@@ -1,7 +1,7 @@
 @ECHO OFF
 MD build
 CD build
-cmake ../
+cmake ../ -G "MSYS Makefiles"
 cmake --build .
 CD debug
 PinkPearl.exe
