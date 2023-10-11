@@ -14,6 +14,8 @@ typedef struct queue_family_indices_t {
 
 	uint32_t *m_transfer_family_ptr;
 
+	uint32_t *m_compute_family_ptr;
+
 } queue_family_indices_t;
 
 typedef struct swapchain_support_details_t {
@@ -34,7 +36,7 @@ typedef struct physical_device_t {
 
 	swapchain_support_details_t m_swapchain_support_details;
 
-	char **m_extensions;
+	const char **m_extensions;
 	uint32_t m_num_extensions;
 
 } physical_device_t;

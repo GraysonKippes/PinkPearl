@@ -1,0 +1,46 @@
+#version 450
+
+// This compute shader takes in an array of vectors (representing positions),
+// and creates translation matrices. Then each matrix is multiplied by the camera
+// and projection matrices, and push to an output buffer.
+
+#define MAX_SIZE 64
+
+layout(local_size_x = MAX_SIZE) in;
+
+layout(set = 0, binding = 0) uniform config {
+	mat4 camera_matrix;
+	mat4 projection_matrix;
+	float delta_time;
+	uint num_inputs;
+} op_data;
+
+layout(set = 0, binding = 1) readonly buffer input_buffer {
+	vec3 positions[MAX_SIZE];
+	vec3 previous_positions[MAX_SIZE];
+} input_data;
+
+layout(set = 0, binding = 2) buffer output_buffer {
+	mat4 matrices[MAX_SIZE];
+} output_data;
+
+void main() {
+	
+	uint global_ID = gl_GlobalInvocationID.x;
+
+	if (global_ID < op_data.num_inputs) {
+
+		vec3 lerp_position = vec3(
+			mix(input_data.previous_positions[global_ID].x, input_data.positions[global_ID].x, op_data.delta_time),
+			mix(input_data.previous_positions[global_ID].y, input_data.positions[global_ID].y, op_data.delta_time),
+			mix(input_data.previous_positions[global_ID].z, input_data.positions[global_ID].z, op_data.delta_time));
+
+		mat4 translation_matrix;
+		translation_matrix[0] = vec4(1.0, 0.0, 0.0, 0.0);
+		translation_matrix[1] = vec4(0.0, 1.0, 0.0, 0.0);
+		translation_matrix[2] = vec4(0.0, 0.0, 1.0, 0.0);
+		translation_matrix[3] = vec4(lerp_position, 1.0);
+
+		output_data.matrices[global_ID] = op_data.projection_matrix * op_data.camera_matrix * translation_matrix;
+	}
+}

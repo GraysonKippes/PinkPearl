@@ -17,5 +17,7 @@ target_include_directories(PinkPearl PRIVATE
 target_sources(PinkPearl PRIVATE 
 	src/main.c
 	src/glfw/glfw_manager.c
-	src/render/vulkan/physical_device.c)
+	src/render/vulkan/logical_device.c
+	src/render/vulkan/physical_device.c
+	src/render/vulkan/vulkan_instance.c)
 

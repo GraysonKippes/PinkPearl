@@ -6,7 +6,7 @@
 
 static const uint32_t num_device_extensions = 1;
 
-static char *device_extensions[1] = {
+static const char *device_extensions[1] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
@@ -66,13 +66,21 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 			queue_family_indices.m_transfer_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.m_transfer_family_ptr = i;
 		}
+
+		if ((queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) && queue_family_indices.m_compute_family_ptr == NULL) {
+			queue_family_indices.m_compute_family_ptr = malloc(sizeof(uint32_t));
+			*queue_family_indices.m_compute_family_ptr = i;
+		}
 	}
 
 	return queue_family_indices;
 }
 
 bool is_queue_family_indices_complete(queue_family_indices_t queue_family_indices) {
-	return queue_family_indices.m_graphics_family_ptr != NULL && queue_family_indices.m_present_family_ptr != NULL && queue_family_indices.m_transfer_family_ptr != NULL;
+	return queue_family_indices.m_graphics_family_ptr != NULL 
+		&& queue_family_indices.m_present_family_ptr != NULL 
+		&& queue_family_indices.m_transfer_family_ptr != NULL
+		&& queue_family_indices.m_compute_family_ptr != NULL;
 }
 
 // Allocates on the heap, make sure to free the surface format and present mode arrays eventually.
@@ -169,6 +177,7 @@ void free_physical_device(physical_device_t physical_device) {
 	free(physical_device.m_queue_family_indices.m_graphics_family_ptr);
 	free(physical_device.m_queue_family_indices.m_present_family_ptr);
 	free(physical_device.m_queue_family_indices.m_transfer_family_ptr);
+	free(physical_device.m_queue_family_indices.m_compute_family_ptr);
 	free(physical_device.m_swapchain_support_details.m_formats);
 	free(physical_device.m_swapchain_support_details.m_present_modes);
 }
