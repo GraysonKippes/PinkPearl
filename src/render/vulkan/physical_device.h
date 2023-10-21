@@ -2,9 +2,12 @@
 #define PHYSICAL_DEVICE_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include <vulkan/vulkan.h>
+
+#define NUM_QUEUES 4
 
 typedef struct queue_family_indices_t {
 	
@@ -18,13 +21,21 @@ typedef struct queue_family_indices_t {
 
 } queue_family_indices_t;
 
+
+
 typedef struct swapchain_support_details_t {
 	
 	VkSurfaceCapabilitiesKHR m_capabilities;
+
+	size_t m_num_formats;
 	VkSurfaceFormatKHR *m_formats;
+
+	size_t m_num_present_modes;
 	VkPresentModeKHR *m_present_modes;
 
 } swapchain_support_details_t;
+
+
 
 typedef struct physical_device_t {
 	
@@ -41,11 +52,13 @@ typedef struct physical_device_t {
 
 } physical_device_t;
 
+
+
 // Selects a physical device from all the physical devices available on the user's machine.
 physical_device_t select_physical_device(VkInstance vk_instance, VkSurfaceKHR surface);
 
 // Frees all the arrays inside the physical device struct.
-void free_physical_device(physical_device_t physical_device);
+void destroy_physical_device(physical_device_t physical_device);
 
 // Attempts to find the index to the memory type in the physical device. Returns true if the memory type was found and stored in type_ptr, false otherwise.
 bool find_physical_device_memory_type(VkPhysicalDevice physical_device, uint32_t filter, VkMemoryPropertyFlags properties, uint32_t *type_ptr);

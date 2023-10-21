@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <glfw/glfw3.h>
+
 #include "debug.h"
-#include "glfw/glfw_manager.h"
+#include "log/logging.h"
 
 static const uint32_t num_validation_layers = 1;
 
@@ -37,6 +39,12 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 bool check_validation_layer_support(uint32_t num_required_layers, const char *required_layers[]) {
 
+	log_message(VERBOSE, "Checking validation layer support...");
+
+	for (size_t i = 0; i < num_required_layers; ++i) {
+		logf_message(VERBOSE, "Required layer: \"%s\"", required_layers[i]);
+	}
+
 	uint32_t num_available_layers = 0;
 	vkEnumerateInstanceLayerProperties(&num_available_layers, NULL);
 
@@ -50,8 +58,12 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 			return false;
 	}
 
-	VkLayerProperties *available_layers = malloc(num_available_layers * sizeof(VkLayerProperties));
+	VkLayerProperties *available_layers = calloc(num_available_layers, sizeof(VkLayerProperties));
 	vkEnumerateInstanceLayerProperties(&num_available_layers, available_layers);
+
+	for (size_t i = 0; i < num_available_layers; ++i) {
+		logf_message(VERBOSE, "Available layer: \"%s\"", available_layers[i].layerName);
+	}
 
 	for (size_t i = 0; i < num_required_layers; ++i) {
 
@@ -76,10 +88,13 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 	return true;
 }
 
-void create_vulkan_instance(VkInstance *instance_ptr) {
-	
+void create_vulkan_instance(VkInstance *vulkan_instance_ptr) {
+
+	log_message(INFO, "Creating Vulkan instance...");
+
 	VkApplicationInfo app_info;
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	app_info.pNext = NULL;
 	app_info.pApplicationName = "Pink Pearl";	// TODO - link to project config
 	app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
 	app_info.pEngineName = "No Engine";
@@ -107,8 +122,9 @@ void create_vulkan_instance(VkInstance *instance_ptr) {
 
 		// Append the debug extension name.
 		size_t debug_extension_name_length = strlen(VK_EXT_DEBUG_UTILS_EXTENSION_NAME) + 1;
-		*(extensions + num_extensions - 1) = malloc(debug_extension_name_length * sizeof(char));
+		*(extensions + num_extensions - 1) = calloc(debug_extension_name_length, sizeof(char));
 		strncpy(*(extensions + num_extensions - 1), VK_EXT_DEBUG_UTILS_EXTENSION_NAME, debug_extension_name_length);
+		//strcpy(*(extensions + num_extensions - 1), VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 	else {
 		
@@ -120,11 +136,15 @@ void create_vulkan_instance(VkInstance *instance_ptr) {
 			*(extensions + i) = malloc(glfw_extension_name_length * sizeof(char));	// Allocate enough space for the GLFW extension name.
 			strncpy(*(extensions + i), glfw_extensions[i], glfw_extension_name_length);
 		}
-
 	}
+
+	for (uint32_t i = 0; i < num_extensions; ++i)
+		logf_message(VERBOSE, "Enabling Vulkan extension \"%s\".", extensions[i]);
 
 	VkInstanceCreateInfo create_info;
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	create_info.pNext = NULL;
+	create_info.flags = 0;
 	create_info.pApplicationInfo = &app_info;
 	create_info.enabledExtensionCount = num_extensions;
 	create_info.ppEnabledExtensionNames = (const char **)extensions;
@@ -134,15 +154,19 @@ void create_vulkan_instance(VkInstance *instance_ptr) {
 		check_validation_layer_support(num_validation_layers, validation_layers);
 		create_info.enabledLayerCount = num_validation_layers;
 		create_info.ppEnabledLayerNames = validation_layers;
+
+		for (uint32_t i = 0; i < num_validation_layers; ++i)
+			logf_message(VERBOSE, "Enabling validation layer \"%s\".", validation_layers[i]);
 	}
 	else {
 		create_info.enabledLayerCount = 0;
 		create_info.ppEnabledLayerNames = NULL;
 	}
 
-	VkResult result = vkCreateInstance(&create_info, NULL, instance_ptr);
+	VkResult result = vkCreateInstance(&create_info, NULL, vulkan_instance_ptr);
 	if (result != VK_SUCCESS) {
-		// TODO - error handling
+		logf_message(FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
+		exit(1);
 	}
 
 	for (size_t i = 0; i < num_extensions; ++i)
@@ -150,52 +174,45 @@ void create_vulkan_instance(VkInstance *instance_ptr) {
 	free(extensions);
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT severity,
 	VkDebugUtilsMessageTypeFlagsEXT type,
 	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
 	void *pUserData) {
 
-	static const bool showVerbose = false;
-	static const bool showInfo = false;
-	static const bool showWarning = true;
-	static const bool showError = true;
+	log_level_t log_level = VERBOSE;
 
-	// Console output formatting and labeling.
-	char label[13];
-	static const char *clear_console_format = "\x1B[39m";
-
-	// Severity text color
 	switch (severity) {
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-		if (!showVerbose) return VK_FALSE;
-		strcpy(label, "\x1B[37mVerbose");	// Verbose - gray
+		log_level = VERBOSE;
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-		if (!showInfo) return VK_FALSE;
-		strcpy(label, "\x1B[97mInfo");		// Info - white
+		log_level = INFO;
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-		if (!showWarning) return VK_FALSE;
-		strcpy(label, "\x1B[93mWarning");	// Warning - yellow
+		log_level = WARNING;
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-		if (!showError) return VK_FALSE;
-		strcpy(label, "\x1B[91mError");		// Error - red
+		log_level = ERROR;
 		break;
 	}
 
-	fprintf(stderr, "%s: %s%s\n", label, pCallbackData->pMessage, clear_console_format);
+	logf_message(log_level, "Vulkan: %s", pCallbackData->pMessage);
+
 	return VK_FALSE;
 }
 
 void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT *messenger_ptr) {
 
+	log_message(INFO, "Creating Vulkan debug messenger...");
+
 	VkDebugUtilsMessengerCreateInfoEXT create_info;
 	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	create_info.pNext = NULL;
+	create_info.flags = 0;
 	create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 	create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	create_info.pfnUserCallback = debugCallback;
+	create_info.pfnUserCallback = debug_callback;
 	create_info.pUserData = NULL;
 
 	if (CreateDebugUtilsMessengerEXT(vulkan_instance, &create_info, NULL, messenger_ptr) != VK_SUCCESS) {

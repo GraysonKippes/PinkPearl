@@ -1,5 +1,10 @@
 #include "logical_device.h"
 
+#include <stdlib.h>
+
+#include "debug.h"
+#include "log/logging.h"
+
 VkDeviceQueueCreateInfo make_queue_create_info(uint32_t queue_family_index) {
 	
 	static const float queue_priority = 1.0F;
@@ -13,53 +18,92 @@ VkDeviceQueueCreateInfo make_queue_create_info(uint32_t queue_family_index) {
 	return queue_create_info;
 }
 
+// Returns a pointer-array that must be freed by the caller.
+VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_family_indices, uint32_t *num_queue_create_infos) {
+
+	// Pack the queue family indices into an array for easy iteration.
+	uint32_t indices_arr[NUM_QUEUES];
+	indices_arr[0] = *queue_family_indices.m_graphics_family_ptr;
+	indices_arr[1] = *queue_family_indices.m_present_family_ptr;
+	indices_arr[2] = *queue_family_indices.m_transfer_family_ptr;
+	indices_arr[3] = *queue_family_indices.m_compute_family_ptr;
+
+	uint32_t num_unique_queue_families = 0;
+	uint32_t unique_queue_families[NUM_QUEUES];
+
+	for (uint32_t i = 0; i < NUM_QUEUES; ++i) {
+
+		uint32_t index = indices_arr[i];
+		bool index_already_present = false;
+
+		for (uint32_t j = i + 1; j < NUM_QUEUES; ++j) {
+			if (index == indices_arr[j])
+				index_already_present = true;
+		}
+
+		if (!index_already_present) {
+			unique_queue_families[num_unique_queue_families++] = index;
+		}
+	}
+
+	VkDeviceQueueCreateInfo *queue_create_infos = calloc(num_unique_queue_families, sizeof(VkDeviceQueueCreateInfo));
+
+	static const float queue_priority = 1.0F;
+
+	for (uint32_t i = 0; i < num_unique_queue_families; ++i) {
+		queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queue_create_infos[i].queueFamilyIndex = unique_queue_families[i];
+		queue_create_infos[i].queueCount = 1;
+		queue_create_infos[i].pQueuePriorities = &queue_priority;
+	}
+
+	if (num_queue_create_infos)
+		*num_queue_create_infos = num_unique_queue_families;
+
+	return queue_create_infos;
+}
+
+static const char *validation_layers[] = {
+	"VK_LAYER_KHRONOS_validation"
+};
+
 void create_logical_device(physical_device_t physical_device, VkDevice *logical_device_ptr) {
 
-	static const uint32_t num_queues = 4;
-	VkDeviceQueueCreateInfo queue_create_infos[num_queues];
-	queue_create_infos[0] = make_queue_create_info(*physical_device.m_queue_family_indices.m_graphics_family_ptr);
-	queue_create_infos[1] = make_queue_create_info(*physical_device.m_queue_family_indices.m_present_family_ptr);
-	queue_create_infos[2] = make_queue_create_info(*physical_device.m_queue_family_indices.m_transfer_family_ptr);
-	queue_create_infos[3] = make_queue_create_info(*physical_device.m_queue_family_indices.m_compute_family_ptr);
+	log_message(INFO, "Creating logical device...");
 
-	VkPhysicalDeviceFeatures device_features;
+	uint32_t num_queue_create_infos = 0;
+	VkDeviceQueueCreateInfo *queue_create_infos = make_queue_create_infos(physical_device.m_queue_family_indices, &num_queue_create_infos);
+
+	VkPhysicalDeviceFeatures device_features = { 0 };
 	device_features.samplerAnisotropy = VK_TRUE;
-
+	
 	VkDeviceCreateInfo create_info;
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	create_info.queueCreateInfoCount = num_queues;
+	create_info.pNext = NULL;
+	create_info.flags = 0;
+	create_info.queueCreateInfoCount = num_queue_create_infos;
 	create_info.pQueueCreateInfos = queue_create_infos;
 	create_info.pEnabledFeatures = &device_features;
 	create_info.enabledExtensionCount = physical_device.m_num_extensions;
 	create_info.ppEnabledExtensionNames = physical_device.m_extensions;
 
-	if (vkCreateDevice(physical_device.m_handle, &create_info, NULL, logical_device_ptr) != VK_SUCCESS) {
-		// TODO - error handling
+	// Compatibility
+	if (debug_enabled) {
+		create_info.enabledLayerCount = 1;
+		create_info.ppEnabledLayerNames = validation_layers;
 	}
-}
-
-void create_command_pool(VkDevice logical_device, uint32_t queue_family_index, VkCommandPool *command_pool_ptr) {
-
-	VkCommandPoolCreateInfo create_info;
-	create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	create_info.queueFamilyIndex = queue_family_index;
-
-	if (vkCreateCommandPool(logical_device, &create_info, NULL, command_pool_ptr) != VK_SUCCESS) {
-		// TODO - error handling
+	else {
+		create_info.enabledLayerCount = 0;
+		create_info.ppEnabledLayerNames = NULL;
 	}
-}
 
-void create_transfer_command_pool(VkDevice logical_device, uint32_t queue_family_index, VkCommandPool *command_pool_ptr) {
-
-	VkCommandPoolCreateInfo create_info;
-	create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	create_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // TODO - this pool may not need the reset flag.
-	create_info.queueFamilyIndex = queue_family_index;
-
-	if (vkCreateCommandPool(logical_device, &create_info, NULL, command_pool_ptr) != VK_SUCCESS) {
-		// TODO - error handling
+	VkResult result = vkCreateDevice(physical_device.m_handle, &create_info, NULL, logical_device_ptr);
+	if (result != VK_SUCCESS) {
+		logf_message(FATAL, "Logical device creation failed. (Error code: %i)", result);
+		exit(1);
 	}
+
+	free(queue_create_infos);
 }
 
 void submit_graphics_queue(VkQueue queue, VkCommandBuffer *command_buffer_ptr, VkSemaphore *wait_semaphore_ptr, VkSemaphore *signal_semaphore, VkFence in_flight_fence) {

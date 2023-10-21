@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-void create_vulkan_instance(VkInstance *instance_ptr);
+void create_vulkan_instance(VkInstance *vulkan_instance_ptr);
 
 void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT *messenger_ptr);
 

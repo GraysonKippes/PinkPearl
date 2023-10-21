@@ -5,10 +5,6 @@
 
 #define DEBUG
 
-#ifdef DEBUG
-const bool debug_enabled = true;
-#elif	// DEBUG
-const bool debug_enabled = false;
-#endif	// DEBUG
+extern const bool debug_enabled;
 
 #endif	// DEBUG_H
