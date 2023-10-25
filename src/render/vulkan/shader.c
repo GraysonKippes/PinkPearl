@@ -6,8 +6,19 @@
 
 #include "log/logging.h"
 
+#define OS_WINDOWS
+
+#ifdef OS_UNIX
 static const size_t shader_directory_length = 22;	// Length includes null-terminator.
+
 static const char *shader_directory = "../resources/shaders/";
+#endif
+
+#ifdef OS_WINDOWS
+static const size_t shader_directory_length = 25;	// Length includes null-terminator.
+
+static const char *shader_directory = "../../resources/shaders/";
+#endif
 
 static const uint32_t initial_buffer_size = 8192;
 
@@ -58,7 +69,7 @@ void create_shader_module(VkDevice logical_device, const char *filename, VkShade
 		log_message(FATAL, "Shader file reading failed.");
 	}
 
-	VkShaderModuleCreateInfo create_info;
+	VkShaderModuleCreateInfo create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;

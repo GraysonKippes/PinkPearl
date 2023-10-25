@@ -74,7 +74,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 	if (physical_device.m_swapchain_support_details.m_capabilities.maxImageCount > 0 && num_images > physical_device.m_swapchain_support_details.m_capabilities.maxImageCount)
 		num_images = physical_device.m_swapchain_support_details.m_capabilities.maxImageCount;
 
-	VkSwapchainCreateInfoKHR create_info;
+	VkSwapchainCreateInfoKHR create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
@@ -126,7 +126,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 	swapchain.m_image_views = malloc(swapchain.m_num_images * sizeof(VkImageView));
 	for (size_t i = 0; i < swapchain.m_num_images; ++i) {
 
-		VkImageViewCreateInfo image_view_create_info;
+		VkImageViewCreateInfo image_view_create_info = {0};
 		image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		image_view_create_info.pNext = NULL;
 		image_view_create_info.flags = 0;
@@ -160,8 +160,10 @@ void create_framebuffers(VkDevice logical_device, VkRenderPass render_pass, swap
 	swapchain_ptr->m_framebuffers = malloc(swapchain_ptr->m_num_images * sizeof(VkFramebuffer));
 	for (uint32_t i = 0; i < swapchain_ptr->m_num_images; ++i) {
 
-		VkFramebufferCreateInfo create_info;
+		VkFramebufferCreateInfo create_info = {0};
 		create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		create_info.pNext = NULL;
+		create_info.flags = 0;
 		create_info.renderPass = render_pass;
 		create_info.attachmentCount = 1;
 		create_info.pAttachments = swapchain_ptr->m_image_views + i;
@@ -210,9 +212,14 @@ VkRect2D make_scissor(VkExtent2D extent) {
 	extent.width -= pad * 2;
 
 	VkRect2D scissor;
-	scissor.offset.x = (int32_t)pad;
+	
+	scissor.offset.x = 0;
 	scissor.offset.y = 0;
 	scissor.extent = extent;
+
+	//scissor.offset.x = (int32_t)pad;
+	//scissor.offset.y = 0;
+	//scissor.extent = extent;
 
 	return scissor;
 }

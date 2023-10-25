@@ -10,7 +10,7 @@ static const size_t attribute_sizes[] = { 3, 2, 3 };
 
 VkVertexInputBindingDescription get_binding_description(void) {
 
-	VkVertexInputBindingDescription binding;
+	VkVertexInputBindingDescription binding = { 0 };
 	binding.binding = 0;
 	binding.stride = VERTEX_INPUT_ELEMENT_STRIDE * sizeof(float);
 	binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -33,6 +33,7 @@ VkVertexInputAttributeDescription *get_attribute_descriptions(void) {
 	VkVertexInputAttributeDescription *attributes = calloc(VERTEX_INPUT_NUM_ATTRIBUTES, sizeof(VkVertexInputAttributeDescription));
 
 	uint32_t offset = 0;
+
 	for (uint32_t i = 0; i < VERTEX_INPUT_NUM_ATTRIBUTES; ++i) {
 
 		attributes[i].binding = 0;

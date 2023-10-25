@@ -5,16 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glfw/glfw3.h>
+#include <GLFW/glfw3.h>
 
 #include "debug.h"
 #include "log/logging.h"
 
-static const uint32_t num_validation_layers = 1;
-
-static const char *validation_layers[] = {
-	"VK_LAYER_KHRONOS_validation"
-};
+#include "layer.h"
 
 /* -- Get Vulkan Extension Functions -- */
 
@@ -92,7 +88,7 @@ void create_vulkan_instance(VkInstance *vulkan_instance_ptr) {
 
 	log_message(INFO, "Creating Vulkan instance...");
 
-	VkApplicationInfo app_info;
+	VkApplicationInfo app_info = {0};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	app_info.pNext = NULL;
 	app_info.pApplicationName = "Pink Pearl";	// TODO - link to project config
@@ -141,7 +137,7 @@ void create_vulkan_instance(VkInstance *vulkan_instance_ptr) {
 	for (uint32_t i = 0; i < num_extensions; ++i)
 		logf_message(VERBOSE, "Enabling Vulkan extension \"%s\".", extensions[i]);
 
-	VkInstanceCreateInfo create_info;
+	VkInstanceCreateInfo create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
@@ -206,7 +202,7 @@ void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT 
 
 	log_message(INFO, "Creating Vulkan debug messenger...");
 
-	VkDebugUtilsMessengerCreateInfoEXT create_info;
+	VkDebugUtilsMessengerCreateInfoEXT create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	create_info.pNext = NULL;
 	create_info.flags = 0;

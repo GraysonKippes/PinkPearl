@@ -11,7 +11,7 @@ void create_command_pool(VkDevice logical_device, VkCommandPoolCreateFlags flags
 	
 	logf_message(INFO, "Creating command pool in queue family %i...", queue_family_index);
 
-	VkCommandPoolCreateInfo create_info;
+	VkCommandPoolCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = flags;
@@ -26,7 +26,7 @@ void create_command_pool(VkDevice logical_device, VkCommandPoolCreateFlags flags
 
 void allocate_command_buffers(VkDevice logical_device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers) {
 
-	VkCommandBufferAllocateInfo allocate_info;
+	VkCommandBufferAllocateInfo allocate_info = { 0 };
 	allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocate_info.commandPool = command_pool;
@@ -38,7 +38,7 @@ void allocate_command_buffers(VkDevice logical_device, VkCommandPool command_poo
 
 void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage) {
 
-	VkCommandBufferBeginInfo begin_info;
+	VkCommandBufferBeginInfo begin_info = { 0 };
 	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	begin_info.flags = usage;
 	begin_info.pInheritanceInfo = NULL;
@@ -49,7 +49,7 @@ void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFl
 
 void begin_render_pass(VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkExtent2D extent, VkClearValue *clear_value) {
 
-	VkRenderPassBeginInfo render_pass_info;
+	VkRenderPassBeginInfo render_pass_info = { 0 };
 	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	render_pass_info.renderPass = render_pass;
 	render_pass_info.framebuffer = framebuffer;

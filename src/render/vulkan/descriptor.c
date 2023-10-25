@@ -4,36 +4,35 @@
 
 #include "log/logging.h"
 
-static descriptor_binding_t graphics_descriptor_bindings[3] = {
-	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_VERTEX_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .m_count = 1, .m_stages = VK_SHADER_STAGE_FRAGMENT_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_FRAGMENT_BIT },
+static descriptor_binding_t graphics_descriptor_bindings[1] = {
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_VERTEX_BIT }
 };
 
 const descriptor_layout_t graphics_descriptor_layout = {
-	.m_num_bindings = 3,
-	.m_bindings = graphics_descriptor_bindings
+	.m_num_bindings = 1,
+	.m_bindings = graphics_descriptor_bindings 
 };
 
-static descriptor_binding_t compute_matrices_bindings[4] = {
-	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
+static descriptor_binding_t compute_matrices_bindings[3] = {
 	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
 	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT }
 };
 
 const descriptor_layout_t compute_matrices_layout = {
-	.m_num_bindings = 4,
+	.m_num_bindings = 3,
 	.m_bindings = compute_matrices_bindings
 };
 
 void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr) {
 
-	log_message(INFO, "Creating descriptor set layout...");
+	VkDescriptorSetLayoutBinding *descriptor_bindings = NULL;
 
-	VkDescriptorSetLayoutBinding *descriptor_bindings = calloc(descriptor_layout.m_num_bindings, sizeof(VkDescriptorSetLayoutBinding));
-	if (descriptor_bindings == NULL) {
-		return;
+	if (descriptor_layout.m_num_bindings > 0) {
+		descriptor_bindings = calloc(descriptor_layout.m_num_bindings, sizeof(VkDescriptorSetLayoutBinding));
+		if (descriptor_bindings == NULL) {
+			return;
+		}
 	}
 
 	for (uint32_t i = 0; i < descriptor_layout.m_num_bindings; ++i) {
@@ -43,8 +42,10 @@ void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t d
 		descriptor_bindings[i].stageFlags = descriptor_layout.m_bindings[i].m_stages;
 	}
 
-	VkDescriptorSetLayoutCreateInfo create_info;
+	VkDescriptorSetLayoutCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	create_info.pNext = NULL;
+	create_info.flags = 0;
 	create_info.bindingCount = descriptor_layout.m_num_bindings;
 	create_info.pBindings = descriptor_bindings;
 
@@ -53,15 +54,14 @@ void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t d
 		logf_message(FATAL, "Descriptor set layout creation failed. (Error code: %i)", result);
 	}
 
-	free(descriptor_bindings);
+	if (descriptor_bindings != NULL)
+		free(descriptor_bindings);
 }
 
 void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr) {
 
-	log_message(INFO, "Creating descriptor pool...");
-
 	VkDescriptorPoolSize *pool_sizes = calloc(descriptor_layout.m_num_bindings, sizeof(VkDescriptorPoolSize));
-	if (pool_sizes = NULL) {
+	if (pool_sizes == NULL) {
 		return;
 	}
 	
@@ -70,8 +70,10 @@ void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descript
 		pool_sizes[i].descriptorCount = descriptor_layout.m_bindings[i].m_count;
 	}
 
-	VkDescriptorPoolCreateInfo create_info;
+	VkDescriptorPoolCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	create_info.pNext = NULL;
+	create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	create_info.maxSets = max_sets;
 	create_info.poolSizeCount = descriptor_layout.m_num_bindings;
 	create_info.pPoolSizes = pool_sizes;
@@ -86,8 +88,6 @@ void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descript
 
 void allocate_descriptor_sets(VkDevice logical_device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets) {
 
-	logf_message(VERBOSE, "Allocating %ui descriptor sets...", num_descriptor_sets);
-
 	VkDescriptorSetLayout *layouts = calloc(num_descriptor_sets, sizeof(VkDescriptorSetLayout));
 	if (layouts == NULL) {
 		return;
@@ -98,6 +98,7 @@ void allocate_descriptor_sets(VkDevice logical_device, descriptor_pool_t descrip
 
 	VkDescriptorSetAllocateInfo allocate_info;
 	allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocate_info.pNext = NULL;
 	allocate_info.descriptorPool = descriptor_pool.m_handle;
 	allocate_info.descriptorSetCount = num_descriptor_sets;
 	allocate_info.pSetLayouts = layouts;

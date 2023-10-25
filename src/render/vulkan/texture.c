@@ -29,7 +29,7 @@ texture_t create_texture(const char *path) {
 
 	VkDeviceSize image_size = image.m_width * image.m_height * image.m_num_channels;
 
-	VkImageCreateInfo imageInfo{};
+	VkImageCreateInfo imageInfo;
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageInfo.flags = 0;
 	imageInfo.imageType = VK_IMAGE_TYPE_2D;

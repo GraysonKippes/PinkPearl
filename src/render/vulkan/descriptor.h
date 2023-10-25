@@ -28,6 +28,7 @@ typedef struct descriptor_pool_t {
 
 	VkDescriptorPool m_handle;
 	VkDescriptorSetLayout m_layout;
+
 } descriptor_pool_t;
 
 

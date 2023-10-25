@@ -1,0 +1,56 @@
+#version 450
+
+// Dynamic texture-image processing
+// Takes in an image, vertex positions, and texture coordinates,
+// as well as an array of point lights, and processes the image 
+// x number of times based on each set of vertices.
+
+// Processes
+// Dynamic lighting
+
+#define MAX_SIZE_X 256
+#define MAX_SIZE_Y 64
+
+layout(local_size_x = MAX_SIZE_X) in;
+layout(local_size_y = MAX_SIZE_Y) in;
+
+layout(set = 0, binding = 0) readonly buffer vertices_t {
+	uint m_num_vertices;
+	vec3 m_position[MAX_SIZE_X];
+	vec2 m_tex_coord[MAX_SIZE_X];
+	vec3 m_color[MAX_SIZE_X];
+} vertices;
+
+struct point_light_t {
+	vec3 m_position;
+	vec3 m_color;
+	float m_intensity;
+};
+
+layout(set = 0, binding = 1) readonly buffer lighting_t {
+	uint m_num_point_lights;
+	point_light_t point_lights[MAX_SIZE_Y];
+} lighting;
+
+layout(set = 0, binding = 2, rgba32f) uniform readonly image2D input_image;
+
+layout(set = 0, binding = 3, rgba32f) uniform writeonly image2D output_image;
+
+void main() {
+	
+	uint g_x = gl_GlobalInvocationID.x;
+	uint g_y = gl_GlobalInvocationID.y;
+
+	if (g_x < vertices.m_num_vertices && g_y < lighting.m_num_point_lights) {
+
+		ivec2 image_size = imageSize(input_image);
+		ivec2 image_coord = ivec2(0, 0);
+
+		for (; image_coord.y < image_size.y; ++image_coord.y) {
+			for (; image_coord.x < image_size.x; ++image_coord.x) {
+				vec4 image_data = imageLoad(input_image, image_coord);
+				imageStore(output_image, image_coord, image_data);
+			}
+		}
+	}
+}

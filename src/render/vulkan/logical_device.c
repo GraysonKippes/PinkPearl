@@ -1,22 +1,14 @@
 #include "logical_device.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "debug.h"
 #include "log/logging.h"
 
-VkDeviceQueueCreateInfo make_queue_create_info(uint32_t queue_family_index) {
-	
-	static const float queue_priority = 1.0F;
+#include "layer.h"
 
-	VkDeviceQueueCreateInfo queue_create_info;
-	queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queue_create_info.queueFamilyIndex = queue_family_index;
-	queue_create_info.queueCount = 1;
-	queue_create_info.pQueuePriorities = &queue_priority;
-
-	return queue_create_info;
-}
+bool check_device_validation_layer_support(VkPhysicalDevice physical_device, uint32_t num_required_layers, const char *required_layers[]);
 
 // Returns a pointer-array that must be freed by the caller.
 VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_family_indices, uint32_t *num_queue_create_infos) {
@@ -63,10 +55,6 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_fa
 	return queue_create_infos;
 }
 
-static const char *validation_layers[] = {
-	"VK_LAYER_KHRONOS_validation"
-};
-
 void create_logical_device(physical_device_t physical_device, VkDevice *logical_device_ptr) {
 
 	log_message(INFO, "Creating logical device...");
@@ -77,7 +65,7 @@ void create_logical_device(physical_device_t physical_device, VkDevice *logical_
 	VkPhysicalDeviceFeatures device_features = { 0 };
 	device_features.samplerAnisotropy = VK_TRUE;
 	
-	VkDeviceCreateInfo create_info;
+	VkDeviceCreateInfo create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
@@ -89,8 +77,15 @@ void create_logical_device(physical_device_t physical_device, VkDevice *logical_
 
 	// Compatibility
 	if (debug_enabled) {
-		create_info.enabledLayerCount = 1;
-		create_info.ppEnabledLayerNames = validation_layers;
+		if (!check_device_validation_layer_support(physical_device.m_handle, num_validation_layers, validation_layers)) {
+			log_message(ERROR, "Required validation layers not supported by device.");
+			create_info.enabledLayerCount = 0;
+			create_info.ppEnabledLayerNames = NULL;
+		}
+		else {
+			create_info.enabledLayerCount = num_validation_layers;
+			create_info.ppEnabledLayerNames = validation_layers;
+		}
 	}
 	else {
 		create_info.enabledLayerCount = 0;
@@ -106,9 +101,60 @@ void create_logical_device(physical_device_t physical_device, VkDevice *logical_
 	free(queue_create_infos);
 }
 
+bool check_device_validation_layer_support(VkPhysicalDevice physical_device, uint32_t num_required_layers, const char *required_layers[]) {
+
+	log_message(VERBOSE, "Checking device validation layer support...");
+
+	for (size_t i = 0; i < num_required_layers; ++i) {
+		logf_message(VERBOSE, "Required layer: \"%s\"", required_layers[i]);
+	}
+
+	uint32_t num_available_layers = 0;
+	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, NULL);
+
+	if (num_available_layers < num_required_layers)
+		return false;
+
+	if (num_available_layers == 0) {
+		if (num_required_layers == 0)
+			return true;
+		else
+			return false;
+	}
+
+	VkLayerProperties *available_layers = calloc(num_available_layers, sizeof(VkLayerProperties));
+	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, available_layers);
+
+	for (size_t i = 0; i < num_available_layers; ++i) {
+		logf_message(VERBOSE, "Available layer: \"%s\"", available_layers[i].layerName);
+	}
+
+	for (size_t i = 0; i < num_required_layers; ++i) {
+
+		const char *layer_name = required_layers[i];
+		bool layer_found = false;
+
+		for (size_t j = 0; j < num_available_layers; ++j) {
+			VkLayerProperties available_layer = available_layers[j];
+			if (strcmp(layer_name, available_layer.layerName) == 0) {
+				layer_found = true;
+				break;
+			}
+		}
+
+		if (!layer_found)
+			return false;
+	}
+
+	free(available_layers);
+	available_layers = NULL;
+
+	return true;
+}
+
 void submit_graphics_queue(VkQueue queue, VkCommandBuffer *command_buffer_ptr, VkSemaphore *wait_semaphore_ptr, VkSemaphore *signal_semaphore, VkFence in_flight_fence) {
 
-	VkSubmitInfo submit_info;
+	VkSubmitInfo submit_info = {0};
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submit_info.pWaitDstStageMask = wait_stages;

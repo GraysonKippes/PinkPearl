@@ -1,0 +1,35 @@
+#ifndef RENDER_OBJECT_H
+#define RENDER_OBJECT_H
+
+#include <stdint.h>
+
+#include "math/vector3F.h"
+
+
+
+typedef uint32_t render_handle_t;
+
+render_handle_t create_render_object(void);
+
+void destroy_render_object(render_handle_t);
+
+
+
+// The render object is an abstract concept, and is separated into various components which are
+// stored in their own arrays, for easy vectorization by the renderer.
+
+typedef struct render_position_t {
+	
+	vector3F_t m_position;
+
+	vector3F_t m_previous_position;
+
+} render_position_t;
+
+render_position_t *get_render_position_ptr(render_handle_t handle);
+
+void update_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
+
+
+
+#endif	// RENDER_OBJECT_H

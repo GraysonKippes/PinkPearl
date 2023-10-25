@@ -1,5 +1,7 @@
 #include "graphics_pipeline.h"
 
+#include <stdint.h>
+
 #include "log/logging.h"
 
 #include "vertex_input.h"
@@ -22,13 +24,11 @@ void create_graphics_pipeline_layout(VkDevice logical_device, VkDescriptorSetLay
 
 /* -- FUNCTION DEFINITIONS -- */
 
-#include <stdio.h>
-
 void create_render_pass(VkDevice logical_device, VkFormat swapchain_format, VkRenderPass *render_pass_ptr) {
 
-	log_message(INFO, "Creating render pass...");
+	log_message(VERBOSE, "Creating render pass...");
 
-	VkAttachmentDescription color_attachment;
+	VkAttachmentDescription color_attachment = { 0 };
 	color_attachment.flags = 0;
 	color_attachment.format = swapchain_format;
 	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -39,11 +39,11 @@ void create_render_pass(VkDevice logical_device, VkFormat swapchain_format, VkRe
 	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-	VkAttachmentReference color_attachment_ref;
+	VkAttachmentReference color_attachment_ref = { 0 };
 	color_attachment_ref.attachment = 0;
 	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	VkSubpassDescription subpass;
+	VkSubpassDescription subpass = { 0 };
 	subpass.flags = 0;
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.inputAttachmentCount = 0;
@@ -55,7 +55,7 @@ void create_render_pass(VkDevice logical_device, VkFormat swapchain_format, VkRe
 	subpass.preserveAttachmentCount = 0;
 	subpass.pPreserveAttachments = NULL;
 
-	VkSubpassDependency dependency;
+	VkSubpassDependency dependency = { 0 };
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass = 0;
 	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -64,7 +64,7 @@ void create_render_pass(VkDevice logical_device, VkFormat swapchain_format, VkRe
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	dependency.dependencyFlags = 0;
 
-	VkRenderPassCreateInfo create_info;
+	VkRenderPassCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
@@ -83,13 +83,13 @@ void create_render_pass(VkDevice logical_device, VkFormat swapchain_format, VkRe
 
 graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_t swapchain, VkDescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
 
-	log_message(INFO, "Creating graphics pipeline...");
+	log_message(VERBOSE, "Creating graphics pipeline...");
 
-	graphics_pipeline_t pipeline;
+	graphics_pipeline_t pipeline = { 0 };
 
 	create_render_pass(logical_device, swapchain.m_image_format, &pipeline.m_render_pass);
 
-	VkPipelineShaderStageCreateInfo shader_stage_vertex_info;
+	VkPipelineShaderStageCreateInfo shader_stage_vertex_info = { 0 };
 	shader_stage_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shader_stage_vertex_info.pNext = NULL;
 	shader_stage_vertex_info.flags = 0;
@@ -97,7 +97,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_
 	shader_stage_vertex_info.module = vertex_shader;
 	shader_stage_vertex_info.pName = "main";
 
-	VkPipelineShaderStageCreateInfo shader_stage_fragment_info;
+	VkPipelineShaderStageCreateInfo shader_stage_fragment_info = { 0 };
 	shader_stage_fragment_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shader_stage_fragment_info.pNext = NULL;
 	shader_stage_fragment_info.flags = 0;
@@ -105,14 +105,14 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_
 	shader_stage_fragment_info.module = fragment_shader;
 	shader_stage_fragment_info.pName = "main";
 
-	VkPipelineShaderStageCreateInfo shader_stages[] = { shader_stage_vertex_info, shader_stage_fragment_info };
+	VkPipelineShaderStageCreateInfo shader_stages[2] = { shader_stage_vertex_info, shader_stage_fragment_info };
 
 	create_graphics_pipeline_layout(logical_device, descriptor_set_layout, &pipeline.m_layout);
 
 	VkVertexInputBindingDescription binding_description = get_binding_description();
 	VkVertexInputAttributeDescription *attribute_descriptions = get_attribute_descriptions();
 
-	VkPipelineVertexInputStateCreateInfo vertex_input_info;
+	VkPipelineVertexInputStateCreateInfo vertex_input_info = { 0 };
 	vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertex_input_info.pNext = NULL;
 	vertex_input_info.flags = 0;
@@ -136,7 +136,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_
 
 	VkPipelineColorBlendStateCreateInfo color_blending = make_color_blend_info(&color_blend_attachment);
 
-	VkGraphicsPipelineCreateInfo create_info;
+	VkGraphicsPipelineCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
@@ -153,11 +153,15 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_
 	create_info.layout = pipeline.m_layout;
 	create_info.renderPass = pipeline.m_render_pass;
 	create_info.subpass = 0;
+	create_info.basePipelineHandle = VK_NULL_HANDLE;
+	create_info.basePipelineIndex= -1;
 
 	VkResult result = vkCreateGraphicsPipelines(logical_device, VK_NULL_HANDLE, 1, &create_info, NULL, &pipeline.m_handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
 	}
+
+	free(attribute_descriptions);
 
 	return pipeline;
 }
@@ -171,7 +175,7 @@ void destroy_graphics_pipeline(VkDevice logical_device, graphics_pipeline_t pipe
 
 VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
 
-	VkPipelineInputAssemblyStateCreateInfo input_assembly;
+	VkPipelineInputAssemblyStateCreateInfo input_assembly = { 0 };
 	input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	input_assembly.pNext = NULL;
 	input_assembly.flags = 0;
@@ -183,7 +187,7 @@ VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
 
 VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_ptr, VkRect2D *scissor_ptr) {
 
-	VkPipelineViewportStateCreateInfo viewport_state;
+	VkPipelineViewportStateCreateInfo viewport_state = { 0 };
 	viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewport_state.pNext = NULL;
 	viewport_state.flags = 0;
@@ -197,7 +201,7 @@ VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_
 
 VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
 
-	VkPipelineRasterizationStateCreateInfo rasterizer;
+	VkPipelineRasterizationStateCreateInfo rasterizer = { 0 };
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.pNext = NULL;
 	rasterizer.flags = 0;
@@ -217,7 +221,7 @@ VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
 
 VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
 
-	VkPipelineMultisampleStateCreateInfo multisampling;
+	VkPipelineMultisampleStateCreateInfo multisampling = { 0 };
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.pNext = NULL;
 	multisampling.flags = 0;
@@ -233,7 +237,7 @@ VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
 
 VkPipelineColorBlendAttachmentState make_color_blend_attachment(void) {
 
-	VkPipelineColorBlendAttachmentState color_blend_attachment;
+	VkPipelineColorBlendAttachmentState color_blend_attachment = { 0 };
 	color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	color_blend_attachment.blendEnable = VK_TRUE;
 	color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
@@ -246,16 +250,16 @@ VkPipelineColorBlendAttachmentState make_color_blend_attachment(void) {
 	return color_blend_attachment;
 }
 
-VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState *pAttachment) {
+VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState *attachment_ptr) {
 
-	VkPipelineColorBlendStateCreateInfo color_blending;
+	VkPipelineColorBlendStateCreateInfo color_blending = { 0 };
 	color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	color_blending.pNext = NULL;
 	color_blending.flags = 0;
 	color_blending.logicOpEnable = VK_FALSE;
 	color_blending.logicOp = VK_LOGIC_OP_COPY;
 	color_blending.attachmentCount = 1;
-	color_blending.pAttachments = pAttachment;
+	color_blending.pAttachments = attachment_ptr;
 	color_blending.blendConstants[0] = 0.0F;
 	color_blending.blendConstants[1] = 0.0F;
 	color_blending.blendConstants[2] = 0.0F;
@@ -266,16 +270,21 @@ VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAt
 
 void create_graphics_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
-	log_message(INFO, "Creating graphics pipeline layout...");
+	log_message(VERBOSE, "Creating graphics pipeline layout...");
 
-	VkPipelineLayoutCreateInfo create_info;
+	VkPushConstantRange push_constant_range = { 0 };
+	push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	push_constant_range.offset = 0;
+	push_constant_range.size = sizeof(uint32_t);
+
+	VkPipelineLayoutCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
 	create_info.setLayoutCount = 1;
 	create_info.pSetLayouts = &descriptor_set_layout;
-	create_info.pushConstantRangeCount = 0;
-	create_info.pPushConstantRanges = NULL;
+	create_info.pushConstantRangeCount = 1;
+	create_info.pPushConstantRanges = &push_constant_range;
 
 	VkResult result = vkCreatePipelineLayout(logical_device, &create_info, NULL, pipeline_layout_ptr);
 	if (result != VK_SUCCESS) {
