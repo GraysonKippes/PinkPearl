@@ -26,11 +26,12 @@ bool check_physical_device_extension_support(physical_device_t physical_device) 
 	VkExtensionProperties *available_extensions = malloc(num_available_extensions * sizeof(VkExtensionProperties));
 	vkEnumerateDeviceExtensionProperties(physical_device.m_handle, NULL, &num_available_extensions, available_extensions);
 
-	for (size_t i = 0; i < physical_device.m_num_extensions; ++i) {
+	for (size_t i = 0; i < physical_device.m_extension_names.m_num_strings; ++i) {
 		
 		bool extension_found = false;
+
 		for (size_t j = 0; j < num_available_extensions; ++j) {
-			if (strcmp(physical_device.m_extensions[i], available_extensions[j].extensionName) == 0) {
+			if (strcmp(physical_device.m_extension_names.m_strings[i], available_extensions[j].extensionName) == 0) {
 				extension_found = true;
 				break;
 			}
@@ -167,7 +168,8 @@ physical_device_t make_new_physical_device(void) {
 	physical_device.m_queue_family_indices.m_compute_family_ptr = NULL;
 	physical_device.m_swapchain_support_details.m_formats = NULL;
 	physical_device.m_swapchain_support_details.m_present_modes = NULL;
-	physical_device.m_extensions = NULL;
+	physical_device.m_extension_names.m_num_strings = 0;
+	physical_device.m_extension_names.m_strings = NULL;
 
 	return physical_device;
 }
@@ -204,8 +206,8 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 		physical_device.m_queue_family_indices = query_queue_family_indices(physical_device.m_handle, surface);
 		physical_device.m_swapchain_support_details = query_swapchain_support_details(physical_device.m_handle, surface);
 		
-		physical_device.m_extensions = device_extensions;
-		physical_device.m_num_extensions = num_device_extensions;
+		physical_device.m_extension_names.m_num_strings = num_device_extensions;
+		physical_device.m_extension_names.m_strings = device_extensions;
 
 		int device_score = rate_physical_device(physical_device);
 

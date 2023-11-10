@@ -72,8 +72,8 @@ void create_logical_device(physical_device_t physical_device, VkDevice *logical_
 	create_info.queueCreateInfoCount = num_queue_create_infos;
 	create_info.pQueueCreateInfos = queue_create_infos;
 	create_info.pEnabledFeatures = &device_features;
-	create_info.enabledExtensionCount = physical_device.m_num_extensions;
-	create_info.ppEnabledExtensionNames = physical_device.m_extensions;
+	create_info.enabledExtensionCount = physical_device.m_extension_names.m_num_strings;
+	create_info.ppEnabledExtensionNames = physical_device.m_extension_names.m_strings;
 
 	// Compatibility
 	if (debug_enabled) {

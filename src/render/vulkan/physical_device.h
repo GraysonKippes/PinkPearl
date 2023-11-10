@@ -7,6 +7,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "util/string_array.h"
+
 #define NUM_QUEUES 4
 
 typedef struct queue_family_indices_t {
@@ -47,8 +49,7 @@ typedef struct physical_device_t {
 
 	swapchain_support_details_t m_swapchain_support_details;
 
-	const char **m_extensions;
-	uint32_t m_num_extensions;
+	string_array_t m_extension_names;
 
 } physical_device_t;
 
