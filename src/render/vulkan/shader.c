@@ -24,15 +24,19 @@ static const uint32_t initial_buffer_size = 8192;
 
 char *read_file(const char *path, uint32_t *file_size_ptr) {
 
+	// TODO - use safe "_s" io functions
+
 	logf_message(VERBOSE, "Opening shader file at \"%s\"", path);
 
 	FILE *file = fopen(path, "rb");
-	if (file == NULL)
+	if (file == NULL) {
 		return NULL;
+	}
 
 	char *contents = calloc(initial_buffer_size, sizeof(char));
-	if (contents == NULL)
+	if (contents == NULL) {
 		return NULL;
+	}
 
 	// TODO - make this able to process larger shader files.
 	uint32_t file_size = 0;
@@ -44,22 +48,22 @@ char *read_file(const char *path, uint32_t *file_size_ptr) {
 
 	fclose(file);
 
-	if (file_size_ptr != NULL)
+	if (file_size_ptr != NULL) {
 		*file_size_ptr = file_size;
+	}
 
 	return contents;
 }
 
 void create_shader_module(VkDevice logical_device, const char *filename, VkShaderModule *shader_module_ptr) {
 
-	logf_message(INFO, "Loading shader \"%s\"...", filename);
+	logf_message(VERBOSE, "Loading shader \"%s\"...", filename);
 
 	size_t filename_length = strlen(filename);	// Length does not include null-terminator.
 	size_t path_length = shader_directory_length + filename_length;
 	char *path = calloc(path_length, sizeof(char));
 	strcpy(path, shader_directory);
 	strcpy(path + shader_directory_length - 1, filename);
-
 
 	uint32_t file_size = 0;
 	char *bytecode = read_file(path, &file_size);

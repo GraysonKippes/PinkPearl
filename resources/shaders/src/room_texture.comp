@@ -1,0 +1,50 @@
+#version 450
+
+// Generates the base texture for the room.
+// Takes the tilemap slot for each tile in the room and copies it to the appropriate spot in the final texture.
+// Tiles are split up across workgroups, as the number of tiles is variable.
+//	The x-dimension represents room width.
+//	The y-dimension represents room height.
+//	gl_WorkGroupID = (0, 0) indicates the top-left corner.
+// Texels within each tilemap slot are split up across local groups, as the dimensions are fixed (16x16).
+
+#define MAX_SIZE_X 16	// Tile texture width
+#define MAX_SIZE_Y 16	// Tile texture height
+#define MAX_SIZE_Z 1
+
+layout(local_size_x = MAX_SIZE_X) in;
+layout(local_size_y = MAX_SIZE_Y) in;
+layout(local_size_z = MAX_SIZE_Z) in;
+
+layout(set = 0, binding = 0) uniform tile_data_t {
+	// length = room width * room height
+	// use workgroup ID index into this array
+	uint m_tilemap_slots[640];
+} tile_data;
+
+layout(set = 0, binding = 1, rgba8ui) uniform readonly uimage2D tilemap_texture;
+
+// Width should be room width * 16 in texels.
+// Height should be room height * 16 in texels.
+layout(set = 0, binding = 2, rgba8ui) uniform writeonly uimage2D room_texture;
+
+void main() {
+
+	// Row-major computation order.
+
+	// The index of the tile whose texture is currently being generated.
+	uint tile_index = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+
+	uint tilemap_slot = tile_data.m_tilemap_slots[tile_index];
+
+	ivec2 tilemap_size = imageSize(tilemap_texture) / 16;
+	ivec2 tilemap_slot_coords = ivec2(tilemap_slot % tilemap_size.x, tilemap_slot / tilemap_size.x);
+
+	ivec2 input_coords = tilemap_slot_coords * 16 + ivec2(gl_LocalInvocationID.xy);
+
+	uvec4 texel = imageLoad(tilemap_texture, input_coords);
+
+	ivec2 output_coords = ivec2(gl_WorkGroupID.xy * 16 + gl_LocalInvocationID.xy);
+
+	imageStore(room_texture, output_coords, texel);
+}

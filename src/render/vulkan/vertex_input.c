@@ -2,11 +2,17 @@
 
 #include <stdlib.h>
 
+#define NUM_VERTEX_INPUT_ATTRIBUTES 2
+
+const size_t num_vertex_input_attributes = NUM_VERTEX_INPUT_ATTRIBUTES;
+
+const size_t vertex_input_element_stride = 5;
+
 const size_t num_vertices_per_rect = 4;
 
 const size_t num_indices_per_rect = 6;
 
-static const size_t attribute_sizes[] = { 3, 2, 3 };
+static const size_t attribute_sizes[NUM_VERTEX_INPUT_ATTRIBUTES] = { 3, 2 };
 
 VkVertexInputBindingDescription get_binding_description(void) {
 

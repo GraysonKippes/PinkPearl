@@ -1,5 +1,7 @@
 #include "frame.h"
 
+#include "command_buffer.h"
+
 frame_t create_frame(physical_device_t physical_device, VkDevice logical_device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool) {
 
 	frame_t frame = { 0 };
@@ -22,13 +24,12 @@ frame_t create_frame(physical_device_t physical_device, VkDevice logical_device,
 
 	static const VkDeviceSize max_num_models = 64;
 
-	// General vertex buffer size		Rooms - 2 slots						// Entity models
-	const VkDeviceSize model_buffer_size = ((32 * 20 * num_elements_per_rect * num_room_slots) + (max_num_models * num_elements_per_rect)) * sizeof(float);
+	// General vertex buffer size
+	const VkDeviceSize model_buffer_size = (max_num_models * num_elements_per_rect) * sizeof(float);
 
 	vkCreateSemaphore(logical_device, &semaphore_info, NULL, &frame.m_semaphore_image_available);
 	vkCreateSemaphore(logical_device, &semaphore_info, NULL, &frame.m_semaphore_render_finished);
 	vkCreateFence(logical_device, &fence_info, NULL, &frame.m_fence_frame_ready);
-
 	vkCreateFence(logical_device, &fence_info, NULL, &frame.m_fence_buffers_up_to_date);
 
 	frame.m_model_update_flags = 0;
@@ -50,4 +51,20 @@ frame_t create_frame(physical_device_t physical_device, VkDevice logical_device,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	return frame;
+}
+
+void destroy_frame(VkDevice logical_device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool, frame_t frame) {
+
+	vkDestroySemaphore(logical_device, frame.m_semaphore_image_available, NULL);
+	vkDestroySemaphore(logical_device, frame.m_semaphore_render_finished, NULL);
+	vkDestroyFence(logical_device, frame.m_fence_frame_ready, NULL);
+	vkDestroyFence(logical_device, frame.m_fence_buffers_up_to_date, NULL);
+
+	vkFreeCommandBuffers(logical_device, command_pool, 1, &frame.m_command_buffer);
+
+	vkFreeDescriptorSets(logical_device, descriptor_pool.m_handle, 1, &frame.m_descriptor_set);
+
+	destroy_buffer(logical_device, frame.m_matrix_buffer);
+	destroy_buffer(logical_device, frame.m_model_buffer);
+	destroy_buffer(logical_device, frame.m_index_buffer);
 }

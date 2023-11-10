@@ -86,7 +86,7 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 
 void create_vulkan_instance(VkInstance *vulkan_instance_ptr) {
 
-	log_message(INFO, "Creating Vulkan instance...");
+	log_message(VERBOSE, "Creating Vulkan instance...");
 
 	VkApplicationInfo app_info = {0};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -200,7 +200,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 
 void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT *messenger_ptr) {
 
-	log_message(INFO, "Creating Vulkan debug messenger...");
+	log_message(VERBOSE, "Creating Vulkan debug messenger...");
 
 	VkDebugUtilsMessengerCreateInfoEXT create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -217,7 +217,10 @@ void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT 
 }
 
 void destroy_vulkan_instance(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT messenger) {
-	if (debug_enabled)
+
+	if (debug_enabled && messenger != VK_NULL_HANDLE) {
 		DestroyDebugUtilsMessengerEXT(vulkan_instance, messenger, NULL);
+	}
+
 	vkDestroyInstance(vulkan_instance, NULL);
 }

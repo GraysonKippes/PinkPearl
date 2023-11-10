@@ -1,8 +1,6 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
-#define SEVERITY_THRESHOLD VERBOSE
-
 typedef enum log_level_t {
 	VERBOSE = 0,
 	INFO = 1,

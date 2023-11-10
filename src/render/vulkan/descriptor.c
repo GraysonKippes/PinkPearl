@@ -4,25 +4,9 @@
 
 #include "log/logging.h"
 
-static descriptor_binding_t graphics_descriptor_bindings[1] = {
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_VERTEX_BIT }
-};
 
-const descriptor_layout_t graphics_descriptor_layout = {
-	.m_num_bindings = 1,
-	.m_bindings = graphics_descriptor_bindings 
-};
 
-static descriptor_binding_t compute_matrices_bindings[3] = {
-	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT }
-};
 
-const descriptor_layout_t compute_matrices_layout = {
-	.m_num_bindings = 3,
-	.m_bindings = compute_matrices_bindings
-};
 
 void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr) {
 
@@ -86,6 +70,12 @@ void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descript
 	free(pool_sizes);
 }
 
+void destroy_descriptor_pool(VkDevice logical_device, descriptor_pool_t descriptor_pool) {
+	vkResetDescriptorPool(logical_device, descriptor_pool.m_handle, 0);
+	vkDestroyDescriptorSetLayout(logical_device, descriptor_pool.m_layout, NULL);
+	vkDestroyDescriptorPool(logical_device, descriptor_pool.m_handle, NULL);
+}
+
 void allocate_descriptor_sets(VkDevice logical_device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets) {
 
 	VkDescriptorSetLayout *layouts = calloc(num_descriptor_sets, sizeof(VkDescriptorSetLayout));
@@ -109,4 +99,26 @@ void allocate_descriptor_sets(VkDevice logical_device, descriptor_pool_t descrip
 	}
 
 	free(layouts);
+}
+
+VkDescriptorBufferInfo make_descriptor_buffer_info(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range) {
+
+	VkDescriptorBufferInfo info = { 0 };
+	info.buffer = buffer;
+	info.offset = offset;
+	info.range = range;
+
+	return info;
+}
+
+const VkSampler no_sampler = VK_NULL_HANDLE;
+
+VkDescriptorImageInfo make_descriptor_image_info(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout) {
+
+	VkDescriptorImageInfo info = { 0 };
+	info.sampler = sampler;
+	info.imageView = image_view;
+	info.imageLayout = image_layout;
+
+	return info;
 }

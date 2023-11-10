@@ -61,4 +61,6 @@ typedef struct frame_t {
 
 frame_t create_frame(physical_device_t physical_device, VkDevice logical_device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool);
 
+void destroy_frame(VkDevice logical_device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool, frame_t frame);
+
 #endif	// FRAME_H

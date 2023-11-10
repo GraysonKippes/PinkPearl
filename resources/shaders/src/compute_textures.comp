@@ -1,25 +1,15 @@
 #version 450
 
-// Dynamic texture-image processing
-// Takes in an image, vertex positions, and texture coordinates,
-// as well as an array of point lights, and processes the image 
-// x number of times based on each set of vertices.
-
-// Processes
+// Processes:
+// Ambient lighting
 // Dynamic lighting
 
-#define MAX_SIZE_X 256
-#define MAX_SIZE_Y 64
+#define MAX_SIZE_X 64	// Model slots
+#define MAX_SIZE_Y 1
+#define MAX_SIZE_Z 1
 
 layout(local_size_x = MAX_SIZE_X) in;
 layout(local_size_y = MAX_SIZE_Y) in;
-
-layout(set = 0, binding = 0) readonly buffer vertices_t {
-	uint m_num_vertices;
-	vec3 m_position[MAX_SIZE_X];
-	vec2 m_tex_coord[MAX_SIZE_X];
-	vec3 m_color[MAX_SIZE_X];
-} vertices;
 
 struct point_light_t {
 	vec3 m_position;
@@ -27,21 +17,28 @@ struct point_light_t {
 	float m_intensity;
 };
 
-layout(set = 0, binding = 1) readonly buffer lighting_t {
+layout(set = 0, binding = 0) readonly uniform data_t {
+
+	uint m_num_models;
+	vec3 m_positions[MAX_SIZE_X];
+
+	vec3 m_ambient_color;
+	float m_ambient_intensity;
+
 	uint m_num_point_lights;
-	point_light_t point_lights[MAX_SIZE_Y];
-} lighting;
+	point_light_t m_point_lights[16];
 
-layout(set = 0, binding = 2, rgba32f) uniform readonly image2D input_image;
+} data;
 
-layout(set = 0, binding = 3, rgba32f) uniform writeonly image2D output_image;
+layout(set = 0, binding = 1, rgba32f) uniform readonly image2D input_image;
+
+layout(set = 0, binding = 2, rgba32f) uniform writeonly image2D output_image;
 
 void main() {
 	
 	uint g_x = gl_GlobalInvocationID.x;
-	uint g_y = gl_GlobalInvocationID.y;
 
-	if (g_x < vertices.m_num_vertices && g_y < lighting.m_num_point_lights) {
+	if (g_x < data.m_num_models) {
 
 		ivec2 image_size = imageSize(input_image);
 		ivec2 image_coord = ivec2(0, 0);

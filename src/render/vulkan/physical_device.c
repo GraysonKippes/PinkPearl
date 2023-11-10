@@ -7,6 +7,8 @@
 #include "util.h"
 #include "log/logging.h"
 
+
+
 static const uint32_t num_device_extensions = 1;
 
 static const char *device_extensions[1] = {
@@ -14,6 +16,8 @@ static const char *device_extensions[1] = {
 };
 
 
+
+void list_physical_device_memories(VkPhysicalDevice physical_device);
 
 bool check_physical_device_extension_support(physical_device_t physical_device) {
 
@@ -170,7 +174,7 @@ physical_device_t make_new_physical_device(void) {
 
 physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKHR surface) {
 
-	log_message(INFO, "Selecting physical device...");
+	log_message(VERBOSE, "Selecting physical device...");
 
 	uint32_t num_physical_devices = 0;
 	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, NULL);
@@ -194,6 +198,8 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 
 		logf_message(VERBOSE, "Rating physical device: %s", physical_device.m_properties.deviceName);
 
+		list_physical_device_memories(physical_device.m_handle);
+
 		vkGetPhysicalDeviceFeatures(physical_device.m_handle, &physical_device.m_features);
 		physical_device.m_queue_family_indices = query_queue_family_indices(physical_device.m_handle, surface);
 		physical_device.m_swapchain_support_details = query_swapchain_support_details(physical_device.m_handle, surface);
@@ -212,6 +218,20 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 			//destroy_physical_device(physical_device);
 		}
 	}
+
+	VkPhysicalDeviceMaintenance4Properties physical_device_maintenance = { 0 };
+	physical_device_maintenance.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES;
+	physical_device_maintenance.pNext = NULL;
+	physical_device_maintenance.maxBufferSize = 0;
+
+	VkPhysicalDeviceProperties2 physical_device_properties = { 0 };
+	physical_device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	physical_device_properties.pNext = &physical_device_maintenance;
+	physical_device_properties.properties = (VkPhysicalDeviceProperties){ 0 };
+
+	vkGetPhysicalDeviceProperties2(selected_physical_device.m_handle, &physical_device_properties);
+
+	logf_message(WARNING, "Max buffer size = %lu", physical_device_maintenance.maxBufferSize);
 
 	free(physical_devices);
 	return selected_physical_device;
@@ -242,4 +262,29 @@ bool find_physical_device_memory_type(VkPhysicalDevice physical_device, uint32_t
 	}
 
 	return false;
+}
+
+// Diagnostic
+void list_physical_device_memories(VkPhysicalDevice physical_device) {
+
+	VkPhysicalDeviceMemoryProperties memory_properties;
+	vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
+
+	logf_message(VERBOSE, "Device memory type count = %u", memory_properties.memoryTypeCount);
+	for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
+
+		VkMemoryType memory_type = memory_properties.memoryTypes[i];
+
+		uint32_t heap_index = memory_type.heapIndex;
+		VkDeviceSize heap_size = memory_properties.memoryHeaps[heap_index].size;
+		bool heap_device_local = (memory_properties.memoryHeaps[heap_index].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) >= 1;
+
+		bool device_local = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) >= 1;
+		bool host_visible = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) >= 1;
+		bool host_coherent = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) >= 1;
+		bool host_cached = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) >= 1;
+
+		logf_message(VERBOSE, "Memory type %u\n\tSize: %lu bytes\n\tHeap device-local: %u\n\tDevice-local: %u\n\tHost-visible: %u\n\tHost-coherent: %u\n\tHost-cached: %u", 
+				i, heap_size, heap_device_local, device_local, host_visible, host_coherent, host_cached);
+	}
 }

@@ -1,30 +1,43 @@
 #include "graphics_pipeline.h"
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "log/logging.h"
 
 #include "vertex_input.h"
 
+/* -- DESCRIPTOR LAYOUT -- */
+
+static descriptor_binding_t graphics_descriptor_bindings[2] = {
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_VERTEX_BIT },
+	{ .m_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .m_count = 1, .m_stages = VK_SHADER_STAGE_FRAGMENT_BIT }
+};
+
+const descriptor_layout_t graphics_descriptor_layout = {
+	.m_num_bindings = 2,
+	.m_bindings = graphics_descriptor_bindings 
+};
+
 /* -- FUNCTION DECLARATIONS -- */
 
-VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void);
+static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void);
 
-VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_ptr, VkRect2D *scissor_ptr);
+static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_ptr, VkRect2D *scissor_ptr);
 
-VkPipelineRasterizationStateCreateInfo make_rasterization_info(void);
+static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void);
 
-VkPipelineMultisampleStateCreateInfo make_multisampling_info(void);
+static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void);
 
-VkPipelineColorBlendAttachmentState make_color_blend_attachment(void);
+static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void);
 
-VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState *attachment_ptr);
+static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState *attachment_ptr);
 
-void create_graphics_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr);
+static void create_graphics_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr);
 
 /* -- FUNCTION DEFINITIONS -- */
 
-void create_render_pass(VkDevice logical_device, VkFormat swapchain_format, VkRenderPass *render_pass_ptr) {
+static void create_render_pass(VkDevice logical_device, VkFormat swapchain_format, VkRenderPass *render_pass_ptr) {
 
 	log_message(VERBOSE, "Creating render pass...");
 
@@ -173,7 +186,7 @@ void destroy_graphics_pipeline(VkDevice logical_device, graphics_pipeline_t pipe
 	vkDestroyRenderPass(logical_device, pipeline.m_render_pass, NULL);
 }
 
-VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
+static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
 
 	VkPipelineInputAssemblyStateCreateInfo input_assembly = { 0 };
 	input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -185,7 +198,7 @@ VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
 	return input_assembly;
 }
 
-VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_ptr, VkRect2D *scissor_ptr) {
+static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_ptr, VkRect2D *scissor_ptr) {
 
 	VkPipelineViewportStateCreateInfo viewport_state = { 0 };
 	viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -199,7 +212,7 @@ VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_
 	return viewport_state;
 }
 
-VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
+static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
 
 	VkPipelineRasterizationStateCreateInfo rasterizer = { 0 };
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -219,7 +232,7 @@ VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
 	return rasterizer;
 }
 
-VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
+static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
 
 	VkPipelineMultisampleStateCreateInfo multisampling = { 0 };
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -235,7 +248,7 @@ VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
 	return multisampling;
 }
 
-VkPipelineColorBlendAttachmentState make_color_blend_attachment(void) {
+static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void) {
 
 	VkPipelineColorBlendAttachmentState color_blend_attachment = { 0 };
 	color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -250,7 +263,7 @@ VkPipelineColorBlendAttachmentState make_color_blend_attachment(void) {
 	return color_blend_attachment;
 }
 
-VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState *attachment_ptr) {
+static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState *attachment_ptr) {
 
 	VkPipelineColorBlendStateCreateInfo color_blending = { 0 };
 	color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -268,12 +281,12 @@ VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAt
 	return color_blending;
 }
 
-void create_graphics_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
+static void create_graphics_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
 	log_message(VERBOSE, "Creating graphics pipeline layout...");
 
 	VkPushConstantRange push_constant_range = { 0 };
-	push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	push_constant_range.offset = 0;
 	push_constant_range.size = sizeof(uint32_t);
 

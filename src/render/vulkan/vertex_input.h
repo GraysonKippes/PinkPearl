@@ -5,9 +5,14 @@
 
 #include <vulkan/vulkan.h>
 
-#define VERTEX_INPUT_NUM_ATTRIBUTES	3
+// TODO - get rid of these
+#define VERTEX_INPUT_NUM_ATTRIBUTES	2
 
-#define VERTEX_INPUT_ELEMENT_STRIDE	8
+#define VERTEX_INPUT_ELEMENT_STRIDE	5
+
+extern const size_t num_vertex_input_attributes;
+
+extern const size_t vertex_input_element_stride;
 
 extern const size_t num_vertices_per_rect;
 

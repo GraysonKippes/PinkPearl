@@ -1,5 +1,6 @@
 # Directories
 build/
+build_gcc/
 build_msvc/
 include/
 lib/

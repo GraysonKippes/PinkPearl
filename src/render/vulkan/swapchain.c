@@ -10,7 +10,7 @@
 
 VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_support_details) {
 
-	log_message(INFO, "Selecting surface format for swapchain...");
+	log_message(VERBOSE, "Selecting surface format for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.m_num_formats; ++i) {
 		VkSurfaceFormatKHR format = swapchain_support_details.m_formats[i];
@@ -29,7 +29,7 @@ VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_s
 
 VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_support_details) {
 
-	log_message(INFO, "Selecting presentation mode for swapchain...");
+	log_message(VERBOSE, "Selecting presentation mode for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.m_num_present_modes; ++i) {
 		VkPresentModeKHR present_mode = swapchain_support_details.m_present_modes[i];
@@ -42,7 +42,7 @@ VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_suppo
 
 VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, GLFWwindow *window) {
 
-	log_message(INFO, "Selecting extent for swapchain...");
+	log_message(VERBOSE, "Selecting extent for swapchain...");
 
 	if (swapchain_support_details.m_capabilities.currentExtent.width != UINT32_MAX) {
 		return swapchain_support_details.m_capabilities.currentExtent;
@@ -60,7 +60,7 @@ VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, 
 
 swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice logical_device, VkSwapchainKHR old_swapchain_handle) {
 
-	log_message(INFO, "Creating swapchain...");
+	log_message(VERBOSE, "Creating swapchain...");
 
 	swapchain_t swapchain;
 
@@ -112,7 +112,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 
 	// Retrieve images
 	
-	log_message(INFO, "Retrieving images for swapchain...");
+	log_message(VERBOSE, "Retrieving images for swapchain...");
 
 	vkGetSwapchainImagesKHR(logical_device, swapchain.m_handle, &num_images, NULL);
 	swapchain.m_num_images = num_images;
@@ -121,7 +121,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 
 	// Create image views
 
-	log_message(INFO, "Creating image views for swapchain...");
+	log_message(VERBOSE, "Creating image views for swapchain...");
 
 	swapchain.m_image_views = malloc(swapchain.m_num_images * sizeof(VkImageView));
 	for (size_t i = 0; i < swapchain.m_num_images; ++i) {
@@ -155,7 +155,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 
 void create_framebuffers(VkDevice logical_device, VkRenderPass render_pass, swapchain_t *swapchain_ptr) {
 
-	log_message(INFO, "Creating framebuffers for swapchain...");
+	log_message(VERBOSE, "Creating framebuffers for swapchain...");
 
 	swapchain_ptr->m_framebuffers = malloc(swapchain_ptr->m_num_images * sizeof(VkFramebuffer));
 	for (uint32_t i = 0; i < swapchain_ptr->m_num_images; ++i) {
@@ -181,16 +181,15 @@ void create_framebuffers(VkDevice logical_device, VkRenderPass render_pass, swap
 void destroy_swapchain(VkDevice logical_device, swapchain_t swapchain) {
 
 	for (size_t i = 0; i < swapchain.m_num_images; ++i) {
-		vkDestroyImage(logical_device, swapchain.m_images[i], NULL);
 		vkDestroyImageView(logical_device, swapchain.m_image_views[i], NULL);
 		vkDestroyFramebuffer(logical_device, swapchain.m_framebuffers[i], NULL);
 	}
 
+	vkDestroySwapchainKHR(logical_device, swapchain.m_handle, NULL);
+
 	free(swapchain.m_images);
 	free(swapchain.m_image_views);
 	free(swapchain.m_framebuffers);
-
-	vkDestroySwapchainKHR(logical_device, swapchain.m_handle, NULL);
 }
 
 VkViewport make_viewport(VkExtent2D extent) {
@@ -208,18 +207,10 @@ VkViewport make_viewport(VkExtent2D extent) {
 
 VkRect2D make_scissor(VkExtent2D extent) {
 
-	uint32_t pad = extent.width / 8;
-	extent.width -= pad * 2;
-
 	VkRect2D scissor;
-	
 	scissor.offset.x = 0;
 	scissor.offset.y = 0;
 	scissor.extent = extent;
-
-	//scissor.offset.x = (int32_t)pad;
-	//scissor.offset.y = 0;
-	//scissor.extent = extent;
 
 	return scissor;
 }

@@ -57,7 +57,7 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_fa
 
 void create_logical_device(physical_device_t physical_device, VkDevice *logical_device_ptr) {
 
-	log_message(INFO, "Creating logical device...");
+	log_message(VERBOSE, "Creating logical device...");
 
 	uint32_t num_queue_create_infos = 0;
 	VkDeviceQueueCreateInfo *queue_create_infos = make_queue_create_infos(physical_device.m_queue_family_indices, &num_queue_create_infos);
@@ -150,22 +150,4 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, uin
 	available_layers = NULL;
 
 	return true;
-}
-
-void submit_graphics_queue(VkQueue queue, VkCommandBuffer *command_buffer_ptr, VkSemaphore *wait_semaphore_ptr, VkSemaphore *signal_semaphore, VkFence in_flight_fence) {
-
-	VkSubmitInfo submit_info = {0};
-	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submit_info.pWaitDstStageMask = wait_stages;
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = command_buffer_ptr;
-	submit_info.waitSemaphoreCount = 1;
-	submit_info.pWaitSemaphores = wait_semaphore_ptr;
-	submit_info.signalSemaphoreCount = 1;
-	submit_info.pSignalSemaphores = signal_semaphore;
-
-	if (vkQueueSubmit(queue, 1, &submit_info, in_flight_fence) != VK_SUCCESS) {
-		// TODO - error handling
-	}
 }

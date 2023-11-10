@@ -3,7 +3,63 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "shader.h"
+
 #include "log/logging.h"
+
+
+
+static descriptor_binding_t compute_matrices_bindings[3] = {
+	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT }
+};
+
+const descriptor_layout_t compute_matrices_layout = {
+	.m_num_bindings = 3,
+	.m_bindings = compute_matrices_bindings
+};
+
+
+
+static descriptor_binding_t compute_room_texture_bindings[3] = {
+	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT }
+};
+
+const descriptor_layout_t compute_room_texture_layout = {
+	.m_num_bindings = 3,
+	.m_bindings = compute_room_texture_bindings
+};
+
+
+
+static descriptor_binding_t compute_textures_bindings[3] = {
+	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT }
+};
+
+const descriptor_layout_t compute_textures_layout = {
+	.m_num_bindings = 3,
+	.m_bindings = compute_textures_bindings
+};
+
+
+
+compute_shader_t create_compute_shader(VkDevice logical_device, descriptor_layout_t descriptor_layout, const char *filename) {
+
+	compute_shader_t compute_shader = { 0 };
+	create_shader_module(logical_device, filename, &compute_shader.m_module);
+	create_descriptor_set_layout(logical_device, descriptor_layout, &compute_shader.m_descriptor_set_layout);
+
+	return compute_shader;
+}
+
+void destroy_compute_shader(VkDevice logical_device, compute_shader_t compute_shader) {
+	vkDestroyShaderModule(logical_device, compute_shader.m_module, NULL);
+}
 
 void create_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
@@ -51,4 +107,10 @@ void create_compute_pipelines(VkDevice logical_device, VkPipeline *compute_pipel
 
 	free(create_infos);
 	va_end(compute_shaders);
+}
+
+void destroy_compute_pipeline(VkDevice logical_device, compute_pipeline_t compute_pipeline) {
+	vkDestroyPipeline(logical_device, compute_pipeline.m_handle, NULL);
+	vkDestroyPipelineLayout(logical_device, compute_pipeline.m_layout, NULL);
+	vkDestroyDescriptorSetLayout(logical_device, compute_pipeline.m_descriptor_set_layout, NULL);
 }

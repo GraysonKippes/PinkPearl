@@ -3,8 +3,8 @@
 #include "debug.h"
 #include "log/logging.h"
 
-#define WINDOW_WIDTH	960
-#define WINDOW_HEIGHT	540
+static const int window_width_default = 960;
+static const int window_height_default = 600;
 
 static GLFWwindow *window = NULL;
 
@@ -16,7 +16,7 @@ void init_GLFW(void) {
 		log_message(FATAL, "GLFW initialization failed.");
 	}
 
-	log_message(INFO, "Creating GLFW window...");
+	log_message(VERBOSE, "Creating GLFW window...");
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -24,7 +24,7 @@ void init_GLFW(void) {
 	const char *application_name = "Pink Pearl";
 
 	if (debug_enabled) {
-		window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, application_name, NULL, NULL);
+		window = glfwCreateWindow(window_width_default, window_height_default, application_name, NULL, NULL);
 	}
 	else {
 		GLFWmonitor *monitor = glfwGetPrimaryMonitor();

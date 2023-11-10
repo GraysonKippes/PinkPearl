@@ -13,8 +13,11 @@ int main(void) {
 
 	log_message(INFO, "Running Pink Pearl...");
 
-	if (debug_enabled)
-		log_message(INFO, "Debug mode enabled.");
+	logf_message(INFO, "C standard: %lu", __STDC_VERSION__);
+
+	if (debug_enabled) {
+		log_message(WARNING, "Debug mode enabled.");
+	}
 
 	init_GLFW();
 
@@ -32,6 +35,19 @@ int main(void) {
 
 	stage_model_data(0, model0);
 
+	projection_bounds_t projection_bounds = { 
+		.m_left = -12.0F, .m_right = 12.0F, 
+		.m_top = 7.5F, .m_bottom = -7.5F, 
+		.m_near = 15.0F, .m_far = -15.0F 
+	};
+
+	projection_bounds_t projection_bounds2 = { 
+		.m_left = -12.0F, .m_right = 12.0F, 
+		.m_bottom = -7.5F, .m_top = 7.5F, 
+		.m_near = 15.0F, .m_far = -15.0F 
+	};
+
+	update_projection_bounds(projection_bounds_8x5);
 	// UNTEST
 
 	log_message(INFO, "Ready to play Pink Pearl!");
