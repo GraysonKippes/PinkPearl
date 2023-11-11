@@ -6,7 +6,8 @@
 #include <vulkan/vulkan.h>
 
 #include "physical_device.h"
+#include "vulkan_instance.h"
 
-void create_logical_device(physical_device_t physical_device, VkDevice *logical_device_ptr);
+void create_logical_device(vulkan_instance_t vulkan_instance, physical_device_t physical_device, VkDevice *logical_device_ptr);
 
 #endif	// LOGICAL_DEVICE_H

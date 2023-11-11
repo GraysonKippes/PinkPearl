@@ -1,6 +1,8 @@
 #include "frame.h"
 
 #include "command_buffer.h"
+#include "queue.h"
+#include "vertex_input.h"
 
 frame_t create_frame(physical_device_t physical_device, VkDevice logical_device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool) {
 
@@ -18,7 +20,7 @@ frame_t create_frame(physical_device_t physical_device, VkDevice logical_device,
 
 	static const VkDeviceSize matrix4F_size = 16 * sizeof(float);
 
-	static const VkDeviceSize num_elements_per_rect = 4 * 8;
+	const VkDeviceSize num_elements_per_rect = num_vertices_per_rect * vertex_input_element_stride;
 
 	static const VkDeviceSize num_room_slots = 2;
 
@@ -40,15 +42,26 @@ frame_t create_frame(physical_device_t physical_device, VkDevice logical_device,
 
 	frame.m_matrix_buffer = create_buffer(physical_device.m_handle, logical_device, max_num_models * matrix4F_size, 
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		queue_family_set_null);
 
-	frame.m_model_buffer = create_shared_buffer(physical_device, logical_device, model_buffer_size, 
+	queue_family_set_t queue_family_set = {
+		.m_num_queue_families = 2,
+		.m_queue_families = (uint32_t[2]){
+			*physical_device.m_queue_family_indices.m_graphics_family_ptr,
+			*physical_device.m_queue_family_indices.m_transfer_family_ptr,
+		}
+	};
+
+	frame.m_model_buffer = create_buffer(physical_device.m_handle, logical_device, model_buffer_size, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		queue_family_set);
 
-	frame.m_index_buffer = create_shared_buffer(physical_device, logical_device, model_buffer_size, 
+	frame.m_index_buffer = create_buffer(physical_device.m_handle, logical_device, model_buffer_size, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		queue_family_set);
 
 	return frame;
 }

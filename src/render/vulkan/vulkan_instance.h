@@ -15,10 +15,12 @@ typedef struct vulkan_instance_t {
 
 } vulkan_instance_t;
 
-void create_vulkan_instance(VkInstance *vulkan_instance_ptr);
+vulkan_instance_t create_vulkan_instance(void);
+
+void destroy_vulkan_instance(vulkan_instance_t vulkan_instance);
 
 void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT *messenger_ptr);
 
-void destroy_vulkan_instance(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT messenger);
+void destroy_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT messenger);
 
 #endif	// VULKAN_INSTANCE_H

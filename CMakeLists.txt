@@ -34,7 +34,6 @@ target_sources(PinkPearl PRIVATE
 	src/render/renderer.c
 	src/render/math/vector3F.c
 	src/render/stb/image_data.c
-	src/render/vulkan/layer.c
 	src/render/vulkan/buffer.c
 	src/render/vulkan/command_buffer.c
 	src/render/vulkan/compute_pipeline.c
@@ -50,4 +49,5 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/vertex_input.c
 	src/render/vulkan/vulkan_instance.c
 	src/render/vulkan/vulkan_manager.c
+	src/util/string_array.c
 )

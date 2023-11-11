@@ -10,21 +10,27 @@
 #include "debug.h"
 #include "log/logging.h"
 
-#include "layer.h"
+#define NUM_VALIDATION_LAYERS 1
+
+static const uint32_t num_validation_layers = NUM_VALIDATION_LAYERS;
+
+static const char *validation_layers[NUM_VALIDATION_LAYERS] = {
+	"VK_LAYER_KHRONOS_validation"
+};
 
 /* -- Get Vulkan Extension Functions -- */
 
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
-{
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
 	PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-	if (func != NULL)
+	if (func != NULL) {
 		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-	else
+	}
+	else {
 		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
 }
 
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator)
-{
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) {
 	PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (func != NULL) {
 		func(instance, debugMessenger, pAllocator);
@@ -84,9 +90,11 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 	return true;
 }
 
-void create_vulkan_instance(VkInstance *vulkan_instance_ptr) {
+vulkan_instance_t create_vulkan_instance(void) {
 
 	log_message(VERBOSE, "Creating Vulkan instance...");
+
+	vulkan_instance_t vulkan_instance = { 0 };
 
 	VkApplicationInfo app_info = {0};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -134,8 +142,9 @@ void create_vulkan_instance(VkInstance *vulkan_instance_ptr) {
 		}
 	}
 
-	for (uint32_t i = 0; i < num_extensions; ++i)
+	for (uint32_t i = 0; i < num_extensions; ++i) {
 		logf_message(VERBOSE, "Enabling Vulkan extension \"%s\".", extensions[i]);
+	}
 
 	VkInstanceCreateInfo create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -147,27 +156,43 @@ void create_vulkan_instance(VkInstance *vulkan_instance_ptr) {
 
 	// If debug mode is enabled, enable the validation layers.
 	if (debug_enabled) {
+
 		check_validation_layer_support(num_validation_layers, validation_layers);
 		create_info.enabledLayerCount = num_validation_layers;
 		create_info.ppEnabledLayerNames = validation_layers;
 
-		for (uint32_t i = 0; i < num_validation_layers; ++i)
+		vulkan_instance.m_layer_names.m_num_strings = num_validation_layers;
+		vulkan_instance.m_layer_names.m_strings = validation_layers;
+
+		for (uint32_t i = 0; i < num_validation_layers; ++i) {
 			logf_message(VERBOSE, "Enabling validation layer \"%s\".", validation_layers[i]);
+		}
 	}
 	else {
+
 		create_info.enabledLayerCount = 0;
 		create_info.ppEnabledLayerNames = NULL;
+
+		vulkan_instance.m_layer_names.m_num_strings = 0;
+		vulkan_instance.m_layer_names.m_strings = NULL;
 	}
 
-	VkResult result = vkCreateInstance(&create_info, NULL, vulkan_instance_ptr);
+	VkResult result = vkCreateInstance(&create_info, NULL, &vulkan_instance.m_handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
 		exit(1);
 	}
 
-	for (size_t i = 0; i < num_extensions; ++i)
+	for (size_t i = 0; i < num_extensions; ++i) {
 		free(extensions[i]);
+	}
 	free(extensions);
+
+	return vulkan_instance;
+}
+
+void destroy_vulkan_instance(vulkan_instance_t vulkan_instance) {
+	vkDestroyInstance(vulkan_instance.m_handle, NULL);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
@@ -216,11 +241,8 @@ void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT 
 	}
 }
 
-void destroy_vulkan_instance(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT messenger) {
-
+void destroy_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT messenger) {
 	if (debug_enabled && messenger != VK_NULL_HANDLE) {
 		DestroyDebugUtilsMessengerEXT(vulkan_instance, messenger, NULL);
 	}
-
-	vkDestroyInstance(vulkan_instance, NULL);
 }

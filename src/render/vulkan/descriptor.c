@@ -6,8 +6,6 @@
 
 
 
-
-
 void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr) {
 
 	VkDescriptorSetLayoutBinding *descriptor_bindings = NULL;

@@ -15,31 +15,40 @@ const VkMemoryPropertyFlags memory_properties_staging = VK_MEMORY_PROPERTY_HOST_
 
 const VkMemoryPropertyFlags memory_properties_local = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice logical_device, VkDeviceSize size, VkBufferUsageFlags buffer_usage, VkMemoryPropertyFlags memory_properties) {
+buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDeviceSize size, VkBufferUsageFlags buffer_usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set) {
 
 	buffer_t buffer = { 0 };
 
 	buffer.m_size = size;
+	buffer.m_device = device;
 
-	VkBufferCreateInfo buffer_info = { 0 };
-	buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffer_info.pNext = NULL;
-	buffer_info.flags = 0;
-	buffer_info.size = buffer.m_size;
-	buffer_info.usage = buffer_usage;
-	buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	buffer_info.queueFamilyIndexCount = 0;
-	buffer_info.pQueueFamilyIndices = NULL;
+	VkBufferCreateInfo buffer_create_info = { 0 };
+	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buffer_create_info.pNext = NULL;
+	buffer_create_info.flags = 0;
+	buffer_create_info.size = buffer.m_size;
+	buffer_create_info.usage = buffer_usage;
 
+	if (is_queue_family_set_null(queue_family_set)) {
+		buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		buffer_create_info.queueFamilyIndexCount = 0;
+		buffer_create_info.pQueueFamilyIndices = NULL;
+	}
+	else {
+		buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+		buffer_create_info.queueFamilyIndexCount = queue_family_set.m_num_queue_families;
+		buffer_create_info.pQueueFamilyIndices = queue_family_set.m_queue_families;
+	}
+	
 	// TODO - error handling
-	VkResult result = vkCreateBuffer(logical_device, &buffer_info, NULL, &buffer.m_handle);
+	VkResult result = vkCreateBuffer(buffer.m_device, &buffer_create_info, NULL, &buffer.m_handle);
 	if (result != VK_SUCCESS) {
 		logf_message(ERROR, "Buffer creation failed. (Error code: %i)", result);
 		return buffer;
 	}
 
 	VkMemoryRequirements memory_requirements;
-	vkGetBufferMemoryRequirements(logical_device, buffer.m_handle, &memory_requirements);
+	vkGetBufferMemoryRequirements(buffer.m_device, buffer.m_handle, &memory_requirements);
 
 	VkMemoryAllocateInfo allocate_info = { 0 };
 	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -50,52 +59,9 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice logical_device
 	}
 
 	// TODO - error handling
-	vkAllocateMemory(logical_device, &allocate_info, NULL, &buffer.m_memory);
+	vkAllocateMemory(buffer.m_device, &allocate_info, NULL, &buffer.m_memory);
 
-	vkBindBufferMemory(logical_device, buffer.m_handle, buffer.m_memory, 0);
-
-	return buffer;
-}
-
-buffer_t create_shared_buffer(physical_device_t physical_device, VkDevice logical_device, VkDeviceSize size, VkBufferUsageFlags buffer_usage, VkMemoryPropertyFlags memory_properties) {
-
-	buffer_t buffer = { 0 };
-
-	buffer.m_size = size;
-
-	uint32_t queue_family_indices[2] = { 
-		*physical_device.m_queue_family_indices.m_graphics_family_ptr, 
-		*physical_device.m_queue_family_indices.m_transfer_family_ptr 
-	};
-
-	VkBufferCreateInfo buffer_info = { 0 };
-	buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffer_info.pNext = NULL;
-	buffer_info.flags = 0;
-	buffer_info.size = buffer.m_size;
-	buffer_info.usage = buffer_usage;
-	buffer_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-	buffer_info.queueFamilyIndexCount = 2;
-	buffer_info.pQueueFamilyIndices = queue_family_indices;
-
-	// TODO - error handling
-	vkCreateBuffer(logical_device, &buffer_info, NULL, &buffer.m_handle);
-
-	VkMemoryRequirements memory_requirements;
-	vkGetBufferMemoryRequirements(logical_device, buffer.m_handle, &memory_requirements);
-
-	VkMemoryAllocateInfo allocate_info = { 0 };
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.pNext = NULL;
-	allocate_info.allocationSize = memory_requirements.size;
-	if(!find_physical_device_memory_type(physical_device.m_handle, memory_requirements.memoryTypeBits, memory_properties, &allocate_info.memoryTypeIndex)) {
-		// TODO - error handling
-	}
-
-	// TODO - error handling
-	vkAllocateMemory(logical_device, &allocate_info, NULL, &buffer.m_memory);
-
-	vkBindBufferMemory(logical_device, buffer.m_handle, buffer.m_memory, 0);
+	vkBindBufferMemory(buffer.m_device, buffer.m_handle, buffer.m_memory, 0);
 
 	return buffer;
 }

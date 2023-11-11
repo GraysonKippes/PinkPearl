@@ -61,6 +61,8 @@ physical_device_t select_physical_device(VkInstance vk_instance, VkSurfaceKHR su
 // Frees all the arrays inside the physical device struct.
 void destroy_physical_device(physical_device_t physical_device);
 
+bool check_device_validation_layer_support(VkPhysicalDevice physical_device, string_array_t required_layer_names);
+
 // Attempts to find the index to the memory type in the physical device. Returns true if the memory type was found and stored in type_ptr, false otherwise.
 bool find_physical_device_memory_type(VkPhysicalDevice physical_device, uint32_t filter, VkMemoryPropertyFlags properties, uint32_t *type_ptr);
 

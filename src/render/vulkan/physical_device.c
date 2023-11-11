@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "util.h"
 #include "log/logging.h"
+#include "util/bit.h"
 
 
 
@@ -42,6 +42,58 @@ bool check_physical_device_extension_support(physical_device_t physical_device) 
 	}
 
 	free(available_extensions);
+	return true;
+}
+
+bool check_device_validation_layer_support(VkPhysicalDevice physical_device, string_array_t required_layer_names) {
+
+	log_message(VERBOSE, "Checking device validation layer support...");
+
+	// If no layers are required, then no support is needed; therefore, return true.
+	if (is_string_array_empty(required_layer_names)) {
+		return true;
+	}
+
+	for (size_t i = 0; i < required_layer_names.m_num_strings; ++i) {
+		logf_message(VERBOSE, "Required layer: \"%s\"", required_layer_names.m_strings[i]);
+	}
+
+	uint32_t num_available_layers = 0;
+	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, NULL);
+
+	// If the number of available layers is less than the number of required layers, then logically not all layers can be supported;
+	// 	therefore, return false.
+	if (num_available_layers < required_layer_names.m_num_strings) {
+		return false;
+	}
+
+	VkLayerProperties *available_layers = calloc(num_available_layers, sizeof(VkLayerProperties));
+	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, available_layers);
+
+	for (size_t i = 0; i < num_available_layers; ++i) {
+		logf_message(VERBOSE, "Available layer: \"%s\"", available_layers[i].layerName);
+	}
+
+	for (size_t i = 0; i < required_layer_names.m_num_strings; ++i) {
+
+		const char *layer_name = required_layer_names.m_strings[i];
+		bool layer_found = false;
+
+		for (size_t j = 0; j < num_available_layers; ++j) {
+			VkLayerProperties available_layer = available_layers[j];
+			if (strcmp(layer_name, available_layer.layerName) == 0) {
+				layer_found = true;
+				break;
+			}
+		}
+
+		if (!layer_found)
+			return false;
+	}
+
+	free(available_layers);
+	available_layers = NULL;
+
 	return true;
 }
 

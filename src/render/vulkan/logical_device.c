@@ -5,10 +5,9 @@
 
 #include "debug.h"
 #include "log/logging.h"
+#include "util/string_array.h"
 
-#include "layer.h"
-
-bool check_device_validation_layer_support(VkPhysicalDevice physical_device, uint32_t num_required_layers, const char *required_layers[]);
+bool check_device_validation_layer_support(VkPhysicalDevice physical_device, string_array_t required_layer_names);
 
 // Returns a pointer-array that must be freed by the caller.
 VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_family_indices, uint32_t *num_queue_create_infos) {
@@ -55,7 +54,7 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_fa
 	return queue_create_infos;
 }
 
-void create_logical_device(physical_device_t physical_device, VkDevice *logical_device_ptr) {
+void create_logical_device(vulkan_instance_t vulkan_instance, physical_device_t physical_device, VkDevice *logical_device_ptr) {
 
 	log_message(VERBOSE, "Creating logical device...");
 
@@ -77,14 +76,14 @@ void create_logical_device(physical_device_t physical_device, VkDevice *logical_
 
 	// Compatibility
 	if (debug_enabled) {
-		if (!check_device_validation_layer_support(physical_device.m_handle, num_validation_layers, validation_layers)) {
+		if (!check_device_validation_layer_support(physical_device.m_handle, vulkan_instance.m_layer_names)) {
 			log_message(ERROR, "Required validation layers not supported by device.");
 			create_info.enabledLayerCount = 0;
 			create_info.ppEnabledLayerNames = NULL;
 		}
 		else {
-			create_info.enabledLayerCount = num_validation_layers;
-			create_info.ppEnabledLayerNames = validation_layers;
+			create_info.enabledLayerCount = vulkan_instance.m_layer_names.m_num_strings;
+			create_info.ppEnabledLayerNames = vulkan_instance.m_layer_names.m_strings;
 		}
 	}
 	else {
@@ -95,59 +94,8 @@ void create_logical_device(physical_device_t physical_device, VkDevice *logical_
 	VkResult result = vkCreateDevice(physical_device.m_handle, &create_info, NULL, logical_device_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Logical device creation failed. (Error code: %i)", result);
-		exit(1);
+		exit(1); // TODO - better error handling
 	}
 
 	free(queue_create_infos);
-}
-
-bool check_device_validation_layer_support(VkPhysicalDevice physical_device, uint32_t num_required_layers, const char *required_layers[]) {
-
-	log_message(VERBOSE, "Checking device validation layer support...");
-
-	for (size_t i = 0; i < num_required_layers; ++i) {
-		logf_message(VERBOSE, "Required layer: \"%s\"", required_layers[i]);
-	}
-
-	uint32_t num_available_layers = 0;
-	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, NULL);
-
-	if (num_available_layers < num_required_layers)
-		return false;
-
-	if (num_available_layers == 0) {
-		if (num_required_layers == 0)
-			return true;
-		else
-			return false;
-	}
-
-	VkLayerProperties *available_layers = calloc(num_available_layers, sizeof(VkLayerProperties));
-	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, available_layers);
-
-	for (size_t i = 0; i < num_available_layers; ++i) {
-		logf_message(VERBOSE, "Available layer: \"%s\"", available_layers[i].layerName);
-	}
-
-	for (size_t i = 0; i < num_required_layers; ++i) {
-
-		const char *layer_name = required_layers[i];
-		bool layer_found = false;
-
-		for (size_t j = 0; j < num_available_layers; ++j) {
-			VkLayerProperties available_layer = available_layers[j];
-			if (strcmp(layer_name, available_layer.layerName) == 0) {
-				layer_found = true;
-				break;
-			}
-		}
-
-		if (!layer_found)
-			return false;
-	}
-
-	free(available_layers);
-	available_layers = NULL;
-
-	return true;
 }

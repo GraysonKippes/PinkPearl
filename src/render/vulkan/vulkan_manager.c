@@ -6,10 +6,10 @@
 #include <vulkan/vulkan.h>
 
 #include "debug.h"
-#include "util.h"
 #include "log/logging.h"
 #include "glfw/glfw_manager.h"
 #include "render/stb/image_data.h"
+#include "util/bit.h"
 #include "util/byte.h"
 
 #include "buffer.h"
@@ -29,7 +29,7 @@
 
 /* -- Vulkan Objects -- */
 
-static VkInstance vulkan_instance = VK_NULL_HANDLE;
+static vulkan_instance_t vulkan_instance = { 0 };
 
 static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 
@@ -118,7 +118,7 @@ static void create_window_surface(void) {
 
 	log_message(VERBOSE, "Creating window surface...");
 
-	VkResult result = glfwCreateWindowSurface(vulkan_instance, get_application_window(), NULL, &surface);
+	VkResult result = glfwCreateWindowSurface(vulkan_instance.m_handle, get_application_window(), NULL, &surface);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Window surface creation failed. (Error code: %i)", result);
 		exit(1);
@@ -164,7 +164,8 @@ static void create_buffers(void) {
 
 	image_staging_buffer = create_buffer(physical_device.m_handle, logical_device, staging_buffer_size, 
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			queue_family_set_null);
 
 	static const VkDeviceSize num_elements_per_rect = 4 * 8;
 
@@ -175,29 +176,34 @@ static void create_buffers(void) {
 
 	model_staging_buffer = create_buffer(physical_device.m_handle, logical_device, model_buffer_size,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			queue_family_set_null);
 
 	const VkDeviceSize index_buffer_size = max_num_models * 6 * sizeof(index_t);
 
 	index_staging_buffer = create_buffer(physical_device.m_handle, logical_device, index_buffer_size,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			queue_family_set_null);
 
 	compute_matrices_buffer = create_buffer(physical_device.m_handle, logical_device, 68, 
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			queue_family_set_null);
 
 	VkDeviceSize render_positions_buffer_size = 64 * sizeof(render_position_t);
 
 	render_positions_buffer = create_buffer(physical_device.m_handle, logical_device, render_positions_buffer_size, 
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			queue_family_set_null);
 
 	VkDeviceSize matrix_buffer_size = 64 * 16 * sizeof(float);
 
 	matrix_buffer = create_buffer(physical_device.m_handle, logical_device, matrix_buffer_size, 
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			queue_family_set_null);
 }
 
 static void create_images(void) {
@@ -210,7 +216,8 @@ static void create_images(void) {
 	// TEMP
 	room_texture_uniform_buffer = create_buffer(physical_device.m_handle, logical_device, 128, 
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			queue_family_set_null);
 
 	create_sampler(physical_device, logical_device, &sampler_default);
 
@@ -324,15 +331,17 @@ void create_vulkan_objects(void) {
 
 	log_message(INFO, "Initializing Vulkan...");
 
-	create_vulkan_instance(&vulkan_instance);
-	if (debug_enabled)
-		setup_debug_messenger(vulkan_instance, &debug_messenger);
+	vulkan_instance = create_vulkan_instance();
+
+	if (debug_enabled) {
+		setup_debug_messenger(vulkan_instance.m_handle, &debug_messenger);
+	}
 
 	create_window_surface();
 
-	physical_device = select_physical_device(vulkan_instance, surface);
+	physical_device = select_physical_device(vulkan_instance.m_handle, surface);
 
-	create_logical_device(physical_device, &logical_device);
+	create_logical_device(vulkan_instance, physical_device, &logical_device);
 
 	log_message(VERBOSE, "Retrieving device queues...");
 
@@ -415,9 +424,11 @@ void destroy_vulkan_objects(void) {
 
 	vkDestroyDevice(logical_device, NULL);
 
-	vkDestroySurfaceKHR(vulkan_instance, surface, NULL);
+	vkDestroySurfaceKHR(vulkan_instance.m_handle, surface, NULL);
 
-	destroy_vulkan_instance(vulkan_instance, debug_messenger);
+	destroy_debug_messenger(vulkan_instance.m_handle, debug_messenger);
+
+	destroy_vulkan_instance(vulkan_instance);
 }
 
 // Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.

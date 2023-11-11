@@ -6,15 +6,15 @@
 
 #include "log/logging.h"
 
-#define OS_WINDOWS
+#define PLATFORM_UNIX
 
-#ifdef OS_UNIX
+#ifdef PLATFORM_UNIX
 static const size_t shader_directory_length = 22;	// Length includes null-terminator.
 
 static const char *shader_directory = "../resources/shaders/";
 #endif
 
-#ifdef OS_WINDOWS
+#ifdef PLATFORM_WINDOWS
 static const size_t shader_directory_length = 25;	// Length includes null-terminator.
 
 static const char *shader_directory = "../../resources/shaders/";
