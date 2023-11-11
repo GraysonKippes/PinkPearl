@@ -77,7 +77,7 @@ void destroy_frame(VkDevice logical_device, VkCommandPool command_pool, descript
 
 	vkFreeDescriptorSets(logical_device, descriptor_pool.m_handle, 1, &frame.m_descriptor_set);
 
-	destroy_buffer(logical_device, frame.m_matrix_buffer);
-	destroy_buffer(logical_device, frame.m_model_buffer);
-	destroy_buffer(logical_device, frame.m_index_buffer);
+	destroy_buffer(&frame.m_matrix_buffer);
+	destroy_buffer(&frame.m_model_buffer);
+	destroy_buffer(&frame.m_index_buffer);
 }

@@ -261,7 +261,7 @@ static void create_images(void) {
 	submit_command_buffers_async(transfer_queue, 1, &transfer_command_buffer);
 	vkFreeCommandBuffers(logical_device, transfer_command_pool, 1, &transfer_command_buffer);
 
-	destroy_buffer(logical_device, image_staging_buffer);
+	destroy_buffer(&image_staging_buffer);
 	free_image_data(image_data);
 
 	// Transition tilemap texture layout so that it can be read by the compute shader.
@@ -393,12 +393,12 @@ void destroy_vulkan_objects(void) {
 
 	vkDeviceWaitIdle(logical_device);
 
-	destroy_buffer(logical_device, compute_matrices_buffer);
-	destroy_buffer(logical_device, render_positions_buffer);
-	destroy_buffer(logical_device, matrix_buffer);
-	destroy_buffer(logical_device, index_staging_buffer);
-	destroy_buffer(logical_device, model_staging_buffer);
-	destroy_buffer(logical_device, room_texture_uniform_buffer);
+	destroy_buffer(&compute_matrices_buffer);
+	destroy_buffer(&render_positions_buffer);
+	destroy_buffer(&matrix_buffer);
+	destroy_buffer(&index_staging_buffer);
+	destroy_buffer(&model_staging_buffer);
+	destroy_buffer(&room_texture_uniform_buffer);
 	
 	destroy_image(tilemap_texture);
 	destroy_image(room_texture_storage);

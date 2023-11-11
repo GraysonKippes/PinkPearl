@@ -6,7 +6,7 @@
 
 #include "log/logging.h"
 
-#define PLATFORM_UNIX
+#define PLATFORM_WINDOWS
 
 #ifdef PLATFORM_UNIX
 static const size_t shader_directory_length = 22;	// Length includes null-terminator.

@@ -66,6 +66,21 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 	return buffer;
 }
 
+void destroy_buffer(buffer_t *buffer_ptr) {
+
+	if (buffer_ptr == NULL) {
+		return;
+	}
+
+	vkDestroyBuffer(buffer_ptr->m_device, buffer_ptr->m_handle, NULL);
+	vkFreeMemory(buffer_ptr->m_device, buffer_ptr->m_memory, NULL);
+
+	buffer_ptr->m_handle = VK_NULL_HANDLE;
+	buffer_ptr->m_memory = VK_NULL_HANDLE;
+	buffer_ptr->m_size = 0;
+	buffer_ptr->m_device = VK_NULL_HANDLE;
+}
+
 void map_data_to_buffer(VkDevice logical_device, buffer_t buffer, VkDeviceSize offset, VkDeviceSize size, void *data) {
 	void *mapped_data;
 	vkMapMemory(logical_device, buffer.m_memory, offset, size, 0, &mapped_data);
@@ -89,9 +104,4 @@ void transfer_data_to_buffer(VkDevice logical_device, VkQueue queue, VkCommandPo
 
 	vkEndCommandBuffer(transfer_command_buffer);
 	submit_command_buffers_async(queue, 1, &transfer_command_buffer);
-}
-
-void destroy_buffer(VkDevice logical_device, buffer_t buffer) {
-	vkDestroyBuffer(logical_device, buffer.m_handle, NULL);
-	vkFreeMemory(logical_device, buffer.m_memory, NULL);
 }
