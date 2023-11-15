@@ -8,14 +8,27 @@
 
 layout(local_size_x = MAX_SIZE_X) in;
 
+struct render_position_t {
+	vec4 current;
+	vec4 previous;
+};
+
+struct projection_bounds_t {
+	float left;
+	float right;
+	float bottom;
+	float top;
+	float near;
+	float far;
+};
+
 // TODO - specify std140 memory layout.
-layout(binding = 0) uniform uniform_data_t {
+layout(binding = 0, std140) uniform uniform_data_t {
 
 	uint num_inputs;
 
 	float delta_time;
 
-	// TODO - make this a struct for better memory packing.
 	float projection_left;
 	float projection_right;
 	float projection_bottom;
@@ -23,12 +36,9 @@ layout(binding = 0) uniform uniform_data_t {
 	float projection_near;
 	float projection_far;
 
-	vec3 camera_position;
-	vec3 camera_previous_position;
+	render_position_t camera_position;
+	render_position_t model_positions[MAX_SIZE_X];
 
-	vec3 positions[MAX_SIZE_X];
-	vec3 previous_positions[MAX_SIZE_X];
-	
 } uniform_data;
 
 layout(binding = 1) writeonly buffer output_buffer {
@@ -36,13 +46,13 @@ layout(binding = 1) writeonly buffer output_buffer {
 } output_data;
 
 // Makes and returns a "translerp" (portmanteau of "translate" and "lerp") matrix.
-mat4 make_translerp_matrix(vec3 position, vec3 previous_position, float delta_time) {
+mat4 make_translerp_matrix(render_position_t position, float delta_time) {
 
 	vec3 lerp_position = vec3(
-		mix(previous_position.x, position.x, delta_time),
-		mix(previous_position.y, position.y, delta_time),
-		mix(previous_position.z, position.z, delta_time));
-	
+		mix(position.previous.x, position.current.x, delta_time),
+		mix(position.previous.y, position.current.y, delta_time),
+		mix(position.previous.z, position.current.z, delta_time)
+	);
 	
 	mat4 translation_matrix;
 	translation_matrix[0] = vec4(1.0, 0.0, 0.0, 0.0);
@@ -77,12 +87,12 @@ void main() {
 	
 	uint global_ID = gl_GlobalInvocationID.x;
 
-	mat4 camera_matrix = make_translerp_matrix(uniform_data.camera_position, uniform_data.camera_previous_position, uniform_data.delta_time);
+	mat4 camera_matrix = make_translerp_matrix(uniform_data.camera_position, uniform_data.delta_time);
 
 	mat4 projection_matrix = make_orthographic_projection_matrix(uniform_data.projection_left, uniform_data.projection_right, uniform_data.projection_bottom, uniform_data.projection_top, uniform_data.projection_near, uniform_data.projection_far);
 
 	if (global_ID < uniform_data.num_inputs) {
-		mat4 model_matrix = make_translerp_matrix(uniform_data.positions[global_ID], uniform_data.previous_positions[global_ID], uniform_data.delta_time);
+		mat4 model_matrix = make_translerp_matrix(uniform_data.model_positions[global_ID], uniform_data.delta_time);
 		output_data.matrices[global_ID] = projection_matrix * camera_matrix * model_matrix;
 	}
 }
