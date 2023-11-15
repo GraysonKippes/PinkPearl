@@ -1,6 +1,8 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include <stdint.h>
+
 #include <vulkan/vulkan.h>
 
 #include "physical_device.h"
@@ -15,6 +17,19 @@ typedef struct buffer_t {
 	VkDevice device;
 
 } buffer_t;
+
+typedef struct memory_range_t {
+	VkDeviceSize offset;
+	VkDeviceSize size;
+} memory_range_t;
+
+// Represents a partitioning of a buffer into sub-resources.
+typedef struct buffer_partition_t {
+
+	uint32_t num_ranges;
+	memory_range_t *ranges;
+	
+} buffer_partition_t;
 
 // Always creates a GPU-side buffer. Use `stage_buffer_data` to upload data a buffer returned by this function.
 buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDeviceSize size, VkBufferUsageFlags buffer_usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set);

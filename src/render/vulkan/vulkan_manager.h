@@ -55,6 +55,13 @@ extern VkCommandPool render_command_pool;
 extern VkCommandPool transfer_command_pool;
 extern VkCommandPool compute_command_pool;
 
+/* -- Global buffers -- */
+
+// Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
+extern VkBuffer global_uniform_buffer;
+extern const VkDeviceSize global_uniform_buffer_size;
+extern VkDeviceMemory global_uniform_memory;
+
 
 
 #define MAX_FRAMES_IN_FLIGHT	2
@@ -64,6 +71,10 @@ extern frame_t frames[MAX_FRAMES_IN_FLIGHT];
 extern size_t current_frame;
 
 #define FRAME (frames[current_frame])
+
+
+
+
 
 
 

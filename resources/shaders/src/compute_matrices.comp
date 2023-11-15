@@ -8,7 +8,8 @@
 
 layout(local_size_x = MAX_SIZE_X) in;
 
-layout(set = 0, binding = 0) uniform config {
+// TODO - specify std140 memory layout.
+layout(binding = 0) uniform config {
 
 	uint num_inputs;
 
@@ -17,6 +18,7 @@ layout(set = 0, binding = 0) uniform config {
 	vec3 camera_position;
 	vec3 camera_previous_position;
 
+	// TODO - make this a struct for better memory packing.
 	float projection_left;
 	float projection_right;
 	float projection_bottom;
@@ -26,12 +28,13 @@ layout(set = 0, binding = 0) uniform config {
 
 } op_data;
 
-layout(set = 0, binding = 1) readonly buffer input_buffer {
+// TODO - this should probably be a uniform buffer.
+layout(binding = 1) readonly buffer input_buffer {
 	vec3 positions[MAX_SIZE_X];
 	vec3 previous_positions[MAX_SIZE_X];
 } input_data;
 
-layout(set = 0, binding = 2) writeonly buffer output_buffer {
+layout(binding = 2) writeonly buffer output_buffer {
 	mat4 matrices[MAX_SIZE_X];
 } output_data;
 

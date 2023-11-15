@@ -16,20 +16,18 @@ static VkClearValue clear_color;
 // TODO - collate storage buffers as much as possible, and move to vulkan_manager.
 
 // Used for staging model data into the model buffers.
-static buffer_t model_staging_buffer;
-static buffer_t index_staging_buffer;
+static buffer_t model_staging_buffer;	// Staging
+static buffer_t index_staging_buffer;	// Staging
 
 // Buffers for compute_matrices shader.
-static buffer_t compute_matrices_buffer;
-static buffer_t render_positions_buffer;
-static buffer_t matrix_buffer;
+static buffer_t render_positions_buffer;	// Currently storage, will be turned to uniform
+static buffer_t matrix_buffer;			// Storage
 
 // Objects for room texture compute shader.
-static buffer_t room_texture_uniform_buffer;
-static buffer_t image_staging_buffer;
-static image_t tilemap_texture;
-static image_t room_texture_storage;
-static image_t room_texture;
+static buffer_t image_staging_buffer;		// Staging - CPU-to-GPU data flow
+static image_t tilemap_texture;			// Storage - GPU only
+static image_t room_texture_storage;		// Storage - GPU only
+static image_t room_texture;			// Graphics - GPU only
 
 
 
@@ -58,11 +56,6 @@ void create_vulkan_render_buffers(void) {
 
 	index_staging_buffer = create_buffer(physical_device.handle, device, index_buffer_size,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			queue_family_set_null);
-
-	compute_matrices_buffer = create_buffer(physical_device.handle, device, 68, 
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
 
@@ -151,12 +144,10 @@ void destroy_vulkan_render_objects(void) {
 
 	vkDeviceWaitIdle(device);
 
-	destroy_buffer(&compute_matrices_buffer);
 	destroy_buffer(&render_positions_buffer);
 	destroy_buffer(&matrix_buffer);
 	destroy_buffer(&index_staging_buffer);
 	destroy_buffer(&model_staging_buffer);
-	destroy_buffer(&room_texture_uniform_buffer);
 	
 	destroy_image(tilemap_texture);
 	destroy_image(room_texture_storage);
@@ -200,14 +191,14 @@ void stage_model_data(render_handle_t handle, model_t model) {
 void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t camera_position, projection_bounds_t projection_bounds, render_position_t *positions) {
 
 	byte_t *compute_matrices_data;
-	vkMapMemory(device, compute_matrices_buffer.memory, 0, 68, 0, (void **)&compute_matrices_data);
+	vkMapMemory(device, global_uniform_memory, 0, 128, 0, (void **)&compute_matrices_data);
 
 	memcpy(compute_matrices_data, &num_inputs, sizeof num_inputs);
 	memcpy(compute_matrices_data + 4, &delta_time, sizeof delta_time);
 	memcpy(compute_matrices_data + 16, &camera_position, sizeof camera_position);
 	memcpy(compute_matrices_data + 44, &projection_bounds, sizeof projection_bounds);
 
-	vkUnmapMemory(device, compute_matrices_buffer.memory);
+	vkUnmapMemory(device, global_uniform_memory);
 
 	// Move this to global scope
 	descriptor_pool_t descriptor_pool;
@@ -217,10 +208,10 @@ void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t c
 	VkDescriptorSet descriptor_set;
 	allocate_descriptor_sets(device, descriptor_pool, 1, &descriptor_set);
 
-	VkDescriptorBufferInfo compute_matrices_buffer_info = { 0 };
-	compute_matrices_buffer_info.buffer = compute_matrices_buffer.handle;
-	compute_matrices_buffer_info.offset = 0;
-	compute_matrices_buffer_info.range = VK_WHOLE_SIZE;
+	VkDescriptorBufferInfo uniform_buffer_info = { 0 };
+	uniform_buffer_info.buffer = global_uniform_buffer;
+	uniform_buffer_info.offset = 0;
+	uniform_buffer_info.range = 128;
 
 	VkDescriptorBufferInfo render_positions_buffer_info = { 0 };
 	render_positions_buffer_info.buffer = render_positions_buffer.handle;
@@ -240,7 +231,7 @@ void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t c
 	descriptor_writes[0].dstArrayElement = 0;
 	descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptor_writes[0].descriptorCount = 1;
-	descriptor_writes[0].pBufferInfo = &compute_matrices_buffer_info;
+	descriptor_writes[0].pBufferInfo = &uniform_buffer_info;
 	descriptor_writes[0].pImageInfo = NULL;
 	descriptor_writes[0].pTexelBufferView = NULL;
 
@@ -309,13 +300,12 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 
 	VkDeviceSize tile_data_size = 16 * room_extent.width * room_extent.length;
 
-	// TEMP
-	room_texture_uniform_buffer = create_buffer(physical_device.handle, device, tile_data_size, 
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			queue_family_set_null);
+	void *uniform_data;
+	vkMapMemory(device, global_uniform_memory, 128, tile_data_size, 0, &uniform_data);
 
-	map_data_to_buffer(device, room_texture_uniform_buffer, 0, tile_data_size, tile_data);
+	memcpy(uniform_data, tile_data, tile_data_size);
+
+	vkUnmapMemory(device, global_uniform_memory);
 
 	descriptor_pool_t descriptor_pool;
 	create_descriptor_pool(device, 1, compute_room_texture_layout, &descriptor_pool.handle);
@@ -324,7 +314,7 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 	VkDescriptorSet descriptor_set;
 	allocate_descriptor_sets(device, descriptor_pool, 1, &descriptor_set);
 
-	VkDescriptorBufferInfo room_texture_uniform_buffer_info = make_descriptor_buffer_info(room_texture_uniform_buffer.handle, 0, VK_WHOLE_SIZE);
+	VkDescriptorBufferInfo uniform_buffer_info = make_descriptor_buffer_info(global_uniform_buffer, 128, tile_data_size);
 
 	VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture.view, tilemap_texture.layout);
 
@@ -340,7 +330,7 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 	write_descriptor_sets[0].descriptorCount = 1;
 	write_descriptor_sets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	write_descriptor_sets[0].pImageInfo = NULL;
-	write_descriptor_sets[0].pBufferInfo = &room_texture_uniform_buffer_info;
+	write_descriptor_sets[0].pBufferInfo = &uniform_buffer_info;
 	write_descriptor_sets[0].pTexelBufferView = NULL;
 
 	VkDescriptorImageInfo storage_image_infos[2] = { tilemap_texture_info, room_texture_storage_info };

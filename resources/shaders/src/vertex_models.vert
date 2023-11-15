@@ -6,7 +6,7 @@ layout(push_constant) uniform draw_data_t {
 	uint m_model_slot;	// in the range [0, MAX_NUM_MODELS - 1].
 } draw_data;
 
-layout(set = 0, binding = 0) readonly buffer matrix_buffer_t {
+layout(binding = 0) readonly buffer matrix_buffer_t {
 	mat4 m_matrices[MAX_NUM_MODELS];
 } matrix_buffer;
 

@@ -89,6 +89,15 @@ size_t current_frame = 0;
 
 
 
+/* -- Global buffers -- */
+
+// Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
+VkBuffer global_uniform_buffer = VK_NULL_HANDLE;
+const VkDeviceSize global_uniform_buffer_size = 128 + 10240;
+VkDeviceMemory global_uniform_memory = VK_NULL_HANDLE;
+
+
+
 // TODO - move this to graphics pipeline struct
 static descriptor_pool_t graphics_descriptor_pool = { 0 };
 
@@ -106,6 +115,42 @@ static void create_window_surface(void) {
 		logf_message(FATAL, "Window surface creation failed. (Error code: %i)", result);
 		exit(1);
 	}
+}
+
+static void create_global_uniform_buffer(void) {
+
+	log_message(VERBOSE, "Creating global uniform buffer...");
+
+	VkBufferCreateInfo buffer_create_info = { 0 };
+	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buffer_create_info.pNext = NULL;
+	buffer_create_info.flags = 0;
+	buffer_create_info.size = global_uniform_buffer_size;
+	buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	buffer_create_info.queueFamilyIndexCount = 0;
+	buffer_create_info.pQueueFamilyIndices = NULL;
+
+	// TODO - error handling
+	VkResult result = vkCreateBuffer(device, &buffer_create_info, NULL, &global_uniform_buffer);
+	if (result != VK_SUCCESS) {
+		logf_message(ERROR, "Global buffer creation failed. (Error code: %i)", result);
+		return;
+	}
+
+	VkMemoryRequirements memory_requirements;
+	vkGetBufferMemoryRequirements(device, global_uniform_buffer, &memory_requirements);
+
+	VkMemoryAllocateInfo allocate_info = { 0 };
+	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocate_info.pNext = NULL;
+	allocate_info.allocationSize = memory_requirements.size;
+	allocate_info.memoryTypeIndex = memory_type_set.uniform_data;
+
+	// TODO - error handling
+	vkAllocateMemory(device, &allocate_info, NULL, &global_uniform_memory);
+
+	vkBindBufferMemory(device, global_uniform_buffer, global_uniform_memory, 0);
 }
 
 static void allocate_device_memories(void) {
@@ -161,10 +206,11 @@ void create_vulkan_objects(void) {
 	create_window_surface();
 
 	physical_device = select_physical_device(vulkan_instance.handle, surface);
-
 	memory_type_set = select_memory_types(physical_device.handle);
 
 	create_device(vulkan_instance, physical_device, &device);
+
+	create_global_uniform_buffer();
 
 	log_message(VERBOSE, "Retrieving device queues...");
 
@@ -231,6 +277,9 @@ void destroy_vulkan_objects(void) {
 	vkDestroyCommandPool(device, render_command_pool, NULL);
 	vkDestroyCommandPool(device, transfer_command_pool, NULL);
 	vkDestroyCommandPool(device, compute_command_pool, NULL);
+
+	vkDestroyBuffer(device, global_uniform_buffer, NULL);
+	vkFreeMemory(device, global_uniform_memory, NULL);
 
 	vkDestroyDevice(device, NULL);
 
