@@ -4,7 +4,7 @@
 #include "queue.h"
 #include "vertex_input.h"
 
-frame_t create_frame(physical_device_t physical_device, VkDevice logical_device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool) {
+frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool) {
 
 	frame_t frame = { 0 };
 
@@ -29,18 +29,18 @@ frame_t create_frame(physical_device_t physical_device, VkDevice logical_device,
 	// General vertex buffer size
 	const VkDeviceSize model_buffer_size = (max_num_models * num_elements_per_rect) * sizeof(float);
 
-	vkCreateSemaphore(logical_device, &semaphore_info, NULL, &frame.m_semaphore_image_available);
-	vkCreateSemaphore(logical_device, &semaphore_info, NULL, &frame.m_semaphore_render_finished);
-	vkCreateFence(logical_device, &fence_info, NULL, &frame.m_fence_frame_ready);
-	vkCreateFence(logical_device, &fence_info, NULL, &frame.m_fence_buffers_up_to_date);
+	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.m_semaphore_image_available);
+	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.m_semaphore_render_finished);
+	vkCreateFence(device, &fence_info, NULL, &frame.m_fence_frame_ready);
+	vkCreateFence(device, &fence_info, NULL, &frame.m_fence_buffers_up_to_date);
 
 	frame.m_model_update_flags = 0;
 
-	allocate_command_buffers(logical_device, command_pool, 1, &frame.m_command_buffer);
+	allocate_command_buffers(device, command_pool, 1, &frame.m_command_buffer);
 
-	allocate_descriptor_sets(logical_device, descriptor_pool, 1, &frame.m_descriptor_set);
+	allocate_descriptor_sets(device, descriptor_pool, 1, &frame.m_descriptor_set);
 
-	frame.m_matrix_buffer = create_buffer(physical_device.m_handle, logical_device, max_num_models * matrix4F_size, 
+	frame.m_matrix_buffer = create_buffer(physical_device.m_handle, device, max_num_models * matrix4F_size, 
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set_null);
@@ -53,12 +53,12 @@ frame_t create_frame(physical_device_t physical_device, VkDevice logical_device,
 		}
 	};
 
-	frame.m_model_buffer = create_buffer(physical_device.m_handle, logical_device, model_buffer_size, 
+	frame.m_model_buffer = create_buffer(physical_device.m_handle, device, model_buffer_size, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set);
 
-	frame.m_index_buffer = create_buffer(physical_device.m_handle, logical_device, model_buffer_size, 
+	frame.m_index_buffer = create_buffer(physical_device.m_handle, device, model_buffer_size, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set);
@@ -66,16 +66,16 @@ frame_t create_frame(physical_device_t physical_device, VkDevice logical_device,
 	return frame;
 }
 
-void destroy_frame(VkDevice logical_device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool, frame_t frame) {
+void destroy_frame(VkDevice device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool, frame_t frame) {
 
-	vkDestroySemaphore(logical_device, frame.m_semaphore_image_available, NULL);
-	vkDestroySemaphore(logical_device, frame.m_semaphore_render_finished, NULL);
-	vkDestroyFence(logical_device, frame.m_fence_frame_ready, NULL);
-	vkDestroyFence(logical_device, frame.m_fence_buffers_up_to_date, NULL);
+	vkDestroySemaphore(device, frame.m_semaphore_image_available, NULL);
+	vkDestroySemaphore(device, frame.m_semaphore_render_finished, NULL);
+	vkDestroyFence(device, frame.m_fence_frame_ready, NULL);
+	vkDestroyFence(device, frame.m_fence_buffers_up_to_date, NULL);
 
-	vkFreeCommandBuffers(logical_device, command_pool, 1, &frame.m_command_buffer);
+	vkFreeCommandBuffers(device, command_pool, 1, &frame.m_command_buffer);
 
-	vkFreeDescriptorSets(logical_device, descriptor_pool.m_handle, 1, &frame.m_descriptor_set);
+	vkFreeDescriptorSets(device, descriptor_pool.m_handle, 1, &frame.m_descriptor_set);
 
 	destroy_buffer(&frame.m_matrix_buffer);
 	destroy_buffer(&frame.m_model_buffer);

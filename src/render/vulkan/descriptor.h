@@ -42,13 +42,13 @@ typedef struct descriptor_pool_t {
 
 /* -- FUNCTION DECLARATIONS -- */
 
-void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr);
+void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr);
 
-void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr);
+void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr);
 
-void destroy_descriptor_pool(VkDevice logical_device, descriptor_pool_t descriptor_pool);
+void destroy_descriptor_pool(VkDevice device, descriptor_pool_t descriptor_pool);
 
-void allocate_descriptor_sets(VkDevice logical_device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets);
+void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets);
 
 // Convenience function. Makes and returns a VkDescriptorBufferInfo struct with the specified parameters.
 VkDescriptorBufferInfo make_descriptor_buffer_info(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);

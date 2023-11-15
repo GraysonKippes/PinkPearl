@@ -33,11 +33,11 @@ static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void);
 
 static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState *attachment_ptr);
 
-static void create_graphics_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr);
+static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr);
 
 /* -- FUNCTION DEFINITIONS -- */
 
-static void create_render_pass(VkDevice logical_device, VkFormat swapchain_format, VkRenderPass *render_pass_ptr) {
+static void create_render_pass(VkDevice device, VkFormat swapchain_format, VkRenderPass *render_pass_ptr) {
 
 	log_message(VERBOSE, "Creating render pass...");
 
@@ -88,19 +88,19 @@ static void create_render_pass(VkDevice logical_device, VkFormat swapchain_forma
 	create_info.dependencyCount = 1;
 	create_info.pDependencies = &dependency;
 
-	VkResult result = vkCreateRenderPass(logical_device, &create_info, NULL, render_pass_ptr);
+	VkResult result = vkCreateRenderPass(device, &create_info, NULL, render_pass_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Render pass creation failed. (Error code: %i)", result);
 	}
 }
 
-graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_t swapchain, VkDescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
+graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapchain, VkDescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
 
 	log_message(VERBOSE, "Creating graphics pipeline...");
 
 	graphics_pipeline_t pipeline = { 0 };
 
-	create_render_pass(logical_device, swapchain.m_image_format, &pipeline.m_render_pass);
+	create_render_pass(device, swapchain.m_image_format, &pipeline.m_render_pass);
 
 	VkPipelineShaderStageCreateInfo shader_stage_vertex_info = { 0 };
 	shader_stage_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -120,7 +120,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_
 
 	VkPipelineShaderStageCreateInfo shader_stages[2] = { shader_stage_vertex_info, shader_stage_fragment_info };
 
-	create_graphics_pipeline_layout(logical_device, descriptor_set_layout, &pipeline.m_layout);
+	create_graphics_pipeline_layout(device, descriptor_set_layout, &pipeline.m_layout);
 
 	VkVertexInputBindingDescription binding_description = get_binding_description();
 	VkVertexInputAttributeDescription *attribute_descriptions = get_attribute_descriptions();
@@ -169,7 +169,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_
 	create_info.basePipelineHandle = VK_NULL_HANDLE;
 	create_info.basePipelineIndex= -1;
 
-	VkResult result = vkCreateGraphicsPipelines(logical_device, VK_NULL_HANDLE, 1, &create_info, NULL, &pipeline.m_handle);
+	VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &pipeline.m_handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
 	}
@@ -179,11 +179,11 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice logical_device, swapchain_
 	return pipeline;
 }
 
-void destroy_graphics_pipeline(VkDevice logical_device, graphics_pipeline_t pipeline) {
+void destroy_graphics_pipeline(VkDevice device, graphics_pipeline_t pipeline) {
 
-	vkDestroyPipeline(logical_device, pipeline.m_handle, NULL);
-	vkDestroyPipelineLayout(logical_device, pipeline.m_layout, NULL);
-	vkDestroyRenderPass(logical_device, pipeline.m_render_pass, NULL);
+	vkDestroyPipeline(device, pipeline.m_handle, NULL);
+	vkDestroyPipelineLayout(device, pipeline.m_layout, NULL);
+	vkDestroyRenderPass(device, pipeline.m_render_pass, NULL);
 }
 
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
@@ -281,7 +281,7 @@ static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColor
 	return color_blending;
 }
 
-static void create_graphics_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
+static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
 	log_message(VERBOSE, "Creating graphics pipeline layout...");
 
@@ -299,7 +299,7 @@ static void create_graphics_pipeline_layout(VkDevice logical_device, VkDescripto
 	create_info.pushConstantRangeCount = 1;
 	create_info.pPushConstantRanges = &push_constant_range;
 
-	VkResult result = vkCreatePipelineLayout(logical_device, &create_info, NULL, pipeline_layout_ptr);
+	VkResult result = vkCreatePipelineLayout(device, &create_info, NULL, pipeline_layout_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Graphics pipeline layout creation failed. (Error code: %i)", result);
 	}

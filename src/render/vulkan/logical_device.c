@@ -52,7 +52,7 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_fa
 	return queue_create_infos;
 }
 
-void create_logical_device(vulkan_instance_t vulkan_instance, physical_device_t physical_device, VkDevice *logical_device_ptr) {
+void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical_device, VkDevice *device_ptr) {
 
 	log_message(VERBOSE, "Creating logical device...");
 
@@ -89,7 +89,7 @@ void create_logical_device(vulkan_instance_t vulkan_instance, physical_device_t 
 		create_info.ppEnabledLayerNames = NULL;
 	}
 
-	VkResult result = vkCreateDevice(physical_device.m_handle, &create_info, NULL, logical_device_ptr);
+	VkResult result = vkCreateDevice(physical_device.m_handle, &create_info, NULL, device_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Logical device creation failed. (Error code: %i)", result);
 		exit(1); // TODO - better error handling

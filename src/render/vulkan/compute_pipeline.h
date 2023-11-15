@@ -25,7 +25,7 @@ typedef struct compute_pipeline_t {
 
 compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t descriptor_layout, const char *compute_shader_name);
 
-void destroy_compute_pipeline(VkDevice logical_device, compute_pipeline_t compute_pipeline);
+void destroy_compute_pipeline(VkDevice device, compute_pipeline_t compute_pipeline);
 
 
 

@@ -56,7 +56,7 @@ char *read_file(const char *path, uint32_t *file_size_ptr) {
 	return contents;
 }
 
-void create_shader_module(VkDevice logical_device, const char *filename, VkShaderModule *shader_module_ptr) {
+void create_shader_module(VkDevice device, const char *filename, VkShaderModule *shader_module_ptr) {
 
 	logf_message(VERBOSE, "Loading shader \"%s\"...", filename);
 
@@ -82,7 +82,7 @@ void create_shader_module(VkDevice logical_device, const char *filename, VkShade
 	create_info.codeSize = file_size;
 	create_info.pCode = (uint32_t *)bytecode;
 
-	VkResult result = vkCreateShaderModule(logical_device, &create_info, NULL, shader_module_ptr);
+	VkResult result = vkCreateShaderModule(device, &create_info, NULL, shader_module_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Shader module creation failed. (Error code: %i)", result);
 	}

@@ -89,25 +89,25 @@ VkMemoryRequirements get_buffer_memory_requirements(buffer_t buffer) {
 	return memory_requirements;
 }
 
-void map_data_to_buffer(VkDevice logical_device, buffer_t buffer, VkDeviceSize offset, VkDeviceSize size, void *data) {
+void map_data_to_buffer(VkDevice device, buffer_t buffer, VkDeviceSize offset, VkDeviceSize size, void *data) {
 	void *mapped_data;
-	vkMapMemory(logical_device, buffer.m_memory, offset, size, 0, &mapped_data);
+	vkMapMemory(device, buffer.m_memory, offset, size, 0, &mapped_data);
 	memcpy(mapped_data, data, size);
-	vkUnmapMemory(logical_device, buffer.m_memory);
+	vkUnmapMemory(device, buffer.m_memory);
 }
 
-void map_data_to_whole_buffer(VkDevice logical_device, buffer_t buffer, void *data) {
+void map_data_to_whole_buffer(VkDevice device, buffer_t buffer, void *data) {
 	void *mapped_data;
-	vkMapMemory(logical_device, buffer.m_memory, 0, buffer.m_size, 0, &mapped_data);
+	vkMapMemory(device, buffer.m_memory, 0, buffer.m_size, 0, &mapped_data);
 	memcpy(mapped_data, data, buffer.m_size);
-	vkUnmapMemory(logical_device, buffer.m_memory);
+	vkUnmapMemory(device, buffer.m_memory);
 }
 
-void transfer_data_to_buffer(VkDevice logical_device, VkQueue queue, VkCommandPool command_pool, buffer_t source, buffer_t destination) {
+void transfer_data_to_buffer(VkDevice device, VkQueue queue, VkCommandPool command_pool, buffer_t source, buffer_t destination) {
 	
 	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
 
-	allocate_command_buffers(logical_device, command_pool, 1, &transfer_command_buffer);
+	allocate_command_buffers(device, command_pool, 1, &transfer_command_buffer);
 	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	vkEndCommandBuffer(transfer_command_buffer);

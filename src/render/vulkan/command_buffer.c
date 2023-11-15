@@ -7,7 +7,7 @@ const VkCommandPoolCreateFlags default_command_pool_flags = VK_COMMAND_POOL_CREA
 const VkCommandPoolCreateFlags transfer_command_pool_flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // TODO - this pool may not need the reset flag.
 
 
-void create_command_pool(VkDevice logical_device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr) {
+void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr) {
 	
 	logf_message(VERBOSE, "Creating command pool in queue family %i...", queue_family_index);
 
@@ -18,13 +18,13 @@ void create_command_pool(VkDevice logical_device, VkCommandPoolCreateFlags flags
 	create_info.queueFamilyIndex = queue_family_index;
 
 	// TODO - error handling
-	VkResult result = vkCreateCommandPool(logical_device, &create_info, NULL, command_pool_ptr);
+	VkResult result = vkCreateCommandPool(device, &create_info, NULL, command_pool_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Command pool creation failed. (Error code: %i)", result);
 	}
 }
 
-void allocate_command_buffers(VkDevice logical_device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers) {
+void allocate_command_buffers(VkDevice device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers) {
 
 	VkCommandBufferAllocateInfo allocate_info = { 0 };
 	allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -33,7 +33,7 @@ void allocate_command_buffers(VkDevice logical_device, VkCommandPool command_poo
 	allocate_info.commandBufferCount = num_buffers;
 
 	// TODO - error handling
-	vkAllocateCommandBuffers(logical_device, &allocate_info, command_buffers);
+	vkAllocateCommandBuffers(device, &allocate_info, command_buffers);
 }
 
 void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage) {

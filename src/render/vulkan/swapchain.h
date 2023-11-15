@@ -22,11 +22,11 @@ typedef struct swapchain_t {
 
 } swapchain_t;
 
-swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice logical_device, VkSwapchainKHR old_swapchain_handle);
+swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle);
 
-void create_framebuffers(VkDevice logical_device, VkRenderPass render_pass, swapchain_t *swapchain_ptr);
+void create_framebuffers(VkDevice device, VkRenderPass render_pass, swapchain_t *swapchain_ptr);
 
-void destroy_swapchain(VkDevice logical_device, swapchain_t swapchain);
+void destroy_swapchain(VkDevice device, swapchain_t swapchain);
 
 VkViewport make_viewport(VkExtent2D extent);
 

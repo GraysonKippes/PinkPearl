@@ -202,7 +202,7 @@ void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t 
 	image_ptr->m_layout = memory_barrier.newLayout;
 }
 
-void create_sampler(physical_device_t physical_device, VkDevice logical_device, VkSampler *sampler_ptr) {
+void create_sampler(physical_device_t physical_device, VkDevice device, VkSampler *sampler_ptr) {
 
 	static const VkFilter filter = VK_FILTER_NEAREST;
 	static const VkSamplerAddressMode address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -227,7 +227,7 @@ void create_sampler(physical_device_t physical_device, VkDevice logical_device, 
 	create_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	create_info.unnormalizedCoordinates = VK_FALSE;
 
-	vkCreateSampler(logical_device, &create_info, NULL, sampler_ptr);
+	vkCreateSampler(device, &create_info, NULL, sampler_ptr);
 }
 
 VkBufferImageCopy2 make_buffer_image_copy(VkOffset2D image_offset, VkExtent2D image_extent) {

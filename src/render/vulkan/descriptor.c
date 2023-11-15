@@ -6,7 +6,7 @@
 
 
 
-void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr) {
+void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr) {
 
 	VkDescriptorSetLayoutBinding *descriptor_bindings = NULL;
 
@@ -31,7 +31,7 @@ void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t d
 	create_info.bindingCount = descriptor_layout.m_num_bindings;
 	create_info.pBindings = descriptor_bindings;
 
-	VkResult result = vkCreateDescriptorSetLayout(logical_device, &create_info, NULL, descriptor_set_layout_ptr);
+	VkResult result = vkCreateDescriptorSetLayout(device, &create_info, NULL, descriptor_set_layout_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Descriptor set layout creation failed. (Error code: %i)", result);
 	}
@@ -40,7 +40,7 @@ void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t d
 		free(descriptor_bindings);
 }
 
-void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr) {
+void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr) {
 
 	VkDescriptorPoolSize *pool_sizes = calloc(descriptor_layout.m_num_bindings, sizeof(VkDescriptorPoolSize));
 	if (pool_sizes == NULL) {
@@ -61,7 +61,7 @@ void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descript
 	create_info.poolSizeCount = descriptor_layout.m_num_bindings;
 	create_info.pPoolSizes = pool_sizes;
 
-	VkResult result = vkCreateDescriptorPool(logical_device, &create_info, NULL, descriptor_pool_ptr);
+	VkResult result = vkCreateDescriptorPool(device, &create_info, NULL, descriptor_pool_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Descriptor pool creation failed. (Error code: %i)", result);
 	}
@@ -69,13 +69,13 @@ void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descript
 	free(pool_sizes);
 }
 
-void destroy_descriptor_pool(VkDevice logical_device, descriptor_pool_t descriptor_pool) {
-	vkResetDescriptorPool(logical_device, descriptor_pool.m_handle, 0);
-	vkDestroyDescriptorSetLayout(logical_device, descriptor_pool.m_layout, NULL);
-	vkDestroyDescriptorPool(logical_device, descriptor_pool.m_handle, NULL);
+void destroy_descriptor_pool(VkDevice device, descriptor_pool_t descriptor_pool) {
+	vkResetDescriptorPool(device, descriptor_pool.m_handle, 0);
+	vkDestroyDescriptorSetLayout(device, descriptor_pool.m_layout, NULL);
+	vkDestroyDescriptorPool(device, descriptor_pool.m_handle, NULL);
 }
 
-void allocate_descriptor_sets(VkDevice logical_device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets) {
+void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets) {
 
 	VkDescriptorSetLayout *layouts = calloc(num_descriptor_sets, sizeof(VkDescriptorSetLayout));
 	if (layouts == NULL) {
@@ -92,7 +92,7 @@ void allocate_descriptor_sets(VkDevice logical_device, descriptor_pool_t descrip
 	allocate_info.descriptorSetCount = num_descriptor_sets;
 	allocate_info.pSetLayouts = layouts;
 
-	VkResult result = vkAllocateDescriptorSets(logical_device, &allocate_info, descriptor_sets);
+	VkResult result = vkAllocateDescriptorSets(device, &allocate_info, descriptor_sets);
 	if (result != VK_SUCCESS) {
 		logf_message(ERROR, "Descriptor set allocation failed. (Error code: %i)", result);
 	}

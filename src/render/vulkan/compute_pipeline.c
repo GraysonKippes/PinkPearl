@@ -47,7 +47,7 @@ const descriptor_layout_t compute_textures_layout = {
 
 
 
-void create_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
+void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
 	VkPipelineLayoutCreateInfo create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -58,7 +58,7 @@ void create_pipeline_layout(VkDevice logical_device, VkDescriptorSetLayout descr
 	create_info.pushConstantRangeCount = 0;
 	create_info.pPushConstantRanges = NULL;
 
-	vkCreatePipelineLayout(logical_device, &create_info, NULL, pipeline_layout_ptr);
+	vkCreatePipelineLayout(device, &create_info, NULL, pipeline_layout_ptr);
 }
 
 compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t descriptor_layout, const char *compute_shader_name) {
@@ -93,9 +93,9 @@ compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t 
 	return compute_pipeline;
 }
 
-void destroy_compute_pipeline(VkDevice logical_device, compute_pipeline_t compute_pipeline) {
-	vkDestroyPipeline(logical_device, compute_pipeline.m_handle, NULL);
-	vkDestroyPipelineLayout(logical_device, compute_pipeline.m_layout, NULL);
-	vkDestroyDescriptorSetLayout(logical_device, compute_pipeline.m_descriptor_set_layout, NULL);
-	vkDestroyDescriptorPool(logical_device, compute_pipeline.m_descriptor_pool, NULL);
+void destroy_compute_pipeline(VkDevice device, compute_pipeline_t compute_pipeline) {
+	vkDestroyPipeline(device, compute_pipeline.m_handle, NULL);
+	vkDestroyPipelineLayout(device, compute_pipeline.m_layout, NULL);
+	vkDestroyDescriptorSetLayout(device, compute_pipeline.m_descriptor_set_layout, NULL);
+	vkDestroyDescriptorPool(device, compute_pipeline.m_descriptor_pool, NULL);
 }

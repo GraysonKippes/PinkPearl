@@ -9,6 +9,6 @@
 
 #include <vulkan/vulkan.h>
 
-void create_shader_module(VkDevice logical_device, const char *filename, VkShaderModule *shader_module_ptr);
+void create_shader_module(VkDevice device, const char *filename, VkShaderModule *shader_module_ptr);
 
 #endif	// SHADER_H

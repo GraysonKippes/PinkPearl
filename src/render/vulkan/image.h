@@ -48,7 +48,7 @@ void destroy_image(image_t image);
 // Make sure the command pool has reset bit on.
 void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t *image_ptr, image_layout_transition_t image_layout_transition);
 
-void create_sampler(physical_device_t physical_device, VkDevice logical_device, VkSampler *sampler_ptr);
+void create_sampler(physical_device_t physical_device, VkDevice device, VkSampler *sampler_ptr);
 
 VkBufferImageCopy2 make_buffer_image_copy(VkOffset2D image_offset, VkExtent2D image_extent);
 

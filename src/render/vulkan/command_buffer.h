@@ -9,9 +9,9 @@ extern const VkCommandPoolCreateFlags default_command_pool_flags;
 
 extern const VkCommandPoolCreateFlags transfer_command_pool_flags;
 
-void create_command_pool(VkDevice logical_device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr);
+void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr);
 
-void allocate_command_buffers(VkDevice logical_device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers);
+void allocate_command_buffers(VkDevice device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers);
 
 void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage);
 
