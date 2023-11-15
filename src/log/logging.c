@@ -6,9 +6,9 @@
 
 #define LOG_OUT stderr
 
-#define OS_WINDOWS
+#define WIN32_FORMATTING
 
-static const log_level_t severity_threshold = VERBOSE;
+static const log_level_t severity_threshold = INFO;
 
 static const char *log_format(log_level_t level);
 
@@ -52,7 +52,7 @@ void logf_message(log_level_t level, const char *format, ...) {
 	fprintf(LOG_OUT, "%s\n", log_deformat(level));
 }
 
-#ifdef OS_WINDOWS
+#ifdef WIN32_FORMATTING
 static const char *log_format(log_level_t level) {
 	switch (level) {
 		default:
@@ -75,4 +75,4 @@ static const char *log_format(log_level_t level) {
 static const char *log_deformat(log_level_t level) {
 	return "";
 }
-#endif	// OS_WINDOWS
+#endif	// WIN32_FORMATTING

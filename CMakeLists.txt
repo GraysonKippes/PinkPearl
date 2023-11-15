@@ -3,8 +3,14 @@ cmake_minimum_required(VERSION 3.27)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
-project(PinkPearl)
+project(PinkPearl VERSION 0.0)
 add_executable(PinkPearl)
+
+set(APP_NAME "\"Pink Pearl\"")
+set(RESOURCE_PATH "\"../resources/\"")
+configure_file(config.h.in config.h)
+
+add_subdirectory("lib_src/tECS")
 
 #target_compile_options(PinkPearl PRIVATE /TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address)
 target_compile_options(PinkPearl PRIVATE -std=c17 -Wpedantic -g)
@@ -12,6 +18,7 @@ target_compile_options(PinkPearl PRIVATE -std=c17 -Wpedantic -g)
 find_package(Vulkan REQUIRED)
 
 target_link_libraries(PinkPearl PRIVATE 
+	tECS 
 	Vulkan::Vulkan 
 	#"${PROJECT_SOURCE_DIR}/lib/glfw3.lib"
 	"${PROJECT_SOURCE_DIR}/lib/libglfw3.a"
@@ -19,6 +26,7 @@ target_link_libraries(PinkPearl PRIVATE
 )
 
 target_include_directories(PinkPearl PRIVATE
+	"${PROJECT_BINARY_DIR}"
 	"${PROJECT_SOURCE_DIR}/src"
 	"${PROJECT_SOURCE_DIR}/include"
 )
@@ -27,6 +35,10 @@ target_include_directories(PinkPearl PRIVATE
 target_sources(PinkPearl PRIVATE 
 	src/debug.c
 	src/main.c
+	src/game/game.c
+	src/game/area/area.c
+	src/game/area/room.c
+	src/game/entity/ecs_manager.c
 	src/glfw/glfw_manager.c
 	src/log/logging.c
 	src/render/model.c
@@ -42,6 +54,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/graphics_pipeline.c
 	src/render/vulkan/image.c
 	src/render/vulkan/logical_device.c
+	src/render/vulkan/memory.c
 	src/render/vulkan/physical_device.c
 	src/render/vulkan/queue.c
 	src/render/vulkan/shader.c

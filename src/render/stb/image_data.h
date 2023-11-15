@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#include <GLFW/glfw3.h>
+
 #include "util/byte.h"
 
 typedef struct image_data_t {
@@ -30,5 +32,7 @@ image_data_t load_image_data(const char *path);
 
 // Frees an image, destroying the data buffer.
 void free_image_data(image_data_t image);
+
+GLFWimage load_glfw_image(const char *path);
 
 #endif	// IMAGE_DATA_H

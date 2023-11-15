@@ -81,6 +81,14 @@ void destroy_buffer(buffer_t *buffer_ptr) {
 	buffer_ptr->m_device = VK_NULL_HANDLE;
 }
 
+VkMemoryRequirements get_buffer_memory_requirements(buffer_t buffer) {
+
+	VkMemoryRequirements memory_requirements = { 0 };
+	vkGetBufferMemoryRequirements(buffer.m_device, buffer.m_handle, &memory_requirements);
+
+	return memory_requirements;
+}
+
 void map_data_to_buffer(VkDevice logical_device, buffer_t buffer, VkDeviceSize offset, VkDeviceSize size, void *data) {
 	void *mapped_data;
 	vkMapMemory(logical_device, buffer.m_memory, offset, size, 0, &mapped_data);

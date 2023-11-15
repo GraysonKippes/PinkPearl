@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "log/logging.h"
 
-#define PLATFORM_WINDOWS
+#define SHADER_DIRECTORY (RESOURCE_PATH "shaders/")
 
 #ifdef PLATFORM_UNIX
 static const size_t shader_directory_length = 22;	// Length includes null-terminator.
@@ -60,10 +61,11 @@ void create_shader_module(VkDevice logical_device, const char *filename, VkShade
 	logf_message(VERBOSE, "Loading shader \"%s\"...", filename);
 
 	size_t filename_length = strlen(filename);	// Length does not include null-terminator.
-	size_t path_length = shader_directory_length + filename_length;
+	size_t shader_directory_length = strlen(SHADER_DIRECTORY);
+	size_t path_length = shader_directory_length + filename_length + 1;
 	char *path = calloc(path_length, sizeof(char));
-	strcpy(path, shader_directory);
-	strcpy(path + shader_directory_length - 1, filename);
+	strcpy(path, SHADER_DIRECTORY);
+	strcpy(path + shader_directory_length, filename);
 
 	uint32_t file_size = 0;
 	char *bytecode = read_file(path, &file_size);

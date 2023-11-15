@@ -4,4 +4,5 @@ build_gcc/
 build_msvc/
 include/
 lib/
+lib_src/
 notes/

@@ -21,6 +21,8 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 
 void destroy_buffer(buffer_t *buffer_ptr);
 
+VkMemoryRequirements get_buffer_memory_requirements(buffer_t buffer);
+
 // Map some data to a host-visible buffer. This function allows setting offset into the buffer and size of data being transfer.
 void map_data_to_buffer(VkDevice logical_device, buffer_t buffer, VkDeviceSize offset, VkDeviceSize size, void *data);
 

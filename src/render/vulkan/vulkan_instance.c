@@ -7,6 +7,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "config.h"
 #include "debug.h"
 #include "log/logging.h"
 
@@ -99,7 +100,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 	VkApplicationInfo app_info = {0};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	app_info.pNext = NULL;
-	app_info.pApplicationName = "Pink Pearl";	// TODO - link to project config
+	app_info.pApplicationName = APP_NAME;	// TODO - link to project config
 	app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
 	app_info.pEngineName = "No Engine";
 	app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);

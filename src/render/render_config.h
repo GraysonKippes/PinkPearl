@@ -1,0 +1,6 @@
+#ifndef RENDER_CONFIG_H
+#define RENDER_CONFIG_H
+
+#define NUM_RENDER_OBJECT_SLOTS 64
+
+#endif	// RENDER_CONFIG_H

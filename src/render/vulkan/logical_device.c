@@ -7,8 +7,6 @@
 #include "log/logging.h"
 #include "util/string_array.h"
 
-bool check_device_validation_layer_support(VkPhysicalDevice physical_device, string_array_t required_layer_names);
-
 // Returns a pointer-array that must be freed by the caller.
 VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_family_indices, uint32_t *num_queue_create_infos) {
 

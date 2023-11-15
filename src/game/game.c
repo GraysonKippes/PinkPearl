@@ -1,10 +1,16 @@
-#ifndef DEBUG_H
-#define DEBUG_H
+#include "game.h"
 
-#include <stdbool.h>
+#include "render/renderer.h"
 
-#define DEBUG
+#include "area/area.h"
+#include "entity/ecs_manager.h"
 
-extern const bool debug_enabled;
+static area_t current_area = { 0 };
 
-#endif	// DEBUG_H
+void start_game(void) {
+
+	init_tECS();
+
+	read_area_data("test", &current_area);
+	upload_room_model(current_area.rooms[0]);
+}

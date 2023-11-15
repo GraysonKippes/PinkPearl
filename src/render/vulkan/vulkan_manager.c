@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "log/logging.h"
 #include "glfw/glfw_manager.h"
+#include "render/render_config.h"
 #include "render/stb/image_data.h"
 #include "util/bit.h"
 #include "util/byte.h"
@@ -20,6 +21,7 @@
 #include "graphics_pipeline.h"
 #include "image.h"
 #include "logical_device.h"
+#include "memory.h"
 #include "physical_device.h"
 #include "queue.h"
 #include "shader.h"
@@ -37,6 +39,8 @@ static VkSurfaceKHR surface = VK_NULL_HANDLE;
 
 static physical_device_t physical_device = { 0 };
 
+static memory_type_set_t memory_type_set = { 0 };
+
 static VkDevice logical_device = VK_NULL_HANDLE;
 
 static swapchain_t swapchain = { 0 };
@@ -44,6 +48,10 @@ static swapchain_t swapchain = { 0 };
 static graphics_pipeline_t graphics_pipeline = { 0 };
 
 static VkSampler sampler_default = VK_NULL_HANDLE;
+
+/* -- Memory -- */
+
+static VkDeviceMemory graphics_memory = VK_NULL_HANDLE;
 
 /* -- Compute -- */
 
@@ -122,6 +130,36 @@ static void create_window_surface(void) {
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Window surface creation failed. (Error code: %i)", result);
 		exit(1);
+	}
+}
+
+static void allocate_device_memories(void) {
+
+	log_message(VERBOSE, "Allocating device memories...");
+
+	VkDeviceSize graphics_memory_size = 0;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+
+		VkMemoryRequirements model_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].m_model_buffer);
+		VkMemoryRequirements index_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].m_index_buffer);
+
+		graphics_memory_size = model_buffer_memory_requirements.size + index_buffer_memory_requirements.size;
+	}
+
+	allocate_device_memory(logical_device, graphics_memory_size, memory_type_set.m_graphics_resources, &graphics_memory);
+
+	VkDeviceSize graphics_memory_offset = 0;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+
+		VkMemoryRequirements model_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].m_model_buffer);
+		bind_buffer_to_memory(frames[i].m_model_buffer, graphics_memory, graphics_memory_offset);
+		graphics_memory_offset += model_buffer_memory_requirements.size;
+
+		VkMemoryRequirements index_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].m_index_buffer);
+		bind_buffer_to_memory(frames[i].m_index_buffer, graphics_memory, graphics_memory_offset);
+		graphics_memory_offset += index_buffer_memory_requirements.size;
 	}
 }
 
@@ -209,7 +247,7 @@ static void create_buffers(void) {
 static void create_images(void) {
 
 	// Apparently the staging buffer can't be created if the image data is loaded first...
-	image_data_t image_data = load_image_data("../../resources/assets/textures/tilemap/dungeon2.png");
+	image_data_t image_data = load_image_data("../resources/assets/textures/tilemap/dungeon2.png");
 	
 	map_data_to_whole_buffer(logical_device, image_staging_buffer, image_data.m_data);
 
@@ -341,6 +379,8 @@ void create_vulkan_objects(void) {
 
 	physical_device = select_physical_device(vulkan_instance.m_handle, surface);
 
+	memory_type_set = select_memory_types(physical_device.m_handle);
+
 	create_logical_device(vulkan_instance, physical_device, &logical_device);
 
 	log_message(VERBOSE, "Retrieving device queues...");
@@ -384,6 +424,8 @@ void create_vulkan_objects(void) {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		frames[i] = create_frame(physical_device, logical_device, render_command_pool, graphics_descriptor_pool);
 	}
+
+	allocate_device_memories();
 
 	create_buffers();
 	create_images();

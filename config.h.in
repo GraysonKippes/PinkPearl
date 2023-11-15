@@ -1,0 +1,6 @@
+#define PinkPearl_VERSION_MAJOR @PinkPearl_VERSION_MAJOR@
+#define PinkPearl_VERSION_MINOR @PinkPearl_VERSION_MINOR@
+
+#define APP_NAME @APP_NAME@
+
+#define RESOURCE_PATH @RESOURCE_PATH@
