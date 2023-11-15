@@ -9,14 +9,11 @@
 layout(local_size_x = MAX_SIZE_X) in;
 
 // TODO - specify std140 memory layout.
-layout(binding = 0) uniform config {
+layout(binding = 0) uniform uniform_data_t {
 
 	uint num_inputs;
 
 	float delta_time;
-
-	vec3 camera_position;
-	vec3 camera_previous_position;
 
 	// TODO - make this a struct for better memory packing.
 	float projection_left;
@@ -26,15 +23,15 @@ layout(binding = 0) uniform config {
 	float projection_near;
 	float projection_far;
 
-} op_data;
+	vec3 camera_position;
+	vec3 camera_previous_position;
 
-// TODO - this should probably be a uniform buffer.
-layout(binding = 1) readonly buffer input_buffer {
 	vec3 positions[MAX_SIZE_X];
 	vec3 previous_positions[MAX_SIZE_X];
-} input_data;
+	
+} uniform_data;
 
-layout(binding = 2) writeonly buffer output_buffer {
+layout(binding = 1) writeonly buffer output_buffer {
 	mat4 matrices[MAX_SIZE_X];
 } output_data;
 
@@ -80,12 +77,12 @@ void main() {
 	
 	uint global_ID = gl_GlobalInvocationID.x;
 
-	mat4 camera_matrix = make_translerp_matrix(op_data.camera_position, op_data.camera_previous_position, op_data.delta_time);
+	mat4 camera_matrix = make_translerp_matrix(uniform_data.camera_position, uniform_data.camera_previous_position, uniform_data.delta_time);
 
-	mat4 projection_matrix = make_orthographic_projection_matrix(op_data.projection_left, op_data.projection_right, op_data.projection_bottom, op_data.projection_top, op_data.projection_near, op_data.projection_far);
+	mat4 projection_matrix = make_orthographic_projection_matrix(uniform_data.projection_left, uniform_data.projection_right, uniform_data.projection_bottom, uniform_data.projection_top, uniform_data.projection_near, uniform_data.projection_far);
 
-	if (global_ID < op_data.num_inputs) {
-		mat4 model_matrix = make_translerp_matrix(input_data.positions[global_ID], input_data.previous_positions[global_ID], op_data.delta_time);
+	if (global_ID < uniform_data.num_inputs) {
+		mat4 model_matrix = make_translerp_matrix(uniform_data.positions[global_ID], uniform_data.previous_positions[global_ID], uniform_data.delta_time);
 		output_data.matrices[global_ID] = projection_matrix * camera_matrix * model_matrix;
 	}
 }

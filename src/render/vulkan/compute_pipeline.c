@@ -8,14 +8,13 @@
 
 
 
-static descriptor_binding_t compute_matrices_bindings[3] = {
+static descriptor_binding_t compute_matrices_bindings[2] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
 };
 
 const descriptor_layout_t compute_matrices_layout = {
-	.num_bindings = 3,
+	.num_bindings = 2,
 	.bindings = compute_matrices_bindings
 };
 

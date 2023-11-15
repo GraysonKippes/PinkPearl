@@ -188,15 +188,16 @@ void stage_model_data(render_handle_t handle, model_t model) {
 }
 
 // Dispatches a work load to the compute_matrices shader, computing a transformation matrix for each render object.
-void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t camera_position, projection_bounds_t projection_bounds, render_position_t *positions) {
+void compute_matrices(uint32_t num_inputs, float delta_time, projection_bounds_t projection_bounds, render_position_t camera_position, render_position_t *positions) {
 
 	byte_t *compute_matrices_data;
-	vkMapMemory(device, global_uniform_memory, 0, 128, 0, (void **)&compute_matrices_data);
+	vkMapMemory(device, global_uniform_memory, 0, 256, 0, (void **)&compute_matrices_data);
 
 	memcpy(compute_matrices_data, &num_inputs, sizeof num_inputs);
 	memcpy(compute_matrices_data + 4, &delta_time, sizeof delta_time);
-	memcpy(compute_matrices_data + 16, &camera_position, sizeof camera_position);
-	memcpy(compute_matrices_data + 44, &projection_bounds, sizeof projection_bounds);
+	memcpy(compute_matrices_data + 8, &projection_bounds, sizeof projection_bounds);
+	memcpy(compute_matrices_data + 44, &camera_position, sizeof camera_position);
+	memcpy(compute_matrices_data + 64, &positions, num_inputs * sizeof(render_position_t));
 
 	vkUnmapMemory(device, global_uniform_memory);
 
@@ -211,12 +212,7 @@ void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t c
 	VkDescriptorBufferInfo uniform_buffer_info = { 0 };
 	uniform_buffer_info.buffer = global_uniform_buffer;
 	uniform_buffer_info.offset = 0;
-	uniform_buffer_info.range = 128;
-
-	VkDescriptorBufferInfo render_positions_buffer_info = { 0 };
-	render_positions_buffer_info.buffer = render_positions_buffer.handle;
-	render_positions_buffer_info.offset = 0;
-	render_positions_buffer_info.range = VK_WHOLE_SIZE;
+	uniform_buffer_info.range = 256;
 
 	VkDescriptorBufferInfo matrix_buffer_info = { 0 };
 	matrix_buffer_info.buffer = matrix_buffer.handle;
@@ -235,15 +231,13 @@ void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t c
 	descriptor_writes[0].pImageInfo = NULL;
 	descriptor_writes[0].pTexelBufferView = NULL;
 
-	VkDescriptorBufferInfo storage_buffer_infos[2] = { render_positions_buffer_info, matrix_buffer_info };
-
 	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[1].dstSet = descriptor_set;
 	descriptor_writes[1].dstBinding = 1;
 	descriptor_writes[1].dstArrayElement = 0;
 	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	descriptor_writes[1].descriptorCount = 2;
-	descriptor_writes[1].pBufferInfo = storage_buffer_infos;
+	descriptor_writes[1].descriptorCount = 1;
+	descriptor_writes[1].pBufferInfo = &matrix_buffer_info;
 	descriptor_writes[1].pImageInfo = NULL;
 	descriptor_writes[1].pTexelBufferView = NULL;
 
@@ -516,7 +510,7 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 
 	render_position_t positions[1] = { pos0 };
 
-	compute_matrices(1, (float)delta_time, camera_position, projection_bounds, positions);
+	compute_matrices(1, (float)delta_time, projection_bounds, camera_position, positions);
 
 
 

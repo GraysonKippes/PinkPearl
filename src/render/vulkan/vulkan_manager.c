@@ -93,7 +93,7 @@ size_t current_frame = 0;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
 VkBuffer global_uniform_buffer = VK_NULL_HANDLE;
-const VkDeviceSize global_uniform_buffer_size = 128 + 10240;
+const VkDeviceSize global_uniform_buffer_size = 256 + 10240;
 VkDeviceMemory global_uniform_memory = VK_NULL_HANDLE;
 
 
