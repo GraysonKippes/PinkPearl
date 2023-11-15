@@ -10,7 +10,6 @@
 #include "log/logging.h"
 #include "render/model.h"
 #include "render/renderer.h"
-#include "render/vulkan/vulkan_manager.h"
 
 int main(void) {
 
@@ -23,7 +22,7 @@ int main(void) {
 	logf_message(VERBOSE, "Resource path: \"%s\"", RESOURCE_PATH);
 
 	init_GLFW();
-	create_vulkan_objects();
+	init_renderer();
 	make_premade_models();
 	start_game();
 
@@ -35,9 +34,7 @@ int main(void) {
 	}
 
 	free_premade_models();
-
-	destroy_vulkan_objects();
-
+	terminate_renderer();
 	terminate_GLFW();
 
 	log_message(INFO, "Stopping Pink Pearl. Goodbye!");

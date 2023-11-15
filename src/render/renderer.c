@@ -4,6 +4,7 @@
 
 #include "model.h"
 #include "vulkan/vulkan_manager.h"
+#include "vulkan/vulkan_render.h"
 
 
 
@@ -29,6 +30,16 @@ static const uint32_t num_room_model_slots = 2;
 static uint32_t current_room_model_slot = num_room_model_slots - 1;
 
 
+
+void init_renderer(void) {
+	create_vulkan_objects();
+	create_vulkan_render_objects();
+}
+
+void terminate_renderer(void) {
+	destroy_vulkan_render_objects();
+	destroy_vulkan_objects();
+}
 
 void render_frame(double tick_delta) {
 	draw_frame(tick_delta, current_projection_bounds);

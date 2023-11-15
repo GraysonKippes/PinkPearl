@@ -1,27 +1,76 @@
 #ifndef VULKAN_MANAGER_H
 #define VULKAN_MANAGER_H
 
+#include <vulkan/vulkan.h>
+
 #include "game/area/room.h"
 #include "render/color.h"
 #include "render/model.h"
 #include "render/projection.h"
 #include "render/render_object.h"
 
+#include "compute_pipeline.h"
+#include "frame.h"
+#include "graphics_pipeline.h"
+#include "memory.h"
+#include "physical_device.h"
+#include "swapchain.h"
+
 // This file contains all the vulkan objects and functions to create them and destroy them.
+
+
+
+/* -- Core State -- */
+
+extern VkSurfaceKHR surface;
+
+extern physical_device_t physical_device;
+
+extern memory_type_set_t memory_type_set;
+
+extern VkDevice device;
+
+extern swapchain_t swapchain;
+
+extern graphics_pipeline_t graphics_pipeline;
+
+extern VkSampler sampler_default;
+
+/* -- Compute -- */
+
+extern compute_pipeline_t compute_pipeline_matrices;
+extern compute_pipeline_t compute_pipeline_room_texture;
+extern compute_pipeline_t compute_pipeline_lighting;
+
+/* -- Queues -- */
+
+extern VkQueue graphics_queue;
+extern VkQueue present_queue;
+extern VkQueue transfer_queue;
+extern VkQueue compute_queue;
+
+/* -- Command Pools -- */
+
+extern VkCommandPool render_command_pool;
+extern VkCommandPool transfer_command_pool;
+extern VkCommandPool compute_command_pool;
+
+
+
+#define MAX_FRAMES_IN_FLIGHT	2
+
+extern frame_t frames[MAX_FRAMES_IN_FLIGHT];
+
+extern size_t current_frame;
+
+#define FRAME (frames[current_frame])
+
+
 
 // Creates all Vulkan objects needed for the rendering system.
 void create_vulkan_objects(void);
 
 // Destroys the Vulkan objects created for the rendering system.
 void destroy_vulkan_objects(void);
-
-void stage_model_data(render_handle_t handle, model_t model);
-
-// Dispatches a work load to the compute_matrices shader, computing a transformation matrix for each render object.
-void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t camera_position, projection_bounds_t projection_bounds, render_position_t *positions);
-
-void create_room_texture(room_t room);
-
-void draw_frame(double delta_time, projection_bounds_t projection_bounds);
 
 #endif	// VULKAN_MANAGER_H

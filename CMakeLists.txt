@@ -62,5 +62,6 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/vertex_input.c
 	src/render/vulkan/vulkan_instance.c
 	src/render/vulkan/vulkan_manager.c
+	src/render/vulkan/vulkan_render.c
 	src/util/string_array.c
 )
