@@ -44,6 +44,7 @@ void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descript
 
 	VkDescriptorPoolSize *pool_sizes = calloc(descriptor_layout.m_num_bindings, sizeof(VkDescriptorPoolSize));
 	if (pool_sizes == NULL) {
+		log_message(ERROR, "Allocation of descriptor pool sizes array failed.");
 		return;
 	}
 	

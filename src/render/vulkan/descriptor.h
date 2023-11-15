@@ -22,6 +22,7 @@ typedef struct descriptor_binding_t {
 
 
 // Can be used to create a VkDescriptorSetLayout.
+// TODO - change typename to `descriptor_set_layout_t`.
 typedef struct descriptor_layout_t {
 	
 	// This can be used both for descriptor bindings and for sizes for descriptor pools.
@@ -43,7 +44,6 @@ typedef struct descriptor_pool_t {
 
 void create_descriptor_set_layout(VkDevice logical_device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr);
 
-// TODO - potentially change this function to take VkDescriptorSetLayout instead.
 void create_descriptor_pool(VkDevice logical_device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr);
 
 void destroy_descriptor_pool(VkDevice logical_device, descriptor_pool_t descriptor_pool);

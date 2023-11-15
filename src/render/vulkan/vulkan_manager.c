@@ -56,8 +56,6 @@ static VkDeviceMemory graphics_memory = VK_NULL_HANDLE;
 
 /* -- Compute -- */
 
-#define NUM_COMPUTE_PIPELINES 3
-
 static compute_pipeline_t compute_pipeline_matrices;
 static compute_pipeline_t compute_pipeline_room_texture;
 static compute_pipeline_t compute_pipeline_lighting;
@@ -163,34 +161,13 @@ static void allocate_device_memories(void) {
 }
 
 static void init_compute(void) {
-	
-	const uint32_t num_compute_shaders = NUM_COMPUTE_PIPELINES;
 
-	compute_shader_t compute_shader_matrices = create_compute_shader(logical_device, compute_matrices_layout, "compute_matrices.spv");
-	compute_shader_t compute_shader_room_texture = create_compute_shader(logical_device, compute_room_texture_layout, "room_texture.spv");
-	compute_shader_t compute_shader_lighting = create_compute_shader(logical_device, compute_textures_layout, "compute_textures.spv");
+	compute_pipeline_matrices = create_compute_pipeline(logical_device, compute_matrices_layout, "compute_matrices.spv");
 
-	VkPipeline compute_pipelines[NUM_COMPUTE_PIPELINES];
-	VkPipelineLayout compute_pipeline_layouts[NUM_COMPUTE_PIPELINES];
+	compute_pipeline_room_texture = create_compute_pipeline(logical_device, compute_room_texture_layout, "room_texture.spv");
 
-	create_compute_pipelines(logical_device, compute_pipelines, compute_pipeline_layouts, num_compute_shaders, 
-			compute_shader_matrices, compute_shader_room_texture, compute_shader_lighting);
+	compute_pipeline_lighting = create_compute_pipeline(logical_device, compute_textures_layout, "compute_textures.spv");
 
-	compute_pipeline_matrices.m_handle = compute_pipelines[0];
-	compute_pipeline_matrices.m_layout = compute_pipeline_layouts[0];
-	compute_pipeline_matrices.m_descriptor_set_layout = compute_shader_matrices.m_descriptor_set_layout;
-
-	compute_pipeline_room_texture.m_handle = compute_pipelines[1];
-	compute_pipeline_room_texture.m_layout = compute_pipeline_layouts[1];
-	compute_pipeline_room_texture.m_descriptor_set_layout = compute_shader_room_texture.m_descriptor_set_layout;
-
-	compute_pipeline_lighting.m_handle = compute_pipelines[2];
-	compute_pipeline_lighting.m_layout = compute_pipeline_layouts[2];
-	compute_pipeline_lighting.m_descriptor_set_layout = compute_shader_lighting.m_descriptor_set_layout;
-
-	destroy_compute_shader(logical_device, compute_shader_matrices);
-	destroy_compute_shader(logical_device, compute_shader_room_texture);
-	destroy_compute_shader(logical_device, compute_shader_lighting);
 }
 
 static buffer_t image_staging_buffer;
@@ -366,7 +343,7 @@ void create_vulkan_objects(void) {
 		frames[i] = create_frame(physical_device, logical_device, render_command_pool, graphics_descriptor_pool);
 	}
 
-	allocate_device_memories();
+	//allocate_device_memories();
 
 	create_buffers();
 	create_images();

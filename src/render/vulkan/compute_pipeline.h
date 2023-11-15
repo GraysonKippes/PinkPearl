@@ -9,20 +9,13 @@
 
 
 
-typedef struct compute_shader_t {
-
-	VkShaderModule m_module;
-
-	// The handle to the descriptor set layout is not destroyed when this shader is destroyed; instead, it is passed onto the compute pipeline.
-	VkDescriptorSetLayout m_descriptor_set_layout;
-
-} compute_shader_t;
-
 typedef struct compute_pipeline_t {
 
 	VkPipeline m_handle;
 	VkPipelineLayout m_layout;
+
 	VkDescriptorSetLayout m_descriptor_set_layout;
+	VkDescriptorPool m_descriptor_pool;
 
 	// TODO - look into including a descriptor pool in this struct.
 
@@ -30,11 +23,7 @@ typedef struct compute_pipeline_t {
 
 
 
-compute_shader_t create_compute_shader(VkDevice logical_device, descriptor_layout_t descriptor_layout, const char *filename);
-
-void destroy_compute_shader(VkDevice logical_device, compute_shader_t compute_shader);
-
-void create_compute_pipelines(VkDevice logical_device, VkPipeline *compute_pipelines, VkPipelineLayout *pipeline_layouts, uint32_t num_compute_shaders, ...);
+compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t descriptor_layout, const char *compute_shader_name);
 
 void destroy_compute_pipeline(VkDevice logical_device, compute_pipeline_t compute_pipeline);
 
