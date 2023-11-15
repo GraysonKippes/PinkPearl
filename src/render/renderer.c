@@ -25,6 +25,7 @@ static projection_bounds_t current_projection_bounds;
 
 static const uint32_t num_room_model_slots = 2;
 
+// Starts off at num_room_model_slots - 1 so that the first room starts at the next slot, which is 0.
 static uint32_t current_room_model_slot = num_room_model_slots - 1;
 
 
@@ -81,4 +82,6 @@ void upload_room_model(room_t room) {
 	};
 
 	update_projection_bounds(room_projection_bounds);
+
+	create_room_texture(room);
 }

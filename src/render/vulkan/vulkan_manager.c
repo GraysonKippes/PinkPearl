@@ -1,5 +1,6 @@
 #include "vulkan_manager.h"
 
+#include <stdalign.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -108,8 +109,6 @@ static buffer_t room_texture_uniform_buffer;
 static image_t tilemap_texture;
 static image_t room_texture_storage;
 static image_t room_texture;
-
-void compute_room_texture(void);
 
 
 
@@ -251,12 +250,6 @@ static void create_images(void) {
 	
 	map_data_to_whole_buffer(logical_device, image_staging_buffer, image_data.m_data);
 
-	// TEMP
-	room_texture_uniform_buffer = create_buffer(physical_device.m_handle, logical_device, 128, 
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			queue_family_set_null);
-
 	create_sampler(physical_device, logical_device, &sampler_default);
 
 	image_dimensions_t tilemap_texture_dimensions = { (uint32_t)image_data.m_width, (uint32_t)image_data.m_height };
@@ -305,64 +298,12 @@ static void create_images(void) {
 	// Transition tilemap texture layout so that it can be read by the compute shader.
 	transition_image_layout(graphics_queue, render_command_pool, &tilemap_texture, IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_GENERAL);
 
-	image_dimensions_t room_texture_dimensions = {
-		8 * 16,
-		5 * 16
-	};
 
-	queue_family_set_t queue_family_set_1 = {
-		.m_num_queue_families = 2,
-		.m_queue_families = (uint32_t[2]){
-			*physical_device.m_queue_family_indices.m_transfer_family_ptr,
-			*physical_device.m_queue_family_indices.m_compute_family_ptr,
-		}
-	};
 
-	room_texture_storage = create_image(physical_device.m_handle, logical_device, 
-			room_texture_dimensions, 
-			VK_FORMAT_R8G8B8A8_UINT,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			queue_family_set_1);
-
-	transition_image_layout(graphics_queue, render_command_pool, &room_texture_storage, IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_GENERAL);
+	//compute_room_texture();
 
 
 
-	compute_room_texture();
-
-
-
-	room_texture = create_image(physical_device.m_handle, logical_device, 
-			room_texture_dimensions,
-			VK_FORMAT_R8G8B8A8_SRGB,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			queue_family_set_null);
-
-	transition_image_layout(graphics_queue, render_command_pool, &room_texture, IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_TRANSFER_DST); 
-
-	VkCommandBuffer transfer_command_buffer_2 = VK_NULL_HANDLE;
-	allocate_command_buffers(logical_device, transfer_command_pool, 1, &transfer_command_buffer_2);
-	begin_command_buffer(transfer_command_buffer_2, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-	VkImageCopy copy_region_2 = { 0 };
-	copy_region_2.srcSubresource = image_subresource_layers_default;
-	copy_region_2.srcOffset = (VkOffset3D){ 0, 0, 0 };
-	copy_region_2.dstSubresource = image_subresource_layers_default;
-	copy_region_2.dstOffset = (VkOffset3D){ 0, 0, 0 };
-	copy_region_2.extent = (VkExtent3D){ 8 * 16, 5 * 16, 1 };
-
-	vkCmdCopyImage(transfer_command_buffer_2, 
-			room_texture_storage.m_handle, room_texture_storage.m_layout,
-			room_texture.m_handle, room_texture.m_layout, 
-			1, &copy_region_2);
-
-	vkEndCommandBuffer(transfer_command_buffer);
-	submit_command_buffers_async(transfer_queue, 1, &transfer_command_buffer);
-	vkFreeCommandBuffers(logical_device, transfer_command_pool, 1, &transfer_command_buffer);
-
-	transition_image_layout(graphics_queue, render_command_pool, &room_texture, IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_SHADER_READ_ONLY); 
 }
 
 void create_vulkan_objects(void) {
@@ -592,33 +533,41 @@ void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t c
 	destroy_descriptor_pool(logical_device, descriptor_pool);
 }
 
-#include <stdalign.h>
+void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 
-void compute_room_texture(void) {
-
-	uint32_t room_width = 8;
-	uint32_t room_height = 5;
-
-	alignas(16) uint32_t room_tiles[40] = {
-		1, 1, 1, 1, 1, 1, 1, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 1, 1, 1, 1, 1, 1, 1
+	image_dimensions_t room_texture_dimensions = {
+		room_extent.width * 16,
+		room_extent.length * 16
 	};
 
-	typedef struct room_tile_index_t {
-		uint32_t m_index;
-		byte_t m_reserved[12];
-	} room_tile_index_t;
+	queue_family_set_t queue_family_set_1 = {
+		.m_num_queue_families = 2,
+		.m_queue_families = (uint32_t[2]){
+			*physical_device.m_queue_family_indices.m_transfer_family_ptr,
+			*physical_device.m_queue_family_indices.m_compute_family_ptr,
+		}
+	};
 
-	alignas(16) room_tile_index_t room_tiles_3[4];
-	room_tiles_3[0] = (room_tile_index_t){1};
-	room_tiles_3[1] = (room_tile_index_t){2};
-	room_tiles_3[2] = (room_tile_index_t){3};
-	room_tiles_3[3] = (room_tile_index_t){2};
+	room_texture_storage = create_image(physical_device.m_handle, logical_device, 
+			room_texture_dimensions, 
+			VK_FORMAT_R8G8B8A8_UINT,
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			queue_family_set_1);
 
-	map_data_to_buffer(logical_device, room_texture_uniform_buffer, 0, 16 * 4, room_tiles_3);
+	transition_image_layout(graphics_queue, render_command_pool, &room_texture_storage, IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_GENERAL);
+
+
+
+	VkDeviceSize tile_data_size = 16 * room_extent.width * room_extent.length;
+
+	// TEMP
+	room_texture_uniform_buffer = create_buffer(physical_device.m_handle, logical_device, tile_data_size, 
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			queue_family_set_null);
+
+	map_data_to_buffer(logical_device, room_texture_uniform_buffer, 0, tile_data_size, tile_data);
 
 	descriptor_pool_t descriptor_pool;
 	create_descriptor_pool(logical_device, 1, compute_room_texture_layout, &descriptor_pool.m_handle);
@@ -668,13 +617,75 @@ void compute_room_texture(void) {
 	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_room_texture.m_handle);
 	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_room_texture.m_layout, 0, 1, &descriptor_set, 0, NULL);
 
-	vkCmdDispatch(compute_command_buffer, room_width, room_height, 1);
+	vkCmdDispatch(compute_command_buffer, room_extent.width, room_extent.length, 1);
 
 	vkEndCommandBuffer(compute_command_buffer);
 	submit_command_buffers_async(compute_queue, 1, &compute_command_buffer);
 	vkFreeCommandBuffers(logical_device, compute_command_pool, 1, &compute_command_buffer);
 
 	destroy_descriptor_pool(logical_device, descriptor_pool);
+
+
+
+	room_texture = create_image(physical_device.m_handle, logical_device, 
+			room_texture_dimensions,
+			VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			queue_family_set_null);
+
+	transition_image_layout(graphics_queue, render_command_pool, &room_texture, IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_TRANSFER_DST); 
+
+	VkCommandBuffer transfer_command_buffer_2 = VK_NULL_HANDLE;
+	allocate_command_buffers(logical_device, transfer_command_pool, 1, &transfer_command_buffer_2);
+	begin_command_buffer(transfer_command_buffer_2, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	VkImageCopy copy_region_2 = { 0 };
+	copy_region_2.srcSubresource = image_subresource_layers_default;
+	copy_region_2.srcOffset = (VkOffset3D){ 0, 0, 0 };
+	copy_region_2.dstSubresource = image_subresource_layers_default;
+	copy_region_2.dstOffset = (VkOffset3D){ 0, 0, 0 };
+	copy_region_2.extent = (VkExtent3D){ 
+		.width = room_extent.width * 16, 
+		.height = room_extent.length * 16, 
+		.depth = 1 
+	};
+
+	vkCmdCopyImage(transfer_command_buffer_2, 
+			room_texture_storage.m_handle, room_texture_storage.m_layout,
+			room_texture.m_handle, room_texture.m_layout, 
+			1, &copy_region_2);
+
+	vkEndCommandBuffer(transfer_command_buffer_2);
+	submit_command_buffers_async(transfer_queue, 1, &transfer_command_buffer_2);
+	vkFreeCommandBuffers(logical_device, transfer_command_pool, 1, &transfer_command_buffer_2);
+
+	transition_image_layout(graphics_queue, render_command_pool, &room_texture, IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_SHADER_READ_ONLY); 
+}
+
+void create_room_texture(room_t room) {
+
+	// Create the properly aligned tile data array, aligned to 16 bytes.
+
+	const uint64_t num_tiles = room.extent.width * room.extent.length;
+	static const uint64_t tile_datum_size = 16;	// Bytes per tile datum--the buffer is aligned to 16 bytes.
+
+	uint32_t *tile_data = calloc(num_tiles, tile_datum_size);
+	if (tile_data == NULL) {
+		log_message(ERROR, "Allocation of aligned tile data array failed.");
+		return;
+	}
+
+	for (uint64_t i = 0; i < num_tiles; ++i) {
+		// The indexing is in increments of sizeof(uint32_t), not of 1 byte;
+		// 	therefore, multiply i by the alignment size (16 bytes) then divided i by sizeof(uint32_t).
+		uint64_t index = i * (tile_datum_size / sizeof(uint32_t));
+		tile_data[index] = room.tiles[i].tilemap_slot;
+	}
+
+	compute_room_texture(room.extent, tile_data);
+
+	free(tile_data);
 }
 
 // Send the drawing commands to the GPU to draw the frame.
