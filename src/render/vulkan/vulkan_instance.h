@@ -9,9 +9,9 @@
 
 typedef struct vulkan_instance_t {
 
-	VkInstance m_handle;
+	VkInstance handle;
 
-	string_array_t m_layer_names;
+	string_array_t layer_names;
 
 } vulkan_instance_t;
 

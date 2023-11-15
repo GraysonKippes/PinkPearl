@@ -29,36 +29,36 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 	// General vertex buffer size
 	const VkDeviceSize model_buffer_size = (max_num_models * num_elements_per_rect) * sizeof(float);
 
-	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.m_semaphore_image_available);
-	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.m_semaphore_render_finished);
-	vkCreateFence(device, &fence_info, NULL, &frame.m_fence_frame_ready);
-	vkCreateFence(device, &fence_info, NULL, &frame.m_fence_buffers_up_to_date);
+	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_image_available);
+	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_render_finished);
+	vkCreateFence(device, &fence_info, NULL, &frame.fence_frame_ready);
+	vkCreateFence(device, &fence_info, NULL, &frame.fence_buffers_up_to_date);
 
-	frame.m_model_update_flags = 0;
+	frame.model_update_flags = 0;
 
-	allocate_command_buffers(device, command_pool, 1, &frame.m_command_buffer);
+	allocate_command_buffers(device, command_pool, 1, &frame.command_buffer);
 
-	allocate_descriptor_sets(device, descriptor_pool, 1, &frame.m_descriptor_set);
+	allocate_descriptor_sets(device, descriptor_pool, 1, &frame.descriptor_set);
 
-	frame.m_matrix_buffer = create_buffer(physical_device.m_handle, device, max_num_models * matrix4F_size, 
+	frame.matrix_buffer = create_buffer(physical_device.handle, device, max_num_models * matrix4F_size, 
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set_null);
 
 	queue_family_set_t queue_family_set = {
-		.m_num_queue_families = 2,
-		.m_queue_families = (uint32_t[2]){
-			*physical_device.m_queue_family_indices.m_graphics_family_ptr,
-			*physical_device.m_queue_family_indices.m_transfer_family_ptr,
+		.num_queue_families = 2,
+		.queue_families = (uint32_t[2]){
+			*physical_device.queue_family_indices.graphics_family_ptr,
+			*physical_device.queue_family_indices.transfer_family_ptr,
 		}
 	};
 
-	frame.m_model_buffer = create_buffer(physical_device.m_handle, device, model_buffer_size, 
+	frame.model_buffer = create_buffer(physical_device.handle, device, model_buffer_size, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set);
 
-	frame.m_index_buffer = create_buffer(physical_device.m_handle, device, model_buffer_size, 
+	frame.index_buffer = create_buffer(physical_device.handle, device, model_buffer_size, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set);
@@ -68,16 +68,16 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 
 void destroy_frame(VkDevice device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool, frame_t frame) {
 
-	vkDestroySemaphore(device, frame.m_semaphore_image_available, NULL);
-	vkDestroySemaphore(device, frame.m_semaphore_render_finished, NULL);
-	vkDestroyFence(device, frame.m_fence_frame_ready, NULL);
-	vkDestroyFence(device, frame.m_fence_buffers_up_to_date, NULL);
+	vkDestroySemaphore(device, frame.semaphore_image_available, NULL);
+	vkDestroySemaphore(device, frame.semaphore_render_finished, NULL);
+	vkDestroyFence(device, frame.fence_frame_ready, NULL);
+	vkDestroyFence(device, frame.fence_buffers_up_to_date, NULL);
 
-	vkFreeCommandBuffers(device, command_pool, 1, &frame.m_command_buffer);
+	vkFreeCommandBuffers(device, command_pool, 1, &frame.command_buffer);
 
-	vkFreeDescriptorSets(device, descriptor_pool.m_handle, 1, &frame.m_descriptor_set);
+	vkFreeDescriptorSets(device, descriptor_pool.handle, 1, &frame.descriptor_set);
 
-	destroy_buffer(&frame.m_matrix_buffer);
-	destroy_buffer(&frame.m_model_buffer);
-	destroy_buffer(&frame.m_index_buffer);
+	destroy_buffer(&frame.matrix_buffer);
+	destroy_buffer(&frame.model_buffer);
+	destroy_buffer(&frame.index_buffer);
 }

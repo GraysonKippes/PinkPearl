@@ -6,9 +6,9 @@
 
 typedef struct string_array_t {
 
-	size_t m_num_strings;
+	size_t num_strings;
 
-	const char **m_strings;
+	const char **strings;
 
 } string_array_t;
 

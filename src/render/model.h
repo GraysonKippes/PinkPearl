@@ -10,14 +10,14 @@ typedef uint16_t index_t;
 typedef struct model_t {
 
 	// TODO - rename to `num_vertex_elements`.
-	uint32_t m_num_vertices;
+	uint32_t num_vertices;
 
 	// TODO - rename to `vertex_elements`.
-	float *m_vertices;
+	float *vertices;
 
-	uint32_t m_num_indices;
+	uint32_t num_indices;
 
-	uint16_t *m_indices;
+	uint16_t *indices;
 
 } model_t;
 

@@ -123,7 +123,7 @@ static void create_window_surface(void) {
 
 	log_message(VERBOSE, "Creating window surface...");
 
-	VkResult result = glfwCreateWindowSurface(vulkan_instance.m_handle, get_application_window(), NULL, &surface);
+	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), NULL, &surface);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Window surface creation failed. (Error code: %i)", result);
 		exit(1);
@@ -138,24 +138,24 @@ static void allocate_device_memories(void) {
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 
-		VkMemoryRequirements model_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].m_model_buffer);
-		VkMemoryRequirements index_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].m_index_buffer);
+		VkMemoryRequirements model_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].model_buffer);
+		VkMemoryRequirements index_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].index_buffer);
 
 		graphics_memory_size = model_buffer_memory_requirements.size + index_buffer_memory_requirements.size;
 	}
 
-	allocate_device_memory(device, graphics_memory_size, memory_type_set.m_graphics_resources, &graphics_memory);
+	allocate_device_memory(device, graphics_memory_size, memory_type_set.graphics_resources, &graphics_memory);
 
 	VkDeviceSize graphics_memory_offset = 0;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 
-		VkMemoryRequirements model_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].m_model_buffer);
-		bind_buffer_to_memory(frames[i].m_model_buffer, graphics_memory, graphics_memory_offset);
+		VkMemoryRequirements model_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].model_buffer);
+		bind_buffer_to_memory(frames[i].model_buffer, graphics_memory, graphics_memory_offset);
 		graphics_memory_offset += model_buffer_memory_requirements.size;
 
-		VkMemoryRequirements index_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].m_index_buffer);
-		bind_buffer_to_memory(frames[i].m_index_buffer, graphics_memory, graphics_memory_offset);
+		VkMemoryRequirements index_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].index_buffer);
+		bind_buffer_to_memory(frames[i].index_buffer, graphics_memory, graphics_memory_offset);
 		graphics_memory_offset += index_buffer_memory_requirements.size;
 	}
 }
@@ -176,7 +176,7 @@ static void create_buffers(void) {
 
 	VkDeviceSize staging_buffer_size = 4096;
 
-	image_staging_buffer = create_buffer(physical_device.m_handle, device, staging_buffer_size, 
+	image_staging_buffer = create_buffer(physical_device.handle, device, staging_buffer_size, 
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
@@ -188,33 +188,33 @@ static void create_buffers(void) {
 	// General vertex buffer size
 	const VkDeviceSize model_buffer_size = max_num_models * num_elements_per_rect * sizeof(float);
 
-	model_staging_buffer = create_buffer(physical_device.m_handle, device, model_buffer_size,
+	model_staging_buffer = create_buffer(physical_device.handle, device, model_buffer_size,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
 
 	const VkDeviceSize index_buffer_size = max_num_models * 6 * sizeof(index_t);
 
-	index_staging_buffer = create_buffer(physical_device.m_handle, device, index_buffer_size,
+	index_staging_buffer = create_buffer(physical_device.handle, device, index_buffer_size,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
 
-	compute_matrices_buffer = create_buffer(physical_device.m_handle, device, 68, 
+	compute_matrices_buffer = create_buffer(physical_device.handle, device, 68, 
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
 
 	VkDeviceSize render_positions_buffer_size = 64 * sizeof(render_position_t);
 
-	render_positions_buffer = create_buffer(physical_device.m_handle, device, render_positions_buffer_size, 
+	render_positions_buffer = create_buffer(physical_device.handle, device, render_positions_buffer_size, 
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
 
 	VkDeviceSize matrix_buffer_size = 64 * 16 * sizeof(float);
 
-	matrix_buffer = create_buffer(physical_device.m_handle, device, matrix_buffer_size, 
+	matrix_buffer = create_buffer(physical_device.handle, device, matrix_buffer_size, 
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			queue_family_set_null);
@@ -225,21 +225,21 @@ static void create_images(void) {
 	// Apparently the staging buffer can't be created if the image data is loaded first...
 	image_data_t image_data = load_image_data("../resources/assets/textures/tilemap/dungeon2.png");
 	
-	map_data_to_whole_buffer(device, image_staging_buffer, image_data.m_data);
+	map_data_to_whole_buffer(device, image_staging_buffer, image_data.data);
 
 	create_sampler(physical_device, device, &sampler_default);
 
-	image_dimensions_t tilemap_texture_dimensions = { (uint32_t)image_data.m_width, (uint32_t)image_data.m_height };
+	image_dimensions_t tilemap_texture_dimensions = { (uint32_t)image_data.width, (uint32_t)image_data.height };
 
 	queue_family_set_t queue_family_set_0 = {
-		.m_num_queue_families = 2,
-		.m_queue_families = (uint32_t[2]){
-			*physical_device.m_queue_family_indices.m_transfer_family_ptr,
-			*physical_device.m_queue_family_indices.m_compute_family_ptr,
+		.num_queue_families = 2,
+		.queue_families = (uint32_t[2]){
+			*physical_device.queue_family_indices.transfer_family_ptr,
+			*physical_device.queue_family_indices.compute_family_ptr,
 		}
 	};
 
-	tilemap_texture = create_image(physical_device.m_handle, device, 
+	tilemap_texture = create_image(physical_device.handle, device, 
 			tilemap_texture_dimensions, 
 			VK_FORMAT_R8G8B8A8_UINT, 
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT, 
@@ -257,8 +257,8 @@ static void create_images(void) {
 	VkCopyBufferToImageInfo2 copy_info = { 0 };
 	copy_info.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2;
 	copy_info.pNext = NULL;
-	copy_info.srcBuffer = image_staging_buffer.m_handle;
-	copy_info.dstImage = tilemap_texture.m_handle;
+	copy_info.srcBuffer = image_staging_buffer.handle;
+	copy_info.dstImage = tilemap_texture.handle;
 	copy_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	copy_info.regionCount = 1;
 	copy_info.pRegions = &copy_region;
@@ -290,27 +290,27 @@ void create_vulkan_objects(void) {
 	vulkan_instance = create_vulkan_instance();
 
 	if (debug_enabled) {
-		setup_debug_messenger(vulkan_instance.m_handle, &debug_messenger);
+		setup_debug_messenger(vulkan_instance.handle, &debug_messenger);
 	}
 
 	create_window_surface();
 
-	physical_device = select_physical_device(vulkan_instance.m_handle, surface);
+	physical_device = select_physical_device(vulkan_instance.handle, surface);
 
-	memory_type_set = select_memory_types(physical_device.m_handle);
+	memory_type_set = select_memory_types(physical_device.handle);
 
 	create_device(vulkan_instance, physical_device, &device);
 
 	log_message(VERBOSE, "Retrieving device queues...");
 
-	vkGetDeviceQueue(device, *physical_device.m_queue_family_indices.m_graphics_family_ptr, 0, &graphics_queue);
-	vkGetDeviceQueue(device, *physical_device.m_queue_family_indices.m_present_family_ptr, 0, &present_queue);
-	vkGetDeviceQueue(device, *physical_device.m_queue_family_indices.m_transfer_family_ptr, 0, &transfer_queue);
-	vkGetDeviceQueue(device, *physical_device.m_queue_family_indices.m_compute_family_ptr, 0, &compute_queue);
+	vkGetDeviceQueue(device, *physical_device.queue_family_indices.graphics_family_ptr, 0, &graphics_queue);
+	vkGetDeviceQueue(device, *physical_device.queue_family_indices.present_family_ptr, 0, &present_queue);
+	vkGetDeviceQueue(device, *physical_device.queue_family_indices.transfer_family_ptr, 0, &transfer_queue);
+	vkGetDeviceQueue(device, *physical_device.queue_family_indices.compute_family_ptr, 0, &compute_queue);
 
-	create_command_pool(device, default_command_pool_flags, *physical_device.m_queue_family_indices.m_graphics_family_ptr, &render_command_pool);
-	create_command_pool(device, transfer_command_pool_flags, *physical_device.m_queue_family_indices.m_transfer_family_ptr, &transfer_command_pool);
-	create_command_pool(device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, *physical_device.m_queue_family_indices.m_compute_family_ptr, &compute_command_pool);
+	create_command_pool(device, default_command_pool_flags, *physical_device.queue_family_indices.graphics_family_ptr, &render_command_pool);
+	create_command_pool(device, transfer_command_pool_flags, *physical_device.queue_family_indices.transfer_family_ptr, &transfer_command_pool);
+	create_command_pool(device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, *physical_device.queue_family_indices.compute_family_ptr, &compute_command_pool);
 
 	swapchain = create_swapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
 
@@ -330,12 +330,12 @@ void create_vulkan_objects(void) {
 	vkDestroyShaderModule(device, vertex_shader, NULL);
 	vkDestroyShaderModule(device, fragment_shader, NULL);
 
-	create_framebuffers(device, graphics_pipeline.m_render_pass, &swapchain);
+	create_framebuffers(device, graphics_pipeline.render_pass, &swapchain);
 
 	init_compute();
 
-	create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, graphics_descriptor_layout, &graphics_descriptor_pool.m_handle);
-	create_descriptor_set_layout(device, graphics_descriptor_layout, &graphics_descriptor_pool.m_layout);
+	create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, graphics_descriptor_layout, &graphics_descriptor_pool.handle);
+	create_descriptor_set_layout(device, graphics_descriptor_layout, &graphics_descriptor_pool.layout);
 
 	log_message(VERBOSE, "Creating frame objects...");
 
@@ -384,9 +384,9 @@ void destroy_vulkan_objects(void) {
 
 	vkDestroyDevice(device, NULL);
 
-	vkDestroySurfaceKHR(vulkan_instance.m_handle, surface, NULL);
+	vkDestroySurfaceKHR(vulkan_instance.handle, surface, NULL);
 
-	destroy_debug_messenger(vulkan_instance.m_handle, debug_messenger);
+	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 
 	destroy_vulkan_instance(vulkan_instance);
 }
@@ -395,17 +395,17 @@ void destroy_vulkan_objects(void) {
 void stage_model_data(render_handle_t handle, model_t model) {
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		vkResetFences(device, 1, &frames[i].m_fence_buffers_up_to_date);
-		frames[i].m_model_update_flags |= (1LL << (uint64_t)handle);
+		vkResetFences(device, 1, &frames[i].fence_buffers_up_to_date);
+		frames[i].model_update_flags |= (1LL << (uint64_t)handle);
 	}
 
 	VkDeviceSize model_size = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	VkDeviceSize model_offset = handle * model_size;
 
 	void *model_staging_data;
-	vkMapMemory(device, model_staging_buffer.m_memory, model_offset, model_size, 0, &model_staging_data);
-	memcpy(model_staging_data, model.m_vertices, model_size);
-	vkUnmapMemory(device, model_staging_buffer.m_memory);
+	vkMapMemory(device, model_staging_buffer.memory, model_offset, model_size, 0, &model_staging_data);
+	memcpy(model_staging_data, model.vertices, model_size);
+	vkUnmapMemory(device, model_staging_buffer.memory);
 
 	VkDeviceSize indices_size = num_indices_per_rect * sizeof(index_t);
 	VkDeviceSize indices_offset = handle * indices_size;
@@ -420,44 +420,44 @@ void stage_model_data(render_handle_t handle, model_t model) {
 	}
 
 	void *index_staging_data;
-	vkMapMemory(device, index_staging_buffer.m_memory, indices_offset, indices_size, 0, &index_staging_data);
+	vkMapMemory(device, index_staging_buffer.memory, indices_offset, indices_size, 0, &index_staging_data);
 	memcpy(index_staging_data, rect_indices, indices_size);
-	vkUnmapMemory(device, index_staging_buffer.m_memory);
+	vkUnmapMemory(device, index_staging_buffer.memory);
 }
 
 // Dispatches a work load to the compute_matrices shader, computing a transformation matrix for each render object.
 void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t camera_position, projection_bounds_t projection_bounds, render_position_t *positions) {
 
 	byte_t *compute_matrices_data;
-	vkMapMemory(device, compute_matrices_buffer.m_memory, 0, 68, 0, (void **)&compute_matrices_data);
+	vkMapMemory(device, compute_matrices_buffer.memory, 0, 68, 0, (void **)&compute_matrices_data);
 
 	memcpy(compute_matrices_data, &num_inputs, sizeof num_inputs);
 	memcpy(compute_matrices_data + 4, &delta_time, sizeof delta_time);
 	memcpy(compute_matrices_data + 16, &camera_position, sizeof camera_position);
 	memcpy(compute_matrices_data + 44, &projection_bounds, sizeof projection_bounds);
 
-	vkUnmapMemory(device, compute_matrices_buffer.m_memory);
+	vkUnmapMemory(device, compute_matrices_buffer.memory);
 
 	// Move this to global scope
 	descriptor_pool_t descriptor_pool;
-	create_descriptor_pool(device, 1, compute_matrices_layout, &descriptor_pool.m_handle);
-	create_descriptor_set_layout(device, compute_matrices_layout, &descriptor_pool.m_layout);
+	create_descriptor_pool(device, 1, compute_matrices_layout, &descriptor_pool.handle);
+	create_descriptor_set_layout(device, compute_matrices_layout, &descriptor_pool.layout);
 
 	VkDescriptorSet descriptor_set;
 	allocate_descriptor_sets(device, descriptor_pool, 1, &descriptor_set);
 
 	VkDescriptorBufferInfo compute_matrices_buffer_info = { 0 };
-	compute_matrices_buffer_info.buffer = compute_matrices_buffer.m_handle;
+	compute_matrices_buffer_info.buffer = compute_matrices_buffer.handle;
 	compute_matrices_buffer_info.offset = 0;
 	compute_matrices_buffer_info.range = VK_WHOLE_SIZE;
 
 	VkDescriptorBufferInfo render_positions_buffer_info = { 0 };
-	render_positions_buffer_info.buffer = render_positions_buffer.m_handle;
+	render_positions_buffer_info.buffer = render_positions_buffer.handle;
 	render_positions_buffer_info.offset = 0;
 	render_positions_buffer_info.range = VK_WHOLE_SIZE;
 
 	VkDescriptorBufferInfo matrix_buffer_info = { 0 };
-	matrix_buffer_info.buffer = matrix_buffer.m_handle;
+	matrix_buffer_info.buffer = matrix_buffer.handle;
 	matrix_buffer_info.offset = 0;
 	matrix_buffer_info.range = VK_WHOLE_SIZE;
 
@@ -498,8 +498,8 @@ void compute_matrices(uint32_t num_inputs, float delta_time, render_position_t c
 
 	vkBeginCommandBuffer(compute_command_buffer, &begin_info);
 
-	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.m_handle);
-	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.m_layout, 0, 1, &descriptor_set, 0, NULL);
+	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.handle);
+	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.layout, 0, 1, &descriptor_set, 0, NULL);
 
 	vkCmdDispatch(compute_command_buffer, num_inputs, 1, 1);
 
@@ -518,14 +518,14 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 	};
 
 	queue_family_set_t queue_family_set_1 = {
-		.m_num_queue_families = 2,
-		.m_queue_families = (uint32_t[2]){
-			*physical_device.m_queue_family_indices.m_transfer_family_ptr,
-			*physical_device.m_queue_family_indices.m_compute_family_ptr,
+		.num_queue_families = 2,
+		.queue_families = (uint32_t[2]){
+			*physical_device.queue_family_indices.transfer_family_ptr,
+			*physical_device.queue_family_indices.compute_family_ptr,
 		}
 	};
 
-	room_texture_storage = create_image(physical_device.m_handle, device, 
+	room_texture_storage = create_image(physical_device.handle, device, 
 			room_texture_dimensions, 
 			VK_FORMAT_R8G8B8A8_UINT,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
@@ -539,7 +539,7 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 	VkDeviceSize tile_data_size = 16 * room_extent.width * room_extent.length;
 
 	// TEMP
-	room_texture_uniform_buffer = create_buffer(physical_device.m_handle, device, tile_data_size, 
+	room_texture_uniform_buffer = create_buffer(physical_device.handle, device, tile_data_size, 
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
@@ -547,17 +547,17 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 	map_data_to_buffer(device, room_texture_uniform_buffer, 0, tile_data_size, tile_data);
 
 	descriptor_pool_t descriptor_pool;
-	create_descriptor_pool(device, 1, compute_room_texture_layout, &descriptor_pool.m_handle);
-	create_descriptor_set_layout(device, compute_room_texture_layout, &descriptor_pool.m_layout);
+	create_descriptor_pool(device, 1, compute_room_texture_layout, &descriptor_pool.handle);
+	create_descriptor_set_layout(device, compute_room_texture_layout, &descriptor_pool.layout);
 
 	VkDescriptorSet descriptor_set;
 	allocate_descriptor_sets(device, descriptor_pool, 1, &descriptor_set);
 
-	VkDescriptorBufferInfo room_texture_uniform_buffer_info = make_descriptor_buffer_info(room_texture_uniform_buffer.m_handle, 0, VK_WHOLE_SIZE);
+	VkDescriptorBufferInfo room_texture_uniform_buffer_info = make_descriptor_buffer_info(room_texture_uniform_buffer.handle, 0, VK_WHOLE_SIZE);
 
-	VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture.m_view, tilemap_texture.m_layout);
+	VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture.view, tilemap_texture.layout);
 
-	VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, room_texture_storage.m_view, room_texture_storage.m_layout);
+	VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, room_texture_storage.view, room_texture_storage.layout);
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
 	
@@ -591,8 +591,8 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 	allocate_command_buffers(device, compute_command_pool, 1, &compute_command_buffer);
 	begin_command_buffer(compute_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_room_texture.m_handle);
-	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_room_texture.m_layout, 0, 1, &descriptor_set, 0, NULL);
+	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_room_texture.handle);
+	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_room_texture.layout, 0, 1, &descriptor_set, 0, NULL);
 
 	vkCmdDispatch(compute_command_buffer, room_extent.width, room_extent.length, 1);
 
@@ -604,7 +604,7 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 
 
 
-	room_texture = create_image(physical_device.m_handle, device, 
+	room_texture = create_image(physical_device.handle, device, 
 			room_texture_dimensions,
 			VK_FORMAT_R8G8B8A8_SRGB,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -629,8 +629,8 @@ void compute_room_texture(extent_t room_extent, uint32_t *tile_data) {
 	};
 
 	vkCmdCopyImage(transfer_command_buffer_2, 
-			room_texture_storage.m_handle, room_texture_storage.m_layout,
-			room_texture.m_handle, room_texture.m_layout, 
+			room_texture_storage.handle, room_texture_storage.layout,
+			room_texture.handle, room_texture.layout, 
 			1, &copy_region_2);
 
 	vkEndCommandBuffer(transfer_command_buffer_2);
@@ -670,9 +670,9 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 
 	uint32_t image_index = 0;
 
-	vkWaitForFences(device, 1, &FRAME.m_fence_frame_ready, VK_TRUE, UINT64_MAX);
+	vkWaitForFences(device, 1, &FRAME.fence_frame_ready, VK_TRUE, UINT64_MAX);
 
-	VkResult result = vkAcquireNextImageKHR(device, swapchain.m_handle, UINT64_MAX, FRAME.m_semaphore_image_available, VK_NULL_HANDLE, &image_index);
+	VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, FRAME.semaphore_image_available, VK_NULL_HANDLE, &image_index);
 	
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return;
@@ -682,7 +682,7 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 	}
 
 	// If the buffers of this frame are not up-to-date, update them.
-	if (vkGetFenceStatus(device, FRAME.m_fence_buffers_up_to_date) == VK_NOT_READY) {
+	if (vkGetFenceStatus(device, FRAME.fence_buffers_up_to_date) == VK_NOT_READY) {
 	
 		VkCommandBuffer transfer_command_buffers[2] = { 0 };
 		allocate_command_buffers(device, transfer_command_pool, 2, transfer_command_buffers);
@@ -703,7 +703,7 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 		const VkDeviceSize copy_size_indices = num_indices_per_rect * sizeof(index_t);
 
 		for (uint64_t i = 0; i < 64; ++i) {
-			if (FRAME.m_model_update_flags & (1LL << i)) {
+			if (FRAME.model_update_flags & (1LL << i)) {
 
 				copy_regions[num_pending_models].srcOffset = i * copy_size_vertices;
 				copy_regions[num_pending_models].dstOffset = i * copy_size_vertices;
@@ -717,10 +717,10 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 			}
 		}
 
-		FRAME.m_model_update_flags = 0;
+		FRAME.model_update_flags = 0;
 
-		vkCmdCopyBuffer(transfer_command_buffer, model_staging_buffer.m_handle, FRAME.m_model_buffer.m_handle, num_pending_models, copy_regions);
-		vkCmdCopyBuffer(index_transfer_command_buffer, index_staging_buffer.m_handle, FRAME.m_index_buffer.m_handle, num_pending_models, index_copy_regions);
+		vkCmdCopyBuffer(transfer_command_buffer, model_staging_buffer.handle, FRAME.model_buffer.handle, num_pending_models, copy_regions);
+		vkCmdCopyBuffer(index_transfer_command_buffer, index_staging_buffer.handle, FRAME.index_buffer.handle, num_pending_models, index_copy_regions);
 
 		vkEndCommandBuffer(index_transfer_command_buffer);
 		vkEndCommandBuffer(transfer_command_buffer);
@@ -731,7 +731,7 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 		submit_info.commandBufferCount = 2;
 		submit_info.pCommandBuffers = transfer_command_buffers;
 
-		vkQueueSubmit(transfer_queue, 1, &submit_info, FRAME.m_fence_buffers_up_to_date);
+		vkQueueSubmit(transfer_queue, 1, &submit_info, FRAME.fence_buffers_up_to_date);
 
 		vkQueueWaitIdle(transfer_queue);
 
@@ -755,21 +755,21 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 	// Wait until the buffers are fully up-to-date.
 	vkQueueWaitIdle(compute_queue);
 	
-	vkWaitForFences(device, 1, &FRAME.m_fence_buffers_up_to_date, VK_TRUE, UINT64_MAX);
+	vkWaitForFences(device, 1, &FRAME.fence_buffers_up_to_date, VK_TRUE, UINT64_MAX);
 
-	vkResetFences(device, 1, &FRAME.m_fence_frame_ready);
+	vkResetFences(device, 1, &FRAME.fence_frame_ready);
 
-	vkResetCommandBuffer(FRAME.m_command_buffer, 0);
+	vkResetCommandBuffer(FRAME.command_buffer, 0);
 
 	VkWriteDescriptorSet descriptor_writes[2] = { { 0 } };
 
 	VkDescriptorBufferInfo matrix_buffer_info = { 0 };
-	matrix_buffer_info.buffer = matrix_buffer.m_handle;
+	matrix_buffer_info.buffer = matrix_buffer.handle;
 	matrix_buffer_info.offset = 0;
 	matrix_buffer_info.range = VK_WHOLE_SIZE;
 
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[0].dstSet = FRAME.m_descriptor_set;
+	descriptor_writes[0].dstSet = FRAME.descriptor_set;
 	descriptor_writes[0].dstBinding = 0;
 	descriptor_writes[0].dstArrayElement = 0;
 	descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -780,11 +780,11 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 
 	VkDescriptorImageInfo room_texture_info = { 0 };
 	room_texture_info.sampler = sampler_default;
-	room_texture_info.imageView = room_texture.m_view;
-	room_texture_info.imageLayout = room_texture.m_layout;
+	room_texture_info.imageView = room_texture.view;
+	room_texture_info.imageLayout = room_texture.layout;
 
 	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[1].dstSet = FRAME.m_descriptor_set;
+	descriptor_writes[1].dstSet = FRAME.descriptor_set;
 	descriptor_writes[1].dstBinding = 1;
 	descriptor_writes[1].dstArrayElement = 0;
 	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -803,38 +803,38 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 	begin_info.flags = 0;
 	begin_info.pInheritanceInfo = NULL;
 
-	vkBeginCommandBuffer(FRAME.m_command_buffer, &begin_info);
+	vkBeginCommandBuffer(FRAME.command_buffer, &begin_info);
 
 	VkRenderPassBeginInfo render_pass_info = { 0 };
 	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	render_pass_info.pNext = NULL;
-	render_pass_info.renderPass = graphics_pipeline.m_render_pass;
-	render_pass_info.framebuffer = swapchain.m_framebuffers[image_index];
+	render_pass_info.renderPass = graphics_pipeline.render_pass;
+	render_pass_info.framebuffer = swapchain.framebuffers[image_index];
 	render_pass_info.renderArea.offset.x = 0;
 	render_pass_info.renderArea.offset.y = 0;
-	render_pass_info.renderArea.extent = swapchain.m_extent;
+	render_pass_info.renderArea.extent = swapchain.extent;
 	render_pass_info.clearValueCount = 1;
 	render_pass_info.pClearValues = &clear_color;
 
-	vkCmdBeginRenderPass(FRAME.m_command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(FRAME.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-	vkCmdBindPipeline(FRAME.m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.m_handle);
+	vkCmdBindPipeline(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
 
-	vkCmdBindDescriptorSets(FRAME.m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.m_layout, 0, 1, &FRAME.m_descriptor_set, 0, NULL);
+	vkCmdBindDescriptorSets(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &FRAME.descriptor_set, 0, NULL);
 
 	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(FRAME.m_command_buffer, 0, 1, &FRAME.m_model_buffer.m_handle, offsets);
+	vkCmdBindVertexBuffers(FRAME.command_buffer, 0, 1, &FRAME.model_buffer.handle, offsets);
 
-	vkCmdBindIndexBuffer(FRAME.m_command_buffer, FRAME.m_index_buffer.m_handle, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
 
 	const uint32_t model_slot = 0;
-	vkCmdPushConstants(FRAME.m_command_buffer, graphics_pipeline.m_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof model_slot), &model_slot);
+	vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof model_slot), &model_slot);
 
-	vkCmdDrawIndexed(FRAME.m_command_buffer, 6, 1, 0, 0, 0);
+	vkCmdDrawIndexed(FRAME.command_buffer, 6, 1, 0, 0, 0);
 
-	vkCmdEndRenderPass(FRAME.m_command_buffer);
+	vkCmdEndRenderPass(FRAME.command_buffer);
 
-	vkEndCommandBuffer(FRAME.m_command_buffer);
+	vkEndCommandBuffer(FRAME.command_buffer);
 
 
 
@@ -845,13 +845,13 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 	submit_info.pNext = NULL;
 	submit_info.pWaitDstStageMask = wait_stages;
 	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &FRAME.m_command_buffer;
+	submit_info.pCommandBuffers = &FRAME.command_buffer;
 	submit_info.waitSemaphoreCount = 1;
-	submit_info.pWaitSemaphores = &FRAME.m_semaphore_image_available;
+	submit_info.pWaitSemaphores = &FRAME.semaphore_image_available;
 	submit_info.signalSemaphoreCount = 1;
-	submit_info.pSignalSemaphores = &FRAME.m_semaphore_render_finished;
+	submit_info.pSignalSemaphores = &FRAME.semaphore_render_finished;
 
-	if (vkQueueSubmit(graphics_queue, 1, &submit_info, FRAME.m_fence_frame_ready) != VK_SUCCESS) {
+	if (vkQueueSubmit(graphics_queue, 1, &submit_info, FRAME.fence_frame_ready) != VK_SUCCESS) {
 		// TODO - error handling
 	}
 
@@ -861,9 +861,9 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	present_info.pNext = NULL;
 	present_info.waitSemaphoreCount = 1;
-	present_info.pWaitSemaphores = &FRAME.m_semaphore_render_finished;
+	present_info.pWaitSemaphores = &FRAME.semaphore_render_finished;
 	present_info.swapchainCount = 1;
-	present_info.pSwapchains = &swapchain.m_handle;
+	present_info.pSwapchains = &swapchain.handle;
 	present_info.pImageIndices = &image_index;
 	present_info.pResults = NULL;
 

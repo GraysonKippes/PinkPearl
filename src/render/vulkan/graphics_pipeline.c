@@ -10,13 +10,13 @@
 /* -- DESCRIPTOR LAYOUT -- */
 
 static descriptor_binding_t graphics_descriptor_bindings[2] = {
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_VERTEX_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .m_count = 1, .m_stages = VK_SHADER_STAGE_FRAGMENT_BIT }
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }
 };
 
 const descriptor_layout_t graphics_descriptor_layout = {
-	.m_num_bindings = 2,
-	.m_bindings = graphics_descriptor_bindings 
+	.num_bindings = 2,
+	.bindings = graphics_descriptor_bindings 
 };
 
 /* -- FUNCTION DECLARATIONS -- */
@@ -100,7 +100,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	graphics_pipeline_t pipeline = { 0 };
 
-	create_render_pass(device, swapchain.m_image_format, &pipeline.m_render_pass);
+	create_render_pass(device, swapchain.image_format, &pipeline.render_pass);
 
 	VkPipelineShaderStageCreateInfo shader_stage_vertex_info = { 0 };
 	shader_stage_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -120,7 +120,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	VkPipelineShaderStageCreateInfo shader_stages[2] = { shader_stage_vertex_info, shader_stage_fragment_info };
 
-	create_graphics_pipeline_layout(device, descriptor_set_layout, &pipeline.m_layout);
+	create_graphics_pipeline_layout(device, descriptor_set_layout, &pipeline.layout);
 
 	VkVertexInputBindingDescription binding_description = get_binding_description();
 	VkVertexInputAttributeDescription *attribute_descriptions = get_attribute_descriptions();
@@ -136,8 +136,8 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	VkPipelineInputAssemblyStateCreateInfo input_assembly = make_input_assembly_info();
 
-	VkViewport viewport = make_viewport(swapchain.m_extent);
-	VkRect2D scissor = make_scissor(swapchain.m_extent);
+	VkViewport viewport = make_viewport(swapchain.extent);
+	VkRect2D scissor = make_scissor(swapchain.extent);
 
 	VkPipelineViewportStateCreateInfo viewport_state = make_viewport_state_info(&viewport, &scissor);
 
@@ -163,13 +163,13 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 	create_info.pDepthStencilState = NULL;
 	create_info.pColorBlendState = &color_blending;
 	create_info.pDynamicState = NULL;
-	create_info.layout = pipeline.m_layout;
-	create_info.renderPass = pipeline.m_render_pass;
+	create_info.layout = pipeline.layout;
+	create_info.renderPass = pipeline.render_pass;
 	create_info.subpass = 0;
 	create_info.basePipelineHandle = VK_NULL_HANDLE;
 	create_info.basePipelineIndex= -1;
 
-	VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &pipeline.m_handle);
+	VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &pipeline.handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
 	}
@@ -181,9 +181,9 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 void destroy_graphics_pipeline(VkDevice device, graphics_pipeline_t pipeline) {
 
-	vkDestroyPipeline(device, pipeline.m_handle, NULL);
-	vkDestroyPipelineLayout(device, pipeline.m_layout, NULL);
-	vkDestroyRenderPass(device, pipeline.m_render_pass, NULL);
+	vkDestroyPipeline(device, pipeline.handle, NULL);
+	vkDestroyPipelineLayout(device, pipeline.layout, NULL);
+	vkDestroyRenderPass(device, pipeline.render_pass, NULL);
 }
 
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {

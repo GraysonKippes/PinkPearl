@@ -20,9 +20,9 @@ void destroy_render_object(render_handle_t);
 
 typedef struct render_position_t {
 	
-	vector3F_t m_position;
+	vector3F_t position;
 
-	vector3F_t m_previous_position;
+	vector3F_t previous_position;
 
 } render_position_t;
 

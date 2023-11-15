@@ -10,20 +10,20 @@
 typedef struct image_data_t {
 	
 	// The data of this image.
-	byte_t *m_data;
+	byte_t *data;
 
 	// The width of this image, in pixels.
-	size_t m_width;
+	size_t width;
 
 	// The height of this image, in pixels.
-	size_t m_height;
+	size_t height;
 
 	// The number of components in each pixel.
 	// 1 = Grayscale;
 	// 2 = Grayscale and Alpha;
 	// 3 = Red, Green, Blue; and
 	// 4 = Red, Green, Blue, and Alpha.
-	size_t m_num_channels;
+	size_t num_channels;
 
 } image_data_t;
 

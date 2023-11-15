@@ -8,15 +8,15 @@
 
 
 const projection_bounds_t projection_bounds_8x5 = {
-	.m_left = -4.0F, 	.m_right = 4.0F,
-	.m_bottom = -2.5F, 	.m_top = 2.5F,
-	.m_near = 15.0F,	.m_far = -15.0F
+	.left = -4.0F, 	.right = 4.0F,
+	.bottom = -2.5F, 	.top = 2.5F,
+	.near = 15.0F,	.far = -15.0F
 };
 
 const projection_bounds_t projection_bounds_10x16 = {
-	.m_left = -4.0F, 	.m_right = 4.0F,
-	.m_bottom = -2.5F, 	.m_top = 2.5F,
-	.m_near = 15.0F,	.m_far = -15.0F
+	.left = -4.0F, 	.right = 4.0F,
+	.bottom = -2.5F, 	.top = 2.5F,
+	.near = 15.0F,	.far = -15.0F
 };
 
 
@@ -56,8 +56,8 @@ void upload_room_model(room_t room) {
 	// The model array data can be allocated on the stack instead of the heap because it will be fully uploaded to a GPU buffer before this function returns.
 	model_t room_model = { 0 };
 
-	room_model.m_num_vertices = 20;
-	room_model.m_vertices = (float[20]){
+	room_model.num_vertices = 20;
+	room_model.vertices = (float[20]){
 		// Positions		Texture	
 		left, top, depth,	0.0F, 0.0F,	// Top-left
 		right, top, depth,	1.0F, 0.0F,	// Top-right
@@ -65,8 +65,8 @@ void upload_room_model(room_t room) {
 		left, bottom, depth,	0.0F, 1.0F	// Bottom-left
 	};
 
-	room_model.m_num_indices = 6;
-	room_model.m_indices = (index_t[6]){
+	room_model.num_indices = 6;
+	room_model.indices = (index_t[6]){
 		0, 1, 2,	// Triangle 1
 		2, 3, 0		// Triangle 2
 	};
@@ -76,9 +76,9 @@ void upload_room_model(room_t room) {
 	current_room_model_slot = next_room_model_slot;
 
 	projection_bounds_t room_projection_bounds = { 
-		.m_left = left, 	.m_right = right,
-		.m_bottom = -bottom, 	.m_top = -top,
-		.m_near = 15.0F,	.m_far = -15.0F
+		.left = left, 	.right = right,
+		.bottom = -bottom, 	.top = -top,
+		.near = 15.0F,	.far = -15.0F
 	};
 
 	update_projection_bounds(room_projection_bounds);

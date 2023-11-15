@@ -8,11 +8,11 @@
 
 typedef struct buffer_t {
 	
-	VkBuffer m_handle;
-	VkDeviceMemory m_memory;
-	VkDeviceSize m_size;
+	VkBuffer handle;
+	VkDeviceMemory memory;
+	VkDeviceSize size;
 
-	VkDevice m_device;
+	VkDevice device;
 
 } buffer_t;
 

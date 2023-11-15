@@ -162,8 +162,8 @@ vulkan_instance_t create_vulkan_instance(void) {
 		create_info.enabledLayerCount = num_validation_layers;
 		create_info.ppEnabledLayerNames = validation_layers;
 
-		vulkan_instance.m_layer_names.m_num_strings = num_validation_layers;
-		vulkan_instance.m_layer_names.m_strings = validation_layers;
+		vulkan_instance.layer_names.num_strings = num_validation_layers;
+		vulkan_instance.layer_names.strings = validation_layers;
 
 		for (uint32_t i = 0; i < num_validation_layers; ++i) {
 			logf_message(VERBOSE, "Enabling validation layer \"%s\".", validation_layers[i]);
@@ -174,11 +174,11 @@ vulkan_instance_t create_vulkan_instance(void) {
 		create_info.enabledLayerCount = 0;
 		create_info.ppEnabledLayerNames = NULL;
 
-		vulkan_instance.m_layer_names.m_num_strings = 0;
-		vulkan_instance.m_layer_names.m_strings = NULL;
+		vulkan_instance.layer_names.num_strings = 0;
+		vulkan_instance.layer_names.strings = NULL;
 	}
 
-	VkResult result = vkCreateInstance(&create_info, NULL, &vulkan_instance.m_handle);
+	VkResult result = vkCreateInstance(&create_info, NULL, &vulkan_instance.handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
 		exit(1);
@@ -193,7 +193,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 }
 
 void destroy_vulkan_instance(vulkan_instance_t vulkan_instance) {
-	vkDestroyInstance(vulkan_instance.m_handle, NULL);
+	vkDestroyInstance(vulkan_instance.handle, NULL);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(

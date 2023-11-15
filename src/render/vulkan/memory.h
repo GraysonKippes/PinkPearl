@@ -17,15 +17,15 @@ typedef struct memory_type_set_t {
 
 	// This memory type is to be used for resources read by the GPU each frame for drawing.
 	// Ideally, this will be device-local but not host-visible.
-	uint32_t m_graphics_resources;
+	uint32_t graphics_resources;
 
 	// This memory type is to be used for buffers used for staging data to the GPU.
 	// Ideally, this will be host-visible, but neither host-cached nor device-local.
-	uint32_t m_resource_staging;
+	uint32_t resource_staging;
 
 	// This memory type is to be used for small, reusable uniform/storage buffers that are updated frequently.
 	// Ideally, this will be both device-local and host-visible.
-	uint32_t m_uniform_data;
+	uint32_t uniform_data;
 
 } memory_type_set_t;
 

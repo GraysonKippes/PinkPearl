@@ -13,21 +13,21 @@
 
 typedef struct image_t {
 
-	VkImage m_handle;
-	VkFormat m_format;
-	VkImageView m_view;
-	VkImageLayout m_layout;
+	VkImage handle;
+	VkFormat format;
+	VkImageView view;
+	VkImageLayout layout;
 
-	VkDeviceMemory m_memory;
+	VkDeviceMemory memory;
 
 	// The device with which this image was created.
-	VkDevice m_device;
+	VkDevice device;
 
 } image_t;
 
 typedef struct image_dimensions_t {
-	uint32_t m_width;
-	uint32_t m_height;
+	uint32_t width;
+	uint32_t height;
 } image_dimensions_t;
 
 typedef enum image_layout_transition_t {

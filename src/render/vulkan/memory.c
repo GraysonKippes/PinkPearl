@@ -30,27 +30,27 @@ memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 		// This memory type is to be used for the primary graphics resources (i.e. vertex buffer, index buffer).
 		if ((property_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) 
 				&& !(property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-			memory_type_set.m_graphics_resources = i;
+			memory_type_set.graphics_resources = i;
 		}
 
 		// Resource staging memory type:
 		// This memory type is to be used for buffers that stage data to the GPU.
 		if (!(property_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) 
 				&& (property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-			memory_type_set.m_resource_staging = i;
+			memory_type_set.resource_staging = i;
 		}
 
 		// Uniform buffer memory type:
 		// This memory type is to be used for small reused uniform buffers that updated very often (i.e. on a per-frame basis).
 		if ((property_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) 
 				&& (property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-			memory_type_set.m_uniform_data = i;
+			memory_type_set.uniform_data = i;
 		}
 	}
 
-	logf_message(VERBOSE, "Memory type graphics: %u", memory_type_set.m_graphics_resources);
-	logf_message(VERBOSE, "Memory type staging: %u", memory_type_set.m_resource_staging);
-	logf_message(VERBOSE, "Memory type uniform: %u", memory_type_set.m_uniform_data);
+	logf_message(VERBOSE, "Memory type graphics: %u", memory_type_set.graphics_resources);
+	logf_message(VERBOSE, "Memory type staging: %u", memory_type_set.resource_staging);
+	logf_message(VERBOSE, "Memory type uniform: %u", memory_type_set.uniform_data);
 
 	return memory_type_set;
 }
@@ -67,5 +67,5 @@ void allocate_device_memory(VkDevice device, VkDeviceSize size, uint32_t memory_
 }
 
 void bind_buffer_to_memory(buffer_t buffer, VkDeviceMemory memory, VkDeviceSize offset) {
-	vkBindBufferMemory(buffer.m_device, buffer.m_handle, memory, offset);
+	vkBindBufferMemory(buffer.device, buffer.handle, memory, offset);
 }

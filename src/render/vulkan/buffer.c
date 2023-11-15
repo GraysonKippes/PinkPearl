@@ -19,14 +19,14 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 
 	buffer_t buffer = { 0 };
 
-	buffer.m_size = size;
-	buffer.m_device = device;
+	buffer.size = size;
+	buffer.device = device;
 
 	VkBufferCreateInfo buffer_create_info = { 0 };
 	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	buffer_create_info.pNext = NULL;
 	buffer_create_info.flags = 0;
-	buffer_create_info.size = buffer.m_size;
+	buffer_create_info.size = buffer.size;
 	buffer_create_info.usage = buffer_usage;
 
 	if (is_queue_family_set_null(queue_family_set)) {
@@ -36,19 +36,19 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 	}
 	else {
 		buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		buffer_create_info.queueFamilyIndexCount = queue_family_set.m_num_queue_families;
-		buffer_create_info.pQueueFamilyIndices = queue_family_set.m_queue_families;
+		buffer_create_info.queueFamilyIndexCount = queue_family_set.num_queue_families;
+		buffer_create_info.pQueueFamilyIndices = queue_family_set.queue_families;
 	}
 	
 	// TODO - error handling
-	VkResult result = vkCreateBuffer(buffer.m_device, &buffer_create_info, NULL, &buffer.m_handle);
+	VkResult result = vkCreateBuffer(buffer.device, &buffer_create_info, NULL, &buffer.handle);
 	if (result != VK_SUCCESS) {
 		logf_message(ERROR, "Buffer creation failed. (Error code: %i)", result);
 		return buffer;
 	}
 
 	VkMemoryRequirements memory_requirements;
-	vkGetBufferMemoryRequirements(buffer.m_device, buffer.m_handle, &memory_requirements);
+	vkGetBufferMemoryRequirements(buffer.device, buffer.handle, &memory_requirements);
 
 	VkMemoryAllocateInfo allocate_info = { 0 };
 	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -59,9 +59,9 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 	}
 
 	// TODO - error handling
-	vkAllocateMemory(buffer.m_device, &allocate_info, NULL, &buffer.m_memory);
+	vkAllocateMemory(buffer.device, &allocate_info, NULL, &buffer.memory);
 
-	vkBindBufferMemory(buffer.m_device, buffer.m_handle, buffer.m_memory, 0);
+	vkBindBufferMemory(buffer.device, buffer.handle, buffer.memory, 0);
 
 	return buffer;
 }
@@ -72,35 +72,35 @@ void destroy_buffer(buffer_t *buffer_ptr) {
 		return;
 	}
 
-	vkDestroyBuffer(buffer_ptr->m_device, buffer_ptr->m_handle, NULL);
-	vkFreeMemory(buffer_ptr->m_device, buffer_ptr->m_memory, NULL);
+	vkDestroyBuffer(buffer_ptr->device, buffer_ptr->handle, NULL);
+	vkFreeMemory(buffer_ptr->device, buffer_ptr->memory, NULL);
 
-	buffer_ptr->m_handle = VK_NULL_HANDLE;
-	buffer_ptr->m_memory = VK_NULL_HANDLE;
-	buffer_ptr->m_size = 0;
-	buffer_ptr->m_device = VK_NULL_HANDLE;
+	buffer_ptr->handle = VK_NULL_HANDLE;
+	buffer_ptr->memory = VK_NULL_HANDLE;
+	buffer_ptr->size = 0;
+	buffer_ptr->device = VK_NULL_HANDLE;
 }
 
 VkMemoryRequirements get_buffer_memory_requirements(buffer_t buffer) {
 
 	VkMemoryRequirements memory_requirements = { 0 };
-	vkGetBufferMemoryRequirements(buffer.m_device, buffer.m_handle, &memory_requirements);
+	vkGetBufferMemoryRequirements(buffer.device, buffer.handle, &memory_requirements);
 
 	return memory_requirements;
 }
 
 void map_data_to_buffer(VkDevice device, buffer_t buffer, VkDeviceSize offset, VkDeviceSize size, void *data) {
 	void *mapped_data;
-	vkMapMemory(device, buffer.m_memory, offset, size, 0, &mapped_data);
+	vkMapMemory(device, buffer.memory, offset, size, 0, &mapped_data);
 	memcpy(mapped_data, data, size);
-	vkUnmapMemory(device, buffer.m_memory);
+	vkUnmapMemory(device, buffer.memory);
 }
 
 void map_data_to_whole_buffer(VkDevice device, buffer_t buffer, void *data) {
 	void *mapped_data;
-	vkMapMemory(device, buffer.m_memory, 0, buffer.m_size, 0, &mapped_data);
-	memcpy(mapped_data, data, buffer.m_size);
-	vkUnmapMemory(device, buffer.m_memory);
+	vkMapMemory(device, buffer.memory, 0, buffer.size, 0, &mapped_data);
+	memcpy(mapped_data, data, buffer.size);
+	vkUnmapMemory(device, buffer.memory);
 }
 
 void transfer_data_to_buffer(VkDevice device, VkQueue queue, VkCommandPool command_pool, buffer_t source, buffer_t destination) {

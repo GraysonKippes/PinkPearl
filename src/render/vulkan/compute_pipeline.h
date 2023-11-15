@@ -11,11 +11,11 @@
 
 typedef struct compute_pipeline_t {
 
-	VkPipeline m_handle;
-	VkPipelineLayout m_layout;
+	VkPipeline handle;
+	VkPipelineLayout layout;
 
-	VkDescriptorSetLayout m_descriptor_set_layout;
-	VkDescriptorPool m_descriptor_pool;
+	VkDescriptorSetLayout descriptor_set_layout;
+	VkDescriptorPool descriptor_pool;
 
 	// TODO - look into including a descriptor pool in this struct.
 

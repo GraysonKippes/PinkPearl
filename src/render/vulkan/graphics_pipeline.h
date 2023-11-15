@@ -8,9 +8,9 @@
 
 typedef struct graphics_pipeline_t {
 
-	VkPipeline m_handle;
-	VkPipelineLayout m_layout;
-	VkRenderPass m_render_pass;
+	VkPipeline handle;
+	VkPipelineLayout layout;
+	VkRenderPass render_pass;
 
 } graphics_pipeline_t;
 

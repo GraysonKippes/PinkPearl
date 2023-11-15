@@ -10,25 +10,25 @@ void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descripto
 
 	VkDescriptorSetLayoutBinding *descriptor_bindings = NULL;
 
-	if (descriptor_layout.m_num_bindings > 0) {
-		descriptor_bindings = calloc(descriptor_layout.m_num_bindings, sizeof(VkDescriptorSetLayoutBinding));
+	if (descriptor_layout.num_bindings > 0) {
+		descriptor_bindings = calloc(descriptor_layout.num_bindings, sizeof(VkDescriptorSetLayoutBinding));
 		if (descriptor_bindings == NULL) {
 			return;
 		}
 	}
 
-	for (uint32_t i = 0; i < descriptor_layout.m_num_bindings; ++i) {
+	for (uint32_t i = 0; i < descriptor_layout.num_bindings; ++i) {
 		descriptor_bindings[i].binding = i;
-		descriptor_bindings[i].descriptorType = descriptor_layout.m_bindings[i].m_type;
-		descriptor_bindings[i].descriptorCount = descriptor_layout.m_bindings[i].m_count;
-		descriptor_bindings[i].stageFlags = descriptor_layout.m_bindings[i].m_stages;
+		descriptor_bindings[i].descriptorType = descriptor_layout.bindings[i].type;
+		descriptor_bindings[i].descriptorCount = descriptor_layout.bindings[i].count;
+		descriptor_bindings[i].stageFlags = descriptor_layout.bindings[i].stages;
 	}
 
 	VkDescriptorSetLayoutCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
-	create_info.bindingCount = descriptor_layout.m_num_bindings;
+	create_info.bindingCount = descriptor_layout.num_bindings;
 	create_info.pBindings = descriptor_bindings;
 
 	VkResult result = vkCreateDescriptorSetLayout(device, &create_info, NULL, descriptor_set_layout_ptr);
@@ -42,15 +42,15 @@ void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descripto
 
 void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr) {
 
-	VkDescriptorPoolSize *pool_sizes = calloc(descriptor_layout.m_num_bindings, sizeof(VkDescriptorPoolSize));
+	VkDescriptorPoolSize *pool_sizes = calloc(descriptor_layout.num_bindings, sizeof(VkDescriptorPoolSize));
 	if (pool_sizes == NULL) {
 		log_message(ERROR, "Allocation of descriptor pool sizes array failed.");
 		return;
 	}
 	
-	for (uint32_t i = 0; i < descriptor_layout.m_num_bindings; ++i) {
-		pool_sizes[i].type = descriptor_layout.m_bindings[i].m_type;
-		pool_sizes[i].descriptorCount = descriptor_layout.m_bindings[i].m_count;
+	for (uint32_t i = 0; i < descriptor_layout.num_bindings; ++i) {
+		pool_sizes[i].type = descriptor_layout.bindings[i].type;
+		pool_sizes[i].descriptorCount = descriptor_layout.bindings[i].count;
 	}
 
 	VkDescriptorPoolCreateInfo create_info = { 0 };
@@ -58,7 +58,7 @@ void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layou
 	create_info.pNext = NULL;
 	create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	create_info.maxSets = max_sets;
-	create_info.poolSizeCount = descriptor_layout.m_num_bindings;
+	create_info.poolSizeCount = descriptor_layout.num_bindings;
 	create_info.pPoolSizes = pool_sizes;
 
 	VkResult result = vkCreateDescriptorPool(device, &create_info, NULL, descriptor_pool_ptr);
@@ -70,9 +70,9 @@ void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layou
 }
 
 void destroy_descriptor_pool(VkDevice device, descriptor_pool_t descriptor_pool) {
-	vkResetDescriptorPool(device, descriptor_pool.m_handle, 0);
-	vkDestroyDescriptorSetLayout(device, descriptor_pool.m_layout, NULL);
-	vkDestroyDescriptorPool(device, descriptor_pool.m_handle, NULL);
+	vkResetDescriptorPool(device, descriptor_pool.handle, 0);
+	vkDestroyDescriptorSetLayout(device, descriptor_pool.layout, NULL);
+	vkDestroyDescriptorPool(device, descriptor_pool.handle, NULL);
 }
 
 void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets) {
@@ -83,12 +83,12 @@ void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool
 	}
 
 	for (uint32_t i = 0; i < num_descriptor_sets; ++i)
-		layouts[i] = descriptor_pool.m_layout;
+		layouts[i] = descriptor_pool.layout;
 
 	VkDescriptorSetAllocateInfo allocate_info;
 	allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocate_info.pNext = NULL;
-	allocate_info.descriptorPool = descriptor_pool.m_handle;
+	allocate_info.descriptorPool = descriptor_pool.handle;
 	allocate_info.descriptorSetCount = num_descriptor_sets;
 	allocate_info.pSetLayouts = layouts;
 

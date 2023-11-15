@@ -13,32 +13,32 @@
 typedef struct frame_t {
 
 	// Buffer to upload drawing commands for this frame to.
-	VkCommandBuffer m_command_buffer;
+	VkCommandBuffer command_buffer;
 
-	VkDescriptorSet m_descriptor_set;
+	VkDescriptorSet descriptor_set;
 
 	/* -- Synchronization -- */
 
 	// Signaled when the image for this frame is available.
-	VkSemaphore m_semaphore_image_available;
+	VkSemaphore semaphore_image_available;
 
 	// Signaled when this frame is done being rendered and can be displayed to the surface.
-	VkSemaphore m_semaphore_render_finished;
+	VkSemaphore semaphore_render_finished;
 
 	// Signaled when this frame is done being presented.
-	VkFence m_fence_frame_ready;
+	VkFence fence_frame_ready;
 
 	// Signaled when the buffers are fully updated after a transfer operation.
 	// Unsignaled when there is a pending transfer operation;
 	// 	this can be either when a request is put in to update the buffer data, OR when the request is being currently fulfilled.
-	VkFence m_fence_buffers_up_to_date;
+	VkFence fence_buffers_up_to_date;
 
 	// Each bit indicates if a slot in the model buffer needs to be updated.
-	uint64_t m_model_update_flags;
+	uint64_t model_update_flags;
 
 	/* -- Buffers -- */
 
-	buffer_t m_matrix_buffer;
+	buffer_t matrix_buffer;
 
 	// This is the model buffer for the entire scene.
 	// It is (currently) divided into three partitions: the room partition and the entity partition.
@@ -53,9 +53,9 @@ typedef struct frame_t {
 	// In the future, an additional partition may be added for larger models.
 	// Render handles are used to index into this partition.
 	//
-	buffer_t m_model_buffer;
+	buffer_t model_buffer;
 
-	buffer_t m_index_buffer;
+	buffer_t index_buffer;
 
 } frame_t;
 

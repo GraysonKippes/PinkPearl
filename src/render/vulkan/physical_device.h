@@ -13,13 +13,13 @@
 
 typedef struct queue_family_indices_t {
 	
-	uint32_t *m_graphics_family_ptr;
+	uint32_t *graphics_family_ptr;
 
-	uint32_t *m_present_family_ptr;
+	uint32_t *present_family_ptr;
 
-	uint32_t *m_transfer_family_ptr;
+	uint32_t *transfer_family_ptr;
 
-	uint32_t *m_compute_family_ptr;
+	uint32_t *compute_family_ptr;
 
 } queue_family_indices_t;
 
@@ -27,13 +27,13 @@ typedef struct queue_family_indices_t {
 
 typedef struct swapchain_support_details_t {
 	
-	VkSurfaceCapabilitiesKHR m_capabilities;
+	VkSurfaceCapabilitiesKHR capabilities;
 
-	size_t m_num_formats;
-	VkSurfaceFormatKHR *m_formats;
+	size_t num_formats;
+	VkSurfaceFormatKHR *formats;
 
-	size_t m_num_present_modes;
-	VkPresentModeKHR *m_present_modes;
+	size_t num_present_modes;
+	VkPresentModeKHR *present_modes;
 
 } swapchain_support_details_t;
 
@@ -41,15 +41,15 @@ typedef struct swapchain_support_details_t {
 
 typedef struct physical_device_t {
 	
-	VkPhysicalDevice m_handle;
-	VkPhysicalDeviceProperties m_properties;
-	VkPhysicalDeviceFeatures m_features;
+	VkPhysicalDevice handle;
+	VkPhysicalDeviceProperties properties;
+	VkPhysicalDeviceFeatures features;
 
-	queue_family_indices_t m_queue_family_indices;
+	queue_family_indices_t queue_family_indices;
 
-	swapchain_support_details_t m_swapchain_support_details;
+	swapchain_support_details_t swapchain_support_details;
 
-	string_array_t m_extension_names;
+	string_array_t extension_names;
 
 } physical_device_t;
 

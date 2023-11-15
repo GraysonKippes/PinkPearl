@@ -9,40 +9,40 @@
 
 
 static descriptor_binding_t compute_matrices_bindings[3] = {
-	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT }
+	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
 };
 
 const descriptor_layout_t compute_matrices_layout = {
-	.m_num_bindings = 3,
-	.m_bindings = compute_matrices_bindings
+	.num_bindings = 3,
+	.bindings = compute_matrices_bindings
 };
 
 
 
 static descriptor_binding_t compute_room_texture_bindings[3] = {
-	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT }
+	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
 };
 
 const descriptor_layout_t compute_room_texture_layout = {
-	.m_num_bindings = 3,
-	.m_bindings = compute_room_texture_bindings
+	.num_bindings = 3,
+	.bindings = compute_room_texture_bindings
 };
 
 
 
 static descriptor_binding_t compute_textures_bindings[3] = {
-	{ .m_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .m_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .m_count = 1, .m_stages = VK_SHADER_STAGE_COMPUTE_BIT }
+	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
 };
 
 const descriptor_layout_t compute_textures_layout = {
-	.m_num_bindings = 3,
-	.m_bindings = compute_textures_bindings
+	.num_bindings = 3,
+	.bindings = compute_textures_bindings
 };
 
 
@@ -69,21 +69,21 @@ compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t 
 
 	compute_pipeline_t compute_pipeline = { 0 };
 
-	create_descriptor_set_layout(device, descriptor_layout, &compute_pipeline.m_descriptor_set_layout);
-	create_pipeline_layout(device, compute_pipeline.m_descriptor_set_layout, &compute_pipeline.m_layout);
-	create_descriptor_pool(device, 1, descriptor_layout, &compute_pipeline.m_descriptor_pool);
+	create_descriptor_set_layout(device, descriptor_layout, &compute_pipeline.descriptor_set_layout);
+	create_pipeline_layout(device, compute_pipeline.descriptor_set_layout, &compute_pipeline.layout);
+	create_descriptor_pool(device, 1, descriptor_layout, &compute_pipeline.descriptor_pool);
 
 	VkComputePipelineCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
-	create_info.layout = compute_pipeline.m_layout;
+	create_info.layout = compute_pipeline.layout;
 	create_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 	create_info.stage.module = compute_shader;
 	create_info.stage.pName = "main";
 
-	VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &compute_pipeline.m_handle);
+	VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &compute_pipeline.handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Compute pipeline creation failed. (Error code: %i)", result);
 	}
@@ -94,8 +94,8 @@ compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t 
 }
 
 void destroy_compute_pipeline(VkDevice device, compute_pipeline_t compute_pipeline) {
-	vkDestroyPipeline(device, compute_pipeline.m_handle, NULL);
-	vkDestroyPipelineLayout(device, compute_pipeline.m_layout, NULL);
-	vkDestroyDescriptorSetLayout(device, compute_pipeline.m_descriptor_set_layout, NULL);
-	vkDestroyDescriptorPool(device, compute_pipeline.m_descriptor_pool, NULL);
+	vkDestroyPipeline(device, compute_pipeline.handle, NULL);
+	vkDestroyPipelineLayout(device, compute_pipeline.layout, NULL);
+	vkDestroyDescriptorSetLayout(device, compute_pipeline.descriptor_set_layout, NULL);
+	vkDestroyDescriptorPool(device, compute_pipeline.descriptor_pool, NULL);
 }

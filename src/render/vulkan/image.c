@@ -31,18 +31,18 @@ image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_di
 	
 	image_t image = { 0 };
 
-	image.m_format = format;
-	image.m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-	image.m_device = device;
+	image.format = format;
+	image.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	image.device = device;
 
 	VkImageCreateInfo image_create_info = { 0 };
 	image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	image_create_info.pNext = NULL;
 	image_create_info.flags = 0;
 	image_create_info.imageType = image_type_default;
-	image_create_info.format = image.m_format;
-	image_create_info.extent.width = dimensions.m_width;
-	image_create_info.extent.height = dimensions.m_height;
+	image_create_info.format = image.format;
+	image_create_info.extent.width = dimensions.width;
+	image_create_info.extent.height = dimensions.height;
 	image_create_info.extent.depth = 1;
 	image_create_info.mipLevels = 1;
 	image_create_info.arrayLayers = 1;
@@ -58,14 +58,14 @@ image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_di
 	}
 	else {
 		image_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		image_create_info.queueFamilyIndexCount = queue_family_set.m_num_queue_families;
-		image_create_info.pQueueFamilyIndices = queue_family_set.m_queue_families;
+		image_create_info.queueFamilyIndexCount = queue_family_set.num_queue_families;
+		image_create_info.pQueueFamilyIndices = queue_family_set.queue_families;
 	}
 	
-	vkCreateImage(device, &image_create_info, NULL, &image.m_handle);
+	vkCreateImage(device, &image_create_info, NULL, &image.handle);
 
 	VkMemoryRequirements memory_requirements;
-	vkGetImageMemoryRequirements(device, image.m_handle, &memory_requirements);
+	vkGetImageMemoryRequirements(device, image.handle, &memory_requirements);
 
 	VkMemoryAllocateInfo allocate_info = { 0 };
 	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -75,13 +75,13 @@ image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_di
 		// TODO - error handling
 	}
 
-	vkAllocateMemory(device, &allocate_info, NULL, &image.m_memory);
+	vkAllocateMemory(device, &allocate_info, NULL, &image.memory);
 
 	VkBindImageMemoryInfo bind_info = { 0 };
 	bind_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
 	bind_info.pNext = NULL;
-	bind_info.image = image.m_handle;
-	bind_info.memory = image.m_memory;
+	bind_info.image = image.handle;
+	bind_info.memory = image.memory;
 	bind_info.memoryOffset = 0;
 
 	vkBindImageMemory2(device, 1, &bind_info);
@@ -90,24 +90,24 @@ image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_di
 	image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	image_view_create_info.pNext = NULL;
 	image_view_create_info.flags = 0;
-	image_view_create_info.image = image.m_handle;
+	image_view_create_info.image = image.handle;
 	image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	image_view_create_info.format = image.m_format;
+	image_view_create_info.format = image.format;
 	image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 	image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 	image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 	image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 	image_view_create_info.subresourceRange = image_subresource_range_default;
 
-	vkCreateImageView(device, &image_view_create_info, NULL, &image.m_view);
+	vkCreateImageView(device, &image_view_create_info, NULL, &image.view);
 
 	return image;
 }
 
 void destroy_image(image_t image) {
-	vkDestroyImage(image.m_device, image.m_handle, NULL);
-	vkDestroyImageView(image.m_device, image.m_view, NULL);
-	vkFreeMemory(image.m_device, image.m_memory, NULL);
+	vkDestroyImage(image.device, image.handle, NULL);
+	vkDestroyImageView(image.device, image.view, NULL);
+	vkFreeMemory(image.device, image.memory, NULL);
 }
 
 void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t *image_ptr, image_layout_transition_t image_layout_transition) {
@@ -117,7 +117,7 @@ void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t 
 	}
 
 	VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-	allocate_command_buffers(image_ptr->m_device, command_pool, 1, &command_buffer);
+	allocate_command_buffers(image_ptr->device, command_pool, 1, &command_buffer);
 	begin_command_buffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	VkImageMemoryBarrier memory_barrier = { 0 };
@@ -129,7 +129,7 @@ void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t 
 	memory_barrier.newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memory_barrier.image = image_ptr->m_handle;
+	memory_barrier.image = image_ptr->handle;
 	memory_barrier.subresourceRange = image_subresource_range_default;
 
 	VkPipelineStageFlags source_stage = 0;
@@ -186,7 +186,7 @@ void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t 
 			break;
 	}
 
-	if (memory_barrier.oldLayout != image_ptr->m_layout) {
+	if (memory_barrier.oldLayout != image_ptr->layout) {
 		return;
 	}
 
@@ -197,9 +197,9 @@ void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t 
 
 	vkEndCommandBuffer(command_buffer);
 	submit_command_buffers_async(queue, 1, &command_buffer);
-	vkFreeCommandBuffers(image_ptr->m_device, command_pool, 1, &command_buffer);
+	vkFreeCommandBuffers(image_ptr->device, command_pool, 1, &command_buffer);
 
-	image_ptr->m_layout = memory_barrier.newLayout;
+	image_ptr->layout = memory_barrier.newLayout;
 }
 
 void create_sampler(physical_device_t physical_device, VkDevice device, VkSampler *sampler_ptr) {
@@ -219,7 +219,7 @@ void create_sampler(physical_device_t physical_device, VkDevice device, VkSample
 	create_info.addressModeW = address_mode;
 	create_info.mipLodBias = 0.0F;
 	create_info.anisotropyEnable = VK_TRUE;
-	create_info.maxAnisotropy = physical_device.m_properties.limits.maxSamplerAnisotropy;
+	create_info.maxAnisotropy = physical_device.properties.limits.maxSamplerAnisotropy;
 	create_info.compareEnable = VK_FALSE;
 	create_info.compareOp = VK_COMPARE_OP_ALWAYS;
 	create_info.minLod = 0.0F;

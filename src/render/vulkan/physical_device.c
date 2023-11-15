@@ -22,16 +22,16 @@ void list_physical_device_memories(VkPhysicalDevice physical_device);
 bool check_physical_device_extension_support(physical_device_t physical_device) {
 
 	uint32_t num_available_extensions = 0;
-	vkEnumerateDeviceExtensionProperties(physical_device.m_handle, NULL, &num_available_extensions, NULL);
+	vkEnumerateDeviceExtensionProperties(physical_device.handle, NULL, &num_available_extensions, NULL);
 	VkExtensionProperties *available_extensions = malloc(num_available_extensions * sizeof(VkExtensionProperties));
-	vkEnumerateDeviceExtensionProperties(physical_device.m_handle, NULL, &num_available_extensions, available_extensions);
+	vkEnumerateDeviceExtensionProperties(physical_device.handle, NULL, &num_available_extensions, available_extensions);
 
-	for (size_t i = 0; i < physical_device.m_extension_names.m_num_strings; ++i) {
+	for (size_t i = 0; i < physical_device.extension_names.num_strings; ++i) {
 		
 		bool extension_found = false;
 
 		for (size_t j = 0; j < num_available_extensions; ++j) {
-			if (strcmp(physical_device.m_extension_names.m_strings[i], available_extensions[j].extensionName) == 0) {
+			if (strcmp(physical_device.extension_names.strings[i], available_extensions[j].extensionName) == 0) {
 				extension_found = true;
 				break;
 			}
@@ -54,8 +54,8 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 		return true;
 	}
 
-	for (size_t i = 0; i < required_layer_names.m_num_strings; ++i) {
-		logf_message(VERBOSE, "Required layer: \"%s\"", required_layer_names.m_strings[i]);
+	for (size_t i = 0; i < required_layer_names.num_strings; ++i) {
+		logf_message(VERBOSE, "Required layer: \"%s\"", required_layer_names.strings[i]);
 	}
 
 	uint32_t num_available_layers = 0;
@@ -63,7 +63,7 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 
 	// If the number of available layers is less than the number of required layers, then logically not all layers can be supported;
 	// 	therefore, return false.
-	if (num_available_layers < required_layer_names.m_num_strings) {
+	if (num_available_layers < required_layer_names.num_strings) {
 		return false;
 	}
 
@@ -74,9 +74,9 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 		logf_message(VERBOSE, "Available layer: \"%s\"", available_layers[i].layerName);
 	}
 
-	for (size_t i = 0; i < required_layer_names.m_num_strings; ++i) {
+	for (size_t i = 0; i < required_layer_names.num_strings; ++i) {
 
-		const char *layer_name = required_layer_names.m_strings[i];
+		const char *layer_name = required_layer_names.strings[i];
 		bool layer_found = false;
 
 		for (size_t j = 0; j < num_available_layers; ++j) {
@@ -105,10 +105,10 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_families);
 
 	queue_family_indices_t queue_family_indices;
-	queue_family_indices.m_graphics_family_ptr = NULL;
-	queue_family_indices.m_present_family_ptr = NULL;
-	queue_family_indices.m_transfer_family_ptr = NULL;
-	queue_family_indices.m_compute_family_ptr = NULL;
+	queue_family_indices.graphics_family_ptr = NULL;
+	queue_family_indices.present_family_ptr = NULL;
+	queue_family_indices.transfer_family_ptr = NULL;
+	queue_family_indices.compute_family_ptr = NULL;
 
 	log_message(VERBOSE, "Querying queue family indices...");
 
@@ -124,24 +124,24 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 
 		logf_message(VERBOSE, "\tQueue family %i: \n\t\tGRAPHICS: %i\n\t\tPRESENT: %i\n\t\tTRANSFER: %i\n\t\tCOMPUTE: %i", i, graphics_support, present_support, transfer_support, compute_support);
 
-		if ((queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.m_graphics_family_ptr == NULL) {
-			queue_family_indices.m_graphics_family_ptr = malloc(sizeof(uint32_t));
-			*queue_family_indices.m_graphics_family_ptr = i;
+		if ((queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.graphics_family_ptr == NULL) {
+			queue_family_indices.graphics_family_ptr = malloc(sizeof(uint32_t));
+			*queue_family_indices.graphics_family_ptr = i;
 		}
 
-		if (present_support && queue_family_indices.m_present_family_ptr == NULL) {
-			queue_family_indices.m_present_family_ptr = malloc(sizeof(uint32_t));
-			*queue_family_indices.m_present_family_ptr = i;
+		if (present_support && queue_family_indices.present_family_ptr == NULL) {
+			queue_family_indices.present_family_ptr = malloc(sizeof(uint32_t));
+			*queue_family_indices.present_family_ptr = i;
 		}
 
-		if ((queue_family.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.m_transfer_family_ptr == NULL) {
-			queue_family_indices.m_transfer_family_ptr = malloc(sizeof(uint32_t));
-			*queue_family_indices.m_transfer_family_ptr = i;
+		if ((queue_family.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.transfer_family_ptr == NULL) {
+			queue_family_indices.transfer_family_ptr = malloc(sizeof(uint32_t));
+			*queue_family_indices.transfer_family_ptr = i;
 		}
 
-		if ((queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) && queue_family_indices.m_compute_family_ptr == NULL) {
-			queue_family_indices.m_compute_family_ptr = malloc(sizeof(uint32_t));
-			*queue_family_indices.m_compute_family_ptr = i;
+		if ((queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) && queue_family_indices.compute_family_ptr == NULL) {
+			queue_family_indices.compute_family_ptr = malloc(sizeof(uint32_t));
+			*queue_family_indices.compute_family_ptr = i;
 		}
 	}
 
@@ -149,10 +149,10 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 }
 
 bool is_queue_family_indices_complete(queue_family_indices_t queue_family_indices) {
-	return queue_family_indices.m_graphics_family_ptr != NULL 
-		&& queue_family_indices.m_present_family_ptr != NULL 
-		&& queue_family_indices.m_transfer_family_ptr != NULL
-		&& queue_family_indices.m_compute_family_ptr != NULL;
+	return queue_family_indices.graphics_family_ptr != NULL 
+		&& queue_family_indices.present_family_ptr != NULL 
+		&& queue_family_indices.transfer_family_ptr != NULL
+		&& queue_family_indices.compute_family_ptr != NULL;
 }
 
 // Allocates on the heap, make sure to free the surface format and present mode arrays eventually.
@@ -160,22 +160,22 @@ swapchain_support_details_t query_swapchain_support_details(VkPhysicalDevice phy
 	
 	swapchain_support_details_t details;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &details.m_capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &details.capabilities);
 
 	uint32_t num_formats = 0;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &num_formats, NULL);
 	if (num_formats != 0) {
-		details.m_num_formats = num_formats;
-		details.m_formats = malloc(num_formats * sizeof(VkSurfaceFormatKHR));
-		vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &num_formats, details.m_formats);
+		details.num_formats = num_formats;
+		details.formats = malloc(num_formats * sizeof(VkSurfaceFormatKHR));
+		vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &num_formats, details.formats);
 	}
 
 	uint32_t num_present_modes = 0;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &num_present_modes, NULL);
 	if (num_present_modes != 0) {
-		details.m_num_present_modes = num_present_modes;
-		details.m_present_modes = malloc(num_present_modes * sizeof(VkPresentModeKHR));
-		vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &num_present_modes, details.m_present_modes);
+		details.num_present_modes = num_present_modes;
+		details.present_modes = malloc(num_present_modes * sizeof(VkPresentModeKHR));
+		vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &num_present_modes, details.present_modes);
 	}
 
 	return details;
@@ -192,13 +192,13 @@ int rate_physical_device(physical_device_t physical_device) {
 	if (!check_physical_device_extension_support(physical_device))
 		return -1;
 
-	if (!physical_device.m_features.geometryShader)
+	if (!physical_device.features.geometryShader)
 		return -2;
 
-	if (!is_queue_family_indices_complete(physical_device.m_queue_family_indices))
+	if (!is_queue_family_indices_complete(physical_device.queue_family_indices))
 		return -3;
 
-	switch(physical_device.m_properties.deviceType) {
+	switch(physical_device.properties.deviceType) {
 		case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:	// Dedicated graphics card 
 			score += 2000; 
 			break;
@@ -213,15 +213,15 @@ int rate_physical_device(physical_device_t physical_device) {
 physical_device_t make_new_physical_device(void) {
 
 	physical_device_t physical_device;
-	physical_device.m_handle = VK_NULL_HANDLE;
-	physical_device.m_queue_family_indices.m_graphics_family_ptr = NULL;
-	physical_device.m_queue_family_indices.m_present_family_ptr = NULL;
-	physical_device.m_queue_family_indices.m_transfer_family_ptr = NULL;
-	physical_device.m_queue_family_indices.m_compute_family_ptr = NULL;
-	physical_device.m_swapchain_support_details.m_formats = NULL;
-	physical_device.m_swapchain_support_details.m_present_modes = NULL;
-	physical_device.m_extension_names.m_num_strings = 0;
-	physical_device.m_extension_names.m_strings = NULL;
+	physical_device.handle = VK_NULL_HANDLE;
+	physical_device.queue_family_indices.graphics_family_ptr = NULL;
+	physical_device.queue_family_indices.present_family_ptr = NULL;
+	physical_device.queue_family_indices.transfer_family_ptr = NULL;
+	physical_device.queue_family_indices.compute_family_ptr = NULL;
+	physical_device.swapchain_support_details.formats = NULL;
+	physical_device.swapchain_support_details.present_modes = NULL;
+	physical_device.extension_names.num_strings = 0;
+	physical_device.extension_names.strings = NULL;
 
 	return physical_device;
 }
@@ -234,7 +234,7 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, NULL);
 	if (num_physical_devices == 0) {
 		physical_device_t physical_device;
-		physical_device.m_handle = VK_NULL_HANDLE;
+		physical_device.handle = VK_NULL_HANDLE;
 		return physical_device;
 	}
 
@@ -247,19 +247,19 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 	for (uint32_t i = 0; i < num_physical_devices; ++i) {
 	
 		physical_device_t physical_device = make_new_physical_device();
-		physical_device.m_handle = physical_devices[i];
-		vkGetPhysicalDeviceProperties(physical_device.m_handle, &physical_device.m_properties);
+		physical_device.handle = physical_devices[i];
+		vkGetPhysicalDeviceProperties(physical_device.handle, &physical_device.properties);
 
-		logf_message(VERBOSE, "Rating physical device: %s", physical_device.m_properties.deviceName);
+		logf_message(VERBOSE, "Rating physical device: %s", physical_device.properties.deviceName);
 
-		list_physical_device_memories(physical_device.m_handle);
+		list_physical_device_memories(physical_device.handle);
 
-		vkGetPhysicalDeviceFeatures(physical_device.m_handle, &physical_device.m_features);
-		physical_device.m_queue_family_indices = query_queue_family_indices(physical_device.m_handle, surface);
-		physical_device.m_swapchain_support_details = query_swapchain_support_details(physical_device.m_handle, surface);
+		vkGetPhysicalDeviceFeatures(physical_device.handle, &physical_device.features);
+		physical_device.queue_family_indices = query_queue_family_indices(physical_device.handle, surface);
+		physical_device.swapchain_support_details = query_swapchain_support_details(physical_device.handle, surface);
 		
-		physical_device.m_extension_names.m_num_strings = num_device_extensions;
-		physical_device.m_extension_names.m_strings = device_extensions;
+		physical_device.extension_names.num_strings = num_device_extensions;
+		physical_device.extension_names.strings = device_extensions;
 
 		int device_score = rate_physical_device(physical_device);
 
@@ -283,7 +283,7 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 	physical_device_properties.pNext = &physical_device_maintenance;
 	physical_device_properties.properties = (VkPhysicalDeviceProperties){ 0 };
 
-	vkGetPhysicalDeviceProperties2(selected_physical_device.m_handle, &physical_device_properties);
+	vkGetPhysicalDeviceProperties2(selected_physical_device.handle, &physical_device_properties);
 
 	logf_message(WARNING, "Max buffer size = %lu", physical_device_maintenance.maxBufferSize);
 
@@ -292,12 +292,12 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 }
 
 void destroy_physical_device(physical_device_t physical_device) {
-	free(physical_device.m_queue_family_indices.m_graphics_family_ptr);
-	free(physical_device.m_queue_family_indices.m_present_family_ptr);
-	free(physical_device.m_queue_family_indices.m_transfer_family_ptr);
-	free(physical_device.m_queue_family_indices.m_compute_family_ptr);
-	free(physical_device.m_swapchain_support_details.m_formats);
-	free(physical_device.m_swapchain_support_details.m_present_modes);
+	free(physical_device.queue_family_indices.graphics_family_ptr);
+	free(physical_device.queue_family_indices.present_family_ptr);
+	free(physical_device.queue_family_indices.transfer_family_ptr);
+	free(physical_device.queue_family_indices.compute_family_ptr);
+	free(physical_device.swapchain_support_details.formats);
+	free(physical_device.swapchain_support_details.present_modes);
 }
 
 bool find_physical_device_memory_type(VkPhysicalDevice physical_device, uint32_t filter, VkMemoryPropertyFlags properties, uint32_t *type_ptr) {

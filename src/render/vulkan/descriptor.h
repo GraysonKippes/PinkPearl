@@ -13,9 +13,9 @@
 // Condensed form of struct VkDescriptorSetLayoutBinding.
 typedef struct descriptor_binding_t {
 
-	VkDescriptorType m_type;
-	uint32_t m_count;
-	VkShaderStageFlags m_stages;
+	VkDescriptorType type;
+	uint32_t count;
+	VkShaderStageFlags stages;
 
 } descriptor_binding_t;
 
@@ -26,15 +26,15 @@ typedef struct descriptor_binding_t {
 typedef struct descriptor_layout_t {
 	
 	// This can be used both for descriptor bindings and for sizes for descriptor pools.
-	uint32_t m_num_bindings;
-	descriptor_binding_t *m_bindings;
+	uint32_t num_bindings;
+	descriptor_binding_t *bindings;
 
 } descriptor_layout_t;
 
 typedef struct descriptor_pool_t {
 
-	VkDescriptorPool m_handle;
-	VkDescriptorSetLayout m_layout;
+	VkDescriptorPool handle;
+	VkDescriptorSetLayout layout;
 
 } descriptor_pool_t;
 

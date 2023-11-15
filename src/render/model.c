@@ -59,22 +59,22 @@ model_t create_model(uint32_t num_vertices, const float *vertices, uint32_t num_
 
 	model_t model;
 
-	model.m_num_vertices = num_vertices;
-	model.m_vertices = malloc(num_vertices * sizeof(float));
-	if (model.m_vertices != NULL)
-		memcpy(model.m_vertices, vertices, num_vertices * sizeof(float));
+	model.num_vertices = num_vertices;
+	model.vertices = malloc(num_vertices * sizeof(float));
+	if (model.vertices != NULL)
+		memcpy(model.vertices, vertices, num_vertices * sizeof(float));
 
-	model.m_num_indices = num_indices;
-	model.m_indices = malloc(num_indices * sizeof(index_t));
-	if (model.m_indices != NULL)
-		memcpy(model.m_indices, indices, num_indices * sizeof(index_t));
+	model.num_indices = num_indices;
+	model.indices = malloc(num_indices * sizeof(index_t));
+	if (model.indices != NULL)
+		memcpy(model.indices, indices, num_indices * sizeof(index_t));
 
 	return model;
 }
 
 void free_model(model_t model) {
-	free(model.m_vertices);
-	free(model.m_indices);
+	free(model.vertices);
+	free(model.indices);
 }
 
 void make_premade_models(void) {

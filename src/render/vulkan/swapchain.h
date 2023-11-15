@@ -10,15 +10,15 @@
 
 typedef struct swapchain_t {
 	
-	VkSwapchainKHR m_handle;
+	VkSwapchainKHR handle;
 
-	VkFormat m_image_format;
-	VkExtent2D m_extent;
+	VkFormat image_format;
+	VkExtent2D extent;
 
-	uint32_t m_num_images;
-	VkImage *m_images;
-	VkImageView *m_image_views;
-	VkFramebuffer *m_framebuffers;
+	uint32_t num_images;
+	VkImage *images;
+	VkImageView *image_views;
+	VkFramebuffer *framebuffers;
 
 } swapchain_t;
 
