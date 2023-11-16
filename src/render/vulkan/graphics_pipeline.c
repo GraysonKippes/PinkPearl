@@ -9,13 +9,14 @@
 
 /* -- DESCRIPTOR LAYOUT -- */
 
-static descriptor_binding_t graphics_descriptor_bindings[2] = {
+static descriptor_binding_t graphics_descriptor_bindings[3] = {
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },
 	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }
 };
 
 const descriptor_layout_t graphics_descriptor_layout = {
-	.num_bindings = 2,
+	.num_bindings = 3,
 	.bindings = graphics_descriptor_bindings 
 };
 

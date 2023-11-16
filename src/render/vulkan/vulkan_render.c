@@ -23,6 +23,7 @@ static buffer_t image_staging_buffer;	// Staging - CPU-to-GPU data flow
 static image_t tilemap_texture;		// Storage - GPU only
 static image_t room_texture_storage;	// Storage - GPU only
 static image_t room_texture;		// Graphics - GPU only
+static image_t room_texture_pbr;	// Graphics - GPU only
 
 
 
@@ -54,7 +55,7 @@ void create_vulkan_render_images(void) {
 	log_message(VERBOSE, "Creating Vulkan render images...");
 
 	// Apparently the staging buffer can't be created if the image data is loaded first...
-	image_data_t image_data = load_image_data("../resources/assets/textures/tilemap/dungeon2.png");
+	image_data_t image_data = load_image_data("../resources/assets/textures/tilemap/dungeon2.png", 0);
 	
 	map_data_to_whole_buffer(device, image_staging_buffer, image_data.data);
 
@@ -107,12 +108,73 @@ void create_vulkan_render_images(void) {
 	transition_image_layout(graphics_queue, render_command_pool, &tilemap_texture, IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_GENERAL);
 }
 
+// TEST
+void create_pbr_texture(void) {
+
+	VkDeviceSize staging_buffer_size = 256 * 160 * 4;
+
+	buffer_t image_staging_buffer_2 = create_buffer(physical_device.handle, device, staging_buffer_size, 
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			queue_family_set_null);
+
+	image_data_t image_data = load_image_data("../resources/assets/textures/pbr_test.png", 0);
+
+	map_data_to_whole_buffer(device, image_staging_buffer_2, image_data.data);
+
+	image_dimensions_t room_texture_dimensions = { (uint32_t)image_data.width, (uint32_t)image_data.height };
+
+	queue_family_set_t queue_family_set_0 = {
+		.num_queue_families = 2,
+		.queue_families = (uint32_t[2]){
+			*physical_device.queue_family_indices.graphics_family_ptr,
+			*physical_device.queue_family_indices.transfer_family_ptr,
+		}
+	};
+
+	room_texture_pbr = create_image(physical_device.handle, device, 
+			room_texture_dimensions, 
+			VK_FORMAT_R8G8B8A8_SRGB, 
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+			queue_family_set_0);
+
+	transition_image_layout(graphics_queue, render_command_pool, &room_texture_pbr, IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_TRANSFER_DST);
+
+	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
+	allocate_command_buffers(device, transfer_command_pool, 1, &transfer_command_buffer);
+	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	VkBufferImageCopy2 copy_region = make_buffer_image_copy((VkOffset2D){ 0 }, (VkExtent2D){ 256, 160 });
+
+	VkCopyBufferToImageInfo2 copy_info = { 0 };
+	copy_info.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2;
+	copy_info.pNext = NULL;
+	copy_info.srcBuffer = image_staging_buffer_2.handle;
+	copy_info.dstImage = room_texture_pbr.handle;
+	copy_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	copy_info.regionCount = 1;
+	copy_info.pRegions = &copy_region;
+
+	vkCmdCopyBufferToImage2(transfer_command_buffer, &copy_info);
+
+	vkEndCommandBuffer(transfer_command_buffer);
+	submit_command_buffers_async(transfer_queue, 1, &transfer_command_buffer);
+	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
+
+	destroy_buffer(&image_staging_buffer_2);
+	free_image_data(image_data);
+
+	transition_image_layout(graphics_queue, render_command_pool, &room_texture_pbr, IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_SHADER_READ_ONLY);
+}
+
 void create_vulkan_render_objects(void) {
 
 	log_message(VERBOSE, "Creating Vulkan render objects...");
 
 	create_vulkan_render_buffers();
 	create_vulkan_render_images();
+	create_pbr_texture();
 }
 
 void destroy_vulkan_render_objects(void) {
@@ -522,14 +584,21 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 	room_texture_info.imageView = room_texture.view;
 	room_texture_info.imageLayout = room_texture.layout;
 
+	VkDescriptorImageInfo room_texture_pbr_info = { 0 };
+	room_texture_pbr_info.sampler = sampler_default;
+	room_texture_pbr_info.imageView = room_texture_pbr.view;
+	room_texture_pbr_info.imageLayout = room_texture_pbr.layout;
+
+	VkDescriptorImageInfo texture_infos[2] = { room_texture_info, room_texture_pbr_info };
+
 	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[1].dstSet = FRAME.descriptor_set;
 	descriptor_writes[1].dstBinding = 1;
 	descriptor_writes[1].dstArrayElement = 0;
 	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptor_writes[1].descriptorCount = 1;
+	descriptor_writes[1].descriptorCount = 2;
 	descriptor_writes[1].pBufferInfo = NULL;
-	descriptor_writes[1].pImageInfo = &room_texture_info;
+	descriptor_writes[1].pImageInfo = texture_infos;
 	descriptor_writes[1].pTexelBufferView = NULL;
 	
 	vkUpdateDescriptorSets(device, 2, descriptor_writes, 0, NULL);

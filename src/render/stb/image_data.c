@@ -5,10 +5,10 @@
 
 #include "log/logging.h"
 
-image_data_t load_image_data(const char *path) {
+image_data_t load_image_data(const char *path, int num_channels) {
 	
 	image_data_t image_data = { 0 };
-	image_data.data = stbi_load(path, (int *)&image_data.width, (int *)&image_data.height, (int *)&image_data.num_channels, 0);
+	image_data.data = stbi_load(path, (int *)&image_data.width, (int *)&image_data.height, (int *)&image_data.num_channels, num_channels);
 
 	if (image_data.data == NULL) {
 		logf_message(ERROR, "Image failed to load. (Path: \"%s\")", path);
