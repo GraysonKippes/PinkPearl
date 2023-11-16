@@ -14,8 +14,11 @@ layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec2 in_tex_coord;
 
 layout(location = 0) out vec2 frag_tex_coord;
+layout(location = 1) out vec3 frag_position;
 
 void main() {
 	gl_Position = matrix_buffer.m_matrices[draw_data.m_model_slot] * vec4(in_position, 1.0);
 	frag_tex_coord = in_tex_coord;
+	// TODO - multiply this with model matrix only
+	frag_position = gl_Position.xyz;
 }
