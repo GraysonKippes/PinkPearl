@@ -38,8 +38,6 @@ typedef struct frame_t {
 
 	/* -- Buffers -- */
 
-	buffer_t matrix_buffer;
-
 	// This is the model buffer for the entire scene.
 	// It is (currently) divided into three partitions: the room partition and the entity partition.
 	//

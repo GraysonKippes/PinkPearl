@@ -57,6 +57,11 @@ extern VkCommandPool compute_command_pool;
 
 /* -- Global buffers -- */
 
+// Used for staging data to GPU-only buffers (storage, vertex, index) and images.
+extern VkBuffer global_staging_buffer;
+extern VkDeviceMemory global_staging_memory;
+extern void *global_staging_mapped_memory;
+
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
 extern VkBuffer global_uniform_buffer;
 extern const VkDeviceSize global_uniform_buffer_size;

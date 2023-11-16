@@ -40,11 +40,6 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 
 	allocate_descriptor_sets(device, descriptor_pool, 1, &frame.descriptor_set);
 
-	frame.matrix_buffer = create_buffer(physical_device.handle, device, max_num_models * matrix4F_size, 
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		queue_family_set_null);
-
 	queue_family_set_t queue_family_set = {
 		.num_queue_families = 2,
 		.queue_families = (uint32_t[2]){
@@ -77,7 +72,6 @@ void destroy_frame(VkDevice device, VkCommandPool command_pool, descriptor_pool_
 
 	vkFreeDescriptorSets(device, descriptor_pool.handle, 1, &frame.descriptor_set);
 
-	destroy_buffer(&frame.matrix_buffer);
 	destroy_buffer(&frame.model_buffer);
 	destroy_buffer(&frame.index_buffer);
 }

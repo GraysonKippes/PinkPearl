@@ -16,18 +16,17 @@ static VkClearValue clear_color;
 // TODO - collate storage buffers as much as possible, and move to vulkan_manager.
 
 // Used for staging model data into the model buffers.
-static buffer_t model_staging_buffer;	// Staging
-static buffer_t index_staging_buffer;	// Staging
+static buffer_t model_staging_buffer;	// Staging - CPU-to-GPU data flow
+static buffer_t index_staging_buffer;	// Staging - CPU-to-GPU data flow
 
 // Buffers for compute_matrices shader.
-static buffer_t render_positions_buffer;	// Currently storage, will be turned to uniform
-static buffer_t matrix_buffer;			// Storage
+static buffer_t matrix_buffer;		// Storage - GPU only
 
 // Objects for room texture compute shader.
-static buffer_t image_staging_buffer;		// Staging - CPU-to-GPU data flow
-static image_t tilemap_texture;			// Storage - GPU only
-static image_t room_texture_storage;		// Storage - GPU only
-static image_t room_texture;			// Graphics - GPU only
+static buffer_t image_staging_buffer;	// Staging - CPU-to-GPU data flow
+static image_t tilemap_texture;		// Storage - GPU only
+static image_t room_texture_storage;	// Storage - GPU only
+static image_t room_texture;		// Graphics - GPU only
 
 
 
@@ -56,13 +55,6 @@ void create_vulkan_render_buffers(void) {
 
 	index_staging_buffer = create_buffer(physical_device.handle, device, index_buffer_size,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			queue_family_set_null);
-
-	VkDeviceSize render_positions_buffer_size = 64 * sizeof(render_position_t);
-
-	render_positions_buffer = create_buffer(physical_device.handle, device, render_positions_buffer_size, 
-			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
 
@@ -144,7 +136,6 @@ void destroy_vulkan_render_objects(void) {
 
 	vkDeviceWaitIdle(device);
 
-	destroy_buffer(&render_positions_buffer);
 	destroy_buffer(&matrix_buffer);
 	destroy_buffer(&index_staging_buffer);
 	destroy_buffer(&model_staging_buffer);
