@@ -3,11 +3,11 @@
 #define MAX_NUM_MODELS 64
 
 layout(push_constant) uniform draw_data_t {
-	uint m_model_slot;	// in the range [0, MAX_NUM_MODELS - 1].
+	uint model_slot;	// in the range [0, MAX_NUM_MODELS - 1].
 } draw_data;
 
 layout(binding = 0) readonly buffer matrix_buffer_t {
-	mat4 m_matrices[MAX_NUM_MODELS];
+	mat4 matrices[MAX_NUM_MODELS];
 } matrix_buffer;
 
 layout(location = 0) in vec3 in_position;
@@ -17,8 +17,9 @@ layout(location = 0) out vec2 frag_tex_coord;
 layout(location = 1) out vec3 frag_position;
 
 void main() {
-	gl_Position = matrix_buffer.m_matrices[draw_data.m_model_slot] * vec4(in_position, 1.0);
+
+	gl_Position = matrix_buffer.matrices[1] * matrix_buffer.matrices[0] * matrix_buffer.matrices[draw_data.model_slot + 2] * vec4(in_position, 1.0);
+
 	frag_tex_coord = in_tex_coord;
-	// TODO - multiply this with model matrix only
-	frag_position = gl_Position.xyz;
+	frag_position = vec3(matrix_buffer.matrices[draw_data.model_slot + 2] * vec4(in_position, 1.0));
 }

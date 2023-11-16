@@ -39,7 +39,9 @@ void create_vulkan_render_buffers(void) {
 
 	static const VkDeviceSize max_num_models = 64;
 
-	VkDeviceSize matrix_buffer_size = 64 * 16 * sizeof(float);
+	static const VkDeviceSize matrix4F_size = 16 * sizeof(float);
+
+	VkDeviceSize matrix_buffer_size = (max_num_models + 2) * matrix4F_size;
 
 	matrix_buffer = create_buffer(physical_device.handle, device, matrix_buffer_size, 
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,

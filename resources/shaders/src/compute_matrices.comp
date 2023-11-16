@@ -42,7 +42,7 @@ layout(binding = 0, std140) uniform uniform_data_t {
 } uniform_data;
 
 layout(binding = 1) writeonly buffer output_buffer {
-	mat4 matrices[MAX_SIZE_X];
+	mat4 matrices[MAX_SIZE_X + 2];
 } output_data;
 
 // Makes and returns a "translerp" (portmanteau of "translate" and "lerp") matrix.
@@ -91,8 +91,11 @@ void main() {
 
 	mat4 projection_matrix = make_orthographic_projection_matrix(uniform_data.projection_left, uniform_data.projection_right, uniform_data.projection_bottom, uniform_data.projection_top, uniform_data.projection_near, uniform_data.projection_far);
 
+	output_data.matrices[0] = camera_matrix;
+	output_data.matrices[1] = projection_matrix;
+
 	if (global_ID < uniform_data.num_inputs) {
 		mat4 model_matrix = make_translerp_matrix(uniform_data.model_positions[global_ID], uniform_data.delta_time);
-		output_data.matrices[global_ID] = projection_matrix * camera_matrix * model_matrix;
+		output_data.matrices[global_ID + 2] = model_matrix;
 	}
 }
