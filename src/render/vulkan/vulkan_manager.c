@@ -94,7 +94,7 @@ size_t current_frame = 0;
 // Used for staging data to GPU-only buffers (storage, vertex, index).
 VkBuffer global_staging_buffer = VK_NULL_HANDLE;
 VkDeviceMemory global_staging_memory = VK_NULL_HANDLE;
-void *global_staging_mapped_memory = NULL;
+byte_t *global_staging_mapped_memory = NULL;
 const VkDeviceSize global_staging_buffer_size = 16384;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
@@ -158,7 +158,7 @@ static void create_global_staging_buffer(void) {
 
 	vkBindBufferMemory(device, global_staging_buffer, global_staging_memory, 0);
 
-	vkMapMemory(device, global_staging_memory, 0, VK_WHOLE_SIZE, 0, &global_staging_mapped_memory);
+	vkMapMemory(device, global_staging_memory, 0, VK_WHOLE_SIZE, 0, (void **)&global_staging_mapped_memory);
 }
 
 static void create_global_uniform_buffer(void) {

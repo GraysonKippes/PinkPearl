@@ -8,6 +8,7 @@
 #include "render/model.h"
 #include "render/projection.h"
 #include "render/render_object.h"
+#include "util/byte.h"
 
 #include "compute_pipeline.h"
 #include "frame.h"
@@ -60,7 +61,7 @@ extern VkCommandPool compute_command_pool;
 // Used for staging data to GPU-only buffers (storage, vertex, index) and images.
 extern VkBuffer global_staging_buffer;
 extern VkDeviceMemory global_staging_memory;
-extern void *global_staging_mapped_memory;
+extern byte_t *global_staging_mapped_memory;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
 extern VkBuffer global_uniform_buffer;

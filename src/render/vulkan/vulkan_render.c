@@ -15,10 +15,6 @@ static VkClearValue clear_color;
 
 // TODO - collate storage buffers as much as possible, and move to vulkan_manager.
 
-// Used for staging model data into the model buffers.
-static buffer_t model_staging_buffer;	// Staging - CPU-to-GPU data flow
-static buffer_t index_staging_buffer;	// Staging - CPU-to-GPU data flow
-
 // Buffers for compute_matrices shader.
 static buffer_t matrix_buffer;		// Storage - GPU only
 
@@ -42,21 +38,6 @@ void create_vulkan_render_buffers(void) {
 			queue_family_set_null);
 
 	static const VkDeviceSize max_num_models = 64;
-
-	// General vertex buffer size
-	const VkDeviceSize model_buffer_size = max_num_models * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-
-	model_staging_buffer = create_buffer(physical_device.handle, device, model_buffer_size,
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			queue_family_set_null);
-
-	const VkDeviceSize index_buffer_size = max_num_models * 6 * sizeof(index_t);
-
-	index_staging_buffer = create_buffer(physical_device.handle, device, index_buffer_size,
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			queue_family_set_null);
 
 	VkDeviceSize matrix_buffer_size = 64 * 16 * sizeof(float);
 
@@ -137,8 +118,6 @@ void destroy_vulkan_render_objects(void) {
 	vkDeviceWaitIdle(device);
 
 	destroy_buffer(&matrix_buffer);
-	destroy_buffer(&index_staging_buffer);
-	destroy_buffer(&model_staging_buffer);
 	
 	destroy_image(tilemap_texture);
 	destroy_image(room_texture_storage);
@@ -146,6 +125,8 @@ void destroy_vulkan_render_objects(void) {
 
 // Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.
 void stage_model_data(render_handle_t handle, model_t model) {
+
+	// Vertex Data
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		vkResetFences(device, 1, &frames[i].fence_buffers_up_to_date);
@@ -155,11 +136,11 @@ void stage_model_data(render_handle_t handle, model_t model) {
 	VkDeviceSize model_size = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	VkDeviceSize model_offset = handle * model_size;
 
-	void *model_staging_data;
-	vkMapMemory(device, model_staging_buffer.memory, model_offset, model_size, 0, &model_staging_data);
-	memcpy(model_staging_data, model.vertices, model_size);
-	vkUnmapMemory(device, model_staging_buffer.memory);
+	memcpy((global_staging_mapped_memory + model_offset), model.vertices, model_size);
 
+	// Index Data
+
+	VkDeviceSize base_offset = model_size * 64;
 	VkDeviceSize indices_size = num_indices_per_rect * sizeof(index_t);
 	VkDeviceSize indices_offset = handle * indices_size;
 
@@ -172,10 +153,65 @@ void stage_model_data(render_handle_t handle, model_t model) {
 		rect_indices[i] += handle * 4;
 	}
 
-	void *index_staging_data;
-	vkMapMemory(device, index_staging_buffer.memory, indices_offset, indices_size, 0, &index_staging_data);
-	memcpy(index_staging_data, rect_indices, indices_size);
-	vkUnmapMemory(device, index_staging_buffer.memory);
+	memcpy((global_staging_mapped_memory + base_offset + indices_offset), rect_indices, indices_size);
+}
+
+void transfer_model_data(void) {
+
+	VkCommandBuffer transfer_command_buffers[2] = { 0 };
+	allocate_command_buffers(device, transfer_command_pool, 2, transfer_command_buffers);
+
+	VkCommandBuffer transfer_command_buffer = transfer_command_buffers[0];
+	VkCommandBuffer index_transfer_command_buffer = transfer_command_buffers[1];
+
+	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	begin_command_buffer(index_transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	VkBufferCopy vertex_copy_regions[64] = { { 0 } };
+	VkBufferCopy index_copy_regions[64] = { { 0 } };
+
+	// The number of models needing to be updated.
+	uint32_t num_pending_models = 0;
+
+	const VkDeviceSize copy_size_vertices = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
+	const VkDeviceSize copy_size_indices = num_indices_per_rect * sizeof(index_t);
+
+	const VkDeviceSize indices_base_offset = 64 * copy_size_vertices;
+
+	for (uint64_t i = 0; i < 64; ++i) {
+		if (FRAME.model_update_flags & (1LL << i)) {
+
+			vertex_copy_regions[num_pending_models].srcOffset = i * copy_size_vertices;
+			vertex_copy_regions[num_pending_models].dstOffset = i * copy_size_vertices;
+			vertex_copy_regions[num_pending_models].size = copy_size_vertices;
+
+			index_copy_regions[num_pending_models].srcOffset = indices_base_offset + i * copy_size_indices;
+			index_copy_regions[num_pending_models].dstOffset = i * copy_size_indices;
+			index_copy_regions[num_pending_models].size = copy_size_indices;
+
+			++num_pending_models;
+		}
+	}
+
+	FRAME.model_update_flags = 0;
+
+	vkCmdCopyBuffer(transfer_command_buffer, global_staging_buffer, FRAME.model_buffer.handle, num_pending_models, vertex_copy_regions);
+	vkCmdCopyBuffer(index_transfer_command_buffer, global_staging_buffer, FRAME.index_buffer.handle, num_pending_models, index_copy_regions);
+
+	vkEndCommandBuffer(index_transfer_command_buffer);
+	vkEndCommandBuffer(transfer_command_buffer);
+
+	VkSubmitInfo submit_info = { 0 };
+	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submit_info.pNext = NULL;
+	submit_info.commandBufferCount = 2;
+	submit_info.pCommandBuffers = transfer_command_buffers;
+
+	vkQueueSubmit(transfer_queue, 1, &submit_info, FRAME.fence_buffers_up_to_date);
+
+	vkQueueWaitIdle(transfer_queue);
+
+	vkFreeCommandBuffers(device, transfer_command_pool, 2, transfer_command_buffers);
 }
 
 // Dispatches a work load to the compute_matrices shader, computing a transformation matrix for each render object.
@@ -436,59 +472,7 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 
 	// If the buffers of this frame are not up-to-date, update them.
 	if (vkGetFenceStatus(device, FRAME.fence_buffers_up_to_date) == VK_NOT_READY) {
-	
-		VkCommandBuffer transfer_command_buffers[2] = { 0 };
-		allocate_command_buffers(device, transfer_command_pool, 2, transfer_command_buffers);
-
-		VkCommandBuffer transfer_command_buffer = transfer_command_buffers[0];
-		VkCommandBuffer index_transfer_command_buffer = transfer_command_buffers[1];
-
-		begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		begin_command_buffer(index_transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-		VkBufferCopy copy_regions[64] = { { 0 } };
-		VkBufferCopy index_copy_regions[64] = { { 0 } };
-
-		// The number of models needing to be updated.
-		uint32_t num_pending_models = 0;
-
-		const VkDeviceSize copy_size_vertices = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-		const VkDeviceSize copy_size_indices = num_indices_per_rect * sizeof(index_t);
-
-		for (uint64_t i = 0; i < 64; ++i) {
-			if (FRAME.model_update_flags & (1LL << i)) {
-
-				copy_regions[num_pending_models].srcOffset = i * copy_size_vertices;
-				copy_regions[num_pending_models].dstOffset = i * copy_size_vertices;
-				copy_regions[num_pending_models].size = copy_size_vertices;
-
-				index_copy_regions[num_pending_models].srcOffset = i * copy_size_indices;
-				index_copy_regions[num_pending_models].dstOffset = i * copy_size_indices;
-				index_copy_regions[num_pending_models].size = copy_size_indices;
-
-				++num_pending_models;
-			}
-		}
-
-		FRAME.model_update_flags = 0;
-
-		vkCmdCopyBuffer(transfer_command_buffer, model_staging_buffer.handle, FRAME.model_buffer.handle, num_pending_models, copy_regions);
-		vkCmdCopyBuffer(index_transfer_command_buffer, index_staging_buffer.handle, FRAME.index_buffer.handle, num_pending_models, index_copy_regions);
-
-		vkEndCommandBuffer(index_transfer_command_buffer);
-		vkEndCommandBuffer(transfer_command_buffer);
-
-		VkSubmitInfo submit_info = { 0 };
-		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submit_info.pNext = NULL;
-		submit_info.commandBufferCount = 2;
-		submit_info.pCommandBuffers = transfer_command_buffers;
-
-		vkQueueSubmit(transfer_queue, 1, &submit_info, FRAME.fence_buffers_up_to_date);
-
-		vkQueueWaitIdle(transfer_queue);
-
-		vkFreeCommandBuffers(device, transfer_command_pool, 2, transfer_command_buffers);
+		transfer_model_data();
 	}
 
 
