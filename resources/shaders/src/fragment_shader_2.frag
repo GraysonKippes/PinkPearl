@@ -6,6 +6,10 @@ layout(push_constant) uniform draw_data_t {
 	uint m_model_slot;	// in the range [0, MAX_NUM_MODELS - 1].
 } draw_data;
 
+// Base texture
+// Rotation map - used in diffuse
+// PBR map ()
+
 layout(binding = 1) uniform sampler2D texture_sampler;
 layout(binding = 2) uniform sampler2D pbr_sampler;
 
@@ -24,12 +28,22 @@ void main() {
 
 	vec4 pbr = texture(pbr_sampler, frag_tex_coord);
 
-	vec4 ambient_lighting_color = vec4(0.5, 0.75, 1.0, 1.0);
-	float ambient_lighting_intensity = 1.0;
+	vec3 global_light_color = vec3(0.5, 0.75, 1.0);
 
 	// Ambient light
-	vec3 point_light_position = vec3(0.0, -3.5, 0.0);
-	vec4 point_light_color = vec4(0.0, 0.5, 1.0, 1.0);
+	float ambient_lighting_intensity = 0.825;
+	vec3 ambient_lighting = global_light_color * ambient_lighting_intensity;
+
+	// Diffuse light
+	float diffuse_lighting_intensity = 0.25;
+	vec3 surface_direction = normalize(vec3(0.0, pbr.g, 1.0 - pbr.g));
+	vec3 diffuse_direction = normalize(vec3(0.0, 1.0, 1.0));
+	float diffuse = max(dot(surface_direction, diffuse_direction), 0.0);
+	vec3 diffuse_lighting = global_light_color * diffuse_lighting_intensity * diffuse;
+
+	// Point light
+	vec3 point_light_position = vec3(0.0, -0.5, 1.5);
+	vec4 point_light_color = vec4(1.0, 0.5, 0.0, 1.0);
 	float point_light_intensity = 1.0;
 
 	// Texel position
@@ -38,16 +52,28 @@ void main() {
 	texel_position.y = floor(frag_position.y * 16.0) / 16.0;
 
 	// Height map
-	float height = pbr.z * 32.0;
-	point_light_position.z -= height;
+	float height_factor = 4.0;
+	if (pbr.z > texel_position.z) {
+		vec2 next_tex_coord = frag_tex_coord;
+		vec4 next = pbr;
+		while (next.z > texel_position.z) {
+			next_tex_coord.y -= 0.0625;
+			next = texture(pbr_sampler, next_tex_coord);
+		}
+		texel_position.y = next_tex_coord.y;
+	}
+	texel_position.z += pbr.z * height_factor;
 
-	// Point light
+	// Apply lighting
 	out_color = texture(texture_sampler, frag_tex_coord);
-	out_color *= ambient_lighting_color * ambient_lighting_intensity;
-	out_color *= point_light_color * point_light_intensity * calculate_attenuation(point_light_position, texel_position, 0.44, 0.35);
+
+	out_color.xyz *= (ambient_lighting + diffuse_lighting);
+
+	out_color *= point_light_color * point_light_intensity 
+			* calculate_attenuation(point_light_position, texel_position, 0.07, 0.14);
 	
 	// Light level granularity
-	const float light_level = 128.0;
+	const float light_level = 32.0;
 	out_color.x = round(out_color.x * light_level) / light_level;
 	out_color.y = round(out_color.y * light_level) / light_level;
 	out_color.z = round(out_color.z * light_level) / light_level;

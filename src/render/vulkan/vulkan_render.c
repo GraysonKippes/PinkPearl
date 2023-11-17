@@ -118,7 +118,7 @@ void create_pbr_texture(void) {
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
 
-	image_data_t image_data = load_image_data("../resources/assets/textures/pbr_test.png", 0);
+	image_data_t image_data = load_image_data("../resources/assets/textures/pbr_test_2.png", 0);
 
 	map_data_to_whole_buffer(device, image_staging_buffer_2, image_data.data);
 
