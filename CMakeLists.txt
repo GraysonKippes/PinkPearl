@@ -41,6 +41,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/entity/ecs_manager.c
 	src/glfw/glfw_manager.c
 	src/log/logging.c
+	src/render/animation.c
 	src/render/model.c
 	src/render/render_object.c
 	src/render/renderer.c
@@ -59,6 +60,8 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/queue.c
 	src/render/vulkan/shader.c
 	src/render/vulkan/swapchain.c
+	src/render/vulkan/texture.c
+	src/render/vulkan/texture_manager.c
 	src/render/vulkan/vertex_input.c
 	src/render/vulkan/vulkan_instance.c
 	src/render/vulkan/vulkan_manager.c

@@ -8,7 +8,7 @@
 
 #define WIN32_FORMATTING
 
-static const log_level_t severity_threshold = INFO;
+static const log_level_t severity_threshold = VERBOSE;
 
 static const char *log_format(log_level_t level);
 

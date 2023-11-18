@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "model.h"
+#include "vulkan/texture_manager.h"
 #include "vulkan/vulkan_manager.h"
 #include "vulkan/vulkan_render.h"
 
@@ -34,9 +35,11 @@ static uint32_t current_room_model_slot = num_room_model_slots - 1;
 void init_renderer(void) {
 	create_vulkan_objects();
 	create_vulkan_render_objects();
+	load_textures();
 }
 
 void terminate_renderer(void) {
+	destroy_textures();
 	destroy_vulkan_render_objects();
 	destroy_vulkan_objects();
 }

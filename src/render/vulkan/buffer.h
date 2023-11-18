@@ -20,6 +20,18 @@ typedef struct buffer_t {
 
 } buffer_t;
 
+typedef struct staging_buffer_t {
+
+	VkBuffer handle;
+	VkDeviceMemory memory;
+	VkDeviceSize size;
+
+	void *mapped_memory;
+
+	VkDevice device;
+
+} staging_buffer_t;
+
 typedef struct memory_range_t {
 	VkDeviceSize offset;
 	VkDeviceSize size;
