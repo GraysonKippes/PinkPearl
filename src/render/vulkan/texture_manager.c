@@ -90,6 +90,8 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		return;
 	}
 
+	const uint32_t texture_index = num_textures_loaded++;
+
 	// Load image data into image staging buffer.
 	image_data_t base_image_data = load_image_data(path, 0);
 	const VkDeviceSize base_image_width = base_image_data.width;
@@ -106,21 +108,21 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	static const VkFormat image_format_default = VK_FORMAT_R8G8B8A8_SRGB;
 
 	// Initial state.
-	textures[num_textures_loaded].num_images = animation_set.num_animations;
-	textures[num_textures_loaded].images = calloc(animation_set.num_animations, sizeof(VkImage));
-	textures[num_textures_loaded].image_views = calloc(animation_set.num_animations, sizeof(VkImageView));
-	textures[num_textures_loaded].animation_cycles = calloc(animation_set.num_animations, sizeof(texture_animation_cycle_t));
-	textures[num_textures_loaded].format = image_format_default;
-	textures[num_textures_loaded].layout = VK_IMAGE_LAYOUT_UNDEFINED;
-	textures[num_textures_loaded].memory = VK_NULL_HANDLE;
-	textures[num_textures_loaded].device = device;
+	textures[texture_index].num_images = animation_set.num_animations;
+	textures[texture_index].images = calloc(animation_set.num_animations, sizeof(VkImage));
+	textures[texture_index].image_views = calloc(animation_set.num_animations, sizeof(VkImageView));
+	textures[texture_index].animation_cycles = calloc(animation_set.num_animations, sizeof(texture_animation_cycle_t));
+	textures[texture_index].format = image_format_default;
+	textures[texture_index].layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	textures[texture_index].memory = VK_NULL_HANDLE;
+	textures[texture_index].device = device;
 
 	// Memory requirments of each image.
 	VkMemoryRequirements2 *image_memory_requirements = calloc(animation_set.num_animations, sizeof(VkMemoryRequirements2));
 	VkDeviceSize total_required_memory_size = 0;
 
 	// Create images and animation cycles.
-	for (uint32_t i = 0; i < animation_set.num_animations; ++i) {
+	for (uint32_t i = 0; i < textures[texture_index].num_images; ++i) {
 
 		// Create image.
 		VkImageCreateInfo image_create_info = { 0 };
@@ -128,7 +130,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		image_create_info.pNext = NULL;
 		image_create_info.flags = 0;
 		image_create_info.imageType = image_type_default;
-		image_create_info.format = textures[num_textures_loaded].format;
+		image_create_info.format = textures[texture_index].format;
 		image_create_info.extent.width = animation_set.cell_extent.width;
 		image_create_info.extent.height = animation_set.cell_extent.length;
 		image_create_info.extent.depth = 1;
@@ -139,7 +141,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-		VkResult image_create_result = vkCreateImage(textures[num_textures_loaded].device, &image_create_info, NULL, (textures[num_textures_loaded].images + i));
+		VkResult image_create_result = vkCreateImage(textures[texture_index].device, &image_create_info, NULL, (textures[texture_index].images + i));
 		if (image_create_result != VK_SUCCESS) {
 			logf_message(ERROR, "Error loading texture: image creation failed. (Error code: %i)", image_create_result);
 			return;
@@ -149,16 +151,16 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		VkImageMemoryRequirementsInfo2 image_memory_requirements_info = { 0 };
 		image_memory_requirements_info.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
 		image_memory_requirements_info.pNext = NULL;
-		image_memory_requirements_info.image = textures[num_textures_loaded].images[i];
+		image_memory_requirements_info.image = textures[texture_index].images[i];
 
 		image_memory_requirements[i].sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
 		image_memory_requirements[i].pNext = NULL;
 
-		vkGetImageMemoryRequirements2(textures[num_textures_loaded].device, &image_memory_requirements_info, (image_memory_requirements + i));
+		vkGetImageMemoryRequirements2(textures[texture_index].device, &image_memory_requirements_info, (image_memory_requirements + i));
 		total_required_memory_size += image_memory_requirements[i].memoryRequirements.size;
 
 		// Copy texture animation cycle from animation set.
-		textures[num_textures_loaded].animation_cycles[i] = (texture_animation_cycle_t){
+		textures[texture_index].animation_cycles[i] = (texture_animation_cycle_t){
 			.current_frame = 0,
 			.play_rate = 1,
 			.num_frames = animation_set.animations[i].num_frames,
@@ -173,7 +175,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	allocate_info.allocationSize = total_required_memory_size;
 	allocate_info.memoryTypeIndex = memory_type_set.graphics_resources;
 
-	VkResult memory_allocation_result = vkAllocateMemory(device, &allocate_info, NULL, &textures[num_textures_loaded].memory);
+	VkResult memory_allocation_result = vkAllocateMemory(device, &allocate_info, NULL, &textures[texture_index].memory);
 	if (memory_allocation_result != VK_SUCCESS) {
 		logf_message(ERROR, "Error loading texture: failed to allocate memory. (Error code: %i)", memory_allocation_result);
 		// TODO - clean up previous image objects and return here.
@@ -190,14 +192,14 @@ void load_texture(animation_set_t animation_set, const char *path) {
 
 	// Bind each image to memory and create a view for it.
 	VkDeviceSize accumulated_memory_offset = 0;
-	for (uint32_t i = 0; i < animation_set.num_animations; ++i) {
+	for (uint32_t i = 0; i < textures[texture_index].num_images; ++i) {
 
 		// Bind the image to memory.
 		VkBindImageMemoryInfo image_bind_info = { 0 };
 		image_bind_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
 		image_bind_info.pNext = NULL;
-		image_bind_info.image = textures[num_textures_loaded].images[i];
-		image_bind_info.memory = textures[num_textures_loaded].memory;
+		image_bind_info.image = textures[texture_index].images[i];
+		image_bind_info.memory = textures[texture_index].memory;
 		image_bind_info.memoryOffset = accumulated_memory_offset;
 
 		vkBindImageMemory2(device, 1, &image_bind_info);
@@ -209,16 +211,16 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		image_view_create_info.pNext = NULL;
 		image_view_create_info.flags = 0;
-		image_view_create_info.image = textures[num_textures_loaded].images[i];
+		image_view_create_info.image = textures[texture_index].images[i];
 		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-		image_view_create_info.format = textures[num_textures_loaded].format;
+		image_view_create_info.format = textures[texture_index].format;
 		image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 		image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 		image_view_create_info.subresourceRange = image_subresource_range;
 
-		VkResult image_view_create_result = vkCreateImageView(textures[num_textures_loaded].device, &image_view_create_info, NULL, (textures[num_textures_loaded].image_views + i));
+		VkResult image_view_create_result = vkCreateImageView(textures[texture_index].device, &image_view_create_info, NULL, (textures[texture_index].image_views + i));
 		if (image_view_create_result != VK_SUCCESS) {
 			logf_message(ERROR, "Error loading texture: image view creation failed. (Error code: %i)", image_view_create_result);
 			return;
@@ -231,7 +233,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	begin_command_buffer(transition_command_buffer, 0);
 
 	// Transition each image's layout from undefined to transfer destination.
-	for (uint32_t i = 0; i < animation_set.num_animations; ++i) {
+	for (uint32_t i = 0; i < textures[texture_index].num_images; ++i) {
 		
 		VkImageMemoryBarrier image_memory_barrier = { 0 };
 		image_memory_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -242,7 +244,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		image_memory_barrier.image = textures[num_textures_loaded].images[i];
+		image_memory_barrier.image = textures[texture_index].images[i];
 		image_memory_barrier.subresourceRange = image_subresource_range;
 
 		VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -256,7 +258,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 
 	vkEndCommandBuffer(transition_command_buffer);
 	submit_command_buffers_async(graphics_queue, 1, &transition_command_buffer);
-	textures[num_textures_loaded].layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	textures[texture_index].layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	vkResetCommandBuffer(transition_command_buffer, 0);
 
 	// Transfer image data to texture images.
@@ -264,7 +266,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	allocate_command_buffers(device, transfer_command_pool, 1, &transfer_command_buffer);
 	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-	for (uint32_t i = 0; i < animation_set.num_animations; ++i) {
+	for (uint32_t i = 0; i < textures[texture_index].num_images; ++i) {
 		
 		const uint32_t num_copy_regions = animation_set.animations[i].num_frames;
 		VkBufferImageCopy2 *copy_regions = calloc(num_copy_regions, sizeof(VkBufferImageCopy2));
@@ -274,10 +276,17 @@ void load_texture(animation_set_t animation_set, const char *path) {
 			copy_regions[j].sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
 			copy_regions[j].pNext = NULL;
 
-			uint32_t texel_offset_x = j * animation_set.cell_extent.width;
-			uint32_t texel_offset_y = i * animation_set.atlas_extent.width * animation_set.cell_extent.length;
+			uint32_t cell_offset = animation_set.animations[i].start_cell + j;
+			uint32_t cell_offset_x = cell_offset % animation_set.num_cells.width;
+			uint32_t cell_offset_y = cell_offset / animation_set.num_cells.width;
 
-			copy_regions[j].bufferOffset = (VkDeviceSize)(texel_offset_x + texel_offset_y) * 4;
+			uint32_t texel_offset_x = cell_offset_x * animation_set.cell_extent.width;
+			uint32_t texel_offset_y = cell_offset_y * animation_set.cell_extent.length;
+			uint32_t texel_offset = texel_offset_y * animation_set.atlas_extent.width + texel_offset_x;
+
+			static const VkDeviceSize bytes_per_texel = 4;
+
+			copy_regions[j].bufferOffset = (VkDeviceSize)texel_offset * bytes_per_texel;
 			copy_regions[j].bufferRowLength = animation_set.atlas_extent.width;
 			copy_regions[j].bufferImageHeight = animation_set.atlas_extent.length;
 
@@ -299,8 +308,8 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		copy_info.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2;
 		copy_info.pNext = NULL;
 		copy_info.srcBuffer = image_staging_buffer.handle;
-		copy_info.dstImage = textures[num_textures_loaded].images[i];
-		copy_info.dstImageLayout = textures[num_textures_loaded].layout;
+		copy_info.dstImage = textures[texture_index].images[i];
+		copy_info.dstImageLayout = textures[texture_index].layout;
 		copy_info.regionCount = num_copy_regions;
 		copy_info.pRegions = copy_regions;
 
@@ -317,7 +326,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	begin_command_buffer(transition_command_buffer, 0);
 
 	// Transition each image's layout from transfer destination to sampled.
-	for (uint32_t i = 0; i < animation_set.num_animations; ++i) {
+	for (uint32_t i = 0; i < textures[texture_index].num_images; ++i) {
 		
 		VkImageMemoryBarrier image_memory_barrier = { 0 };
 		image_memory_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -328,7 +337,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		image_memory_barrier.image = textures[num_textures_loaded].images[i];
+		image_memory_barrier.image = textures[texture_index].images[i];
 		image_memory_barrier.subresourceRange = image_subresource_range;
 
 		VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -342,10 +351,8 @@ void load_texture(animation_set_t animation_set, const char *path) {
 
 	vkEndCommandBuffer(transition_command_buffer);
 	submit_command_buffers_async(graphics_queue, 1, &transition_command_buffer);
-	textures[num_textures_loaded].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	textures[texture_index].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	vkFreeCommandBuffers(device, render_command_pool, 1, &transition_command_buffer);
-	
-	num_textures_loaded++;
 }
 
 void load_textures(void) {
@@ -356,26 +363,46 @@ void load_textures(void) {
 		.atlas_extent = (extent_t){ 48, 96 },
 		.num_cells = (extent_t){ 3, 4 },
 		.cell_extent = (extent_t){ 16, 24 },
-		.num_animations = 4,
-		.animations = (animation_t[4]){
+		.num_animations = 8,
+		.animations = (animation_t[8]){
 			(animation_t){
 				.start_cell = 0,
-				.num_frames = 3,
+				.num_frames = 1,
+				.frames_per_second = 0
+			},
+			(animation_t){
+				.start_cell = 1,
+				.num_frames = 2,
 				.frames_per_second = 10
 			},
 			(animation_t){
 				.start_cell = 3,
-				.num_frames = 3,
+				.num_frames = 1,
+				.frames_per_second = 0
+			},
+			(animation_t){
+				.start_cell = 4,
+				.num_frames = 2,
 				.frames_per_second = 10
 			},
 			(animation_t){
 				.start_cell = 6,
-				.num_frames = 3,
+				.num_frames = 1,
+				.frames_per_second = 0
+			},
+			(animation_t){
+				.start_cell = 7,
+				.num_frames = 2,
 				.frames_per_second = 10
 			},
 			(animation_t){
 				.start_cell = 9,
-				.num_frames = 3,
+				.num_frames = 1,
+				.frames_per_second = 0
+			},
+			(animation_t){
+				.start_cell = 10,
+				.num_frames = 2,
 				.frames_per_second = 10
 			}
 		}
