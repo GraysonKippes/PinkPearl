@@ -39,6 +39,9 @@ void init_renderer(void) {
 	load_textures();
 
 	upload_model(2, get_premade_model(0), get_loaded_texture(0));
+
+	enable_render_object_slot(0);
+	enable_render_object_slot(2);
 }
 
 void terminate_renderer(void) {

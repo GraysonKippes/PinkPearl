@@ -13,6 +13,10 @@
 
 
 
+// Render object slots.
+static uint64_t render_object_slot_enable_flags = 0;
+static texture_t model_textures[NUM_RENDER_OBJECT_SLOTS];
+
 static VkClearValue clear_color;
 
 // TODO - collate storage buffers as much as possible, and move to vulkan_manager.
@@ -26,9 +30,6 @@ static image_t tilemap_texture;		// Storage - GPU only
 static image_t room_texture_storage;	// Storage - GPU only
 static image_t room_texture;		// Graphics - GPU only
 static image_t room_texture_pbr;	// Graphics - GPU only
-
-// Model textures.
-static texture_t model_textures[NUM_RENDER_OBJECT_SLOTS];
 
 
 
@@ -192,6 +193,28 @@ void destroy_vulkan_render_objects(void) {
 	destroy_image(room_texture_storage);
 }
 
+void enable_render_object_slot(uint32_t slot) {
+	
+	if (slot >= num_render_object_slots) {
+		logf_message(ERROR, "Error enabling render object slot: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
+		return;
+	}
+
+	render_object_slot_enable_flags |= (1LL << (uint64_t)slot);
+
+	logf_message(WARNING, "TEST: flags = 0x%LX", render_object_slot_enable_flags);
+}
+
+void disable_render_object_slot(uint32_t slot) {
+	
+	if (slot >= num_render_object_slots) {
+		logf_message(ERROR, "Error disabling render object slot: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
+		return;
+	}
+
+	render_object_slot_enable_flags &= ~(1LL << (uint64_t)slot);
+}
+
 // Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.
 void stage_model_data(uint32_t slot, model_t model) {
 
@@ -206,11 +229,7 @@ void stage_model_data(uint32_t slot, model_t model) {
 	VkDeviceSize model_size = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	VkDeviceSize model_offset = slot * model_size;
 
-	logf_message(WARNING, "TEST 0: model_offset = %lu, model_size = %lu", model_offset, model_size);
-
 	memcpy((global_staging_mapped_memory + model_offset), model.vertices, model_size);
-
-	log_message(WARNING, "TEST 1");
 
 	// Index Data
 
@@ -228,8 +247,6 @@ void stage_model_data(uint32_t slot, model_t model) {
 	}
 
 	memcpy((global_staging_mapped_memory + indices_offset), rect_indices, indices_size);
-
-	log_message(WARNING, "TEST 2");
 }
 
 void transfer_model_data(void) {
@@ -290,24 +307,24 @@ void transfer_model_data(void) {
 	vkFreeCommandBuffers(device, transfer_command_pool, 2, transfer_command_buffers);
 }
 
-texture_t *get_model_texture_ptr(render_handle_t handle) {
+texture_t *get_model_texture_ptr(uint32_t slot) {
 	
-	if (handle >= num_render_object_slots) {
-		logf_message(ERROR, "Error getting model texture: render handle (%u) exceeds total number of render object slots (%u).", handle, num_render_object_slots);
+	if (slot >= num_render_object_slots) {
+		logf_message(ERROR, "Error getting model texture: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
 		return NULL;
 	}
 
-	return model_textures + handle;
+	return model_textures + slot;
 }
 
-void set_model_texture(render_handle_t handle, texture_t texture) {
+void set_model_texture(uint32_t slot, texture_t texture) {
 
-	if (handle >= num_render_object_slots) {
-		logf_message(ERROR, "Error setting model texture: render handle (%u) exceeds total number of render object slots (%u).", handle, num_render_object_slots);
+	if (slot >= num_render_object_slots) {
+		logf_message(ERROR, "Error setting model texture: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
 		return;
 	}
 
-	model_textures[handle] = texture;
+	model_textures[slot] = texture;
 }
 
 // Dispatches a work load to the compute_matrices shader, computing a transformation matrix for each render object.
@@ -667,10 +684,20 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 
 	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
 
-	const uint32_t model_slot = 0;
-	vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof model_slot), &model_slot);
+	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
 
-	vkCmdDrawIndexed(FRAME.command_buffer, 6, 1, 0, 0, 0);
+		if ((render_object_slot_enable_flags & (1LL << (uint64_t)i)) == 0) {
+			continue;
+		}
+
+		const uint32_t render_object_slot = i;
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
+
+		uint32_t first_index = render_object_slot * num_indices_per_rect;
+
+		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, 0, 0);
+		
+	}
 
 	vkCmdEndRenderPass(FRAME.command_buffer);
 

@@ -17,13 +17,17 @@ void create_vulkan_render_objects(void);
 
 void destroy_vulkan_render_objects(void);
 
+void enable_render_object_slot(uint32_t slot);
+
+void disable_render_object_slot(uint32_t slot);
+
 void set_clear_color(color3F_t color);
 
 void stage_model_data(uint32_t slot, model_t model);
 
-texture_t *get_model_texture_ptr(render_handle_t handle);
+texture_t *get_model_texture_ptr(uint32_t slot);
 
-void set_model_texture(render_handle_t handle, texture_t texture);
+void set_model_texture(uint32_t slot, texture_t texture);
 
 void create_room_texture(room_t room);
 
