@@ -32,6 +32,8 @@ extern render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
 
 void update_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
 
+void reset_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
+
 
 
 #endif	// RENDER_OBJECT_H

@@ -69,6 +69,8 @@ void main() {
 	// Apply lighting
 	out_color = texture(texture_samplers[draw_data.model_slot], texture_coordinates);
 
+	return;
+
 	out_color.xyz *= (ambient_lighting + diffuse_lighting);
 
 	out_color *= point_light_color * point_light_intensity 

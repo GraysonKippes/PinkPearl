@@ -24,10 +24,10 @@ const size_t model_index_one_by_one_point_five = 1;
 
 static const float model0_vertices[20] = {
 	// Positions		Texture
-	-0.5F, -0.5F, 0.0F,	0.0F, 0.0F,
-	0.5F, -0.5F, 0.0F,	1.0F, 0.0F,
-	0.5F, 0.5F, 0.0F,	1.0F, 1.0F,
-	-0.5F, 0.5F, 0.0F,	0.0F, 1.0F
+	-0.5F, -1.0F, 0.0F,	0.0F, 0.0F,	// Top-left
+	0.5F, -1.0F, 0.0F,	1.0F, 0.0F,	// Top-right
+	0.5F, 0.5F, 0.0F,	1.0F, 1.0F,	// Bottom-right
+	-0.5F, 0.5F, 0.0F,	0.0F, 1.0F	// Bottom-left
 };
 
 static const index_t model_indices[6] = {

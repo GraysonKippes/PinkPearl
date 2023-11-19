@@ -73,11 +73,11 @@ void create_vulkan_render_buffers(void) {
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			queue_family_set_null);
 
-	static const VkDeviceSize max_num_models = 64;
+	static const VkDeviceSize num_matrices = NUM_RENDER_OBJECT_SLOTS + 2;
 
 	static const VkDeviceSize matrix4F_size = 16 * sizeof(float);
 
-	VkDeviceSize matrix_buffer_size = (max_num_models + 2) * matrix4F_size;
+	static const VkDeviceSize matrix_buffer_size = num_matrices * matrix4F_size;
 
 	matrix_buffer = create_buffer(physical_device.handle, device, matrix_buffer_size, 
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -356,18 +356,17 @@ void set_model_texture(uint32_t slot, texture_t texture) {
 }
 
 // Dispatches a work load to the compute_matrices shader, computing a transformation matrix for each render object.
-void compute_matrices(uint32_t num_inputs, float delta_time, projection_bounds_t projection_bounds, render_position_t camera_position, render_position_t *positions) {
+void compute_matrices(float delta_time, projection_bounds_t projection_bounds, render_position_t camera_position, render_position_t *positions) {
 
-	static const VkDeviceSize uniform_data_size = 256;
+	static const VkDeviceSize uniform_data_size = 1024;
 
 	byte_t *compute_matrices_data;
 	vkMapMemory(device, global_uniform_memory, 0, uniform_data_size, 0, (void **)&compute_matrices_data);
 
-	memcpy(compute_matrices_data, &num_inputs, sizeof num_inputs);
-	memcpy(compute_matrices_data + 4, &delta_time, sizeof delta_time);
-	memcpy(compute_matrices_data + 8, &projection_bounds, sizeof projection_bounds);
-	memcpy(compute_matrices_data + 44, &camera_position, sizeof camera_position);
-	memcpy(compute_matrices_data + 64, &positions, num_inputs * sizeof(render_position_t));
+	memcpy(compute_matrices_data, &delta_time, sizeof delta_time);
+	memcpy(compute_matrices_data + 4, &projection_bounds, sizeof projection_bounds);
+	memcpy(compute_matrices_data + 32, &camera_position, sizeof camera_position);
+	memcpy(compute_matrices_data + 64, positions, num_render_object_slots * sizeof(render_position_t));
 
 	vkUnmapMemory(device, global_uniform_memory);
 
@@ -427,7 +426,7 @@ void compute_matrices(uint32_t num_inputs, float delta_time, projection_bounds_t
 	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.handle);
 	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.layout, 0, 1, &descriptor_set, 0, NULL);
 
-	vkCmdDispatch(compute_command_buffer, num_inputs, 1, 1);
+	vkCmdDispatch(compute_command_buffer, 1, 1, 1);
 
 	vkEndCommandBuffer(compute_command_buffer);
 	submit_command_buffers_async(compute_queue, 1, &compute_command_buffer);
@@ -774,7 +773,7 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 
 	render_position_t camera_position = { 0 };
 
-	compute_matrices(num_render_object_slots, (float)delta_time, projection_bounds, camera_position, render_object_positions);
+	compute_matrices((float)delta_time, projection_bounds, camera_position, render_object_positions);
 
 
 
@@ -817,7 +816,6 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 			texture_infos[i].sampler = sampler_default;
 			texture_infos[i].imageView = missing_texture.image_views[0];
 			texture_infos[i].imageLayout = missing_texture.layout;
-
 		}
 		else {
 			texture_infos[i].sampler = sampler_default;

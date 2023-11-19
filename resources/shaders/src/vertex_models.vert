@@ -18,8 +18,14 @@ layout(location = 1) out vec3 frag_position;
 
 void main() {
 
-	gl_Position = matrix_buffer.matrices[1] * matrix_buffer.matrices[0] * matrix_buffer.matrices[draw_data.model_slot + 2] * vec4(in_position, 1.0);
+	vec4 homogenous_coordinates = vec4(in_position, 1.0);
+
+	mat4 model_matrix = matrix_buffer.matrices[draw_data.model_slot + 2];
+	mat4 camera_matrix = matrix_buffer.matrices[0];
+	mat4 projection_matrix = matrix_buffer.matrices[1];
+
+	gl_Position = projection_matrix * camera_matrix * model_matrix * homogenous_coordinates;
 
 	frag_tex_coord = in_tex_coord;
-	frag_position = vec3(matrix_buffer.matrices[draw_data.model_slot + 2] * vec4(in_position, 1.0));
+	frag_position = vec3(model_matrix * homogenous_coordinates);
 }

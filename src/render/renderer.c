@@ -4,6 +4,7 @@
 
 #include "render_config.h"
 #include "render_object.h"
+#include "math/vector3F.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/vulkan_manager.h"
 #include "vulkan/vulkan_render.h"
@@ -29,7 +30,7 @@ void init_renderer(void) {
 			set_model_texture(i, get_loaded_texture(0));
 		}
 
-		render_object_positions[i] = (render_position_t){ 0 };
+		reset_render_position((render_object_positions + i), zero_vector3F);
 	}
 
 	upload_model(2, get_premade_model(0), get_loaded_texture(1));
