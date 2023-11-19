@@ -288,10 +288,17 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 
 	log_message(VERBOSE, "Creating graphics pipeline layout...");
 
-	VkPushConstantRange push_constant_range = { 0 };
-	push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-	push_constant_range.offset = 0;
-	push_constant_range.size = sizeof(uint32_t);
+	VkPushConstantRange push_constant_ranges[2] = { { 0 } };
+
+	// Current model slot
+	push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	push_constant_ranges[0].offset = 0;
+	push_constant_ranges[0].size = sizeof(uint32_t);
+
+	// Current animation frame
+	push_constant_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	push_constant_ranges[1].offset = 0;
+	push_constant_ranges[1].size = 2 * sizeof(uint32_t);
 
 	VkPipelineLayoutCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -299,8 +306,8 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 	create_info.flags = 0;
 	create_info.setLayoutCount = 1;
 	create_info.pSetLayouts = &descriptor_set_layout;
-	create_info.pushConstantRangeCount = 1;
-	create_info.pPushConstantRanges = &push_constant_range;
+	create_info.pushConstantRangeCount = 2;
+	create_info.pPushConstantRanges = push_constant_ranges;
 
 	VkResult result = vkCreatePipelineLayout(device, &create_info, NULL, pipeline_layout_ptr);
 	if (result != VK_SUCCESS) {

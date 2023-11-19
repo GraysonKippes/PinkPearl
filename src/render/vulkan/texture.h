@@ -17,12 +17,6 @@
 // 	the corresponding texture in the scene.
 typedef struct texture_animation_cycle_t {
 
-	// The current frame of this animation cycle.
-	uint32_t current_frame;
-
-	// The number of frames this animation will jump on the next frame.
-	uint32_t play_rate;
-
 	// The total number of frames in this animation cycle.
 	uint32_t num_frames;
 
@@ -39,6 +33,9 @@ typedef struct texture_t {
 	VkImage *images;
 	VkImageView *image_views;
 	texture_animation_cycle_t *animation_cycles;
+
+	uint32_t current_animation_cycle;
+	uint32_t current_animation_frame;
 
 	VkFormat format;
 	VkImageLayout layout;

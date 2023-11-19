@@ -116,6 +116,8 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	textures[texture_index].images = calloc(animation_set.num_animations, sizeof(VkImage));
 	textures[texture_index].image_views = calloc(animation_set.num_animations, sizeof(VkImageView));
 	textures[texture_index].animation_cycles = calloc(animation_set.num_animations, sizeof(texture_animation_cycle_t));
+	textures[texture_index].current_animation_cycle = 0;
+	textures[texture_index].current_animation_frame = 0;
 	textures[texture_index].format = image_format_default;
 	textures[texture_index].layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	textures[texture_index].memory = VK_NULL_HANDLE;
@@ -165,8 +167,6 @@ void load_texture(animation_set_t animation_set, const char *path) {
 
 		// Copy texture animation cycle from animation set.
 		textures[texture_index].animation_cycles[i] = (texture_animation_cycle_t){
-			.current_frame = 0,
-			.play_rate = 1,
 			.num_frames = animation_set.animations[i].num_frames,
 			.frames_per_second = animation_set.animations[i].frames_per_second
 		};

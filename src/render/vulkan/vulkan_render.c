@@ -534,10 +534,10 @@ void compute_room_texture(uint32_t room_slot, extent_t room_extent, uint32_t *ti
 	model_textures[room_slot].num_images = 1;
 	model_textures[room_slot].images[0] = VK_NULL_HANDLE;
 	model_textures[room_slot].image_views[0] = VK_NULL_HANDLE;
-	model_textures[room_slot].animation_cycles[0].current_frame = 0;
-	model_textures[room_slot].animation_cycles[0].play_rate = 0;
 	model_textures[room_slot].animation_cycles[0].num_frames = 1;
 	model_textures[room_slot].animation_cycles[0].frames_per_second = 0;
+	model_textures[room_slot].current_animation_cycle = 0;
+	model_textures[room_slot].current_animation_frame = 0;
 	model_textures[room_slot].format = VK_FORMAT_R8G8B8A8_SRGB;
 	model_textures[room_slot].layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	model_textures[room_slot].memory = VK_NULL_HANDLE;
@@ -819,7 +819,7 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 		}
 		else {
 			texture_infos[i].sampler = sampler_default;
-			texture_infos[i].imageView = model_textures[i].image_views[0];
+			texture_infos[i].imageView = model_textures[i].image_views[model_textures[i].current_animation_cycle];
 			texture_infos[i].imageLayout = model_textures[i].layout;
 		}
 	}
@@ -891,6 +891,9 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 
 		const uint32_t render_object_slot = i;
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
+
+		const uint32_t current_animation_frame = model_textures[i].current_animation_frame;
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
 
 		uint32_t first_index = render_object_slot * num_indices_per_rect;
 

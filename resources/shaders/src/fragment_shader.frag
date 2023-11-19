@@ -4,6 +4,7 @@
 
 layout(push_constant) uniform draw_data_t {
 	uint model_slot;	// in the range [0, NUM_MODELS - 1].
+	uint animation_frame;
 } draw_data;
 
 // Base texture
@@ -26,7 +27,7 @@ float calculate_attenuation(vec3 src, vec3 dst, float k_q, float k_l) {
 
 void main() {
 
-	vec3 texture_coordinates = vec3(frag_tex_coord, 0.0);
+	vec3 texture_coordinates = vec3(frag_tex_coord, float(draw_data.animation_frame));
 
 	vec4 pbr = texture(pbr_sampler, texture_coordinates);
 
