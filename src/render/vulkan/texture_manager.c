@@ -15,7 +15,7 @@
 #include "texture.h"
 #include "vulkan_manager.h"
 
-#define NUM_TEXTURES 1
+#define NUM_TEXTURES 2
 
 static const uint32_t num_textures = NUM_TEXTURES;
 
@@ -82,7 +82,9 @@ void destroy_image_staging_buffer(void) {
 }
 
 void load_texture(animation_set_t animation_set, const char *path) {
-	
+
+	// TODO - modify this to use semaphores between image transitions and data transfer operations.
+
 	static uint32_t num_textures_loaded = 0;
 
 	logf_message(VERBOSE, "Loading texture %u...", num_textures_loaded);
@@ -184,7 +186,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	}
 
 	// Subresource range used in all image views and layout transitions.
-	const VkImageSubresourceRange image_subresource_range = {
+	static const VkImageSubresourceRange image_subresource_range = {
 		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 		.baseMipLevel = 0,
 		.levelCount = 1,
@@ -363,7 +365,23 @@ void load_textures(void) {
 	
 	create_image_staging_buffer();
 
-	animation_set_t animation_set = {
+	animation_set_t animation_set_0 = {
+		.atlas_extent = (extent_t){ 16, 16 },
+		.num_cells = (extent_t){ 1, 1 },
+		.cell_extent = (extent_t){ 16, 16 },
+		.num_animations = 1,
+		.animations = (animation_t[1]){
+			(animation_t){
+				.start_cell = 0,
+				.num_frames = 1,
+				.frames_per_second = 0
+			}
+		}
+	};
+
+	load_texture(animation_set_0, "../resources/assets/textures/missing.png");
+
+	animation_set_t animation_set_1 = {
 		.atlas_extent = (extent_t){ 48, 96 },
 		.num_cells = (extent_t){ 3, 4 },
 		.cell_extent = (extent_t){ 16, 24 },
@@ -412,7 +430,7 @@ void load_textures(void) {
 		}
 	};
 
-	load_texture(animation_set, "../resources/assets/textures/entity/pearl.png");
+	load_texture(animation_set_1, "../resources/assets/textures/entity/pearl.png");
 
 	destroy_image_staging_buffer();
 

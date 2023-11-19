@@ -1,13 +1,13 @@
 #version 450
 
-#define MAX_NUM_MODELS 64
+#define NUM_MODELS 64
 
 layout(push_constant) uniform draw_data_t {
-	uint model_slot;	// in the range [0, MAX_NUM_MODELS - 1].
+	uint model_slot;	// in the range [0, NUM_MODELS - 1].
 } draw_data;
 
 layout(binding = 0) readonly buffer matrix_buffer_t {
-	mat4 matrices[MAX_NUM_MODELS];
+	mat4 matrices[NUM_MODELS];
 } matrix_buffer;
 
 layout(location = 0) in vec3 in_position;

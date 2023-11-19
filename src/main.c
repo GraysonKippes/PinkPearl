@@ -31,7 +31,6 @@ int main(void) {
 		render_frame(0.0);
 	}
 
-	free_premade_models();
 	terminate_renderer();
 	terminate_GLFW();
 

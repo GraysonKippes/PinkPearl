@@ -7,4 +7,8 @@
 
 extern const uint32_t num_render_object_slots;
 
+#define NUM_ROOM_RENDER_OBJECT_SLOTS 2
+
+extern const uint32_t num_room_render_object_slots;
+
 #endif	// RENDER_CONFIG_H

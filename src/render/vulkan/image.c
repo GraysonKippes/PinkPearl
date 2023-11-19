@@ -27,7 +27,7 @@ const VkImageSubresourceLayers image_subresource_layers_default = {
 
 
 
-image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_dimensions_t dimensions, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set) {
+image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_dimensions_t dimensions, VkFormat format, bool is_array, VkImageUsageFlags usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set) {
 	
 	image_t image = { 0 };
 
@@ -91,7 +91,12 @@ image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_di
 	image_view_create_info.pNext = NULL;
 	image_view_create_info.flags = 0;
 	image_view_create_info.image = image.handle;
-	image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	if (is_array) {
+		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+	}
+	else {
+		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	}
 	image_view_create_info.format = image.format;
 	image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 	image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;

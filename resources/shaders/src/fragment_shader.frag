@@ -1,17 +1,17 @@
 #version 450
 
-#define MAX_NUM_MODELS 64
+#define NUM_MODELS 64
 
 layout(push_constant) uniform draw_data_t {
-	uint m_model_slot;	// in the range [0, MAX_NUM_MODELS - 1].
+	uint model_slot;	// in the range [0, NUM_MODELS - 1].
 } draw_data;
 
 // Base texture
 // Rotation map - used in diffuse
 // PBR map ()
 
-layout(binding = 1) uniform sampler2D texture_sampler;
-layout(binding = 2) uniform sampler2D pbr_sampler;
+layout(binding = 1) uniform sampler2DArray[NUM_MODELS] texture_samplers;
+layout(binding = 2) uniform sampler2DArray pbr_sampler;
 
 layout(location = 0) in vec2 frag_tex_coord;
 layout(location = 1) in vec3 frag_position;	// Model space
@@ -26,7 +26,9 @@ float calculate_attenuation(vec3 src, vec3 dst, float k_q, float k_l) {
 
 void main() {
 
-	vec4 pbr = texture(pbr_sampler, frag_tex_coord);
+	vec3 texture_coordinates = vec3(frag_tex_coord, 0.0);
+
+	vec4 pbr = texture(pbr_sampler, texture_coordinates);
 
 	vec3 global_light_color = vec3(0.5, 0.75, 1.0);
 
@@ -54,7 +56,7 @@ void main() {
 	// Height map
 	float height_factor = 4.0;
 	if (pbr.z > texel_position.z) {
-		vec2 next_tex_coord = frag_tex_coord;
+		vec3 next_tex_coord = texture_coordinates;
 		vec4 next = pbr;
 		while (next.z > texel_position.z) {
 			next_tex_coord.y -= 0.0625;
@@ -65,7 +67,7 @@ void main() {
 	texel_position.z += pbr.z * height_factor;
 
 	// Apply lighting
-	out_color = texture(texture_sampler, frag_tex_coord);
+	out_color = texture(texture_samplers[draw_data.model_slot], texture_coordinates);
 
 	out_color.xyz *= (ambient_lighting + diffuse_lighting);
 

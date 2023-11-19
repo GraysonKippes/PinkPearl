@@ -29,7 +29,7 @@ texture_t *get_model_texture_ptr(uint32_t slot);
 
 void set_model_texture(uint32_t slot, texture_t texture);
 
-void create_room_texture(room_t room);
+void create_room_texture(room_t room, uint32_t render_object_slot);
 
 void draw_frame(double delta_time, projection_bounds_t projection_bounds);
 

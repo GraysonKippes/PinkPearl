@@ -98,7 +98,7 @@ const VkDeviceSize global_staging_buffer_size = 16384;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
 VkBuffer global_uniform_buffer = VK_NULL_HANDLE;
-const VkDeviceSize global_uniform_buffer_size = 256 + 10240;
+const VkDeviceSize global_uniform_buffer_size = 2560 + 10240;
 VkDeviceMemory global_uniform_memory = VK_NULL_HANDLE;
 
 
@@ -265,7 +265,7 @@ void create_vulkan_objects(void) {
 	create_shader_module(device, "vertex_models.spv", &vertex_shader);
 
 	VkShaderModule fragment_shader;
-	create_shader_module(device, "fragment_shader_2.spv", &fragment_shader);
+	create_shader_module(device, "fragment_shader.spv", &fragment_shader);
 
 	VkDescriptorSetLayout graphics_pipeline_layout = VK_NULL_HANDLE;
 	create_descriptor_set_layout(device, graphics_descriptor_layout, &graphics_pipeline_layout);

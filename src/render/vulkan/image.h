@@ -1,6 +1,7 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <vulkan/vulkan.h>
@@ -41,7 +42,7 @@ typedef enum image_layout_transition_t {
 
 extern const VkImageSubresourceLayers image_subresource_layers_default;
 
-image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_dimensions_t dimensions, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set);
+image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_dimensions_t dimensions, VkFormat format, bool is_array, VkImageUsageFlags usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set);
 
 void destroy_image(image_t image);
 

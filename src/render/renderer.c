@@ -3,32 +3,17 @@
 #include "log/logging.h"
 
 #include "render_config.h"
+#include "render_object.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/vulkan_manager.h"
 #include "vulkan/vulkan_render.h"
 
 
 
-const projection_bounds_t projection_bounds_8x5 = {
-	.left = -4.0F, 	.right = 4.0F,
-	.bottom = -2.5F, 	.top = 2.5F,
-	.near = 15.0F,	.far = -15.0F
-};
-
-const projection_bounds_t projection_bounds_10x16 = {
-	.left = -4.0F, 	.right = 4.0F,
-	.bottom = -2.5F, 	.top = 2.5F,
-	.near = 15.0F,	.far = -15.0F
-};
-
-
-
 static projection_bounds_t current_projection_bounds;
 
-static const uint32_t num_room_model_slots = 2;
-
-// Starts off at num_room_model_slots - 1 so that the next slot--which the room starts at--is 0.
-static uint32_t current_room_model_slot = num_room_model_slots - 1;
+// Starts off at num_room_render_object_slots - 1 so that the next slot--which the room starts at--is 0.
+static uint32_t current_room_render_object_slot = NUM_ROOM_RENDER_OBJECT_SLOTS - 1;
 
 
 
@@ -38,7 +23,16 @@ void init_renderer(void) {
 	load_premade_models();
 	load_textures();
 
-	upload_model(2, get_premade_model(0), get_loaded_texture(0));
+	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+
+		if (i >= num_room_render_object_slots) {
+			set_model_texture(i, get_loaded_texture(0));
+		}
+
+		render_object_positions[i] = (render_position_t){ 0 };
+	}
+
+	upload_model(2, get_premade_model(0), get_loaded_texture(1));
 
 	enable_render_object_slot(0);
 	enable_render_object_slot(2);
@@ -46,6 +40,7 @@ void init_renderer(void) {
 
 void terminate_renderer(void) {
 	destroy_textures();
+	free_premade_models();
 	destroy_vulkan_render_objects();
 	destroy_vulkan_objects();
 }
@@ -61,12 +56,13 @@ void update_projection_bounds(projection_bounds_t new_projection_bounds) {
 void upload_model(uint32_t slot, model_t model, texture_t texture) {
 
 	if (slot >= num_render_object_slots) {
-		logf_message(ERROR, "Error uploading model: model slot (%u) exceeds total number of model slots (%u).", slot, num_render_object_slots);
+		logf_message(ERROR, "Error uploading model: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
 		return;
 	}
 
-	if (slot < num_room_model_slots) {
-		logf_message(WARNING, "Uploading non-room model in a model slot (%u) reserved for room models.", slot);
+	if (slot < num_room_render_object_slots) {
+		logf_message(FATAL, "Error uploading model: attempted uploading non-room model in a render object slot (%u) reserved for room models.", slot);
+		return;
 	}
 
 	stage_model_data(slot, model);
@@ -75,9 +71,9 @@ void upload_model(uint32_t slot, model_t model, texture_t texture) {
 
 void upload_room_model(room_t room) {
 	
-	uint32_t next_room_model_slot = current_room_model_slot + 1;
+	uint32_t next_room_model_slot = current_room_render_object_slot + 1;
 	
-	if (next_room_model_slot >= num_room_model_slots) {
+	if (next_room_model_slot >= num_room_render_object_slots) {
 		next_room_model_slot = 0;
 	}
 
@@ -108,8 +104,6 @@ void upload_room_model(room_t room) {
 
 	stage_model_data((render_handle_t)next_room_model_slot, room_model);
 
-	current_room_model_slot = next_room_model_slot;
-
 	projection_bounds_t room_projection_bounds = { 
 		.left = left, 	.right = right,
 		.bottom = -bottom, 	.top = -top,
@@ -118,5 +112,7 @@ void upload_room_model(room_t room) {
 
 	update_projection_bounds(room_projection_bounds);
 
-	create_room_texture(room);
+	create_room_texture(room, next_room_model_slot);
+
+	current_room_render_object_slot = next_room_model_slot;
 }

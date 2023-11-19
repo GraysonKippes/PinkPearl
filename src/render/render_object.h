@@ -5,6 +5,8 @@
 
 #include "math/vector3F.h"
 
+#include "render_config.h"
+
 
 
 typedef uint32_t render_handle_t;
@@ -26,7 +28,7 @@ typedef struct render_position_t {
 
 } render_position_t;
 
-render_position_t *get_render_position_ptr(render_handle_t handle);
+extern render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
 
 void update_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
 
