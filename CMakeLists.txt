@@ -43,6 +43,7 @@ target_sources(PinkPearl PRIVATE
 	src/log/logging.c
 	src/render/animation.c
 	src/render/model.c
+	src/render/render_config.c
 	src/render/render_object.c
 	src/render/renderer.c
 	src/render/math/vector3F.c

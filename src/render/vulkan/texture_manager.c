@@ -17,6 +17,8 @@
 
 #define NUM_TEXTURES 1
 
+static const uint32_t num_textures = NUM_TEXTURES;
+
 static texture_t textures[NUM_TEXTURES];
 
 #define IMAGE_STAGING_BUFFER_SIZE 65536
@@ -85,7 +87,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 
 	logf_message(VERBOSE, "Loading texture %u...", num_textures_loaded);
 
-	if (num_textures_loaded >= NUM_TEXTURES) {
+	if (num_textures_loaded >= num_textures) {
 		log_message(ERROR, "Error loading texture: attempted loading an additional texture past max number of textures.");
 		return;
 	}
@@ -356,6 +358,8 @@ void load_texture(animation_set_t animation_set, const char *path) {
 }
 
 void load_textures(void) {
+
+	log_message(VERBOSE, "Loading textures...");
 	
 	create_image_staging_buffer();
 
@@ -411,6 +415,8 @@ void load_textures(void) {
 	load_texture(animation_set, "../resources/assets/textures/entity/pearl.png");
 
 	destroy_image_staging_buffer();
+
+	log_message(VERBOSE, "Done loading textures.");
 }
 
 void destroy_texture(texture_t texture) {
@@ -431,4 +437,14 @@ void destroy_textures(void) {
 	for (uint32_t i = 0; i < NUM_TEXTURES; ++i) {
 		destroy_texture(textures[i]);
 	}
+}
+
+texture_t get_loaded_texture(uint32_t texture_index) {
+	
+	if (texture_index >= num_textures) {
+		logf_message(ERROR, "Error getting loaded texture: texture index (%u) exceeds total number of loaded textures (%u).", texture_index, num_textures);
+		return (texture_t){ 0 };
+	}
+
+	return textures[texture_index];
 }

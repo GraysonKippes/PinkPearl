@@ -1,7 +1,6 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include <stddef.h>
 #include <stdint.h>
 
 // Type-definition for the integer type used for index data.
@@ -25,10 +24,10 @@ model_t create_model(uint32_t num_vertices, const float *vertices, uint32_t num_
 
 void free_model(model_t model);
 
-void make_premade_models(void);
+void load_premade_models(void);
 
 void free_premade_models(void);
 
-model_t get_premade_model(size_t index);
+model_t get_premade_model(uint32_t index);
 
 #endif	// MODEL_H

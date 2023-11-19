@@ -8,7 +8,6 @@
 #include "game/game.h"
 #include "glfw/glfw_manager.h"
 #include "log/logging.h"
-#include "render/model.h"
 #include "render/renderer.h"
 
 int main(void) {
@@ -23,7 +22,6 @@ int main(void) {
 
 	init_GLFW();
 	init_renderer();
-	make_premade_models();
 	start_game();
 
 	log_message(INFO, "Ready to play Pink Pearl!");

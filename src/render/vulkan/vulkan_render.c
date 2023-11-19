@@ -4,8 +4,10 @@
 #include <string.h>
 
 #include "log/logging.h"
+#include "render/render_config.h"
 
 #include "command_buffer.h"
+#include "texture.h"
 #include "vertex_input.h"
 #include "vulkan_manager.h"
 
@@ -24,6 +26,9 @@ static image_t tilemap_texture;		// Storage - GPU only
 static image_t room_texture_storage;	// Storage - GPU only
 static image_t room_texture;		// Graphics - GPU only
 static image_t room_texture_pbr;	// Graphics - GPU only
+
+// Model textures.
+static texture_t model_textures[NUM_RENDER_OBJECT_SLOTS];
 
 
 
@@ -188,36 +193,43 @@ void destroy_vulkan_render_objects(void) {
 }
 
 // Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.
-void stage_model_data(render_handle_t handle, model_t model) {
+void stage_model_data(uint32_t slot, model_t model) {
 
 	// Vertex Data
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		vkResetFences(device, 1, &frames[i].fence_buffers_up_to_date);
-		frames[i].model_update_flags |= (1LL << (uint64_t)handle);
+		frames[i].model_update_flags |= (1LL << (uint64_t)slot);
 	}
 
+	// Model size is standard rect model size (4 vertices * 5 sp-floats per vertex * 4 bytes per sp-float = 80 bytes)
 	VkDeviceSize model_size = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	VkDeviceSize model_offset = handle * model_size;
+	VkDeviceSize model_offset = slot * model_size;
+
+	logf_message(WARNING, "TEST 0: model_offset = %lu, model_size = %lu", model_offset, model_size);
 
 	memcpy((global_staging_mapped_memory + model_offset), model.vertices, model_size);
 
+	log_message(WARNING, "TEST 1");
+
 	// Index Data
 
-	VkDeviceSize base_offset = model_size * 64;
+	VkDeviceSize base_offset = model_size * num_render_object_slots;
 	VkDeviceSize indices_size = num_indices_per_rect * sizeof(index_t);
-	VkDeviceSize indices_offset = handle * indices_size;
+	VkDeviceSize indices_offset = base_offset + slot * indices_size;
 
 	index_t rect_indices[6] = {
 		0, 1, 2,
 		2, 3, 0
 	};
 
-	for (size_t i = 0; i < num_indices_per_rect; ++i) {
-		rect_indices[i] += handle * 4;
+	for (uint32_t i = 0; i < num_indices_per_rect; ++i) {
+		rect_indices[i] += slot * num_vertices_per_rect;
 	}
 
-	memcpy((global_staging_mapped_memory + base_offset + indices_offset), rect_indices, indices_size);
+	memcpy((global_staging_mapped_memory + indices_offset), rect_indices, indices_size);
+
+	log_message(WARNING, "TEST 2");
 }
 
 void transfer_model_data(void) {
@@ -276,6 +288,26 @@ void transfer_model_data(void) {
 	vkQueueWaitIdle(transfer_queue);
 
 	vkFreeCommandBuffers(device, transfer_command_pool, 2, transfer_command_buffers);
+}
+
+texture_t *get_model_texture_ptr(render_handle_t handle) {
+	
+	if (handle >= num_render_object_slots) {
+		logf_message(ERROR, "Error getting model texture: render handle (%u) exceeds total number of render object slots (%u).", handle, num_render_object_slots);
+		return NULL;
+	}
+
+	return model_textures + handle;
+}
+
+void set_model_texture(render_handle_t handle, texture_t texture) {
+
+	if (handle >= num_render_object_slots) {
+		logf_message(ERROR, "Error setting model texture: render handle (%u) exceeds total number of render object slots (%u).", handle, num_render_object_slots);
+		return;
+	}
+
+	model_textures[handle] = texture;
 }
 
 // Dispatches a work load to the compute_matrices shader, computing a transformation matrix for each render object.

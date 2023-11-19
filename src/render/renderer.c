@@ -1,8 +1,8 @@
 #include "renderer.h"
 
-#include <stdint.h>
+#include "log/logging.h"
 
-#include "model.h"
+#include "render_config.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/vulkan_manager.h"
 #include "vulkan/vulkan_render.h"
@@ -27,7 +27,7 @@ static projection_bounds_t current_projection_bounds;
 
 static const uint32_t num_room_model_slots = 2;
 
-// Starts off at num_room_model_slots - 1 so that the first room starts at the next slot, which is 0.
+// Starts off at num_room_model_slots - 1 so that the next slot--which the room starts at--is 0.
 static uint32_t current_room_model_slot = num_room_model_slots - 1;
 
 
@@ -35,7 +35,10 @@ static uint32_t current_room_model_slot = num_room_model_slots - 1;
 void init_renderer(void) {
 	create_vulkan_objects();
 	create_vulkan_render_objects();
+	load_premade_models();
 	load_textures();
+
+	upload_model(2, get_premade_model(0), get_loaded_texture(0));
 }
 
 void terminate_renderer(void) {
@@ -50,6 +53,21 @@ void render_frame(double tick_delta) {
 
 void update_projection_bounds(projection_bounds_t new_projection_bounds) {
 	current_projection_bounds = new_projection_bounds;
+}
+
+void upload_model(uint32_t slot, model_t model, texture_t texture) {
+
+	if (slot >= num_render_object_slots) {
+		logf_message(ERROR, "Error uploading model: model slot (%u) exceeds total number of model slots (%u).", slot, num_render_object_slots);
+		return;
+	}
+
+	if (slot < num_room_model_slots) {
+		logf_message(WARNING, "Uploading non-room model in a model slot (%u) reserved for room models.", slot);
+	}
+
+	stage_model_data(slot, model);
+	set_model_texture(slot, texture);
 }
 
 void upload_room_model(room_t room) {
