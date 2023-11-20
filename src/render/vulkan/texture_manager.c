@@ -122,6 +122,18 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 
 	const uint32_t texture_index = num_textures_loaded++;
 
+	// Create semaphores.
+	VkSemaphore semaphore_transition_finished = VK_NULL_HANDLE;
+	VkSemaphore semaphore_transfer_finished = VK_NULL_HANDLE;
+
+	VkSemaphoreCreateInfo semaphore_create_info = { 0 };
+	semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	semaphore_create_info.pNext = NULL;
+	semaphore_create_info.flags = 0;
+
+	vkCreateSemaphore(device, &semaphore_create_info, NULL, &semaphore_transition_finished);
+	vkCreateSemaphore(device, &semaphore_create_info, NULL, &semaphore_transfer_finished);
+
 	// Load image data into image staging buffer.
 	image_data_t base_image_data = load_image_data(path, 0);
 	const VkDeviceSize base_image_width = base_image_data.width;
@@ -320,9 +332,21 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 	}
 
 	vkEndCommandBuffer(transition_command_buffer);
-	submit_command_buffers_async(graphics_queue, 1, &transition_command_buffer);
+
+	VkSubmitInfo transition_0_submit_info = { 0 };
+	transition_0_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	transition_0_submit_info.pNext = NULL;
+	transition_0_submit_info.waitSemaphoreCount = 0;
+	transition_0_submit_info.pWaitSemaphores = NULL;
+	transition_0_submit_info.pWaitDstStageMask = NULL;
+	transition_0_submit_info.commandBufferCount = 1;
+	transition_0_submit_info.pCommandBuffers = &transition_command_buffer;
+	transition_0_submit_info.signalSemaphoreCount = 1;
+	transition_0_submit_info.pSignalSemaphores = &semaphore_transition_finished;
+
+	vkQueueSubmit(graphics_queue, 1, &transition_0_submit_info, NULL);
+
 	textures[texture_index].layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	vkResetCommandBuffer(transition_command_buffer, 0);
 
 	// Transfer image data to texture images.
 	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
@@ -382,11 +406,26 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 	}
 
 	vkEndCommandBuffer(transfer_command_buffer);
-	submit_command_buffers_async(transfer_queue, 1, &transfer_command_buffer);
-	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
+
+	VkPipelineStageFlags transfer_stage_flags[1] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
+
+	VkSubmitInfo transfer_submit_info = { 0 };
+	transfer_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	transfer_submit_info.pNext = NULL;
+	transfer_submit_info.waitSemaphoreCount = 1;
+	transfer_submit_info.pWaitSemaphores = &semaphore_transition_finished;
+	transfer_submit_info.pWaitDstStageMask = transfer_stage_flags;
+	transfer_submit_info.commandBufferCount = 1;
+	transfer_submit_info.pCommandBuffers = &transfer_command_buffer;
+	transfer_submit_info.signalSemaphoreCount = 1;
+	transfer_submit_info.pSignalSemaphores = &semaphore_transfer_finished;
+
+	vkQueueSubmit(transfer_queue, 1, &transfer_submit_info, NULL);
 
 	// Command buffer for second image layout transition (transfer destination to sampled).
-	begin_command_buffer(transition_command_buffer, 0);
+	VkCommandBuffer transition_1_command_buffer = VK_NULL_HANDLE;
+	allocate_command_buffers(device, render_command_pool, 1, &transition_1_command_buffer);
+	begin_command_buffer(transition_1_command_buffer, 0);
 
 	// Transition each image's layout from transfer destination to sampled.
 	for (uint32_t i = 0; i < textures[texture_index].num_images; ++i) {
@@ -413,15 +452,38 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 			destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
 
-		vkCmdPipelineBarrier(transition_command_buffer, source_stage, destination_stage, 0,
+		vkCmdPipelineBarrier(transition_1_command_buffer, source_stage, destination_stage, 0,
 				0, NULL,
 				0, NULL,
 				1, &image_memory_barrier);
 	}
 
-	vkEndCommandBuffer(transition_command_buffer);
-	submit_command_buffers_async(graphics_queue, 1, &transition_command_buffer);
+	vkEndCommandBuffer(transition_1_command_buffer);
+
+	VkPipelineStageFlags transition_1_stage_flags[1] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
+
+	VkSubmitInfo transition_1_submit_info = { 0 };
+	transition_1_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	transition_1_submit_info.pNext = NULL;
+	transition_1_submit_info.waitSemaphoreCount = 1;
+	transition_1_submit_info.pWaitSemaphores = &semaphore_transfer_finished;
+	transition_1_submit_info.pWaitDstStageMask = transition_1_stage_flags;
+	transition_1_submit_info.commandBufferCount = 1;
+	transition_1_submit_info.pCommandBuffers = &transition_1_command_buffer;
+	transition_1_submit_info.signalSemaphoreCount = 0;
+	transition_1_submit_info.pSignalSemaphores = NULL;
+
+	vkQueueSubmit(graphics_queue, 1, &transition_1_submit_info, NULL);
+
+	vkQueueWaitIdle(graphics_queue);
+	vkQueueWaitIdle(transfer_queue);
+
 	vkFreeCommandBuffers(device, render_command_pool, 1, &transition_command_buffer);
+	vkFreeCommandBuffers(device, render_command_pool, 1, &transition_1_command_buffer);
+	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
+
+	vkDestroySemaphore(device, semaphore_transition_finished, NULL);
+	vkDestroySemaphore(device, semaphore_transfer_finished, NULL);
 
 	if (is_tilemap) {
 		textures[texture_index].layout = VK_IMAGE_LAYOUT_GENERAL;
