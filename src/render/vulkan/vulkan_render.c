@@ -28,8 +28,11 @@ static VkClearValue clear_color;
 // Buffers for compute_matrices shader.
 static buffer_t matrix_buffer;		// Storage - GPU only
 
-// Objects for room texture compute shader.
-static image_t room_texture_storage;	// Storage - GPU only
+// This image is used to transfer texel data from the room texture compute output to the textures used in the fragment shader.
+static image_t room_texture_storage_image;	// Storage - GPU only
+static VkSemaphore semaphore_storage_image_transition_finished = VK_NULL_HANDLE;
+
+// TODO - move this into general texture functionality.
 static image_t room_texture_pbr;	// Graphics - GPU only
 
 
@@ -59,6 +62,89 @@ void destroy_room_textures(void) {
 		free(model_textures[i].image_views);
 		free(model_textures[i].animation_cycles);
 	}
+}
+
+// Creates the image that stores the output of the room texture compute 
+// 	and from which is transferred the output to the room texture.
+void create_room_texture_storage_image(void) {
+
+	VkSemaphoreCreateInfo semaphore_create_info = { 0 };
+	semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	semaphore_create_info.pNext = NULL;
+	semaphore_create_info.flags = 0;
+
+	vkCreateSemaphore(device, &semaphore_create_info, NULL, &semaphore_storage_image_transition_finished);
+
+	// Dimensions for the largest possible room texture, smaller textures use a subsection of this image.
+	static const image_dimensions_t image_dimensions = {
+		32 * 16,
+		20 * 16
+	};
+
+	const queue_family_set_t queue_family_set = {
+		.num_queue_families = 2,
+		.queue_families = (uint32_t[2]){
+			*physical_device.queue_family_indices.transfer_family_ptr,
+			*physical_device.queue_family_indices.compute_family_ptr,
+		}
+	};
+
+	static const VkFormat storage_image_format = VK_FORMAT_R8G8B8A8_UINT;
+
+	room_texture_storage_image = create_image(physical_device.handle, device, 
+			image_dimensions, 
+			storage_image_format, false,
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			queue_family_set);
+
+	// Initial transition room texture storage image to transfer destination layout.
+
+	VkCommandBuffer transition_command_buffer = VK_NULL_HANDLE;
+	allocate_command_buffers(device, render_command_pool, 1, &transition_command_buffer);
+	begin_command_buffer(transition_command_buffer, 0);
+
+	VkImageMemoryBarrier image_memory_barrier = { 0 };
+	image_memory_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	image_memory_barrier.pNext = NULL;
+	image_memory_barrier.srcAccessMask = VK_ACCESS_NONE;
+	image_memory_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	image_memory_barrier.image = room_texture_storage_image.handle;
+	image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	image_memory_barrier.subresourceRange.baseMipLevel = 0;
+	image_memory_barrier.subresourceRange.levelCount = 1;
+	image_memory_barrier.subresourceRange.baseArrayLayer = 0;
+	image_memory_barrier.subresourceRange.layerCount = 1;
+
+	VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+	vkCmdPipelineBarrier(transition_command_buffer, source_stage, destination_stage, 0,
+			0, NULL,
+			0, NULL,
+			1, &image_memory_barrier);
+
+	vkEndCommandBuffer(transition_command_buffer);
+
+	VkSubmitInfo transition_submit_info = { 0 };
+	transition_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	transition_submit_info.pNext = NULL;
+	transition_submit_info.waitSemaphoreCount = 0;
+	transition_submit_info.pWaitSemaphores = NULL;
+	transition_submit_info.pWaitDstStageMask = NULL;
+	transition_submit_info.commandBufferCount = 1;
+	transition_submit_info.pCommandBuffers = &transition_command_buffer;
+	transition_submit_info.signalSemaphoreCount = 0;
+	transition_submit_info.pSignalSemaphores = NULL;
+
+	vkQueueSubmit(graphics_queue, 1, &transition_submit_info, NULL);
+	vkQueueWaitIdle(graphics_queue);
+
+	room_texture_storage_image.layout = VK_IMAGE_LAYOUT_GENERAL;
 }
 
 void create_vulkan_render_buffers(void) {
@@ -144,8 +230,9 @@ void create_vulkan_render_objects(void) {
 	log_message(VERBOSE, "Creating Vulkan render objects...");
 
 	create_vulkan_render_buffers();
-	create_pbr_texture();
+	create_room_texture_storage_image();
 	create_room_textures();
+	create_pbr_texture();
 }
 
 void destroy_vulkan_render_objects(void) {
@@ -153,9 +240,10 @@ void destroy_vulkan_render_objects(void) {
 	vkDeviceWaitIdle(device);
 
 	destroy_room_textures();
-
 	destroy_buffer(&matrix_buffer);
-	destroy_image(room_texture_storage);
+	destroy_image(room_texture_storage_image);
+
+	vkDestroySemaphore(device, semaphore_storage_image_transition_finished, NULL);
 }
 
 bool is_render_object_slot_enabled(uint32_t slot) {
@@ -402,53 +490,30 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, r
 
 void compute_room_texture(uint32_t room_slot, extent_t room_extent, uint32_t *tile_data) {
 
-	image_dimensions_t room_texture_dimensions = {
-		room_extent.width * 16,
-		room_extent.length * 16
-	};
-
-	queue_family_set_t queue_family_set_1 = {
-		.num_queue_families = 2,
-		.queue_families = (uint32_t[2]){
-			*physical_device.queue_family_indices.transfer_family_ptr,
-			*physical_device.queue_family_indices.compute_family_ptr,
-		}
-	};
-
-	room_texture_storage = create_image(physical_device.handle, device, 
-			room_texture_dimensions, 
-			VK_FORMAT_R8G8B8A8_UINT, false,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			queue_family_set_1);
-
-	transition_image_layout(graphics_queue, render_command_pool, &room_texture_storage, IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_GENERAL);
-
-
-
 	VkDeviceSize tile_data_size = 16 * room_extent.width * room_extent.length;
 
 	void *uniform_data;
 	vkMapMemory(device, global_uniform_memory, 128, tile_data_size, 0, &uniform_data);
-
 	memcpy(uniform_data, tile_data, tile_data_size);
-
 	vkUnmapMemory(device, global_uniform_memory);
 
-	descriptor_pool_t descriptor_pool;
-	create_descriptor_pool(device, 1, compute_room_texture_layout, &descriptor_pool.handle);
-	create_descriptor_set_layout(device, compute_room_texture_layout, &descriptor_pool.layout);
+	VkDescriptorSetAllocateInfo descriptor_set_allocate_info = { 0 };
+	descriptor_set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptor_set_allocate_info.pNext = NULL;
+	descriptor_set_allocate_info.descriptorPool = compute_pipeline_room_texture.descriptor_pool;
+	descriptor_set_allocate_info.descriptorSetCount = 1;
+	descriptor_set_allocate_info.pSetLayouts = &compute_pipeline_room_texture.descriptor_set_layout;
 
-	VkDescriptorSet descriptor_set;
-	allocate_descriptor_sets(device, descriptor_pool, 1, &descriptor_set);
+	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+	vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
 
 	VkDescriptorBufferInfo uniform_buffer_info = make_descriptor_buffer_info(global_uniform_buffer, 128, tile_data_size);
 
-	texture_t tilemap_texture2 = get_loaded_texture(1);
+	texture_t tilemap_texture = get_loaded_texture(1);
 
-	VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture2.image_views[0], tilemap_texture2.layout);
+	VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture.image_views[0], tilemap_texture.layout);
 
-	VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, room_texture_storage.view, room_texture_storage.layout);
+	VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, room_texture_storage_image.view, room_texture_storage_image.layout);
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
 	
@@ -490,8 +555,6 @@ void compute_room_texture(uint32_t room_slot, extent_t room_extent, uint32_t *ti
 	vkEndCommandBuffer(compute_command_buffer);
 	submit_command_buffers_async(compute_queue, 1, &compute_command_buffer);
 	vkFreeCommandBuffers(device, compute_command_pool, 1, &compute_command_buffer);
-
-	destroy_descriptor_pool(device, descriptor_pool);
 
 
 
@@ -645,7 +708,7 @@ void compute_room_texture(uint32_t room_slot, extent_t room_extent, uint32_t *ti
 	};
 
 	vkCmdCopyImage(transfer_command_buffer_2, 
-			room_texture_storage.handle, room_texture_storage.layout,
+			room_texture_storage_image.handle, room_texture_storage_image.layout,
 			model_textures[room_slot].images[0], model_textures[room_slot].layout, 
 			1, &copy_region_2);
 
