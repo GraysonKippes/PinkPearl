@@ -2,10 +2,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "log/logging.h"
 #include "render/render_config.h"
 #include "render/render_object.h"
+#include "util/time.h"
 
 #include "command_buffer.h"
 #include "texture.h"
@@ -225,6 +227,10 @@ void destroy_vulkan_render_objects(void) {
 	destroy_image(room_texture_storage);
 }
 
+bool is_render_object_slot_enabled(uint32_t slot) {
+	return (render_object_slot_enable_flags & (1LL << (uint64_t)slot)) >= 1;
+}
+
 void enable_render_object_slot(uint32_t slot) {
 	
 	if (slot >= num_render_object_slots) {
@@ -353,6 +359,33 @@ void set_model_texture(uint32_t slot, texture_t texture) {
 	}
 
 	model_textures[slot] = texture;
+	model_textures[slot].last_frame_time = get_time_ms();
+}
+
+void animate_texture(uint32_t slot) {
+
+	uint64_t current_time_ms = get_time_ms();
+
+	// Time difference between last frame change for this texture and current time, in seconds.
+	const uint64_t delta_time_ms = current_time_ms - model_textures[slot].last_frame_time;
+	const double delta_time = (double)delta_time_ms / 1000.0;
+
+	// Frames per second of the current animation cycle of this texture, in frames per second.
+	const double frames_per_second = (double)model_textures[slot].animation_cycles[model_textures[slot].current_animation_cycle].frames_per_second;
+
+	// Time in seconds * frames per second = frames.
+	const uint32_t frames = (uint32_t)(delta_time * frames_per_second);
+
+	// Total number of frames in the current animation cycle of this texture.
+	const uint32_t num_frames = model_textures[slot].animation_cycles[model_textures[slot].current_animation_cycle].num_frames;
+
+	// Update the current frame and last frame time of this texture.
+	model_textures[slot].current_animation_frame += frames;
+	model_textures[slot].current_animation_frame %= num_frames;
+
+	if (frames > 0) {
+		model_textures[slot].last_frame_time = current_time_ms;
+	}
 }
 
 // Dispatches a work load to the compute_matrices shader, computing a transformation matrix for each render object.
@@ -370,7 +403,7 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, r
 
 	vkUnmapMemory(device, global_uniform_memory);
 
-	// Move this to global scope
+	// TODO - move this to global scope.
 	descriptor_pool_t descriptor_pool;
 	create_descriptor_pool(device, 1, compute_matrices_layout, &descriptor_pool.handle);
 	create_descriptor_set_layout(device, compute_matrices_layout, &descriptor_pool.layout);
@@ -818,6 +851,11 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 			texture_infos[i].imageLayout = missing_texture.layout;
 		}
 		else {
+
+			if (is_render_object_slot_enabled(i)) {
+				animate_texture(i);
+			}
+
 			texture_infos[i].sampler = sampler_default;
 			texture_infos[i].imageView = model_textures[i].image_views[model_textures[i].current_animation_cycle];
 			texture_infos[i].imageLayout = model_textures[i].layout;
@@ -885,7 +923,7 @@ void draw_frame(double delta_time, projection_bounds_t projection_bounds) {
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
 
-		if ((render_object_slot_enable_flags & (1LL << (uint64_t)i)) == 0) {
+		if (!is_render_object_slot_enabled(i)) {
 			continue;
 		}
 

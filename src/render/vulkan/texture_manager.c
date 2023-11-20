@@ -118,6 +118,7 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	textures[texture_index].animation_cycles = calloc(animation_set.num_animations, sizeof(texture_animation_cycle_t));
 	textures[texture_index].current_animation_cycle = 0;
 	textures[texture_index].current_animation_frame = 0;
+	textures[texture_index].last_frame_time = 0;
 	textures[texture_index].format = image_format_default;
 	textures[texture_index].layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	textures[texture_index].memory = VK_NULL_HANDLE;
@@ -395,7 +396,7 @@ void load_textures(void) {
 			(animation_t){
 				.start_cell = 1,
 				.num_frames = 2,
-				.frames_per_second = 10
+				.frames_per_second = 2
 			},
 			(animation_t){
 				.start_cell = 3,
@@ -405,7 +406,7 @@ void load_textures(void) {
 			(animation_t){
 				.start_cell = 4,
 				.num_frames = 2,
-				.frames_per_second = 10
+				.frames_per_second = 2
 			},
 			(animation_t){
 				.start_cell = 6,
@@ -415,7 +416,7 @@ void load_textures(void) {
 			(animation_t){
 				.start_cell = 7,
 				.num_frames = 2,
-				.frames_per_second = 10
+				.frames_per_second = 2
 			},
 			(animation_t){
 				.start_cell = 9,
@@ -425,7 +426,7 @@ void load_textures(void) {
 			(animation_t){
 				.start_cell = 10,
 				.num_frames = 2,
-				.frames_per_second = 10
+				.frames_per_second = 2
 			}
 		}
 	};

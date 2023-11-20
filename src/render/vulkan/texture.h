@@ -36,6 +36,7 @@ typedef struct texture_t {
 
 	uint32_t current_animation_cycle;
 	uint32_t current_animation_frame;
+	uint64_t last_frame_time;	// Time point of last frame, in milliseconds.
 
 	VkFormat format;
 	VkImageLayout layout;

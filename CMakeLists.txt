@@ -68,4 +68,5 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/vulkan_manager.c
 	src/render/vulkan/vulkan_render.c
 	src/util/string_array.c
+	src/util/time.c
 )

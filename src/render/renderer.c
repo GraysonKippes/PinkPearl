@@ -37,6 +37,8 @@ void init_renderer(void) {
 
 	enable_render_object_slot(0);
 	enable_render_object_slot(2);
+
+	get_model_texture_ptr(2)->current_animation_cycle = 3;
 }
 
 void terminate_renderer(void) {

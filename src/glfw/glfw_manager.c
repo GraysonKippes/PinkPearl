@@ -49,7 +49,7 @@ void init_GLFW(void) {
 	}
 
 	GLFWimage icons[1];
-	icons[0] = load_glfw_image(RESOURCE_PATH "assets/textures/icon.png");
+	//icons[0] = load_glfw_image(RESOURCE_PATH "assets/textures/icon.png");
 
 	// TODO - get window icon to work
 	//glfwSetWindowIcon(window, 1, icons);

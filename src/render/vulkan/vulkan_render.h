@@ -1,6 +1,7 @@
 #ifndef VULKAN_RENDER_H
 #define VULKAN_RENDER_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "game/area/room.h"
@@ -16,6 +17,8 @@
 void create_vulkan_render_objects(void);
 
 void destroy_vulkan_render_objects(void);
+
+bool is_render_object_slot_enabled(uint32_t slot);
 
 void enable_render_object_slot(uint32_t slot);
 
