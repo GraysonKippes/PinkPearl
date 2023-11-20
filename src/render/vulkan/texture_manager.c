@@ -15,13 +15,39 @@
 #include "texture.h"
 #include "vulkan_manager.h"
 
-#define NUM_TEXTURES 2
+
+
+#define NUM_TEXTURES 3
 
 static const uint32_t num_textures = NUM_TEXTURES;
 
 static texture_t textures[NUM_TEXTURES];
 
 #define IMAGE_STAGING_BUFFER_SIZE 65536
+
+
+
+animation_set_t make_unanimated_animation_set(extent_t texture_extent) {
+
+	static const animation_t animations[1] = {
+		{
+			.start_cell = 0,
+			.num_frames = 1,
+			.frames_per_second = 0
+		}
+	};
+
+	animation_set_t animation_set = { 0 };
+	animation_set.atlas_extent = texture_extent;
+	animation_set.num_cells = (extent_t){ 1, 1 };
+	animation_set.cell_extent = texture_extent;
+	animation_set.num_animations = 1;
+	animation_set.animations = (animation_t *)animations;
+
+	return animation_set;
+}
+
+
 
 // TODO - eventually (maybe) collate this with the global staging buffer.
 static staging_buffer_t image_staging_buffer = { 
@@ -81,7 +107,7 @@ void destroy_image_staging_buffer(void) {
 	image_staging_buffer.device = VK_NULL_HANDLE;
 }
 
-void load_texture(animation_set_t animation_set, const char *path) {
+void load_texture(animation_set_t animation_set, bool is_tilemap, const char *path) {
 
 	// TODO - modify this to use semaphores between image transitions and data transfer operations.
 
@@ -124,6 +150,13 @@ void load_texture(animation_set_t animation_set, const char *path) {
 	textures[texture_index].memory = VK_NULL_HANDLE;
 	textures[texture_index].device = device;
 
+	if (is_tilemap) {
+		textures[texture_index].format = VK_FORMAT_R8G8B8A8_UINT;
+	}
+	else {
+		textures[texture_index].format = image_format_default;
+	}
+
 	// Memory requirments of each image.
 	VkMemoryRequirements2 *image_memory_requirements = calloc(animation_set.num_animations, sizeof(VkMemoryRequirements2));
 	VkDeviceSize total_required_memory_size = 0;
@@ -145,8 +178,33 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		image_create_info.arrayLayers = animation_set.animations[i].num_frames;
 		image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
 		image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-		image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		if (is_tilemap) {
+
+			uint32_t queue_family_indices[2] = {
+					*physical_device.queue_family_indices.transfer_family_ptr,
+					*physical_device.queue_family_indices.compute_family_ptr
+			};
+
+			image_create_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+			image_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+			image_create_info.queueFamilyIndexCount = 2;
+			image_create_info.pQueueFamilyIndices = queue_family_indices;
+		}
+		else {
+
+			uint32_t queue_family_indices[2] = {
+					*physical_device.queue_family_indices.graphics_family_ptr,
+					*physical_device.queue_family_indices.transfer_family_ptr
+			};
+
+			image_create_info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+			image_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+			image_create_info.queueFamilyIndexCount = 2;
+			image_create_info.pQueueFamilyIndices = queue_family_indices;
+		}
 
 		VkResult image_create_result = vkCreateImage(textures[texture_index].device, &image_create_info, NULL, (textures[texture_index].images + i));
 		if (image_create_result != VK_SUCCESS) {
@@ -348,6 +406,13 @@ void load_texture(animation_set_t animation_set, const char *path) {
 		VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
+		// If this is a tilemap texture, transition it to the general layout instead 
+		// 	so that it can be read by the room texture compute shader.
+		if (is_tilemap) {
+			image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+			destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+
 		vkCmdPipelineBarrier(transition_command_buffer, source_stage, destination_stage, 0,
 				0, NULL,
 				0, NULL,
@@ -356,8 +421,14 @@ void load_texture(animation_set_t animation_set, const char *path) {
 
 	vkEndCommandBuffer(transition_command_buffer);
 	submit_command_buffers_async(graphics_queue, 1, &transition_command_buffer);
-	textures[texture_index].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	vkFreeCommandBuffers(device, render_command_pool, 1, &transition_command_buffer);
+
+	if (is_tilemap) {
+		textures[texture_index].layout = VK_IMAGE_LAYOUT_GENERAL;
+	}
+	else {
+		textures[texture_index].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	}
 }
 
 void load_textures(void) {
@@ -366,21 +437,8 @@ void load_textures(void) {
 	
 	create_image_staging_buffer();
 
-	animation_set_t animation_set_0 = {
-		.atlas_extent = (extent_t){ 16, 16 },
-		.num_cells = (extent_t){ 1, 1 },
-		.cell_extent = (extent_t){ 16, 16 },
-		.num_animations = 1,
-		.animations = (animation_t[1]){
-			(animation_t){
-				.start_cell = 0,
-				.num_frames = 1,
-				.frames_per_second = 0
-			}
-		}
-	};
-
-	load_texture(animation_set_0, "../resources/assets/textures/missing.png");
+	load_texture(make_unanimated_animation_set((extent_t){ 16, 16 }), false, "../resources/assets/textures/missing.png");
+	load_texture(make_unanimated_animation_set((extent_t){ 32, 32 }), true, "../resources/assets/textures/tilemap/dungeon2.png");
 
 	animation_set_t animation_set_1 = {
 		.atlas_extent = (extent_t){ 48, 96 },
@@ -431,7 +489,7 @@ void load_textures(void) {
 		}
 	};
 
-	load_texture(animation_set_1, "../resources/assets/textures/entity/pearl.png");
+	load_texture(animation_set_1, false, "../resources/assets/textures/entity/pearl.png");
 
 	destroy_image_staging_buffer();
 

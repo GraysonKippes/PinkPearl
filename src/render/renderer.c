@@ -33,7 +33,7 @@ void init_renderer(void) {
 		reset_render_position((render_object_positions + i), zero_vector3F);
 	}
 
-	upload_model(2, get_premade_model(0), get_loaded_texture(1));
+	upload_model(2, get_premade_model(0), get_loaded_texture(2));
 
 	enable_render_object_slot(0);
 	enable_render_object_slot(2);

@@ -22,7 +22,7 @@ layout(set = 0, binding = 0) uniform tile_data_t {
 	uint m_tilemap_slots[640];
 } tile_data;
 
-layout(set = 0, binding = 1, rgba8ui) uniform readonly uimage2D tilemap_texture;
+layout(set = 0, binding = 1, rgba8ui) uniform readonly uimage2DArray tilemap_texture;
 
 // Width should be room width * 16 in texels.
 // Height should be room height * 16 in texels.
@@ -37,12 +37,12 @@ void main() {
 
 	uint tilemap_slot = tile_data.m_tilemap_slots[tile_index];
 
-	ivec2 tilemap_size = imageSize(tilemap_texture) / 16;
+	ivec2 tilemap_size = (imageSize(tilemap_texture) / 16).xy;
 	ivec2 tilemap_slot_coords = ivec2(tilemap_slot % tilemap_size.x, tilemap_slot / tilemap_size.x);
 
 	ivec2 input_coords = tilemap_slot_coords * 16 + ivec2(gl_LocalInvocationID.xy);
 
-	uvec4 texel = imageLoad(tilemap_texture, input_coords);
+	uvec4 texel = imageLoad(tilemap_texture, ivec3(input_coords, 0));
 
 	ivec2 output_coords = ivec2(gl_WorkGroupID.xy * 16 + gl_LocalInvocationID.xy);
 

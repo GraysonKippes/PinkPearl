@@ -30,9 +30,7 @@ static buffer_t matrix_buffer;		// Storage - GPU only
 
 // Objects for room texture compute shader.
 static buffer_t image_staging_buffer;	// Staging - CPU-to-GPU data flow
-static image_t tilemap_texture;		// Storage - GPU only
 static image_t room_texture_storage;	// Storage - GPU only
-static image_t room_texture;		// Graphics - GPU only
 static image_t room_texture_pbr;	// Graphics - GPU only
 
 
@@ -91,58 +89,7 @@ void create_vulkan_render_images(void) {
 
 	log_message(VERBOSE, "Creating Vulkan render images...");
 
-	// Apparently the staging buffer can't be created if the image data is loaded first...
-	image_data_t image_data = load_image_data("../resources/assets/textures/tilemap/dungeon2.png", 0);
-	
-	map_data_to_whole_buffer(device, image_staging_buffer, image_data.data);
-
 	create_sampler(physical_device, device, &sampler_default);
-
-	image_dimensions_t tilemap_texture_dimensions = { (uint32_t)image_data.width, (uint32_t)image_data.height };
-
-	queue_family_set_t queue_family_set_0 = {
-		.num_queue_families = 2,
-		.queue_families = (uint32_t[2]){
-			*physical_device.queue_family_indices.transfer_family_ptr,
-			*physical_device.queue_family_indices.compute_family_ptr,
-		}
-	};
-
-	tilemap_texture = create_image(physical_device.handle, device, 
-			tilemap_texture_dimensions, 
-			VK_FORMAT_R8G8B8A8_UINT, false,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT, 
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-			queue_family_set_0);
-
-	transition_image_layout(graphics_queue, render_command_pool, &tilemap_texture, IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_TRANSFER_DST);
-
-	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
-	allocate_command_buffers(device, transfer_command_pool, 1, &transfer_command_buffer);
-	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-	VkBufferImageCopy2 copy_region = make_buffer_image_copy((VkOffset2D){ 0 }, (VkExtent2D){ 32, 32 });
-
-	VkCopyBufferToImageInfo2 copy_info = { 0 };
-	copy_info.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2;
-	copy_info.pNext = NULL;
-	copy_info.srcBuffer = image_staging_buffer.handle;
-	copy_info.dstImage = tilemap_texture.handle;
-	copy_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	copy_info.regionCount = 1;
-	copy_info.pRegions = &copy_region;
-
-	vkCmdCopyBufferToImage2(transfer_command_buffer, &copy_info);
-
-	vkEndCommandBuffer(transfer_command_buffer);
-	submit_command_buffers_async(transfer_queue, 1, &transfer_command_buffer);
-	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
-
-	destroy_buffer(&image_staging_buffer);
-	free_image_data(image_data);
-
-	// Transition tilemap texture layout so that it can be read by the compute shader.
-	transition_image_layout(graphics_queue, render_command_pool, &tilemap_texture, IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_GENERAL);
 }
 
 // TEST
@@ -223,7 +170,6 @@ void destroy_vulkan_render_objects(void) {
 
 	destroy_buffer(&matrix_buffer);
 	
-	destroy_image(tilemap_texture);
 	destroy_image(room_texture_storage);
 }
 
@@ -512,7 +458,9 @@ void compute_room_texture(uint32_t room_slot, extent_t room_extent, uint32_t *ti
 
 	VkDescriptorBufferInfo uniform_buffer_info = make_descriptor_buffer_info(global_uniform_buffer, 128, tile_data_size);
 
-	VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture.view, tilemap_texture.layout);
+	texture_t tilemap_texture2 = get_loaded_texture(1);
+
+	VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture2.image_views[0], tilemap_texture2.layout);
 
 	VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, room_texture_storage.view, room_texture_storage.layout);
 
@@ -561,7 +509,8 @@ void compute_room_texture(uint32_t room_slot, extent_t room_extent, uint32_t *ti
 
 
 
-	// TODO - if there already exists an image for the room slot, destroy it first.
+	// TODO - if there already exists an image for the room slot, destroy it first;
+	// 	or, if it is of the same dimensions, just overwrite it.
 
 	// Create a new texture for the room image.
 	model_textures[room_slot].num_images = 1;
