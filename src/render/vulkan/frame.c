@@ -31,6 +31,8 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 
 	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_image_available);
 	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_render_finished);
+	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_compute_matrices_finished);
+
 	vkCreateFence(device, &fence_info, NULL, &frame.fence_frame_ready);
 	vkCreateFence(device, &fence_info, NULL, &frame.fence_buffers_up_to_date);
 
@@ -65,6 +67,8 @@ void destroy_frame(VkDevice device, VkCommandPool command_pool, descriptor_pool_
 
 	vkDestroySemaphore(device, frame.semaphore_image_available, NULL);
 	vkDestroySemaphore(device, frame.semaphore_render_finished, NULL);
+	vkDestroySemaphore(device, frame.semaphore_compute_matrices_finished, NULL);
+
 	vkDestroyFence(device, frame.fence_frame_ready, NULL);
 	vkDestroyFence(device, frame.fence_buffers_up_to_date, NULL);
 

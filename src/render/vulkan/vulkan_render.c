@@ -326,21 +326,21 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, r
 
 	byte_t *compute_matrices_data;
 	vkMapMemory(device, global_uniform_memory, 0, uniform_data_size, 0, (void **)&compute_matrices_data);
-
 	memcpy(compute_matrices_data, &delta_time, sizeof delta_time);
 	memcpy(compute_matrices_data + 4, &projection_bounds, sizeof projection_bounds);
 	memcpy(compute_matrices_data + 32, &camera_position, sizeof camera_position);
 	memcpy(compute_matrices_data + 64, positions, num_render_object_slots * sizeof(render_position_t));
-
 	vkUnmapMemory(device, global_uniform_memory);
 
-	// TODO - move this to global scope.
-	descriptor_pool_t descriptor_pool;
-	create_descriptor_pool(device, 1, compute_matrices_layout, &descriptor_pool.handle);
-	create_descriptor_set_layout(device, compute_matrices_layout, &descriptor_pool.layout);
+	VkDescriptorSetAllocateInfo descriptor_set_allocate_info = { 0 };
+	descriptor_set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptor_set_allocate_info.pNext = NULL;
+	descriptor_set_allocate_info.descriptorPool = compute_pipeline_matrices.descriptor_pool;
+	descriptor_set_allocate_info.descriptorSetCount = 1;
+	descriptor_set_allocate_info.pSetLayouts = &compute_pipeline_matrices.descriptor_set_layout;
 
-	VkDescriptorSet descriptor_set;
-	allocate_descriptor_sets(device, descriptor_pool, 1, &descriptor_set);
+	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+	vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
 
 	VkDescriptorBufferInfo uniform_buffer_info = { 0 };
 	uniform_buffer_info.buffer = global_uniform_buffer;
@@ -388,6 +388,7 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, r
 	vkBeginCommandBuffer(compute_command_buffer, &begin_info);
 
 	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.handle);
+
 	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.layout, 0, 1, &descriptor_set, 0, NULL);
 
 	vkCmdDispatch(compute_command_buffer, 1, 1, 1);
@@ -396,7 +397,7 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, r
 	submit_command_buffers_async(compute_queue, 1, &compute_command_buffer);
 	vkFreeCommandBuffers(device, compute_command_pool, 1, &compute_command_buffer);
 
-	destroy_descriptor_pool(device, descriptor_pool);
+	vkResetDescriptorPool(device, compute_pipeline_matrices.descriptor_pool, 0);
 }
 
 void compute_room_texture(uint32_t room_slot, extent_t room_extent, uint32_t *tile_data) {

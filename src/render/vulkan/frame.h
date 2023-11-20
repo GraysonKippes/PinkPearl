@@ -33,6 +33,8 @@ typedef struct frame_t {
 	// 	this can be either when a request is put in to update the buffer data, OR when the request is being currently fulfilled.
 	VkFence fence_buffers_up_to_date;
 
+	VkSemaphore semaphore_compute_matrices_finished;
+
 	// Each bit indicates if a slot in the model buffer needs to be updated.
 	uint64_t model_update_flags;
 
