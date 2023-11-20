@@ -288,6 +288,8 @@ void create_vulkan_objects(void) {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		frames[i] = create_frame(physical_device, device, render_command_pool, graphics_descriptor_pool);
 	}
+
+	create_sampler(physical_device, device, &sampler_default);
 }
 
 void destroy_vulkan_objects(void) {

@@ -29,7 +29,6 @@ static VkClearValue clear_color;
 static buffer_t matrix_buffer;		// Storage - GPU only
 
 // Objects for room texture compute shader.
-static buffer_t image_staging_buffer;	// Staging - CPU-to-GPU data flow
 static image_t room_texture_storage;	// Storage - GPU only
 static image_t room_texture_pbr;	// Graphics - GPU only
 
@@ -68,11 +67,6 @@ void create_vulkan_render_buffers(void) {
 
 	VkDeviceSize staging_buffer_size = 4096;
 
-	image_staging_buffer = create_buffer(physical_device.handle, device, staging_buffer_size, 
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			queue_family_set_null);
-
 	static const VkDeviceSize num_matrices = NUM_RENDER_OBJECT_SLOTS + 2;
 
 	static const VkDeviceSize matrix4F_size = 16 * sizeof(float);
@@ -83,13 +77,6 @@ void create_vulkan_render_buffers(void) {
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			queue_family_set_null);
-}
-
-void create_vulkan_render_images(void) {
-
-	log_message(VERBOSE, "Creating Vulkan render images...");
-
-	create_sampler(physical_device, device, &sampler_default);
 }
 
 // TEST
@@ -157,7 +144,6 @@ void create_vulkan_render_objects(void) {
 	log_message(VERBOSE, "Creating Vulkan render objects...");
 
 	create_vulkan_render_buffers();
-	create_vulkan_render_images();
 	create_pbr_texture();
 	create_room_textures();
 }
@@ -169,7 +155,6 @@ void destroy_vulkan_render_objects(void) {
 	destroy_room_textures();
 
 	destroy_buffer(&matrix_buffer);
-	
 	destroy_image(room_texture_storage);
 }
 
