@@ -40,6 +40,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/area/room.c
 	src/game/entity/ecs_manager.c
 	src/glfw/glfw_manager.c
+	src/glfw/input_manager.c
 	src/log/logging.c
 	src/render/animation.c
 	src/render/model.c
