@@ -42,10 +42,9 @@ void init_renderer(void) {
 }
 
 void terminate_renderer(void) {
-	destroy_textures();
-	free_premade_models();
 	destroy_vulkan_render_objects();
 	destroy_vulkan_objects();
+	free_premade_models();
 }
 
 void render_frame(double tick_delta) {

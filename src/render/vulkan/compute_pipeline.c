@@ -69,6 +69,6 @@ compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t 
 void destroy_compute_pipeline(VkDevice device, compute_pipeline_t compute_pipeline) {
 	vkDestroyPipeline(device, compute_pipeline.handle, NULL);
 	vkDestroyPipelineLayout(device, compute_pipeline.layout, NULL);
-	vkDestroyDescriptorSetLayout(device, compute_pipeline.descriptor_set_layout, NULL);
 	vkDestroyDescriptorPool(device, compute_pipeline.descriptor_pool, NULL);
+	vkDestroyDescriptorSetLayout(device, compute_pipeline.descriptor_set_layout, NULL);
 }

@@ -121,9 +121,12 @@ void destroy_vulkan_render_objects(void) {
 
 	vkDeviceWaitIdle(device);
 
-	destroy_buffer(&matrix_buffer);
+	log_message(VERBOSE, "Destroying Vulkan render objects...");
 
+	destroy_buffer(&matrix_buffer);
+	destroy_image(room_texture_pbr);
 	terminate_compute_room_texture();
+	destroy_textures();
 }
 
 bool is_render_object_slot_enabled(uint32_t slot) {

@@ -558,6 +558,9 @@ void load_textures(void) {
 }
 
 void destroy_textures(void) {
+
+	log_message(VERBOSE, "Destroying loaded textures...");
+
 	for (uint32_t i = 0; i < NUM_TEXTURES; ++i) {
 		destroy_texture(textures[i]);
 	}

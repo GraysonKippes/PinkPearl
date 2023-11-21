@@ -14,10 +14,8 @@ typedef struct compute_pipeline_t {
 	VkPipeline handle;
 	VkPipelineLayout layout;
 
-	VkDescriptorSetLayout descriptor_set_layout;
 	VkDescriptorPool descriptor_pool;
-
-	// TODO - look into including a descriptor pool in this struct.
+	VkDescriptorSetLayout descriptor_set_layout;
 
 } compute_pipeline_t;
 

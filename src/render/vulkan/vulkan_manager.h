@@ -78,10 +78,6 @@ extern size_t current_frame;
 
 
 
-
-
-
-
 // Creates all Vulkan objects needed for the rendering system.
 void create_vulkan_objects(void);
 

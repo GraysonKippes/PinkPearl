@@ -70,9 +70,8 @@ void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layou
 }
 
 void destroy_descriptor_pool(VkDevice device, descriptor_pool_t descriptor_pool) {
-	vkResetDescriptorPool(device, descriptor_pool.handle, 0);
-	vkDestroyDescriptorSetLayout(device, descriptor_pool.layout, NULL);
 	vkDestroyDescriptorPool(device, descriptor_pool.handle, NULL);
+	vkDestroyDescriptorSetLayout(device, descriptor_pool.layout, NULL);
 }
 
 void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets) {

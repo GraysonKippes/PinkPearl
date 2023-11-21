@@ -107,7 +107,6 @@ static descriptor_pool_t graphics_descriptor_pool = { 0 };
 
 
 
-
 /* -- Function Definitions -- */
 
 static void create_window_surface(void) {
@@ -266,10 +265,10 @@ void create_vulkan_objects(void) {
 	VkShaderModule fragment_shader;
 	create_shader_module(device, "fragment_shader.spv", &fragment_shader);
 
-	VkDescriptorSetLayout graphics_pipeline_layout = VK_NULL_HANDLE;
-	create_descriptor_set_layout(device, graphics_descriptor_layout, &graphics_pipeline_layout);
+	create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, graphics_descriptor_layout, &graphics_descriptor_pool.handle);
+	create_descriptor_set_layout(device, graphics_descriptor_layout, &graphics_descriptor_pool.layout);
 
-	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_pipeline_layout, vertex_shader, fragment_shader);
+	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_pool.layout, vertex_shader, fragment_shader);
 
 	vkDestroyShaderModule(device, vertex_shader, NULL);
 	vkDestroyShaderModule(device, fragment_shader, NULL);
@@ -277,9 +276,6 @@ void create_vulkan_objects(void) {
 	create_framebuffers(device, graphics_pipeline.render_pass, &swapchain);
 
 	compute_pipeline_matrices = create_compute_pipeline(device, compute_matrices_layout, "compute_matrices.spv");
-
-	create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, graphics_descriptor_layout, &graphics_descriptor_pool.handle);
-	create_descriptor_set_layout(device, graphics_descriptor_layout, &graphics_descriptor_pool.layout);
 
 	log_message(VERBOSE, "Creating frame objects...");
 
@@ -292,7 +288,7 @@ void create_vulkan_objects(void) {
 
 void destroy_vulkan_objects(void) {
 
-	vkDeviceWaitIdle(device);
+	log_message(VERBOSE, "Destroying Vulkan objects...");
 
 	vkDestroySampler(device, sampler_default, NULL);
 
@@ -301,10 +297,8 @@ void destroy_vulkan_objects(void) {
 	}
 
 	destroy_compute_pipeline(device, compute_pipeline_matrices);
-
 	destroy_descriptor_pool(device, graphics_descriptor_pool);
 	destroy_graphics_pipeline(device, graphics_pipeline);
-
 	destroy_swapchain(device, swapchain);
 
 	vkDestroyCommandPool(device, render_command_pool, NULL);
