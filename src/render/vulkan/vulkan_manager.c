@@ -57,7 +57,6 @@ static VkDeviceMemory graphics_memory = VK_NULL_HANDLE;
 /* -- Compute -- */
 
 compute_pipeline_t compute_pipeline_matrices;
-compute_pipeline_t compute_pipeline_room_texture;
 
 /* -- Queues -- */
 
@@ -278,7 +277,6 @@ void create_vulkan_objects(void) {
 	create_framebuffers(device, graphics_pipeline.render_pass, &swapchain);
 
 	compute_pipeline_matrices = create_compute_pipeline(device, compute_matrices_layout, "compute_matrices.spv");
-	compute_pipeline_room_texture = create_compute_pipeline(device, compute_room_texture_layout, "room_texture.spv");
 
 	create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, graphics_descriptor_layout, &graphics_descriptor_pool.handle);
 	create_descriptor_set_layout(device, graphics_descriptor_layout, &graphics_descriptor_pool.layout);
@@ -303,7 +301,6 @@ void destroy_vulkan_objects(void) {
 	}
 
 	destroy_compute_pipeline(device, compute_pipeline_matrices);
-	destroy_compute_pipeline(device, compute_pipeline_room_texture);
 
 	destroy_descriptor_pool(device, graphics_descriptor_pool);
 	destroy_graphics_pipeline(device, graphics_pipeline);

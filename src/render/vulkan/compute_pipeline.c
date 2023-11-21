@@ -20,32 +20,6 @@ const descriptor_layout_t compute_matrices_layout = {
 
 
 
-static descriptor_binding_t compute_room_texture_bindings[3] = {
-	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
-};
-
-const descriptor_layout_t compute_room_texture_layout = {
-	.num_bindings = 3,
-	.bindings = compute_room_texture_bindings
-};
-
-
-
-static descriptor_binding_t compute_textures_bindings[3] = {
-	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
-};
-
-const descriptor_layout_t compute_textures_layout = {
-	.num_bindings = 3,
-	.bindings = compute_textures_bindings
-};
-
-
-
 void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
 	VkPipelineLayoutCreateInfo create_info = {0};

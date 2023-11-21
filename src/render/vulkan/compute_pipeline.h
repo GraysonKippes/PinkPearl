@@ -31,10 +31,6 @@ void destroy_compute_pipeline(VkDevice device, compute_pipeline_t compute_pipeli
 
 extern const descriptor_layout_t compute_matrices_layout;
 
-extern const descriptor_layout_t compute_room_texture_layout;
-
-extern const descriptor_layout_t compute_textures_layout;
-
 
 
 #endif	// COMPUTE_PIPELINE_H

@@ -40,7 +40,6 @@ extern VkSampler sampler_default;
 /* -- Compute -- */
 
 extern compute_pipeline_t compute_pipeline_matrices;
-extern compute_pipeline_t compute_pipeline_room_texture;
 
 /* -- Queues -- */
 

@@ -146,7 +146,6 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 	// Create texture images.
 
 	static const VkImageType image_type_default = VK_IMAGE_TYPE_2D;
-
 	static const VkFormat image_format_default = VK_FORMAT_R8G8B8A8_SRGB;
 
 	// Initial state.
@@ -556,20 +555,6 @@ void load_textures(void) {
 	destroy_image_staging_buffer();
 
 	log_message(VERBOSE, "Done loading textures.");
-}
-
-void destroy_texture(texture_t texture) {
-
-	for (uint32_t i = 0; i < texture.num_images; ++i) {
-		vkDestroyImage(texture.device, texture.images[i], NULL);
-		vkDestroyImageView(texture.device, texture.image_views[i], NULL);
-	}
-
-	vkFreeMemory(device, texture.memory, NULL);
-
-	free(texture.images);
-	free(texture.image_views);
-	free(texture.animation_cycles);
 }
 
 void destroy_textures(void) {

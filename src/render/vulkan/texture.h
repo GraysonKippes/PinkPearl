@@ -25,8 +25,6 @@ typedef struct texture_animation_cycle_t {
 
 } texture_animation_cycle_t;
 
-
-
 typedef struct texture_t {
 
 	uint32_t num_images;
@@ -47,6 +45,6 @@ typedef struct texture_t {
 
 } texture_t;
 
-
+void destroy_texture(texture_t texture);
 
 #endif	// VK_TEXTURE_H

@@ -46,3 +46,17 @@ texture_t create_texture(VkDevice device, animation_set_t animation_set) {
 
 	return texture;
 }
+
+void destroy_texture(texture_t texture) {
+
+	for (uint32_t i = 0; i < texture.num_images; ++i) {
+		vkDestroyImage(texture.device, texture.images[i], NULL);
+		vkDestroyImageView(texture.device, texture.image_views[i], NULL);
+	}
+
+	vkFreeMemory(texture.device, texture.memory, NULL);
+
+	free(texture.images);
+	free(texture.image_views);
+	free(texture.animation_cycles);
+}
