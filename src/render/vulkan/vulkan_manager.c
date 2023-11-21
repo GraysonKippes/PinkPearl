@@ -108,11 +108,6 @@ static const VkDeviceSize global_storage_buffer_size = 8192;
 
 
 
-// TODO - move this to graphics pipeline struct
-static descriptor_pool_t graphics_descriptor_pool = { 0 };
-
-
-
 /* -- Function Definitions -- */
 
 static void create_window_surface(void) {
@@ -310,21 +305,19 @@ void create_vulkan_objects(void) {
 	VkShaderModule fragment_shader;
 	create_shader_module(device, "fragment_shader.spv", &fragment_shader);
 
-	create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, graphics_descriptor_layout, &graphics_descriptor_pool.handle);
-	create_descriptor_set_layout(device, graphics_descriptor_layout, &graphics_descriptor_pool.layout);
-
-	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_pool.layout, vertex_shader, fragment_shader);
+	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_set_layout, vertex_shader, fragment_shader);
 
 	vkDestroyShaderModule(device, vertex_shader, NULL);
 	vkDestroyShaderModule(device, fragment_shader, NULL);
 
 	create_framebuffers(device, graphics_pipeline.render_pass, &swapchain);
 
-
 	log_message(VERBOSE, "Creating frame objects...");
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		frames[i] = create_frame(physical_device, device, render_command_pool, graphics_descriptor_pool);
+	for (size_t i = 0; i < num_frames_in_flight; ++i) {
+		frames[i] = create_frame(physical_device, device, 
+				render_command_pool, 
+				graphics_pipeline.descriptor_pool, graphics_pipeline.descriptor_set_layout);
 	}
 
 	create_sampler(physical_device, device, &sampler_default);
@@ -337,10 +330,9 @@ void destroy_vulkan_objects(void) {
 	vkDestroySampler(device, sampler_default, NULL);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		destroy_frame(device, render_command_pool, graphics_descriptor_pool, frames[i]);
+		destroy_frame(device, render_command_pool, frames[i]);
 	}
 
-	destroy_descriptor_pool(device, graphics_descriptor_pool);
 	destroy_graphics_pipeline(device, graphics_pipeline);
 	destroy_swapchain(device, swapchain);
 

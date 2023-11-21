@@ -17,7 +17,7 @@ static descriptor_binding_t graphics_descriptor_bindings[3] = {
 	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }
 };
 
-const descriptor_layout_t graphics_descriptor_layout = {
+const descriptor_layout_t graphics_descriptor_set_layout = {
 	.num_bindings = 3,
 	.bindings = graphics_descriptor_bindings 
 };
@@ -97,7 +97,7 @@ static void create_render_pass(VkDevice device, VkFormat swapchain_format, VkRen
 	}
 }
 
-graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapchain, VkDescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
+graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
 
 	log_message(VERBOSE, "Creating graphics pipeline...");
 
@@ -123,7 +123,10 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	VkPipelineShaderStageCreateInfo shader_stages[2] = { shader_stage_vertex_info, shader_stage_fragment_info };
 
-	create_graphics_pipeline_layout(device, descriptor_set_layout, &pipeline.layout);
+	create_descriptor_pool(device, NUM_FRAMES_IN_FLIGHT, descriptor_set_layout, &pipeline.descriptor_pool);
+	create_descriptor_set_layout(device, descriptor_set_layout, &pipeline.descriptor_set_layout);
+
+	create_graphics_pipeline_layout(device, pipeline.descriptor_set_layout, &pipeline.layout);
 
 	VkVertexInputBindingDescription binding_description = get_binding_description();
 	VkVertexInputAttributeDescription *attribute_descriptions = get_attribute_descriptions();
@@ -187,6 +190,9 @@ void destroy_graphics_pipeline(VkDevice device, graphics_pipeline_t pipeline) {
 	vkDestroyPipeline(device, pipeline.handle, NULL);
 	vkDestroyPipelineLayout(device, pipeline.layout, NULL);
 	vkDestroyRenderPass(device, pipeline.render_pass, NULL);
+
+	vkDestroyDescriptorPool(device, pipeline.descriptor_pool, NULL);
+	vkDestroyDescriptorSetLayout(device, pipeline.descriptor_set_layout, NULL);
 }
 
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {

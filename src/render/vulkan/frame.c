@@ -1,10 +1,12 @@
 #include "frame.h"
 
+#include "log/logging.h"
+
 #include "command_buffer.h"
 #include "queue.h"
 #include "vertex_input.h"
 
-frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool) {
+frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout) {
 
 	frame_t frame = { 0 };
 
@@ -40,7 +42,17 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 
 	allocate_command_buffers(device, command_pool, 1, &frame.command_buffer);
 
-	allocate_descriptor_sets(device, descriptor_pool, 1, &frame.descriptor_set);
+	VkDescriptorSetAllocateInfo allocate_info;
+	allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocate_info.pNext = NULL;
+	allocate_info.descriptorPool = descriptor_pool;
+	allocate_info.descriptorSetCount = 1;
+	allocate_info.pSetLayouts = &descriptor_set_layout;
+
+	VkResult result = vkAllocateDescriptorSets(device, &allocate_info, &frame.descriptor_set);
+	if (result != VK_SUCCESS) {
+		logf_message(ERROR, "Descriptor set allocation failed. (Error code: %i)", result);
+	}
 
 	queue_family_set_t queue_family_set = {
 		.num_queue_families = 2,
@@ -63,7 +75,7 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 	return frame;
 }
 
-void destroy_frame(VkDevice device, VkCommandPool command_pool, descriptor_pool_t descriptor_pool, frame_t frame) {
+void destroy_frame(VkDevice device, VkCommandPool command_pool, frame_t frame) {
 
 	vkDestroySemaphore(device, frame.semaphore_image_available, NULL);
 	vkDestroySemaphore(device, frame.semaphore_render_finished, NULL);
@@ -71,10 +83,6 @@ void destroy_frame(VkDevice device, VkCommandPool command_pool, descriptor_pool_
 
 	vkDestroyFence(device, frame.fence_frame_ready, NULL);
 	vkDestroyFence(device, frame.fence_buffers_up_to_date, NULL);
-
-	vkFreeCommandBuffers(device, command_pool, 1, &frame.command_buffer);
-
-	vkFreeDescriptorSets(device, descriptor_pool.handle, 1, &frame.descriptor_set);
 
 	destroy_buffer(&frame.model_buffer);
 	destroy_buffer(&frame.index_buffer);
