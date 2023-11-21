@@ -345,10 +345,7 @@ void compute_room_texture(texture_t tilemap_texture, uint32_t cache_slot, extent
 
 	const VkDeviceSize tile_data_size = 16 * room_extent.width * room_extent.length;
 
-	void *uniform_data;
-	vkMapMemory(device, global_uniform_memory, 128, tile_data_size, 0, &uniform_data);
-	memcpy(uniform_data, tile_data, tile_data_size);
-	vkUnmapMemory(device, global_uniform_memory);
+	memcpy((global_uniform_mapped_memory + 128), tile_data, tile_data_size);
 
 	VkDescriptorSetAllocateInfo descriptor_set_allocate_info = { 0 };
 	descriptor_set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

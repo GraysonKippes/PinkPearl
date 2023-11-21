@@ -37,10 +37,6 @@ extern graphics_pipeline_t graphics_pipeline;
 
 extern VkSampler sampler_default;
 
-/* -- Compute -- */
-
-extern compute_pipeline_t compute_pipeline_matrices;
-
 /* -- Queues -- */
 
 extern VkQueue graphics_queue;
@@ -63,8 +59,12 @@ extern byte_t *global_staging_mapped_memory;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
 extern VkBuffer global_uniform_buffer;
-extern const VkDeviceSize global_uniform_buffer_size;
 extern VkDeviceMemory global_uniform_memory;
+extern byte_t *global_uniform_mapped_memory;
+
+// Used for GPU-only bulk storage data.
+extern VkBuffer global_storage_buffer;
+extern VkDeviceMemory global_storage_memory;
 
 
 

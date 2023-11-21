@@ -93,12 +93,18 @@ size_t current_frame = 0;
 VkBuffer global_staging_buffer = VK_NULL_HANDLE;
 VkDeviceMemory global_staging_memory = VK_NULL_HANDLE;
 byte_t *global_staging_mapped_memory = NULL;
-const VkDeviceSize global_staging_buffer_size = 16384;
+static const VkDeviceSize global_staging_buffer_size = 16384;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
 VkBuffer global_uniform_buffer = VK_NULL_HANDLE;
-const VkDeviceSize global_uniform_buffer_size = 2560 + 10240;
 VkDeviceMemory global_uniform_memory = VK_NULL_HANDLE;
+byte_t *global_uniform_mapped_memory = NULL;
+static const VkDeviceSize global_uniform_buffer_size = 2560 + 10240;
+
+// Used for GPU-only bulk storage data.
+VkBuffer global_storage_buffer = VK_NULL_HANDLE;
+VkDeviceMemory global_storage_memory = VK_NULL_HANDLE;
+static const VkDeviceSize global_storage_buffer_size = 8192;
 
 
 
@@ -192,6 +198,44 @@ static void create_global_uniform_buffer(void) {
 	vkAllocateMemory(device, &allocate_info, NULL, &global_uniform_memory);
 
 	vkBindBufferMemory(device, global_uniform_buffer, global_uniform_memory, 0);
+
+	vkMapMemory(device, global_uniform_memory, 0, VK_WHOLE_SIZE, 0, (void **)&global_uniform_mapped_memory);
+}
+
+static void create_global_storage_buffer(void) {
+
+	log_message(VERBOSE, "Creating global storage buffer...");
+
+	VkBufferCreateInfo buffer_create_info = { 0 };
+	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buffer_create_info.pNext = NULL;
+	buffer_create_info.flags = 0;
+	buffer_create_info.size = global_storage_buffer_size;
+	buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	buffer_create_info.queueFamilyIndexCount = 0;
+	buffer_create_info.pQueueFamilyIndices = NULL;
+
+	// TODO - error handling
+	VkResult result = vkCreateBuffer(device, &buffer_create_info, NULL, &global_storage_buffer);
+	if (result != VK_SUCCESS) {
+		logf_message(ERROR, "Global storage buffer creation failed. (Error code: %i)", result);
+		return;
+	}
+
+	VkMemoryRequirements memory_requirements;
+	vkGetBufferMemoryRequirements(device, global_storage_buffer, &memory_requirements);
+
+	VkMemoryAllocateInfo allocate_info = { 0 };
+	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocate_info.pNext = NULL;
+	allocate_info.allocationSize = memory_requirements.size;
+	allocate_info.memoryTypeIndex = memory_type_set.graphics_resources;
+
+	// TODO - error handling
+	vkAllocateMemory(device, &allocate_info, NULL, &global_storage_memory);
+
+	vkBindBufferMemory(device, global_storage_buffer, global_storage_memory, 0);
 }
 
 static void allocate_device_memories(void) {
@@ -243,6 +287,7 @@ void create_vulkan_objects(void) {
 
 	create_global_staging_buffer();
 	create_global_uniform_buffer();
+	create_global_storage_buffer();
 
 	log_message(VERBOSE, "Retrieving device queues...");
 
@@ -275,7 +320,6 @@ void create_vulkan_objects(void) {
 
 	create_framebuffers(device, graphics_pipeline.render_pass, &swapchain);
 
-	compute_pipeline_matrices = create_compute_pipeline(device, compute_matrices_layout, "compute_matrices.spv");
 
 	log_message(VERBOSE, "Creating frame objects...");
 
@@ -296,7 +340,6 @@ void destroy_vulkan_objects(void) {
 		destroy_frame(device, render_command_pool, graphics_descriptor_pool, frames[i]);
 	}
 
-	destroy_compute_pipeline(device, compute_pipeline_matrices);
 	destroy_descriptor_pool(device, graphics_descriptor_pool);
 	destroy_graphics_pipeline(device, graphics_pipeline);
 	destroy_swapchain(device, swapchain);
@@ -304,6 +347,9 @@ void destroy_vulkan_objects(void) {
 	vkDestroyCommandPool(device, render_command_pool, NULL);
 	vkDestroyCommandPool(device, transfer_command_pool, NULL);
 	vkDestroyCommandPool(device, compute_command_pool, NULL);
+
+	vkDestroyBuffer(device, global_storage_buffer, NULL);
+	vkFreeMemory(device, global_storage_memory, NULL);
 
 	vkDestroyBuffer(device, global_uniform_buffer, NULL);
 	vkFreeMemory(device, global_uniform_memory, NULL);

@@ -7,8 +7,6 @@
 
 #include "descriptor.h"
 
-
-
 typedef struct compute_pipeline_t {
 
 	VkPipeline handle;
@@ -19,16 +17,8 @@ typedef struct compute_pipeline_t {
 
 } compute_pipeline_t;
 
-
-
 compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t descriptor_layout, const char *compute_shader_name);
 
 void destroy_compute_pipeline(VkDevice device, compute_pipeline_t compute_pipeline);
-
-
-
-extern const descriptor_layout_t compute_matrices_layout;
-
-
 
 #endif	// COMPUTE_PIPELINE_H
