@@ -50,7 +50,11 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, r
 	memcpy(global_uniform_mapped_memory, &delta_time, sizeof delta_time);
 	memcpy(global_uniform_mapped_memory + 4, &projection_bounds, sizeof projection_bounds);
 	memcpy(global_uniform_mapped_memory + 32, &camera_position, sizeof camera_position);
-	memcpy(global_uniform_mapped_memory + 64, positions, num_render_object_slots * sizeof(render_position_t));
+
+	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+		memcpy(global_uniform_mapped_memory + 64 + (i * 32), &positions[i].position, sizeof(vector3F_t));
+		memcpy(global_uniform_mapped_memory + 64 + (i * 32) + 16, &positions[i].previous_position, sizeof(vector3F_t));
+	}
 
 	VkDescriptorSetAllocateInfo descriptor_set_allocate_info = { 0 };
 	descriptor_set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

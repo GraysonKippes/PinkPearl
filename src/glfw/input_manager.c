@@ -6,14 +6,21 @@ static const int num_key_inputs = GLFW_KEY_LAST;
 static const int num_mouse_inputs = GLFW_MOUSE_BUTTON_LAST;
 static const int num_inputs = NUM_INPUTS;
 
-static input_state_t input_states[NUM_INPUTS];
+static input_state_t input_states[NUM_INPUTS] = { INPUT_STATE_RELEASED };
 
 input_state_t get_input_state(int input_index) {
 	return input_states[input_index];
 }
 
 bool is_input_pressed_or_held(int input_index) {
-	return input_states[input_index] != INPUT_STATE_RELEASED;
+
+	bool pressed_or_held = input_states[input_index] != INPUT_STATE_RELEASED;
+
+	if (pressed_or_held) {
+		input_states[input_index] = INPUT_STATE_HELD;
+	}
+
+	return pressed_or_held;
 }
 
 static void update_input_state(int input_index, int action) {
@@ -21,10 +28,7 @@ static void update_input_state(int input_index, int action) {
 	if (action == GLFW_RELEASE) {
 		input_states[input_index] = INPUT_STATE_RELEASED;
 	}
-	else if (input_states[input_index] == INPUT_STATE_RELEASED) {
-		input_states[input_index] = INPUT_STATE_HELD;
-	}
-	else {
+	else if (action == GLFW_PRESS) {
 		input_states[input_index] = INPUT_STATE_PRESSED;
 	}
 }

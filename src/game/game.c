@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "glfw/input_manager.h"
+#include "render/render_object.h"
 #include "render/renderer.h"
 
 #include "area/area.h"
@@ -13,6 +14,8 @@
 static area_t current_area = { 0 };
 
 static entity_transform_t player_transform = { 0 };
+
+static render_handle_t player_render_handle = 2;
 
 void start_game(void) {
 
@@ -30,13 +33,13 @@ void tick_game(void) {
 		uint8_t flags : 4;
 	} four_direction_input_state_t;
 
-	four_direction_input_state_t four_direction_input_state = { 0 };
-	four_direction_input_state.flags += 1 * is_input_pressed_or_held(GLFW_KEY_W);	// UP
-	four_direction_input_state.flags += 2 * is_input_pressed_or_held(GLFW_KEY_A);	// LEFT
-	four_direction_input_state.flags += 4 * is_input_pressed_or_held(GLFW_KEY_S);	// DOWN
-	four_direction_input_state.flags += 8 * is_input_pressed_or_held(GLFW_KEY_D);	// RIGHT
+	four_direction_input_state_t four_direction_input_state = { .flags = 0 };
+	four_direction_input_state.flags |= 1 * is_input_pressed_or_held(GLFW_KEY_W);	// UP
+	four_direction_input_state.flags |= 2 * is_input_pressed_or_held(GLFW_KEY_A);	// LEFT
+	four_direction_input_state.flags |= 4 * is_input_pressed_or_held(GLFW_KEY_S);	// DOWN
+	four_direction_input_state.flags |= 8 * is_input_pressed_or_held(GLFW_KEY_D);	// RIGHT
 	
-	player_transform.velocity.r = 1.4;
+	player_transform.velocity.r = 0.24;
 	player_transform.velocity.theta = pi / 2.0;
 
 	switch (four_direction_input_state.flags) {
@@ -69,8 +72,25 @@ void tick_game(void) {
 			break;
 	}
 
-	vector3D_rectangular_t position_step = vector3D_polar_to_rectangular(player_transform.velocity);
-	player_transform.position = vector3D_rectangular_add(player_transform.position, position_step);
+	printf("|v->| = %.2f\n", player_transform.velocity.r);
 
+	vector3D_rectangular_t old_position = player_transform.position;
+	vector3D_rectangular_t position_step = vector3D_polar_to_rectangular(player_transform.velocity);
+	player_transform.position = vector3D_rectangular_add(old_position, position_step);
+
+	render_object_positions[player_render_handle].position.x = (float)player_transform.position.x;
+	render_object_positions[player_render_handle].position.y = (float)player_transform.position.y;
+	render_object_positions[player_render_handle].position.z = (float)player_transform.position.z;
+	render_object_positions[player_render_handle].previous_position.x = (float)old_position.x;
+	render_object_positions[player_render_handle].previous_position.y = (float)old_position.y;
+	render_object_positions[player_render_handle].previous_position.z = (float)old_position.z;
+
+	bool up = (four_direction_input_state.flags & 1) >= 1;
+	bool left = (four_direction_input_state.flags & 2) >= 1;
+	bool down = (four_direction_input_state.flags & 4) >= 1;
+	bool right = (four_direction_input_state.flags & 8) >= 1;
+
+	printf("input = %u\n", four_direction_input_state.flags);
+	printf("up = %u, left = %u, down = %u, right = %u\n", up, left, down, right);
 	printf("position = <%.2f, %.2f, %.2f>\n", player_transform.position.x, player_transform.position.y, player_transform.position.z);
 }
