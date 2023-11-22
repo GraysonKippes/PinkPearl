@@ -6,6 +6,7 @@
 #include "glfw/input_manager.h"
 #include "render/render_object.h"
 #include "render/renderer.h"
+#include "render/vulkan/vulkan_render.h"
 
 #include "area/area.h"
 #include "entity/ecs_manager.h"
@@ -40,33 +41,44 @@ void tick_game(void) {
 	player_transform.velocity.r = 0.24;
 	player_transform.velocity.theta = pi / 2.0;
 
+	static uint32_t animation_cycle = 4;
+
 	switch (four_direction_input_state.flags) {
 		case 1:	// 0001 - up only
 			player_transform.velocity.phi = pi / 2.0;
+			animation_cycle = 1;
 			break;
 		case 2:	// 0010 - left only
 			player_transform.velocity.phi = pi;
+			animation_cycle = 7;
 			break;
 		case 4:	// 0100 - down only
 			player_transform.velocity.phi = (3.0 * pi) / 2.0;
+			animation_cycle = 5;
 			break;
 		case 8:	// 1000 - right only
 			player_transform.velocity.phi = 0.0;
+			animation_cycle = 3;
 			break;
 		case 3:	// 0011 - up-left
 			player_transform.velocity.phi = (3.0 * pi) / 4.0;
+			animation_cycle = 7;
 			break;
 		case 6:	// 0110 - down-left
 			player_transform.velocity.phi = (5.0 * pi) / 4.0;
+			animation_cycle = 7;
 			break;
 		case 12:// 1100 - down-right
 			player_transform.velocity.phi = (7.0 * pi) / 4.0;
+			animation_cycle = 3;
 			break;
 		case 9:	// 1001 - up-right
 			player_transform.velocity.phi = pi / 4.0;
+			animation_cycle = 3;
 			break;
 		default:
 			player_transform.velocity.r = 0.0;
+			animation_cycle -= animation_cycle % 2;
 			break;
 	}
 
@@ -80,4 +92,6 @@ void tick_game(void) {
 	render_object_positions[player_render_handle].previous_position.x = (float)old_position.x;
 	render_object_positions[player_render_handle].previous_position.y = (float)old_position.y;
 	render_object_positions[player_render_handle].previous_position.z = (float)old_position.z;
+
+	get_model_texture_ptr(player_render_handle)->current_animation_cycle = animation_cycle;
 }
