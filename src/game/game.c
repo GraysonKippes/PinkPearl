@@ -25,8 +25,6 @@ void start_game(void) {
 	upload_room_model(current_area.rooms[0]);
 }
 
-#include <stdio.h>
-
 void tick_game(void) {
 
 	typedef struct four_direction_input_state_t {
@@ -72,8 +70,6 @@ void tick_game(void) {
 			break;
 	}
 
-	printf("|v->| = %.2f\n", player_transform.velocity.r);
-
 	vector3D_rectangular_t old_position = player_transform.position;
 	vector3D_rectangular_t position_step = vector3D_polar_to_rectangular(player_transform.velocity);
 	player_transform.position = vector3D_rectangular_add(old_position, position_step);
@@ -84,13 +80,4 @@ void tick_game(void) {
 	render_object_positions[player_render_handle].previous_position.x = (float)old_position.x;
 	render_object_positions[player_render_handle].previous_position.y = (float)old_position.y;
 	render_object_positions[player_render_handle].previous_position.z = (float)old_position.z;
-
-	bool up = (four_direction_input_state.flags & 1) >= 1;
-	bool left = (four_direction_input_state.flags & 2) >= 1;
-	bool down = (four_direction_input_state.flags & 4) >= 1;
-	bool right = (four_direction_input_state.flags & 8) >= 1;
-
-	printf("input = %u\n", four_direction_input_state.flags);
-	printf("up = %u, left = %u, down = %u, right = %u\n", up, left, down, right);
-	printf("position = <%.2f, %.2f, %.2f>\n", player_transform.position.x, player_transform.position.y, player_transform.position.z);
 }

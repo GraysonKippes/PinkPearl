@@ -501,6 +501,8 @@ void load_textures(void) {
 	load_texture(make_unanimated_animation_set((extent_t){ 16, 16 }), false, "../resources/assets/textures/missing.png");
 	load_texture(make_unanimated_animation_set((extent_t){ 32, 32 }), true, "../resources/assets/textures/tilemap/dungeon2.png");
 
+	static const uint32_t fps = 4;
+
 	animation_set_t animation_set_1 = {
 		.atlas_extent = (extent_t){ 48, 96 },
 		.num_cells = (extent_t){ 3, 4 },
@@ -515,7 +517,7 @@ void load_textures(void) {
 			(animation_t){
 				.start_cell = 1,
 				.num_frames = 2,
-				.frames_per_second = 2
+				.frames_per_second = fps
 			},
 			(animation_t){
 				.start_cell = 3,
@@ -525,7 +527,7 @@ void load_textures(void) {
 			(animation_t){
 				.start_cell = 4,
 				.num_frames = 2,
-				.frames_per_second = 2
+				.frames_per_second = fps
 			},
 			(animation_t){
 				.start_cell = 6,
@@ -535,7 +537,7 @@ void load_textures(void) {
 			(animation_t){
 				.start_cell = 7,
 				.num_frames = 2,
-				.frames_per_second = 2
+				.frames_per_second = fps
 			},
 			(animation_t){
 				.start_cell = 9,
@@ -545,7 +547,7 @@ void load_textures(void) {
 			(animation_t){
 				.start_cell = 10,
 				.num_frames = 2,
-				.frames_per_second = 2
+				.frames_per_second = fps
 			}
 		}
 	};

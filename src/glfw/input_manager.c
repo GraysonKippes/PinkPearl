@@ -48,6 +48,11 @@ static void glfw_mouse_button_callback(GLFWwindow *window, int button, int actio
 }
 
 void init_input_manager(GLFWwindow *window) {
+
+	for (int i = 0; i < num_inputs; ++i) {
+		input_states[i] = INPUT_STATE_RELEASED;
+	}
+
 	glfwSetKeyCallback(window, glfw_key_callback);
 	glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
 }
