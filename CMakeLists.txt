@@ -33,12 +33,14 @@ target_include_directories(PinkPearl PRIVATE
 
 
 target_sources(PinkPearl PRIVATE 
+	src/client.c
 	src/debug.c
 	src/main.c
 	src/game/game.c
 	src/game/area/area.c
 	src/game/area/room.c
 	src/game/entity/ecs_manager.c
+	src/game/entity/entity_transform.c
 	src/glfw/glfw_manager.c
 	src/glfw/input_manager.c
 	src/log/logging.c

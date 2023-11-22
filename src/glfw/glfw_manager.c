@@ -65,6 +65,10 @@ GLFWwindow *get_application_window(void) {
 	return window;
 }
 
+bool should_application_window_close(void) {
+	return glfwWindowShouldClose(window);
+}
+
 void glfw_error_callback(int code, const char *description) {
 	logf_message(ERROR, "GLFW error (%i): %s", code, description);
 }

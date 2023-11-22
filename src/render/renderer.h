@@ -15,7 +15,7 @@ void init_renderer(void);
 
 void terminate_renderer(void);
 
-void render_frame(double tick_delta);
+void render_frame(float tick_delta_time);
 
 void update_projection_bounds(projection_bounds_t projection_bounds);
 

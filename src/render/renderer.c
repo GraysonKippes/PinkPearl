@@ -1,5 +1,7 @@
 #include "renderer.h"
 
+#include <GLFW/glfw3.h>
+
 #include "log/logging.h"
 
 #include "render_config.h"
@@ -47,8 +49,9 @@ void terminate_renderer(void) {
 	free_premade_models();
 }
 
-void render_frame(double tick_delta) {
-	draw_frame(tick_delta, current_projection_bounds);
+void render_frame(float tick_delta_time) {
+	glfwPollEvents();
+	draw_frame(tick_delta_time, current_projection_bounds);
 }
 
 void update_projection_bounds(projection_bounds_t new_projection_bounds) {

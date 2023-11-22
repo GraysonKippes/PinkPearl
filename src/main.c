@@ -4,6 +4,7 @@
 
 #include "config.h"
 
+#include "client.h"
 #include "debug.h"
 #include "game/game.h"
 #include "glfw/glfw_manager.h"
@@ -26,10 +27,7 @@ int main(void) {
 
 	log_message(INFO, "Ready to play Pink Pearl!");
 
-	while(!glfwWindowShouldClose(get_application_window())) {
-		glfwPollEvents();
-		render_frame(0.0);
-	}
+	run_client();
 
 	terminate_renderer();
 	terminate_GLFW();

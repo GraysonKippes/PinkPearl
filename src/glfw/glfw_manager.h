@@ -1,6 +1,8 @@
 #ifndef GLFW_MANAGER_H
 #define GLFW_MANAGER_H
 
+#include <stdbool.h>
+
 /* define GLFW_INCLUDE_VULKAN or
  * include a Vulkan header
  * before including this header to use GLFW-Vulkan functions.
@@ -16,5 +18,7 @@ void terminate_GLFW(void);
 
 // Returns the handle to the application window.
 GLFWwindow *get_application_window(void);
+
+bool should_application_window_close(void);
 
 #endif	// GLFW_MANAGER_H
