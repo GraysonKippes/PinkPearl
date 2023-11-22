@@ -1,6 +1,8 @@
 #ifndef ENTITY_TRANSFORM_H
 #define ENTITY_TRANSFORM_H
 
+extern const double pi;
+
 typedef struct vector3D_rectangular_t {
 	double x;	// Magnitude in the x direction.
 	double y;	// Magnitude in the y direction.
@@ -16,6 +18,8 @@ typedef struct vector3D_polar_t {
 vector3D_polar_t vector3D_rectangular_to_polar(vector3D_rectangular_t vector);
 
 vector3D_rectangular_t vector3D_polar_to_rectangular(vector3D_polar_t vector);
+
+vector3D_rectangular_t vector3D_rectangular_add(vector3D_rectangular_t a, vector3D_rectangular_t b);
 
 typedef struct entity_transform_t {
 

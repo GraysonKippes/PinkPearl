@@ -12,6 +12,10 @@ input_state_t get_input_state(int input_index) {
 	return input_states[input_index];
 }
 
+bool is_input_pressed_or_held(int input_index) {
+	return input_states[input_index] != INPUT_STATE_RELEASED;
+}
+
 static void update_input_state(int input_index, int action) {
 
 	if (action == GLFW_RELEASE) {

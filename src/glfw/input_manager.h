@@ -1,6 +1,8 @@
 #ifndef INPUT_MANAGER_H
 #define INPUT_MANAGER_H
 
+#include <stdbool.h>
+
 #include <GLFW/glfw3.h>
 
 typedef enum input_state_t {
@@ -12,5 +14,7 @@ typedef enum input_state_t {
 void init_input_manager(GLFWwindow *window);
 
 input_state_t get_input_state(int input_index);
+
+bool is_input_pressed_or_held(int input_index);
 
 #endif	// INPUT_MANAGER_H

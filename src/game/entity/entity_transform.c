@@ -2,23 +2,13 @@
 
 #include <math.h>
 
-static const double pi = 3.14159265358979323846;
+const double pi = 3.14159265358979323846;
 
 vector3D_polar_t vector3D_rectangular_to_polar(vector3D_rectangular_t vector) {
 
 	vector3D_polar_t vector_polar;
 
 	vector_polar.r = sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
-
-	if (vector.z > 0.0) {
-		vector_polar.theta = atan(sqrt(vector.x * vector.x + vector.y * vector.y) / vector.z);
-	}
-	else if (vector.z < 0.0) {
-		vector_polar.theta = atan(sqrt(vector.x * vector.x + vector.y * vector.y) / vector.z) + pi;
-	}
-	else {
-		vector_polar.theta = pi / 2.0;
-	}
 
 	if (vector.x > 0.0) {
 		vector_polar.phi = atan(vector.y / vector.x);
@@ -39,6 +29,16 @@ vector3D_polar_t vector3D_rectangular_to_polar(vector3D_rectangular_t vector) {
 			vector_polar.phi = -pi / 2.0;
 		}
 	}
+
+	if (vector.z > 0.0) {
+		vector_polar.theta = atan(sqrt(vector.x * vector.x + vector.y * vector.y) / vector.z);
+	}
+	else if (vector.z < 0.0) {
+		vector_polar.theta = atan(sqrt(vector.x * vector.x + vector.y * vector.y) / vector.z) + pi;
+	}
+	else {
+		vector_polar.theta = pi / 2.0;
+	}
 }
 
 vector3D_rectangular_t vector3D_polar_to_rectangular(vector3D_polar_t vector) {
@@ -49,3 +49,10 @@ vector3D_rectangular_t vector3D_polar_to_rectangular(vector3D_polar_t vector) {
 	};
 }
 
+vector3D_rectangular_t vector3D_rectangular_add(vector3D_rectangular_t a, vector3D_rectangular_t b) {
+	return (vector3D_rectangular_t){
+		.x = a.x + b.x,
+		.y = a.y + b.y,
+		.z = a.z + b.z
+	};
+}
