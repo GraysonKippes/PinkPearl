@@ -82,9 +82,9 @@ void tick_game(void) {
 			break;
 	}
 
-	vector3D_rectangular_t old_position = player_transform.position;
-	vector3D_rectangular_t position_step = vector3D_polar_to_rectangular(player_transform.velocity);
-	player_transform.position = vector3D_rectangular_add(old_position, position_step);
+	vector3D_cubic_t old_position = player_transform.position;
+	vector3D_cubic_t position_step = vector3D_spherical_to_cubic(player_transform.velocity);
+	player_transform.position = vector3D_cubic_add(old_position, position_step);
 
 	render_object_positions[player_render_handle].position.x = (float)player_transform.position.x;
 	render_object_positions[player_render_handle].position.y = (float)player_transform.position.y;
