@@ -1,6 +1,8 @@
 #ifndef ENTITY_TRANSFORM_H
 #define ENTITY_TRANSFORM_H
 
+#include <stdint.h>
+
 extern const double pi;
 
 typedef struct vector3D_cubic_t {
@@ -26,6 +28,8 @@ typedef struct entity_transform_t {
 	vector3D_cubic_t position;
 
 	vector3D_spherical_t velocity;
+
+	uint64_t last_stationary_time;
 
 } entity_transform_t;
 

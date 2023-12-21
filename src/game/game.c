@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -7,6 +8,7 @@
 #include "render/render_object.h"
 #include "render/renderer.h"
 #include "render/vulkan/vulkan_render.h"
+#include "util/time.h"
 
 #include "area/area.h"
 #include "entity/entity_manager.h"
@@ -53,7 +55,11 @@ void tick_game(void) {
 		return;
 	}
 
-	player_entity_ptr->transform.velocity.r = 0.24;
+	static const double max_speed = 0.24;	// Tiles / s
+	static const double acceleration_constant = 1.8; // Tiles / s^2
+	const double speed = (get_time_ms() - player_entity_ptr->transform.last_stationary_time) * 0.001 * acceleration_constant;
+
+	player_entity_ptr->transform.velocity.r = fmin(speed, max_speed);
 	player_entity_ptr->transform.velocity.theta = pi / 2.0;
 
 	static uint32_t animation_cycle = 4;
@@ -93,6 +99,7 @@ void tick_game(void) {
 			break;
 		default:
 			player_entity_ptr->transform.velocity.r = 0.0;
+			player_entity_ptr->transform.last_stationary_time = get_time_ms();
 			animation_cycle -= animation_cycle % 2;
 			break;
 	}
