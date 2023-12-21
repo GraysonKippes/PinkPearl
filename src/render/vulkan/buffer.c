@@ -102,14 +102,3 @@ void map_data_to_whole_buffer(VkDevice device, buffer_t buffer, void *data) {
 	memcpy(mapped_data, data, buffer.size);
 	vkUnmapMemory(device, buffer.memory);
 }
-
-void transfer_data_to_buffer(VkDevice device, VkQueue queue, VkCommandPool command_pool, buffer_t source, buffer_t destination) {
-	
-	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
-
-	allocate_command_buffers(device, command_pool, 1, &transfer_command_buffer);
-	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-	vkEndCommandBuffer(transfer_command_buffer);
-	submit_command_buffers_async(queue, 1, &transfer_command_buffer);
-}

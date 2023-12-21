@@ -32,7 +32,7 @@ void init_GLFW(void) {
 	const char *application_name = APP_NAME;
 
 	if (debug_enabled) {
-		window = glfwCreateWindow(window_width_default, window_height_default, APP_NAME, NULL, NULL);
+		window = glfwCreateWindow(window_width_default, window_height_default, application_name, NULL, NULL);
 	}
 	else {
 		GLFWmonitor *monitor = glfwGetPrimaryMonitor();

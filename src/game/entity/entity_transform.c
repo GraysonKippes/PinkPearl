@@ -39,6 +39,8 @@ vector3D_spherical_t vector3D_cubic_to_spherical(vector3D_cubic_t vector) {
 	else {
 		vector_spherical.theta = pi / 2.0;
 	}
+
+	return vector_spherical;
 }
 
 vector3D_cubic_t vector3D_spherical_to_cubic(vector3D_spherical_t vector) {

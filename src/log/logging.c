@@ -12,7 +12,7 @@ static const log_level_t severity_threshold = VERBOSE;
 
 static const char *log_format(log_level_t level);
 
-static const char *log_deformat(log_level_t level);
+static const char *log_deformat(void);
 
 static const char *severity_labels[5] = {
 	"VERBOSE",
@@ -32,7 +32,7 @@ void log_message(log_level_t level, const char *message) {
 
 	fprintf(LOG_OUT, "%s", log_format(level));
 	fprintf(LOG_OUT, "[%s] %s", severity_labels[level], message);
-	fprintf(LOG_OUT, "%s\n", log_deformat(level));
+	fprintf(LOG_OUT, "%s\n", log_deformat());
 }
 
 void logf_message(log_level_t level, const char *format, ...) {
@@ -49,7 +49,7 @@ void logf_message(log_level_t level, const char *format, ...) {
 	vfprintf(LOG_OUT, format, args);
 	va_end(args);
 
-	fprintf(LOG_OUT, "%s\n", log_deformat(level));
+	fprintf(LOG_OUT, "%s\n", log_deformat());
 }
 
 #ifdef WIN32_FORMATTING
@@ -64,7 +64,7 @@ static const char *log_format(log_level_t level) {
 	}
 }
 
-static const char *log_deformat(log_level_t level) {
+static const char *log_deformat(void) {
 	return "\x1B[0m";
 }
 #else
@@ -72,7 +72,7 @@ static const char *log_format(log_level_t level) {
 	return "";
 }
 
-static const char *log_deformat(log_level_t level) {
+static const char *log_deformat(void) {
 	return "";
 }
 #endif	// WIN32_FORMATTING

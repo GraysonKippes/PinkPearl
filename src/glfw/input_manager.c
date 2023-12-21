@@ -3,7 +3,6 @@
 #define NUM_INPUTS (GLFW_KEY_LAST + GLFW_MOUSE_BUTTON_LAST)
 
 static const int num_key_inputs = GLFW_KEY_LAST;
-static const int num_mouse_inputs = GLFW_MOUSE_BUTTON_LAST;
 static const int num_inputs = NUM_INPUTS;
 
 static input_state_t input_states[NUM_INPUTS] = { INPUT_STATE_RELEASED };
@@ -35,6 +34,10 @@ static void update_input_state(int input_index, int action) {
 
 static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
 
+	(void)window;
+	(void)scancode;
+	(void)mods;
+
 	if (key == GLFW_KEY_UNKNOWN) {
 		return;
 	}
@@ -43,6 +46,9 @@ static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int act
 }
 
 static void glfw_mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
+
+	(void)window;
+	(void)mods;
 
 	update_input_state(button + num_key_inputs, action);
 }

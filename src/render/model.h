@@ -20,7 +20,7 @@ typedef struct model_t {
 
 } model_t;
 
-model_t create_model(uint32_t num_vertices, const float *vertices, uint32_t num_indices, index_t *indices);
+model_t create_model(uint32_t num_vertices, const float *vertices, uint32_t num_indices, const index_t *indices);
 
 void free_model(model_t model);
 

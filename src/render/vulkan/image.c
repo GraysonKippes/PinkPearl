@@ -4,11 +4,9 @@
 
 #include "command_buffer.h"
 
-static const VkImageType image_type_default = VK_IMAGE_TYPE_2D;
 
-static const VkFormat image_format_default = VK_FORMAT_R8G8B8A8_SRGB;
-//static const VkFormat image_format_0 = VK_FORMAT_R8G8B8A8_UINT;
-static const VkFormat image_format_0 = VK_FORMAT_R8G8B8A8_SRGB;
+
+static const VkImageType image_type_default = VK_IMAGE_TYPE_2D;
 
 static const VkImageSubresourceRange image_subresource_range_default = {
 	.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

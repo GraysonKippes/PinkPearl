@@ -38,7 +38,12 @@ texture_t create_texture(VkDevice device, animation_set_t animation_set) {
 		image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-		VkResult image_create_result = vkCreateImage(device, &image_create_info, NULL, (texture.images + i));
+		const VkResult image_create_result = vkCreateImage(device, &image_create_info, NULL, (texture.images + i));
+		if (image_create_result != VK_SUCCESS) {
+			free(texture.images);
+			texture.images = NULL;
+			return texture;
+		}
 	}
 
 

@@ -202,6 +202,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
 	void *pUserData) {
 
+	(void)type;
+	(void)pUserData;
+
 	log_level_t log_level = VERBOSE;
 
 	switch (severity) {

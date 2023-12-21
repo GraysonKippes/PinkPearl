@@ -1,6 +1,8 @@
 #include "frame.h"
 
 #include "log/logging.h"
+#include "render/model.h"
+#include "render/render_config.h"
 
 #include "command_buffer.h"
 #include "queue.h"
@@ -20,16 +22,9 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 	fence_info.pNext = NULL;
 	fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	static const VkDeviceSize matrix4F_size = 16 * sizeof(float);
-
 	const VkDeviceSize num_elements_per_rect = num_vertices_per_rect * vertex_input_element_stride;
-
-	static const VkDeviceSize num_room_slots = 2;
-
-	static const VkDeviceSize max_num_models = 64;
-
-	// General vertex buffer size
-	const VkDeviceSize model_buffer_size = (max_num_models * num_elements_per_rect) * sizeof(float);
+	const VkDeviceSize model_buffer_size = (num_render_object_slots * num_elements_per_rect) * sizeof(float);
+	const VkDeviceSize index_buffer_size = (num_render_object_slots * num_indices_per_rect) * sizeof(index_t);
 
 	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_image_available);
 	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_render_finished);
@@ -67,7 +62,7 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set);
 
-	frame.index_buffer = create_buffer(physical_device.handle, device, model_buffer_size, 
+	frame.index_buffer = create_buffer(physical_device.handle, device, index_buffer_size, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set);
@@ -75,7 +70,7 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 	return frame;
 }
 
-void destroy_frame(VkDevice device, VkCommandPool command_pool, frame_t frame) {
+void destroy_frame(VkDevice device, frame_t frame) {
 
 	vkDestroySemaphore(device, frame.semaphore_image_available, NULL);
 	vkDestroySemaphore(device, frame.semaphore_render_finished, NULL);

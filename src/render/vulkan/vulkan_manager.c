@@ -50,10 +50,6 @@ graphics_pipeline_t graphics_pipeline = { 0 };
 
 VkSampler sampler_default = VK_NULL_HANDLE;
 
-/* -- Memory -- */
-
-static VkDeviceMemory graphics_memory = VK_NULL_HANDLE;
-
 /* -- Compute -- */
 
 compute_pipeline_t compute_pipeline_matrices;
@@ -233,36 +229,6 @@ static void create_global_storage_buffer(void) {
 	vkBindBufferMemory(device, global_storage_buffer, global_storage_memory, 0);
 }
 
-static void allocate_device_memories(void) {
-
-	log_message(VERBOSE, "Allocating device memories...");
-
-	VkDeviceSize graphics_memory_size = 0;
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-
-		VkMemoryRequirements model_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].model_buffer);
-		VkMemoryRequirements index_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].index_buffer);
-
-		graphics_memory_size = model_buffer_memory_requirements.size + index_buffer_memory_requirements.size;
-	}
-
-	allocate_device_memory(device, graphics_memory_size, memory_type_set.graphics_resources, &graphics_memory);
-
-	VkDeviceSize graphics_memory_offset = 0;
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-
-		VkMemoryRequirements model_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].model_buffer);
-		bind_buffer_to_memory(frames[i].model_buffer, graphics_memory, graphics_memory_offset);
-		graphics_memory_offset += model_buffer_memory_requirements.size;
-
-		VkMemoryRequirements index_buffer_memory_requirements = get_buffer_memory_requirements(frames[i].index_buffer);
-		bind_buffer_to_memory(frames[i].index_buffer, graphics_memory, graphics_memory_offset);
-		graphics_memory_offset += index_buffer_memory_requirements.size;
-	}
-}
-
 void create_vulkan_objects(void) {
 
 	log_message(INFO, "Initializing Vulkan...");
@@ -330,7 +296,7 @@ void destroy_vulkan_objects(void) {
 	vkDestroySampler(device, sampler_default, NULL);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		destroy_frame(device, render_command_pool, frames[i]);
+		destroy_frame(device, frames[i]);
 	}
 
 	destroy_graphics_pipeline(device, graphics_pipeline);

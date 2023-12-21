@@ -80,15 +80,12 @@ static void create_room_texture(uint32_t room_model_cache, uint32_t cache_slot, 
 	room_textures[index].animation_cycles[0].num_frames = 1;
 	room_textures[index].animation_cycles[0].frames_per_second = 0;
 
-	static const VkImageType image_type_default = VK_IMAGE_TYPE_2D;
-	static const VkFormat image_format_default = VK_FORMAT_R8G8B8A8_SRGB;
-
 	// Create image.
 	VkImageCreateInfo image_create_info = { 0 };
 	image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	image_create_info.pNext = NULL;
 	image_create_info.flags = 0;
-	image_create_info.imageType = image_type_default;
+	image_create_info.imageType = VK_IMAGE_TYPE_2D;
 	image_create_info.format = room_textures[index].format;
 	image_create_info.extent.width = room_extent.width * 16;
 	image_create_info.extent.height = room_extent.length * 16;
