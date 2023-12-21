@@ -38,6 +38,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/area/area.c
 	src/game/area/room.c
 	src/game/entity/entity.c
+	src/game/entity/entity_manager.c
 	src/game/entity/entity_transform.c
 	src/glfw/glfw_manager.c
 	src/glfw/input_manager.c
