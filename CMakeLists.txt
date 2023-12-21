@@ -40,7 +40,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/entity/entity.c
 	src/game/entity/entity_ai.c
 	src/game/entity/entity_manager.c
-	src/game/entity/entity_transform.c
+	src/game/math/vector3D.c
 	src/glfw/glfw_manager.c
 	src/glfw/input_manager.c
 	src/log/logging.c
