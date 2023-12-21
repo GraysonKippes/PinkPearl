@@ -10,15 +10,12 @@ set(APP_NAME "\"Pink Pearl\"")
 set(RESOURCE_PATH "\"../resources/\"")
 configure_file(config.h.in config.h)
 
-add_subdirectory("lib_src/tECS")
-
 #target_compile_options(PinkPearl PRIVATE /TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address)
 target_compile_options(PinkPearl PRIVATE -std=c17 -Wpedantic -g)
 
 find_package(Vulkan REQUIRED)
 
 target_link_libraries(PinkPearl PRIVATE 
-	tECS 
 	Vulkan::Vulkan 
 	#"${PROJECT_SOURCE_DIR}/lib/glfw3.lib"
 	"${PROJECT_SOURCE_DIR}/lib/libglfw3.a"
@@ -40,7 +37,6 @@ target_sources(PinkPearl PRIVATE
 	src/game/hitbox.c
 	src/game/area/area.c
 	src/game/area/room.c
-	src/game/entity/ecs_manager.c
 	src/game/entity/entity.c
 	src/game/entity/entity_transform.c
 	src/glfw/glfw_manager.c
