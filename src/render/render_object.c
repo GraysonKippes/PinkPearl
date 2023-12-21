@@ -4,7 +4,17 @@
 
 #include "log/logging.h"
 
+const uint32_t render_handle_invalid = UINT32_MAX;
+
 render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
+
+bool validate_render_handle(render_handle_t handle) {
+	return handle < num_render_object_slots && handle < 64;
+}
+
+bool is_render_handle_to_room_render_object(render_handle_t handle) {
+	return handle < num_room_render_object_slots;
+}
 
 render_position_t *get_render_position_ptr(render_handle_t handle) {
 

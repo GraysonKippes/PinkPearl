@@ -11,7 +11,7 @@ set(RESOURCE_PATH "\"../resources/\"")
 configure_file(config.h.in config.h)
 
 #target_compile_options(PinkPearl PRIVATE /TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address)
-target_compile_options(PinkPearl PRIVATE -std=c17 -Wpedantic -Wall -Wextra -Werror=return-type -Wno-switch)
+target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra -Werror=return-type -Wno-switch)
 
 find_package(Vulkan REQUIRED)
 
@@ -38,6 +38,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/area/area.c
 	src/game/area/room.c
 	src/game/entity/entity.c
+	src/game/entity/entity_ai.c
 	src/game/entity/entity_manager.c
 	src/game/entity/entity_transform.c
 	src/glfw/glfw_manager.c

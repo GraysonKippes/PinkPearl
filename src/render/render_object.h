@@ -1,6 +1,7 @@
 #ifndef RENDER_OBJECT_H
 #define RENDER_OBJECT_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "math/vector3F.h"
@@ -10,6 +11,16 @@
 
 
 typedef uint32_t render_handle_t;
+
+extern const uint32_t render_handle_invalid;
+
+// Returns true if the render handle is both below the number of render object slots 
+// 	and below the bitwidth of the render object slot flags;
+// 	returns false otherwise.
+bool validate_render_handle(render_handle_t handle);
+
+// Returns true if the render handle goes to a render object slot dedicated to room render objects.
+bool is_render_handle_to_room_render_object(render_handle_t handle);
 
 render_handle_t create_render_object(void);
 
