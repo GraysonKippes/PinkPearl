@@ -1,7 +1,7 @@
 #ifndef HITBOX_H
 #define HITBOX_H
 
-#include "entity/entity_transform.h"
+#include "vector3D.h"
 
 typedef struct hitbox_t {
 	double width;

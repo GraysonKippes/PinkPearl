@@ -37,9 +37,7 @@ void init_entity_manager(void) {
 	loaded_entity_slots = 0;
 
 	for (uint32_t i = 0; i < max_num_entities; ++i) {
-		entities[i].transform = (entity_transform_t){ 0 };
-		entities[i].ai = entity_ai_null;
-		entities[i].render_handle = render_handle_invalid;
+		entities[i] = new_entity();
 	}
 }
 

@@ -34,12 +34,12 @@ target_sources(PinkPearl PRIVATE
 	src/debug.c
 	src/main.c
 	src/game/game.c
-	src/game/hitbox.c
 	src/game/area/area.c
 	src/game/area/room.c
 	src/game/entity/entity.c
 	src/game/entity/entity_ai.c
 	src/game/entity/entity_manager.c
+	src/game/math/hitbox.c
 	src/game/math/vector3D.c
 	src/glfw/glfw_manager.c
 	src/glfw/input_manager.c

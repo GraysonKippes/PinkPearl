@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 #include "entity.h"
-#include "render/render_object.h"
 
 #define MAX_NUM_ENTITIES 64
 
@@ -15,7 +14,7 @@ typedef uint32_t entity_handle_t;
 
 extern const entity_handle_t entity_handle_invalid;
 
-// Initializes the entity manager by setting all entity slots to default values.
+// Initializes the entity manager by setting all entity slots to default values using `new_entity`.
 void init_entity_manager(void);
 
 // Returns a handle to the first available entity slot.
