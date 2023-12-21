@@ -11,6 +11,8 @@
 
 #define NUM_QUEUES 4
 
+
+
 typedef struct queue_family_indices_t {
 	
 	uint32_t *graphics_family_ptr;

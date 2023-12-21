@@ -37,6 +37,7 @@ target_sources(PinkPearl PRIVATE
 	src/debug.c
 	src/main.c
 	src/game/game.c
+	src/game/hitbox.c
 	src/game/area/area.c
 	src/game/area/room.c
 	src/game/entity/ecs_manager.c
