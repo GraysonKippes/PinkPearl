@@ -14,6 +14,10 @@ typedef uint32_t render_handle_t;
 
 extern const uint32_t render_handle_invalid;
 
+render_handle_t load_render_object(void);
+
+void unload_render_object(render_handle_t *handle_ptr);
+
 // Returns true if the render handle is both below the number of render object slots 
 // 	and below the bitwidth of the render object slot flags;
 // 	returns false otherwise.

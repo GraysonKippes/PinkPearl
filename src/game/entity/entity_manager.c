@@ -2,6 +2,9 @@
 
 #include <stddef.h>
 
+#include "log/logging.h"
+#include "util/bit.h"
+
 const uint32_t max_num_entities = MAX_NUM_ENTITIES;
 
 static entity_t entities[MAX_NUM_ENTITIES];
@@ -61,6 +64,9 @@ entity_handle_t load_entity(void) {
 void unload_entity(entity_handle_t handle) {
 	
 	if (validate_entity_handle(handle)) {
+		if (is_bit_off(loaded_entity_slots, handle)) {
+			logf_message(WARNING, "Unloading already unused entity slot (%u).", handle);
+		}
 		set_entity_slot_unused(handle);
 	}
 }

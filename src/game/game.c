@@ -33,7 +33,8 @@ void start_game(void) {
 	entity_t *player_entity_ptr = NULL;
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {
-		player_entity_ptr->render_handle = player_render_handle;
+		//player_entity_ptr->render_handle = player_render_handle;
+		player_entity_ptr->render_handle = load_render_object();
 	}
 }
 

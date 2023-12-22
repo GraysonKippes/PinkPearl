@@ -8,6 +8,8 @@
 
 #define TEST_MASK(x, mask) ((x & mask) >= 1)
 
+extern const uint64_t flags_bitwidth;
+
 // Returns true if the bit at the specified position in `x` is one;
 // 	returns false otherwise.
 bool is_bit_on(uint64_t x, uint64_t bit_pos);
