@@ -28,7 +28,6 @@ target_include_directories(PinkPearl PRIVATE
 	"${PROJECT_SOURCE_DIR}/include"
 )
 
-
 target_sources(PinkPearl PRIVATE 
 	src/client.c
 	src/debug.c
@@ -72,6 +71,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/vulkan_render.c
 	src/render/vulkan/compute/compute_matrices.c
 	src/render/vulkan/compute/compute_room_texture.c
+	src/util/bit.c
 	src/util/string_array.c
 	src/util/time.c
 )
