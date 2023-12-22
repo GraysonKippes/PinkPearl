@@ -28,8 +28,6 @@ void start_game(void) {
 		// TODO - error handling
 	}
 
-	static const render_handle_t player_render_handle = 2;
-
 	entity_t *player_entity_ptr = NULL;
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {

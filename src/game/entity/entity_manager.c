@@ -18,13 +18,13 @@ static uint64_t loaded_entity_slots = 0;
 // Returns true if the bit at the corresponding position in the loaded entity slot flags is one;
 // 	returns false otherwise.
 static bool is_entity_slot_used(uint64_t slot) {
-	return !!(loaded_entity_slots & (1LL << slot));
+	return slot < max_num_entities && is_bit_on(loaded_entity_slots, slot);
 }
 
 // Returns true if the bit at the corresponding position in the loaded entity slot flags is zero;
 // 	returns false otherwise.
 static bool is_entity_slot_unused(uint64_t slot) {
-	return !(loaded_entity_slots & (1LL << slot));
+	return slot < max_num_entities && is_bit_off(loaded_entity_slots, slot);
 }
 
 static void set_entity_slot_used(uint64_t slot) {
@@ -52,7 +52,7 @@ entity_handle_t load_entity(void) {
 		return entity_handle_invalid;
 	}
 
-	for (uint64_t i = 0; i < 64; ++i) {
+	for (uint64_t i = 0; validate_entity_handle(i); ++i) {
 		if (is_entity_slot_unused(i)) {
 			set_entity_slot_used(i);
 			return i;
@@ -64,7 +64,7 @@ entity_handle_t load_entity(void) {
 void unload_entity(entity_handle_t handle) {
 	
 	if (validate_entity_handle(handle)) {
-		if (is_bit_off(loaded_entity_slots, handle)) {
+		if (is_entity_slot_unused(handle)) {
 			logf_message(WARNING, "Unloading already unused entity slot (%u).", handle);
 		}
 		set_entity_slot_unused(handle);

@@ -18,10 +18,10 @@ bool is_bit_on(uint64_t x, uint64_t bit_pos);
 // 	returns false otherwise.
 bool is_bit_off(uint64_t x, uint64_t bit_pos);
 
-// Sets the bit at the specified position in `x` to one.
-void set_bit_on(uint64_t x, uint64_t bit_pos);
+// Returns `x` with the bit at the specified position in `x` to one.
+uint64_t set_bit_on(uint64_t x, uint64_t bit_pos);
 
-// Sets the bit at the specified position in `x` to zero.
-void set_bit_off(uint64_t x, uint64_t bit_pos);
+// Returns `x` with the bit at the specified position in `x` to zero.
+uint64_t set_bit_off(uint64_t x, uint64_t bit_pos);
 
 #endif	// UTIL_H

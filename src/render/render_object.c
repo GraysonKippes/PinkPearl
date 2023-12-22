@@ -20,7 +20,7 @@ render_handle_t load_render_object(void) {
 
 	for (uint32_t i = 0; i < num_render_object_slots && i < 64; ++i) {
 		if (is_bit_off(loaded_render_slot_flags, i)) {
-			set_bit_on(loaded_render_slot_flags, i);
+			loaded_render_slot_flags = set_bit_on(loaded_render_slot_flags, i);
 			return (render_handle_t)i;
 		}
 	}
@@ -43,7 +43,7 @@ void unload_render_object(render_handle_t *handle_ptr) {
 		logf_message(WARNING, "Unloading already unused render object slot (%u).", *handle_ptr);
 	}
 
-	set_bit_off(loaded_render_slot_flags, *handle_ptr);
+	loaded_render_slot_flags = set_bit_off(loaded_render_slot_flags, *handle_ptr);
 	*handle_ptr = render_handle_dangling;
 }
 
