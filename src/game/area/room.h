@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "util/extent.h"
-
+#include "game/math/hitbox.h"
 #include "tile.h"
 
 // The size of a room, given as ratio of the default room size (24x15).
@@ -18,8 +18,14 @@ typedef enum room_size_t {
 typedef struct room_t {
 
 	room_size_t size;
+
 	extent_t extent;
+
 	tile_t *tiles;
+
+	unsigned int num_collision_boxes;
+
+	rect_t *collision_boxes;
 
 } room_t;
 

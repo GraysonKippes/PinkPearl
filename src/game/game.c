@@ -5,15 +5,24 @@
 #include <stdint.h>
 
 #include "glfw/input_manager.h"
+#include "log/logging.h"
 #include "render/render_object.h"
 #include "render/renderer.h"
 #include "render/vulkan/vulkan_render.h"
 #include "util/time.h"
 
-#include "area/area.h"
 #include "entity/entity_manager.h"
 
-static area_t current_area = { 0 };
+area_t current_area = { 0 };
+
+static const rect_t test_collision_boxes[1] = {
+	{
+		.x1 = -8.0,
+		.y1 = 3.0,
+		.x2 = 8.0,
+		.y2 = 5.0
+	}
+};
 
 static entity_handle_t player_entity_handle;
 
@@ -22,6 +31,9 @@ void start_game(void) {
 	init_entity_manager();
 	read_area_data("test", &current_area);
 	upload_room_model(current_area.rooms[0]);
+
+	current_area.rooms[0].num_collision_boxes = 1;
+	current_area.rooms[0].collision_boxes = (rect_t *)test_collision_boxes;
 
 	player_entity_handle = load_entity();
 	if (!validate_entity_handle(player_entity_handle)) {
@@ -104,6 +116,13 @@ void tick_game(void) {
 	}
 
 	tick_entities();
+
+	const rect_t player_rect = hitbox_to_world_space(player_entity_ptr->hitbox, player_entity_ptr->transform.position);
+	const rect_t room_rect = current_area.rooms[0].collision_boxes[0];
+
+	if (rect_overlap(player_rect, room_rect)) {
+		log_message(INFO, "RECT OVERLAP");
+	}
 
 	get_model_texture_ptr(player_entity_ptr->render_handle)->current_animation_cycle = animation_cycle;
 }
