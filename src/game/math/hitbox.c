@@ -75,7 +75,11 @@ bool rect_overlap(const rect_t a, const rect_t b) {
 
 #include "log/logging.h"
 
+
+
 double resolve_collision(const entity_transform_t entity_transform, const rect_t entity_hitbox, const rect_t collision_box) {
+	
+	const double step_length = entity_transform.velocity.r;
 	
 	const vector3D_cubic_t old_position = entity_transform.position;
 	const vector3D_cubic_t position_step = vector3D_spherical_to_cubic(entity_transform.velocity);
@@ -83,51 +87,92 @@ double resolve_collision(const entity_transform_t entity_transform, const rect_t
 
 	vector3D_cubic_t resolved_position = new_position; 
 
+	//logf_message(INFO, "step vector: <\n\t%.20f, \n\t%.20f, \n\t%.20f\n>", position_step.x, position_step.y, position_step.z);
+
 	if (position_step.x > 0.0) {
 
 		// Moving right (+x direction)
 
-		// The padding that the entity hitbox gives; depends on the direction of movement.
-		const double x_boundary = entity_hitbox.x2;
-
 		// Is the entity behind the collision box before moving?
-		const bool precondition = old_position.x - x_boundary <= collision_box.x2;
+		const bool precondition = old_position.x + entity_hitbox.x1 <= collision_box.x2;
 
 		// Is the entity either inside or ahead of the collision box after moving?
-		const bool postcondition = new_position.x + x_boundary >= collision_box.x1;
+		const bool postcondition = new_position.x + entity_hitbox.x2 >= collision_box.x1;
 
 		if (precondition && postcondition) {
-			resolved_position.x = collision_box.x1 - x_boundary;
-			//logf_message(INFO, "Colliding going right: %.2f -> %.2f", new_position.x, resolved_position.x);
+			resolved_position.x = collision_box.x1 - entity_hitbox.x2;
+			log_message(WARNING, "Clipping +x movement");
 		}
 		else {
-			//return;
+			return step_length;
 		}
 	}
 	else if (position_step.x < 0.0) {
 
 		// Moving left (-x direction)
 
-		// The padding that the entity hitbox gives; depends on the direction of movement.
-		const double x_boundary = entity_hitbox.x1;
-
-		// Is the entity behind the collision box before moving?
-		const bool precondition = old_position.x + x_boundary >= collision_box.x1;
-
-		// Is the entity either inside or ahead of the collision box after moving?
-		const bool postcondition = new_position.x - x_boundary <= collision_box.x2;
+		const bool precondition = old_position.x + entity_hitbox.x2 >= collision_box.x1;
+		const bool postcondition = new_position.x + entity_hitbox.x1 <= collision_box.x2;
 
 		if (precondition && postcondition) {
-			resolved_position.x = collision_box.x2 + x_boundary;
-			//logf_message(INFO, "Colliding going left: %.2f -> %.2f", new_position.x, resolved_position.x);
+			resolved_position.x = collision_box.x2 - entity_hitbox.x1;
+			log_message(WARNING, "Clipping -x movement");
 		}
 		else {
-			//return;
+			return step_length;
+		}
+	}
+	else {
+
+		const double x1 = old_position.x + entity_hitbox.x1;
+		const double x2 = old_position.x + entity_hitbox.x2;
+
+		if (!rect_overlap_single_axis(x1, x2, collision_box.x1, collision_box.x2)) {
+			return step_length;
+		}
+	}
+
+	if (position_step.y > 0.0) {
+
+		// Moving up (+y direction)
+
+		const bool precondition = old_position.y + entity_hitbox.y1 <= collision_box.y2;
+		const bool postcondition = new_position.y + entity_hitbox.y2 >= collision_box.y1;
+
+		if (precondition && postcondition) {
+			resolved_position.y = collision_box.y1 - entity_hitbox.y2;
+			log_message(WARNING, "Clipping +y movement");
+		}
+		else {
+			return step_length;
+		}
+	}
+	else if (position_step.y < 0.0) {
+
+		// Moving down (-y direction)
+
+		const bool precondition = old_position.y + entity_hitbox.y2 >= collision_box.y1;
+		const bool postcondition = new_position.y + entity_hitbox.y1 <= collision_box.y2;
+
+		if (precondition && postcondition) {
+			resolved_position.y = collision_box.y2 - entity_hitbox.y1;
+			log_message(WARNING, "Clipping -y movement");
+		}
+		else {
+			return step_length;
+		}
+	}
+	else {
+
+		const double y1 = old_position.y + entity_hitbox.y1;
+		const double y2 = old_position.y + entity_hitbox.y2;
+
+		if (!rect_overlap_single_axis(y1, y2, collision_box.y1, collision_box.y2)) {
+			return step_length;
 		}
 	}
 
 	const vector3D_cubic_t resolved_step = vector3D_cubic_subtract(resolved_position, old_position);
-	const double step_length = entity_transform.velocity.r;
 	const double resolved_step_length = sqrt(SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z));
 
 	return fmin(resolved_step_length, step_length);

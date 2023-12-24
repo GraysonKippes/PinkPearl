@@ -44,11 +44,30 @@ vector3D_spherical_t vector3D_cubic_to_spherical(vector3D_cubic_t vector) {
 }
 
 vector3D_cubic_t vector3D_spherical_to_cubic(vector3D_spherical_t vector) {
-	return (vector3D_cubic_t){
+
+	static const double zero_threshold = 0.00000001;
+
+	vector3D_cubic_t cubic_vector = {
 		.x = vector.r * sin(vector.theta) * cos(vector.phi),
 		.y = vector.r * sin(vector.theta) * sin(vector.phi),
 		.z = vector.r * cos(vector.theta)
 	};
+
+	// TODO - do general rounding with this
+
+	if (fabs(cubic_vector.x) < zero_threshold) {
+		cubic_vector.x = 0.0;
+	}
+
+	if (fabs(cubic_vector.y) < zero_threshold) {
+		cubic_vector.y = 0.0;
+	}
+
+	if (fabs(cubic_vector.z) < zero_threshold) {
+		cubic_vector.z = 0.0;
+	}
+
+	return cubic_vector;
 }
 
 vector3D_cubic_t vector3D_cubic_add(const vector3D_cubic_t a, const vector3D_cubic_t b) {

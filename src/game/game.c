@@ -26,10 +26,10 @@ static const rect_t test_collision_boxes[1] = {
 
 static const rect_t test_collision_boxes_2[1] = {
 	{
-		.x1 = -7.0,
-		.y1 = -3.0,
+		.x1 = -3.0,
+		.y1 = -1.0,
 		.x2 = -2.0,
-		.y2 = 3.0
+		.y2 = 2.0
 	}
 };
 
@@ -40,9 +40,9 @@ static const hitbox_t player_hitbox = {
 
 static const rect_t player_hitbox_2 = {
 	.x1 = -0.45,
-	.y1 = 0.95,
+	.y1 = -0.45,
 	.x2 = 0.45,
-	.y2 = -0.45
+	.y2 = 0.95
 };
 
 static entity_handle_t player_entity_handle;
