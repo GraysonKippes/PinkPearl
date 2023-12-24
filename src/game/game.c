@@ -18,10 +18,31 @@ area_t current_area = { 0 };
 static const rect_t test_collision_boxes[1] = {
 	{
 		.x1 = -8.0,
-		.y1 = 3.0,
+		.y1 = 2.0,
 		.x2 = 8.0,
 		.y2 = 5.0
 	}
+};
+
+static const rect_t test_collision_boxes_2[1] = {
+	{
+		.x1 = -7.0,
+		.y1 = -3.0,
+		.x2 = -2.0,
+		.y2 = 3.0
+	}
+};
+
+static const hitbox_t player_hitbox = {
+	.width = 0.9,
+	.length = 1.4
+};
+
+static const rect_t player_hitbox_2 = {
+	.x1 = -0.45,
+	.y1 = 0.95,
+	.x2 = 0.45,
+	.y2 = -0.45
 };
 
 static entity_handle_t player_entity_handle;
@@ -33,7 +54,7 @@ void start_game(void) {
 	upload_room_model(current_area.rooms[0]);
 
 	current_area.rooms[0].num_collision_boxes = 1;
-	current_area.rooms[0].collision_boxes = (rect_t *)test_collision_boxes;
+	current_area.rooms[0].collision_boxes = (rect_t *)test_collision_boxes_2;
 
 	player_entity_handle = load_entity();
 	if (!validate_entity_handle(player_entity_handle)) {
@@ -43,7 +64,7 @@ void start_game(void) {
 	entity_t *player_entity_ptr = NULL;
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {
-		//player_entity_ptr->render_handle = player_render_handle;
+		player_entity_ptr->hitbox = player_hitbox;
 		player_entity_ptr->render_handle = load_render_object();
 	}
 }
@@ -115,14 +136,17 @@ void tick_game(void) {
 			break;
 	}
 
-	tick_entities();
-
 	const rect_t player_rect = hitbox_to_world_space(player_entity_ptr->hitbox, player_entity_ptr->transform.position);
 	const rect_t room_rect = current_area.rooms[0].collision_boxes[0];
 
 	if (rect_overlap(player_rect, room_rect)) {
-		log_message(INFO, "RECT OVERLAP");
+		//log_message(INFO, "RECT OVERLAP");
 	}
+
+	const double resolved_rho = resolve_collision(player_entity_ptr->transform, player_hitbox_2, room_rect);
+	player_entity_ptr->transform.velocity.r = resolved_rho;
+
+	tick_entities();
 
 	get_model_texture_ptr(player_entity_ptr->render_handle)->current_animation_cycle = animation_cycle;
 }

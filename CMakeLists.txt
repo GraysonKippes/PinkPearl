@@ -11,7 +11,7 @@ set(RESOURCE_PATH "\"../resources/\"")
 configure_file(config.h.in config.h)
 
 #target_compile_options(PinkPearl PRIVATE /TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address)
-target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra 
+target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
 	-Werror=implicit-function-declaration 
 	-Wno-switch)

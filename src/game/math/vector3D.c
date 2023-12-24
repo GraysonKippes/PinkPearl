@@ -51,10 +51,18 @@ vector3D_cubic_t vector3D_spherical_to_cubic(vector3D_spherical_t vector) {
 	};
 }
 
-vector3D_cubic_t vector3D_cubic_add(vector3D_cubic_t a, vector3D_cubic_t b) {
+vector3D_cubic_t vector3D_cubic_add(const vector3D_cubic_t a, const vector3D_cubic_t b) {
 	return (vector3D_cubic_t){
 		.x = a.x + b.x,
 		.y = a.y + b.y,
 		.z = a.z + b.z
+	};
+}
+
+vector3D_cubic_t vector3D_cubic_subtract(const vector3D_cubic_t a, const vector3D_cubic_t b) {
+	return (vector3D_cubic_t){
+		.x = a.x - b.x,
+		.y = a.y - b.y,
+		.z = a.z - b.z
 	};
 }

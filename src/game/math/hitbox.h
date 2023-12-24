@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+#include "game/entity/entity_transform.h"
 #include "vector3D.h"
 
 typedef struct hitbox_t {
@@ -20,5 +21,7 @@ rect_t hitbox_to_world_space(hitbox_t hitbox, vector3D_cubic_t position);
 
 // Returns true if the two rects overlap; returns false otherwise.
 bool rect_overlap(const rect_t a, const rect_t b);
+
+double resolve_collision(const entity_transform_t entity_transform, const rect_t entity_hitbox, const rect_t collision_box);
 
 #endif	// HITBOX_H
