@@ -26,8 +26,8 @@ static const rect_t test_collision_boxes[1] = {
 
 static const rect_t test_collision_boxes_2[1] = {
 	{
-		.x1 = -3.0,
-		.y1 = -1.0,
+		.x1 = -4.0,
+		.y1 = -2.0,
 		.x2 = -2.0,
 		.y2 = 2.0
 	}
@@ -64,7 +64,7 @@ void start_game(void) {
 	entity_t *player_entity_ptr = NULL;
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {
-		player_entity_ptr->hitbox = player_hitbox;
+		player_entity_ptr->hitbox = player_hitbox_2;
 		player_entity_ptr->render_handle = load_render_object();
 	}
 }
@@ -135,16 +135,6 @@ void tick_game(void) {
 			animation_cycle -= animation_cycle % 2;
 			break;
 	}
-
-	const rect_t player_rect = hitbox_to_world_space(player_entity_ptr->hitbox, player_entity_ptr->transform.position);
-	const rect_t room_rect = current_area.rooms[0].collision_boxes[0];
-
-	if (rect_overlap(player_rect, room_rect)) {
-		//log_message(INFO, "RECT OVERLAP");
-	}
-
-	const double resolved_rho = resolve_collision(player_entity_ptr->transform, player_hitbox_2, room_rect);
-	player_entity_ptr->transform.velocity.r = resolved_rho;
 
 	tick_entities();
 

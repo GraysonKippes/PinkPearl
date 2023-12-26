@@ -2,10 +2,12 @@
 
 #include <stddef.h>
 
+#include "game/game.h"
+
 entity_t new_entity(void) {
 	return (entity_t){
 		.transform = (entity_transform_t){ 0 },
-		.hitbox = (hitbox_t){ 0 },
+		.hitbox = (rect_t){ 0 },
 		.ai = entity_ai_null,
 		.render_handle = render_handle_invalid
 	};
@@ -17,9 +19,10 @@ void tick_entity(entity_t *entity_ptr) {
 		return;
 	}
 
-	vector3D_cubic_t old_position = entity_ptr->transform.position;
-	vector3D_cubic_t position_step = vector3D_spherical_to_cubic(entity_ptr->transform.velocity);
-	entity_ptr->transform.position = vector3D_cubic_add(old_position, position_step);
+	const rect_t room_rect = current_area.rooms[0].collision_boxes[0];
+	const vector3D_cubic_t old_position = entity_ptr->transform.position;
+	const vector3D_cubic_t new_position = resolve_collision(entity_ptr->transform, entity_ptr->hitbox, room_rect);
+	entity_ptr->transform.position = new_position;
 
 	// Render object updates.
 

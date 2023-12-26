@@ -15,12 +15,12 @@ rect_t hitbox_to_world_space(hitbox_t hitbox, vector3D_cubic_t position) {
 
 // Returns true if `x` is between `a` and `b`, inclusive: x -> [a, b].
 static bool is_number_between(const double x, const double a, const double b) {
-	return x >= a && x <= b;
+	return x > a && x < b;
 }
 
 // Returns true if there is overlap on a single axis; returns false otherwise.
 static bool rect_overlap_single_axis(const double a1, const double a2, const double b1, const double b2) {
-	return is_number_between(a1, b1, b2) || is_number_between(a2, b1, b2) || (a1 < b1 && a2 > b2);
+	return is_number_between(a1, b1, b2) || is_number_between(a2, b1, b2) || (a1 <= b1 && a2 >= b2);
 }
 
 bool rect_overlap(const rect_t a, const rect_t b) {
@@ -75,51 +75,55 @@ bool rect_overlap(const rect_t a, const rect_t b) {
 
 #include "log/logging.h"
 
-
-
-double resolve_collision(const entity_transform_t entity_transform, const rect_t entity_hitbox, const rect_t collision_box) {
-	
-	const double step_length = entity_transform.velocity.r;
+vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, const rect_t entity_hitbox, const rect_t collision_box) {
 	
 	const vector3D_cubic_t old_position = entity_transform.position;
 	const vector3D_cubic_t position_step = vector3D_spherical_to_cubic(entity_transform.velocity);
 	const vector3D_cubic_t new_position = vector3D_cubic_add(old_position, position_step);
 
-	vector3D_cubic_t resolved_position = new_position; 
+	// Slope of the line of travel, in both axes.
+	const double x_slope = position_step.x / position_step.y;
+	const double y_slope = position_step.y / position_step.x;
 
-	//logf_message(INFO, "step vector: <\n\t%.20f, \n\t%.20f, \n\t%.20f\n>", position_step.x, position_step.y, position_step.z);
+	vector3D_cubic_t resolved_position = new_position; 
 
 	if (position_step.x > 0.0) {
 
 		// Moving right (+x direction)
 
 		// Is the entity behind the collision box before moving?
-		const bool precondition = old_position.x + entity_hitbox.x1 <= collision_box.x2;
+		const bool precondition = old_position.x + entity_hitbox.x1 < collision_box.x2;
 
 		// Is the entity either inside or ahead of the collision box after moving?
-		const bool postcondition = new_position.x + entity_hitbox.x2 >= collision_box.x1;
+		const bool postcondition = new_position.x + entity_hitbox.x2 > collision_box.x1;
 
 		if (precondition && postcondition) {
 			resolved_position.x = collision_box.x1 - entity_hitbox.x2;
-			log_message(WARNING, "Clipping +x movement");
+			const double resolved_run = resolved_position.x - old_position.x;
+			const double resolved_step_y = resolved_run * y_slope;
+			resolved_position.y = old_position.y + resolved_step_y;
+			return resolved_position;
 		}
 		else {
-			return step_length;
+			return new_position;
 		}
 	}
 	else if (position_step.x < 0.0) {
 
 		// Moving left (-x direction)
 
-		const bool precondition = old_position.x + entity_hitbox.x2 >= collision_box.x1;
-		const bool postcondition = new_position.x + entity_hitbox.x1 <= collision_box.x2;
+		const bool precondition = old_position.x + entity_hitbox.x2 > collision_box.x1;
+		const bool postcondition = new_position.x + entity_hitbox.x1 < collision_box.x2;
 
 		if (precondition && postcondition) {
 			resolved_position.x = collision_box.x2 - entity_hitbox.x1;
-			log_message(WARNING, "Clipping -x movement");
+			const double resolved_run = resolved_position.x - old_position.x;
+			const double resolved_step_y = resolved_run * y_slope;
+			resolved_position.y = old_position.y + resolved_step_y;
+			return resolved_position;
 		}
 		else {
-			return step_length;
+			return new_position;
 		}
 	}
 	else {
@@ -128,7 +132,7 @@ double resolve_collision(const entity_transform_t entity_transform, const rect_t
 		const double x2 = old_position.x + entity_hitbox.x2;
 
 		if (!rect_overlap_single_axis(x1, x2, collision_box.x1, collision_box.x2)) {
-			return step_length;
+			return new_position;
 		}
 	}
 
@@ -136,30 +140,36 @@ double resolve_collision(const entity_transform_t entity_transform, const rect_t
 
 		// Moving up (+y direction)
 
-		const bool precondition = old_position.y + entity_hitbox.y1 <= collision_box.y2;
-		const bool postcondition = new_position.y + entity_hitbox.y2 >= collision_box.y1;
+		const bool precondition = old_position.y + entity_hitbox.y1 < collision_box.y2;
+		const bool postcondition = new_position.y + entity_hitbox.y2 > collision_box.y1;
 
 		if (precondition && postcondition) {
 			resolved_position.y = collision_box.y1 - entity_hitbox.y2;
-			log_message(WARNING, "Clipping +y movement");
+			const double resolved_rise = resolved_position.y - old_position.y;
+			const double resolved_step_x = resolved_rise * x_slope;
+			resolved_position.x = old_position.x + resolved_step_x;
+			return resolved_position;
 		}
 		else {
-			return step_length;
+			return new_position;
 		}
 	}
 	else if (position_step.y < 0.0) {
 
 		// Moving down (-y direction)
 
-		const bool precondition = old_position.y + entity_hitbox.y2 >= collision_box.y1;
-		const bool postcondition = new_position.y + entity_hitbox.y1 <= collision_box.y2;
+		const bool precondition = old_position.y + entity_hitbox.y2 > collision_box.y1;
+		const bool postcondition = new_position.y + entity_hitbox.y1 < collision_box.y2;
 
 		if (precondition && postcondition) {
 			resolved_position.y = collision_box.y2 - entity_hitbox.y1;
-			log_message(WARNING, "Clipping -y movement");
+			const double resolved_rise = resolved_position.y - old_position.y;
+			const double resolved_step_x = resolved_rise * x_slope;
+			resolved_position.x = old_position.x + resolved_step_x;
+			return resolved_position;
 		}
 		else {
-			return step_length;
+			return new_position;
 		}
 	}
 	else {
@@ -168,14 +178,11 @@ double resolve_collision(const entity_transform_t entity_transform, const rect_t
 		const double y2 = old_position.y + entity_hitbox.y2;
 
 		if (!rect_overlap_single_axis(y1, y2, collision_box.y1, collision_box.y2)) {
-			return step_length;
+			return new_position;
 		}
 	}
 
-	const vector3D_cubic_t resolved_step = vector3D_cubic_subtract(resolved_position, old_position);
-	const double resolved_step_length = sqrt(SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z));
-
-	return fmin(resolved_step_length, step_length);
+	return resolved_position;
 }
 
 /* SINGLE-AXIS COLLISION RESOLUTION

@@ -11,7 +11,7 @@ typedef struct entity_t {
 
 	entity_transform_t transform;
 
-	hitbox_t hitbox;
+	rect_t hitbox;
 
 	entity_ai_t ai;
 
