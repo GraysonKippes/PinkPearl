@@ -4,6 +4,8 @@
 
 #include "game/game.h"
 
+#define SQUARE(x) (x * x)
+
 entity_t new_entity(void) {
 	return (entity_t){
 		.transform = (entity_transform_t){ 0 },
@@ -19,9 +21,30 @@ void tick_entity(entity_t *entity_ptr) {
 		return;
 	}
 
-	const rect_t room_rect = current_area.rooms[0].collision_boxes[0];
 	const vector3D_cubic_t old_position = entity_ptr->transform.position;
-	const vector3D_cubic_t new_position = resolve_collision(entity_ptr->transform, entity_ptr->hitbox, room_rect);
+	const vector3D_cubic_t position_step = vector3D_spherical_to_cubic(entity_ptr->transform.velocity);
+
+	vector3D_cubic_t new_position = vector3D_cubic_add(old_position, position_step);
+
+	// The square of the distance of the currently selected new position from the old position.
+	// This variable is used to track which resolved new position is the shortest from the entity.
+	// The squared length is used instead of the real length because it is only used for comparison.
+	double step_length_squared = SQUARE(position_step.x) + SQUARE(position_step.y) + SQUARE(position_step.z); 
+
+	for (unsigned int i = 0; i < current_area.rooms[0].num_collision_boxes; ++i) {
+		
+		const rect_t room_rect = current_area.rooms[0].collision_boxes[i];
+
+		vector3D_cubic_t resolved_position = resolve_collision(entity_ptr->transform, entity_ptr->hitbox, room_rect);
+		vector3D_cubic_t resolved_step = vector3D_cubic_subtract(resolved_position, old_position);
+		const double resolved_step_length_squared = SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z);
+
+		if (resolved_step_length_squared < step_length_squared) {
+			new_position = resolved_position;
+			step_length_squared = resolved_step_length_squared;
+		}
+	}
+
 	entity_ptr->transform.position = new_position;
 
 	// Render object updates.
