@@ -67,7 +67,7 @@ int read_room_data(FILE *file, room_t *room_ptr) {
 		return 2;
 	}
 
-	uint64_t num_tiles = room_ptr->extent.width * room_ptr->extent.length;
+	const uint64_t num_tiles = room_ptr->extent.width * room_ptr->extent.length;
 	uint64_t tiles_filled = 0;
 
 	logf_message(WARNING, "num_tiles = %lu", num_tiles);
