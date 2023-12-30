@@ -23,15 +23,15 @@ typedef struct room_t {
 
 	tile_t *tiles;
 
-	unsigned int num_collision_boxes;
+	unsigned int num_walls;
 
-	rect_t *collision_boxes;
+	rect_t *walls;
 
 } room_t;
 
-extent_t room_size_to_extent(room_size_t room_size);
+room_t create_room(room_size_t room_size);
 
-int read_room_data(FILE *file, room_t *room_ptr);
+extent_t room_size_to_extent(room_size_t room_size);
 
 void destroy_room(room_t room);
 

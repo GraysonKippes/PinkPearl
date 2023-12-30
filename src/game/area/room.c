@@ -48,64 +48,6 @@ extent_t room_size_to_extent(room_size_t room_size) {
 	};
 }
 
-int read_room_data(FILE *file, room_t *room_ptr) {
-	
-	// Must not close file.
-	
-	uint32_t room_size = 0;
-	fread(&room_size, 4, 1, file);
-
-	if (room_size > 3) {
-		logf_message(ERROR, "Error reading room data: invalid room size code (%u).", room_size);
-		return 1;
-	}
-
-	*room_ptr = create_room((room_size_t)room_size);
-
-	if (room_ptr->tiles == NULL) {
-		log_message(ERROR, "Error creating room: failed to allocate tile array.");
-		return 2;
-	}
-
-	const uint64_t num_tiles = room_ptr->extent.width * room_ptr->extent.length;
-	uint64_t tiles_filled = 0;
-
-	logf_message(WARNING, "num_tiles = %lu", num_tiles);
-
-	// Read data for each tile here.
-	while (tiles_filled < num_tiles) {
-
-		uint32_t fill_range = 0;
-		tile_t tile = { 0 };
-
-		fread(&fill_range, 4, 1, file);
-		fread(&tile, 4, 1, file);
-
-		logf_message(WARNING, "fill_range = %u", fill_range);
-
-		if (fill_range == 0) {
-			log_message(ERROR, "Error creating room: tile fill range is zero.");
-			free(room_ptr->tiles);
-			return 3;
-		}
-
-		if (tiles_filled + (uint64_t)fill_range > num_tiles) {
-			logf_message(ERROR, "Error creating room: tile fill range (%lu + %u) exceeds room area (%lu).", tiles_filled, fill_range, num_tiles);
-			free(room_ptr->tiles);
-			return 4;
-		}
-
-		for (uint32_t j = 0; j < fill_range; ++j) {
-			room_ptr->tiles[tiles_filled + (uint64_t)j] = tile;
-		}
-
-		tiles_filled += (uint64_t)fill_range;
-		logf_message(WARNING, "tiles_filled = %lu", tiles_filled);
-	}
-
-	return 0;
-}
-
 void destroy_room(room_t room) {
 	free(room.tiles);
 }

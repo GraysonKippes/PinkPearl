@@ -26,8 +26,6 @@ typedef struct area_t {
 
 } area_t;
 
-void read_area_data(const char *path, area_t *area_ptr);
-
 // Returns a pointer to the room at the map position in the area.
 // Returns NULL if the room could not be found.
 room_t *area_get_room_ptr(area_t area, offset_t map_position);

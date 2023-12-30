@@ -11,32 +11,10 @@
 #include "render/vulkan/vulkan_render.h"
 #include "util/time.h"
 
+#include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
 
 area_t current_area = { 0 };
-
-static const rect_t test_collision_boxes[1] = {
-	{
-		.x1 = -8.0,
-		.y1 = 2.0,
-		.x2 = 8.0,
-		.y2 = 5.0
-	}
-};
-
-static const rect_t test_collision_boxes_2[1] = {
-	{
-		.x1 = -4.0,
-		.y1 = -2.0,
-		.x2 = -2.0,
-		.y2 = 2.0
-	}
-};
-
-static const hitbox_t player_hitbox = {
-	.width = 0.9,
-	.length = 1.4
-};
 
 static const rect_t player_hitbox_2 = {
 	.x1 = -0.45,
@@ -50,11 +28,8 @@ static entity_handle_t player_entity_handle;
 void start_game(void) {
 
 	init_entity_manager();
-	read_area_data("test", &current_area);
+	current_area = parse_fga_file("test");
 	upload_room_model(current_area.rooms[0]);
-
-	current_area.rooms[0].num_collision_boxes = 1;
-	current_area.rooms[0].collision_boxes = (rect_t *)test_collision_boxes_2;
 
 	player_entity_handle = load_entity();
 	if (!validate_entity_handle(player_entity_handle)) {
