@@ -596,10 +596,6 @@ void load_textures(const texture_pack_t texture_pack) {
 
 	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
 		
-		logf_message(WARNING, "Texture atlas extent: %u x %u texels.", texture_pack.texture_create_infos[i].atlas_extent.width, texture_pack.texture_create_infos[i].atlas_extent.length);
-		logf_message(WARNING, "Texture cell extent: %u x %u texels.", texture_pack.texture_create_infos[i].cell_extent.width, texture_pack.texture_create_infos[i].cell_extent.length);
-		logf_message(WARNING, "Texture num. cells: %u x %u cells.", texture_pack.texture_create_infos[i].num_cells.width, texture_pack.texture_create_infos[i].num_cells.length);
-
 		// TODO - this is temporary, make it so that tilemap textures do not need a special flag
 		if (i == 0)
 			load_texture(texture_pack.texture_create_infos[i], true);

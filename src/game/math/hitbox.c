@@ -73,9 +73,7 @@ bool rect_overlap(const rect_t a, const rect_t b) {
  *
  * */
 
-#include "log/logging.h"
-
-vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, const rect_t entity_hitbox, const rect_t collision_box) {
+vector3D_cubic_t resolve_collision(const vector3D_cubic_t old_position, const vector3D_cubic_t new_position, const rect_t hitbox, const rect_t wall) {
 	
 	// Collision detection and correction works by transforming 
 	// the entity's velocity vector into a linear function:
@@ -179,36 +177,35 @@ vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, co
 	//
 	//
 
+	// This parameter determines how much the entity is slowed down when sliding against a wall.
 	static const double friction_factor = 0.75;
 
-	const vector3D_cubic_t old_position = entity_transform.position;
-	const vector3D_cubic_t position_step = vector3D_spherical_to_cubic(entity_transform.velocity);
-	const vector3D_cubic_t new_position = vector3D_cubic_add(old_position, position_step);
+	const vector3D_cubic_t position_step = vector3D_cubic_subtract(new_position, old_position);
 
 	vector3D_cubic_t resolved_position = new_position; 
 
 	if (position_step.x > 0.0) {
 
 		// If the wall is entirely behind or ahead of the entity as it moves right, then skip collision resolution.
-		if (old_position.x + entity_hitbox.x1 >= collision_box.x2
-				|| new_position.x + entity_hitbox.x2 <= collision_box.x1) {
+		if (old_position.x + hitbox.x1 >= wall.x2
+				|| new_position.x + hitbox.x2 <= wall.x1) {
 			goto skip;
 		}
 
 		const double slope_y = position_step.y / position_step.x;
-		const double x_boundary = collision_box.x1 - old_position.x - entity_hitbox.x2;
-		const double lower_intersection = slope_y * x_boundary + old_position.y + entity_hitbox.y1;
-		const double upper_intersection = slope_y * x_boundary + old_position.y + entity_hitbox.y2;
+		const double x_boundary = wall.x1 - old_position.x - hitbox.x2;
+		const double lower_intersection = slope_y * x_boundary + old_position.y + hitbox.y1;
+		const double upper_intersection = slope_y * x_boundary + old_position.y + hitbox.y2;
 		
-		const bool lower_collision = lower_intersection > collision_box.y1 && lower_intersection < collision_box.y2;
-		const bool upper_collision = upper_intersection > collision_box.y1 && upper_intersection < collision_box.y2;
-		const bool surround_collision = lower_intersection < collision_box.y1 && upper_intersection > collision_box.y2;
+		const bool lower_collision = lower_intersection > wall.y1 && lower_intersection < wall.y2;
+		const bool upper_collision = upper_intersection > wall.y1 && upper_intersection < wall.y2;
+		const bool surround_collision = lower_intersection < wall.y1 && upper_intersection > wall.y2;
 
 		// Test for lower and upper collision in the +x direction.
 		if (lower_collision || upper_collision || surround_collision) {
 
 			// If the entity is flush against the wall, then strip the x-component from the entity's velocity.
-			if (old_position.x + entity_hitbox.x2 == collision_box.x1) {
+			if (old_position.x + hitbox.x2 == wall.x1) {
 				vector3D_cubic_t resolved_step = position_step;
 				resolved_step.x = 0.0;
 				resolved_step.y *= friction_factor;
@@ -216,7 +213,7 @@ vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, co
 			}
 			else {
 				resolved_position = new_position;
-				resolved_position.x = collision_box.x1 - entity_hitbox.x2;
+				resolved_position.x = wall.x1 - hitbox.x2;
 				resolved_position.y = slope_y * (resolved_position.x - old_position.x) + old_position.y;
 			}
 			goto correct;
@@ -225,26 +222,26 @@ vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, co
 	else if (position_step.x < 0.0) {
 		
 		// If the wall is entirely behind or ahead of the entity as it moves left, then skip collision resolution.
-		if (old_position.x + entity_hitbox.x2 <= collision_box.x1
-				|| new_position.x + entity_hitbox.x1 >= collision_box.x2) {
+		if (old_position.x + hitbox.x2 <= wall.x1
+				|| new_position.x + hitbox.x1 >= wall.x2) {
 			goto skip;
 		}
 
 
 		const double slope_y = position_step.y / position_step.x;
-		const double x_boundary = collision_box.x2 - old_position.x - entity_hitbox.x1;
-		const double lower_intersection = slope_y * x_boundary + old_position.y + entity_hitbox.y1;
-		const double upper_intersection = slope_y * x_boundary + old_position.y + entity_hitbox.y2;
+		const double x_boundary = wall.x2 - old_position.x - hitbox.x1;
+		const double lower_intersection = slope_y * x_boundary + old_position.y + hitbox.y1;
+		const double upper_intersection = slope_y * x_boundary + old_position.y + hitbox.y2;
 		
-		const bool lower_collision = lower_intersection > collision_box.y1 && lower_intersection < collision_box.y2;
-		const bool upper_collision = upper_intersection > collision_box.y1 && upper_intersection < collision_box.y2;
-		const bool surround_collision = lower_intersection < collision_box.y1 && upper_intersection > collision_box.y2;
+		const bool lower_collision = lower_intersection > wall.y1 && lower_intersection < wall.y2;
+		const bool upper_collision = upper_intersection > wall.y1 && upper_intersection < wall.y2;
+		const bool surround_collision = lower_intersection < wall.y1 && upper_intersection > wall.y2;
 
 		// Test for lower and upper collision in the -x direction.
 		if (lower_collision || upper_collision || surround_collision) {
 
 			// If the entity is flush against the wall, then strip the x-component from the entity's velocity.
-			if (old_position.x + entity_hitbox.x1 == collision_box.x2) {
+			if (old_position.x + hitbox.x1 == wall.x2) {
 				vector3D_cubic_t resolved_step = position_step;
 				resolved_step.x = 0.0;
 				resolved_step.y *= friction_factor;
@@ -252,7 +249,7 @@ vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, co
 			}
 			else {
 				resolved_position = new_position;
-				resolved_position.x = collision_box.x2 - entity_hitbox.x1;
+				resolved_position.x = wall.x2 - hitbox.x1;
 				resolved_position.y = slope_y * (resolved_position.x - old_position.x) + old_position.y;
 			}
 			goto correct;
@@ -262,25 +259,25 @@ vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, co
 	if (position_step.y > 0.0) {
 		
 		// If the wall is entirely below or above the entity as it moves up, then skip collision resolution.
-		if (old_position.y + entity_hitbox.y1 >= collision_box.y2
-				|| new_position.y + entity_hitbox.y2 <= collision_box.y1) {
+		if (old_position.y + hitbox.y1 >= wall.y2
+				|| new_position.y + hitbox.y2 <= wall.y1) {
 			goto skip;
 		}
 
 		const double slope_x = position_step.x / position_step.y;
-		const double y_boundary = collision_box.y1 - old_position.y - entity_hitbox.y2;
-		const double left_intersection = slope_x * y_boundary + old_position.x + entity_hitbox.x1;
-		const double right_intersection = slope_x * y_boundary + old_position.x + entity_hitbox.x2;
+		const double y_boundary = wall.y1 - old_position.y - hitbox.y2;
+		const double left_intersection = slope_x * y_boundary + old_position.x + hitbox.x1;
+		const double right_intersection = slope_x * y_boundary + old_position.x + hitbox.x2;
 		
-		const bool left_collision = left_intersection > collision_box.x1 && left_intersection < collision_box.x2;
-		const bool right_collision = right_intersection > collision_box.x1 && right_intersection < collision_box.x2;
-		const bool surround_collision = left_intersection < collision_box.x1 && right_intersection > collision_box.x2;
+		const bool left_collision = left_intersection > wall.x1 && left_intersection < wall.x2;
+		const bool right_collision = right_intersection > wall.x1 && right_intersection < wall.x2;
+		const bool surround_collision = left_intersection < wall.x1 && right_intersection > wall.x2;
 
 		// Test for left and right collision in the +y direction.
 		if (left_collision || right_collision || surround_collision) {
 
 			// If the entity is flush against the wall, then strip the y-component from the entity's velocity.
-			if (old_position.y + entity_hitbox.y2 == collision_box.y1) {
+			if (old_position.y + hitbox.y2 == wall.y1) {
 				vector3D_cubic_t resolved_step = position_step;
 				resolved_step.y = 0.0;
 				resolved_step.x *= friction_factor;
@@ -288,7 +285,7 @@ vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, co
 			}
 			else {
 				resolved_position = new_position;
-				resolved_position.y = collision_box.y1 - entity_hitbox.y2;
+				resolved_position.y = wall.y1 - hitbox.y2;
 				resolved_position.x = slope_x * (resolved_position.y - old_position.y) + old_position.x;
 			}
 			goto correct;
@@ -297,25 +294,25 @@ vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, co
 	else if (position_step.y < 0.0) {
 
 		// If the wall is entirely below or above the entity as it moves down, then skip collision resolution.
-		if (old_position.y + entity_hitbox.y2 <= collision_box.y1
-				|| new_position.y + entity_hitbox.y1 >= collision_box.y2) {
+		if (old_position.y + hitbox.y2 <= wall.y1
+				|| new_position.y + hitbox.y1 >= wall.y2) {
 			goto skip;
 		}
 
 		const double slope_x = position_step.x / position_step.y;
-		const double y_boundary = collision_box.y2 - old_position.y - entity_hitbox.y1;
-		const double left_intersection = slope_x * y_boundary + old_position.x + entity_hitbox.x1;
-		const double right_intersection = slope_x * y_boundary + old_position.x + entity_hitbox.x2;
+		const double y_boundary = wall.y2 - old_position.y - hitbox.y1;
+		const double left_intersection = slope_x * y_boundary + old_position.x + hitbox.x1;
+		const double right_intersection = slope_x * y_boundary + old_position.x + hitbox.x2;
 		
-		const bool left_collision = left_intersection > collision_box.x1 && left_intersection < collision_box.x2;
-		const bool right_collision = right_intersection > collision_box.x1 && right_intersection < collision_box.x2;
-		const bool surround_collision = left_intersection < collision_box.x1 && right_intersection > collision_box.x2;
+		const bool left_collision = left_intersection > wall.x1 && left_intersection < wall.x2;
+		const bool right_collision = right_intersection > wall.x1 && right_intersection < wall.x2;
+		const bool surround_collision = left_intersection < wall.x1 && right_intersection > wall.x2;
 
 		// Test for left and right collision in the -y direction.
 		if (left_collision || right_collision || surround_collision) {
 
 			// If the entity is flush against the wall, then strip the y-component from the entity's velocity.
-			if (old_position.y + entity_hitbox.y1 == collision_box.y2) {
+			if (old_position.y + hitbox.y1 == wall.y2) {
 				vector3D_cubic_t resolved_step = position_step;
 				resolved_step.y = 0.0;
 				resolved_step.x *= friction_factor;
@@ -323,7 +320,7 @@ vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, co
 			}
 			else {
 				resolved_position = new_position;
-				resolved_position.y = collision_box.y2 - entity_hitbox.y1;
+				resolved_position.y = wall.y2 - hitbox.y1;
 				resolved_position.x = slope_x * (resolved_position.y - old_position.y) + old_position.x;
 			}
 			goto correct;

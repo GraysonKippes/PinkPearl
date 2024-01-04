@@ -35,7 +35,7 @@ void tick_entity(entity_t *entity_ptr) {
 		
 		const rect_t wall = current_area.rooms[0].walls[i];
 
-		vector3D_cubic_t resolved_position = resolve_collision(entity_ptr->transform, entity_ptr->hitbox, wall);
+		vector3D_cubic_t resolved_position = resolve_collision(old_position, new_position, entity_ptr->hitbox, wall);
 		vector3D_cubic_t resolved_step = vector3D_cubic_subtract(resolved_position, old_position);
 		const double resolved_step_length_squared = SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z);
 
