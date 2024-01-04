@@ -1,5 +1,6 @@
 #include "texture.h"
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -10,7 +11,7 @@ static const VkImageType image_type_default = VK_IMAGE_TYPE_2D;
 
 static const VkFormat image_format_default = VK_FORMAT_R8G8B8A8_SRGB;
 
-texture_t create_texture(VkDevice device, animation_set_t animation_set) {
+texture_t create_texture(VkDevice device, texture_create_info_t animation_set) {
 
 	texture_t texture = { 0 };
 
@@ -65,3 +66,4 @@ void destroy_texture(texture_t texture) {
 	free(texture.image_views);
 	free(texture.animation_cycles);
 }
+

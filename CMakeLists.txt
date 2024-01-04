@@ -8,7 +8,7 @@ add_executable(PinkPearl)
 
 set(APP_NAME "\"Pink Pearl\"")
 set(RESOURCE_PATH "\"../resources/\"")
-configure_file(config.h.in config.h)
+configure_file(src/config.h.in config.h)
 
 #target_compile_options(PinkPearl PRIVATE /TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address)
 target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
@@ -75,6 +75,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/vulkan_render.c
 	src/render/vulkan/compute/compute_matrices.c
 	src/render/vulkan/compute/compute_room_texture.c
+	src/util/allocate.c
 	src/util/bit.c
 	src/util/file_io.c
 	src/util/string_array.c

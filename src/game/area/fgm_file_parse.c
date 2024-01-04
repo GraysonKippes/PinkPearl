@@ -36,9 +36,6 @@ area_t parse_fga_file(const char *filename) {
 
 	uint64_t extent_area = area.extent.width * area.extent.length;
 
-	logf_message(WARNING, "Area data: width = %u, length = %u, num. rooms = %u", 
-			area.extent.width, area.extent.length, area.num_rooms);
-
 	if (area.num_rooms > extent_area) {
 		logf_message(ERROR, "Error reading area fga_file: `area.num_rooms` (%u) is greater than `area.extent.width` times `area.extent.height` (%lu).", area.num_rooms, extent_area);
 		goto end_read;
@@ -58,8 +55,6 @@ area_t parse_fga_file(const char *filename) {
 	}
 
 	for (uint32_t i = 0; i < area.num_rooms; ++i) {
-
-		logf_message(WARNING, "Reading data for room %u.", i);
 
 		uint32_t room_position = 0;
 		fread(&room_position, 4, 1, fga_file);
@@ -104,8 +99,6 @@ int read_room_data(FILE *file, room_t *room_ptr) {
 	uint32_t num_walls = 0;
 	fread(&num_walls, 4, 1, file);
 
-	logf_message(WARNING, "num_walls = %u", num_walls);
-
 	if (num_walls > 0) {
 
 		room_ptr->num_walls = num_walls;
@@ -121,9 +114,7 @@ int read_room_data(FILE *file, room_t *room_ptr) {
 			fread(&wall.y1, sizeof(double), 1, file);
 			fread(&wall.x2, sizeof(double), 1, file);
 			fread(&wall.y2, sizeof(double), 1, file);
-			logf_message(WARNING, "Wall %u: (%.1f, %.1f; %.1f, %.1f)", i, wall.x1, wall.y1, wall.x2, wall.y2);
 			room_ptr->walls[i] = wall;
-			//fread((room_ptr->walls + i), 4, 4, file);
 		}
 	}
 
@@ -131,8 +122,6 @@ int read_room_data(FILE *file, room_t *room_ptr) {
 
 	const uint64_t num_tiles = room_ptr->extent.width * room_ptr->extent.length;
 	uint64_t tiles_filled = 0;
-
-	logf_message(WARNING, "num_tiles = %lu", num_tiles);
 
 	// Read data for each tile here.
 	while (tiles_filled < num_tiles) {
@@ -142,8 +131,6 @@ int read_room_data(FILE *file, room_t *room_ptr) {
 
 		fread(&fill_range, 4, 1, file);
 		fread(&tile, 4, 1, file);
-
-		logf_message(WARNING, "fill_range = %u", fill_range);
 
 		if (fill_range == 0) {
 			log_message(ERROR, "Error creating room: tile fill range is zero.");
@@ -162,7 +149,6 @@ int read_room_data(FILE *file, room_t *room_ptr) {
 		}
 
 		tiles_filled += (uint64_t)fill_range;
-		logf_message(WARNING, "tiles_filled = %lu", tiles_filled);
 	}
 
 	return 0;

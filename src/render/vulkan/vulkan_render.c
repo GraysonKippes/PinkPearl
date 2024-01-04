@@ -293,6 +293,10 @@ void animate_texture(uint32_t slot) {
 	}
 }
 
+void set_current_tilemap_texture(const texture_t texture) {
+
+}
+
 void create_room_texture(room_t room, uint32_t render_object_slot) {
 
 	// Create the properly aligned tile data array, aligned to 16 bytes.
@@ -302,7 +306,7 @@ void create_room_texture(room_t room, uint32_t render_object_slot) {
 
 	uint32_t *tile_data = calloc(num_tiles, tile_datum_size);
 	if (tile_data == NULL) {
-		log_message(ERROR, "Allocation of aligned tile data array failed.");
+		log_message(ERROR, "Error creating room texture: allocation of aligned tile data array failed.");
 		return;
 	}
 
@@ -313,7 +317,8 @@ void create_room_texture(room_t room, uint32_t render_object_slot) {
 		tile_data[index] = room.tiles[i].tilemap_slot;
 	}
 
-	compute_room_texture(get_loaded_texture(1), render_object_slot, room.extent, tile_data);
+	// TODO - make tilemap texture chooseable.
+	compute_room_texture(find_loaded_texture("tilemap/dungeon3"), render_object_slot, room.extent, tile_data);
 	model_textures[render_object_slot] = get_room_texture((uint32_t)room.size, render_object_slot);
 
 	free(tile_data);

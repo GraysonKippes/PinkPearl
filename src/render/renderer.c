@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "config.h"
 #include "log/logging.h"
 
 #include "render_config.h"
@@ -13,6 +14,11 @@
 
 
 
+#define DATA_PATH (RESOURCE_PATH "data/")
+#define FGT_PATH (RESOURCE_PATH "data/textures.fgt")
+
+
+
 static projection_bounds_t current_projection_bounds;
 
 // Starts off at num_room_render_object_slots - 1 so that the next slot--which the room starts at--is 0.
@@ -21,10 +27,15 @@ static uint32_t current_room_render_object_slot = NUM_ROOM_RENDER_OBJECT_SLOTS -
 
 
 void init_renderer(void) {
+
 	create_vulkan_objects();
 	create_vulkan_render_objects();
 	load_premade_models();
-	load_textures();
+
+	// Load textures
+	texture_pack_t texture_pack = parse_fgt_file(FGT_PATH);
+	load_textures(texture_pack);
+	destroy_texture_pack(&texture_pack);
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
 
@@ -35,7 +46,7 @@ void init_renderer(void) {
 		reset_render_position((render_object_positions + i), zero_vector3F);
 	}
 
-	upload_model(2, get_premade_model(0), get_loaded_texture(2));
+	upload_model(2, get_premade_model(0), find_loaded_texture("entity/pearl"));
 
 	enable_render_object_slot(0);
 	enable_render_object_slot(2);
