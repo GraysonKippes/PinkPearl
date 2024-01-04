@@ -19,9 +19,12 @@
 
 
 
+static render_position_t camera_position = { 0 };
+
 static projection_bounds_t current_projection_bounds;
 
 // Starts off at num_room_render_object_slots - 1 so that the next slot--which the room starts at--is 0.
+// The preprocessor constant is used for static initialization.
 static uint32_t current_room_render_object_slot = NUM_ROOM_RENDER_OBJECT_SLOTS - 1;
 
 
@@ -31,6 +34,7 @@ void init_renderer(void) {
 	create_vulkan_objects();
 	create_vulkan_render_objects();
 	load_premade_models();
+	reset_render_position(&camera_position, (vector3F_t){ 0.0F, 0.0F, 0.0F });
 
 	// Load textures
 	texture_pack_t texture_pack = parse_fgt_file(FGT_PATH);
@@ -62,7 +66,7 @@ void terminate_renderer(void) {
 
 void render_frame(float tick_delta_time) {
 	glfwPollEvents();
-	draw_frame(tick_delta_time, current_projection_bounds);
+	draw_frame(tick_delta_time, camera_position, current_projection_bounds);
 }
 
 void update_projection_bounds(projection_bounds_t new_projection_bounds) {

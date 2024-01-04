@@ -332,7 +332,7 @@ void set_clear_color(color3F_t color) {
 }
 
 // Send the drawing commands to the GPU to draw the frame.
-void draw_frame(float tick_delta_time, projection_bounds_t projection_bounds) {
+void draw_frame(const float tick_delta_time, const render_position_t camera_position, const projection_bounds_t projection_bounds) {
 
 	uint32_t image_index = 0;
 
@@ -355,9 +355,6 @@ void draw_frame(float tick_delta_time, projection_bounds_t projection_bounds) {
 
 	// Compute matrices
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
-
-	render_position_t camera_position = { 0 };
-
 	compute_matrices(tick_delta_time, projection_bounds, camera_position, render_object_positions);
 
 

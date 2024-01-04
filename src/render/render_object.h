@@ -45,8 +45,10 @@ typedef struct render_position_t {
 
 extern render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
 
+// Updates the render position, setting the previous position to what the position was before the update.
 void update_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
 
+// Force-updates both the current position and the previous position to the new position.
 void reset_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
 
 
