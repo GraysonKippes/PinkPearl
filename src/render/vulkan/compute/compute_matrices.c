@@ -36,7 +36,7 @@ const VkDeviceSize matrix_data_size = num_matrices * matrix_size;
 
 
 void init_compute_matrices(void) {
-	compute_pipeline_matrices = create_compute_pipeline(device, compute_matrices_layout, "compute_matrices.spv");
+	compute_pipeline_matrices = create_compute_pipeline(device, compute_matrices_layout, COMPUTE_MATRICES_SHADER_NAME);
 }
 
 void terminate_compute_matrices(void) {

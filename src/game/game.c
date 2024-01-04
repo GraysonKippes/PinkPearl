@@ -16,11 +16,11 @@
 
 area_t current_area = { 0 };
 
-static const rect_t player_hitbox_2 = {
-	.x1 = -0.45,
-	.y1 = -0.45,
-	.x2 = 0.45,
-	.y2 = 0.95
+static const rect_t player_hitbox = {
+	.x1 = -0.4375,
+	.y1 = -0.5,
+	.x2 = 0.4375,
+	.y2 = 0.5
 };
 
 static entity_handle_t player_entity_handle;
@@ -39,7 +39,7 @@ void start_game(void) {
 	entity_t *player_entity_ptr = NULL;
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {
-		player_entity_ptr->hitbox = player_hitbox_2;
+		player_entity_ptr->hitbox = player_hitbox;
 		player_entity_ptr->render_handle = load_render_object();
 	}
 }

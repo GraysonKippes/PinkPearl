@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "log/logging.h"
+#include "render/render_config.h"
 
 #include "../command_buffer.h"
 #include "../compute_pipeline.h"
@@ -309,7 +310,7 @@ void init_compute_room_texture(void) {
 
 	log_message(VERBOSE, "Initializing compute room texture...");
 
-	compute_pipeline_room_texture = create_compute_pipeline(device, compute_room_texture_layout, "room_texture.spv");
+	compute_pipeline_room_texture = create_compute_pipeline(device, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
 	create_room_textures();
 	create_room_texture_transfer_image();
 }
