@@ -29,14 +29,50 @@ area_t parse_fga_file(const char *filename) {
 		goto end_read;
 	}
 
-	// Read basic area info.
-	fread(&area.extent.width, 4, 1, fga_file);
-	fread(&area.extent.length, 4, 1, fga_file);
-	fread(&area.num_rooms, 4, 1, fga_file);
+	// Read area extent.
+	
+	if (!read_data(fga_file, 4, 1, &area.extent.x1)) {
+		log_message(ERROR, "Error reading area file: failed to read area extent coordinate x1.");
+		goto end_read;
+	}
 
-	uint64_t extent_area = area.extent.width * area.extent.length;
+	if (!read_data(fga_file, 4, 1, &area.extent.y1)) {
+		log_message(ERROR, "Error reading area file: failed to read area extent coordinate y1.");
+		goto end_read;
+	}
 
-	if (area.num_rooms > extent_area) {
+	if (!read_data(fga_file, 4, 1, &area.extent.x2)) {
+		log_message(ERROR, "Error reading area file: failed to read area extent coordinate x2.");
+		goto end_read;
+	}
+
+	if (!read_data(fga_file, 4, 1, &area.extent.y2)) {
+		log_message(ERROR, "Error reading area file: failed to read area extent coordinate y2.");
+		goto end_read;
+	}
+
+	const int32_t area_width = area.extent.x2 - area.extent.x1;
+	const int32_t area_length = area.extent.y2 - area.extent.y1;
+	const int64_t extent_area = area_width * area_length;
+
+	if (area_width < 1) {
+		logf_message(ERROR, "Error creating area: the width of the area is not positive (%i).", area_width);
+		goto end_read;
+	}
+
+	if (area_length < 1) {
+		logf_message(ERROR, "Error creating area: the length of the area is not positive (%i).", area_length);
+		goto end_read;
+	}
+
+	// Read number of rooms.
+	
+	if (!read_data(fga_file, 4, 1, &area.num_rooms)) {
+		log_message(ERROR, "Error reading area file: failed to read number of rooms.");
+		goto end_read;
+	}
+
+	if ((int64_t)area.num_rooms > extent_area) {
 		logf_message(ERROR, "Error reading area fga_file: `area.num_rooms` (%u) is greater than `area.extent.width` times `area.extent.height` (%lu).", area.num_rooms, extent_area);
 		goto end_read;
 	}
@@ -47,7 +83,7 @@ area_t parse_fga_file(const char *filename) {
 		goto end_read;
 	}
 
-	area.positions_to_rooms = malloc(area.num_rooms * sizeof(uint32_t));
+	area.positions_to_rooms = calloc(area.num_rooms, sizeof(uint32_t));
 	if (area.positions_to_rooms == NULL) {
 		log_message(ERROR, "Error creating area: failed to allocate positions-to-rooms array.");
 		free(area.rooms);
@@ -56,8 +92,15 @@ area_t parse_fga_file(const char *filename) {
 
 	for (uint32_t i = 0; i < area.num_rooms; ++i) {
 
+		area.positions_to_rooms[i] = UINT32_MAX;
+
 		uint32_t room_position = 0;
 		fread(&room_position, 4, 1, fga_file);
+
+		if ((int64_t)room_position >= extent_area) {
+			logf_message(WARNING, "Warning creating area: room position (%u) is greater than extent area (%li).", room_position, extent_area);
+		}
+
 		area.positions_to_rooms[i] = room_position;
 
 		int result = read_room_data(fga_file, (area.rooms + i));
@@ -67,6 +110,9 @@ area_t parse_fga_file(const char *filename) {
 			area.rooms = NULL;
 			goto end_read;
 		}
+
+		area.rooms[i].position.x = ((int64_t)i % area_width) + area.extent.x1;
+		area.rooms[i].position.y = ((int64_t)i / area_width) + area.extent.y1;
 	}
 
 end_read:

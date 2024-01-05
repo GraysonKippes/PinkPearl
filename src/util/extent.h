@@ -8,10 +8,9 @@ typedef struct extent_t {
 	uint32_t length;
 } extent_t;
 
-// TODO - make this struct use signed integers.
 typedef struct offset_t {
-	uint32_t x;
-	uint32_t y;
+	int32_t x;
+	int32_t y;
 } offset_t;
 
 #endif	// EXTENT_H
