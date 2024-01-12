@@ -29,8 +29,6 @@ typedef struct room_t {
 
 } room_t;
 
-room_t create_room(room_size_t room_size);
-
 extent_t room_size_to_extent(room_size_t room_size);
 
 void destroy_room(room_t room);

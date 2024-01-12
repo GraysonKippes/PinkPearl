@@ -28,3 +28,41 @@ room_t *area_get_room_ptr(const area_t area, const offset_t map_position) {
 
 	return area.rooms + room_index;
 }
+
+direction_t test_room_travel(const vector3D_cubic_t player_position, const area_t area, const int current_room_index) {
+	
+	if (current_room_index >= area.num_rooms) {
+		logf_message(WARNING, "Warning testing room travel: specified current room index (%i) is not less than total number of rooms in specified area (%u).", current_room_index, area.num_rooms);
+		return DIRECTION_ERROR;
+	}
+
+	const room_t room = area.rooms[current_room_index];
+	const extent_t room_extent = area.room_extent;
+	const vector3D_cubic_t room_position = {
+		.x = (double)room.position.x * (double)room_extent.width,
+		.y = (double)room.position.y * (double)room_extent.length,
+		.z = 0.0
+	};
+	// Player position in room space (abbreviated IRS)
+	const vector3D_cubic_t player_position_irs = vector3D_cubic_subtract(player_position, room_position);
+
+	// TODO - make this check which edge of the room the player actually goes through.
+
+	if (player_position_irs.x < -((double)room_extent.width / 2.0)) {
+		return DIRECTION_WEST;
+	}
+
+	if (player_position_irs.x > ((double)room_extent.width / 2.0)) {
+		return DIRECTION_EAST;
+	}
+
+	if (player_position_irs.y < -((double)room_extent.length / 2.0)) {
+		return DIRECTION_SOUTH;
+	}
+
+	if (player_position_irs.y > ((double)room_extent.length / 2.0)) {
+		return DIRECTION_NORTH;
+	}
+
+	return DIRECTION_NONE;
+}

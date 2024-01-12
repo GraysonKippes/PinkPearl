@@ -118,14 +118,5 @@ void tick_game(void) {
 	tick_entities();
 	get_model_texture_ptr(player_entity_ptr->render_handle)->current_animation_cycle = animation_cycle;
 
-	room_t *current_room_ptr = current_area.rooms + current_room_index;
-
-	// Position of the current room in area space.
-	vector3D_cubic_t room_position = { 0 };
-	room_position.x = (double)((int32_t)current_room_ptr->extent.width * current_room_ptr->position.x);
-	room_position.y = (double)((int32_t)current_room_ptr->extent.width * current_room_ptr->position.y);
-	room_position.z = 0.0;
-
-	const vector3D_cubic_t player_position_in_room_space = vector3D_cubic_subtract(room_position, player_entity_ptr->transform.position);
-
+	const direction_t travel_direction = test_room_travel(player_entity_ptr->transform.position, current_area, current_room_index);
 }

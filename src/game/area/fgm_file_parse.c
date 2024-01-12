@@ -18,6 +18,7 @@ area_t parse_fga_file(const char *filename) {
 
 	FILE *fga_file = fopen(FGA_FILE_DIRECTORY, "rb");
 	if (fga_file == NULL) {
+		log_message(ERROR, "Error reading area file: failed to open file.");
 		return area;
 	}
 
@@ -128,8 +129,8 @@ area_t parse_fga_file(const char *filename) {
 			goto end_read;
 		}
 
-		area.rooms[i].position.x = ((int64_t)i % area_width) + area.extent.x1;
-		area.rooms[i].position.y = ((int64_t)i / area_width) + area.extent.y1;
+		area.rooms[i].position.x = ((int64_t)room_position % area_width) + area.extent.x1;
+		area.rooms[i].position.y = ((int64_t)room_position / area_width) + area.extent.y1;
 	}
 
 end_read:

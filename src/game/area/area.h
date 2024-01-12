@@ -1,6 +1,7 @@
 #ifndef AREA_H
 #define AREA_H
 
+#include "game/math/vector3D.h"
 #include "util/extent.h"
 
 #include "room.h"
@@ -40,5 +41,17 @@ typedef struct area_t {
 // Returns a pointer to the room at the map position in the area.
 // Returns NULL if the room could not be found.
 room_t *area_get_room_ptr(area_t area, offset_t map_position);
+
+typedef enum direction_t {
+	DIRECTION_ERROR = -1,
+	DIRECTION_NONE = 0,
+	DIRECTION_NORTH = 1,
+	DIRECTION_EAST = 2,
+	DIRECTION_SOUTH = 3,
+	DIRECTION_WEST = 4
+} direction_t;
+
+// Returns the direction in which the player is leaving the room, or NONE if the player is not leaving the room.
+direction_t test_room_travel(const vector3D_cubic_t player_position, const area_t area, const int current_room_index);
 
 #endif	// AREA_H
