@@ -33,7 +33,7 @@ static texture_t textures[NUM_TEXTURES];
 
 static char texture_names[NUM_TEXTURES][TEXTURE_NAME_MAX_LENGTH];
 
-#define IMAGE_STAGING_BUFFER_SIZE 65536
+#define IMAGE_STAGING_BUFFER_SIZE 262144
 
 
 
@@ -171,9 +171,6 @@ void load_texture(const texture_create_info_t texture_create_info, const bool is
 		logf_message(WARNING, "Warning loading texture: failed to concatenate image filename into image path buffer. (Error code: %u)", filename_strncat_result);
 	}
 
-	logf_message(VERBOSE, "Loading image at \"%s\"...", path);
-	logf_message(VERBOSE, "Texture is tilemap: %i", is_tilemap);
-
 	// Copy texture name into texture name array.
 
 	// Temporary name buffer -- do the string operations here.
@@ -201,8 +198,6 @@ void load_texture(const texture_create_info_t texture_create_info, const bool is
 		logf_message(WARNING, "Warning loading texture: failed to copy texture name from temporary buffer into texture name array. (Error code: %u)", texture_name_strncpy_result_2);
 	}
 	
-	logf_message(VERBOSE, "Texture's recorded name is \"%s\".", texture_names[texture_index]);
-
 	// Load image data into image staging buffer.
 	image_data_t base_image_data = load_image_data(path, 0);
 	const VkDeviceSize base_image_width = base_image_data.width;
@@ -636,10 +631,7 @@ texture_t find_loaded_texture(const char *const name) {
 
 	const size_t name_length = strnlen_s(name, texture_name_max_length);
 
-	uint32_t index = 0;
-
 	// Depth-first search for matching texture name.
-
 	for (uint32_t i = 0; i < num_textures; ++i) {
 	
 		bool name_matches = true;
@@ -656,10 +648,10 @@ texture_t find_loaded_texture(const char *const name) {
 		}
 
 		if (name_matches) {
-			index = i;
-			break;
+			return textures[i];
 		}
 	}
 
-	return textures[index];
+	logf_message(WARNING, "Warning finding loaded texture: texture \"%s\" not found.", name);
+	return textures[0];
 }

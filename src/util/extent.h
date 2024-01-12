@@ -8,6 +8,8 @@ typedef struct extent_t {
 	uint32_t length;
 } extent_t;
 
+uint64_t extent_area(const extent_t extent);
+
 typedef struct offset_t {
 	int32_t x;
 	int32_t y;

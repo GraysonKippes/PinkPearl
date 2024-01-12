@@ -129,10 +129,8 @@ void upload_room_model(room_t room) {
 		.bottom = -bottom, 	.top = -top,
 		.near = 15.0F,	.far = -15.0F
 	};
-
 	update_projection_bounds(room_projection_bounds);
 
 	create_room_texture(room, next_room_model_slot);
-
 	current_room_render_object_slot = next_room_model_slot;
 }

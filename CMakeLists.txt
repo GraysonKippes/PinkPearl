@@ -77,6 +77,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/compute/compute_room_texture.c
 	src/util/allocate.c
 	src/util/bit.c
+	src/util/extent.c
 	src/util/file_io.c
 	src/util/string_array.c
 	src/util/time.c

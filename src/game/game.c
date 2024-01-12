@@ -11,15 +11,19 @@
 #include "render/vulkan/vulkan_render.h"
 #include "util/time.h"
 
+#include "game_state.h"
 #include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
 
+static game_state_flag_bits = 0;
+
 area_t current_area = { 0 };
+static uint32_t current_room_index = 0;
 
 static const rect_t player_hitbox = {
-	.x1 = -0.4375,
+	.x1 = -0.375,
 	.y1 = -0.5,
-	.x2 = 0.4375,
+	.x2 = 0.375,
 	.y2 = 0.5
 };
 
@@ -112,6 +116,16 @@ void tick_game(void) {
 	}
 
 	tick_entities();
-
 	get_model_texture_ptr(player_entity_ptr->render_handle)->current_animation_cycle = animation_cycle;
+
+	room_t *current_room_ptr = current_area.rooms + current_room_index;
+
+	// Position of the current room in area space.
+	vector3D_cubic_t room_position = { 0 };
+	room_position.x = (double)((int32_t)current_room_ptr->extent.width * current_room_ptr->position.x);
+	room_position.y = (double)((int32_t)current_room_ptr->extent.width * current_room_ptr->position.y);
+	room_position.z = 0.0;
+
+	const vector3D_cubic_t player_position_in_room_space = vector3D_cubic_subtract(room_position, player_entity_ptr->transform.position);
+
 }

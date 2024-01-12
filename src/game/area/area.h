@@ -21,6 +21,9 @@ typedef struct area_t {
 	// The extent of this area in number of rooms.
 	area_extent_t extent;
 
+	// The extent of each room in this area in tiles.
+	extent_t room_extent;
+
 	// The rooms in this area.
 	uint32_t num_rooms;
 	room_t *rooms;

@@ -318,7 +318,7 @@ void create_room_texture(room_t room, uint32_t render_object_slot) {
 	}
 
 	// TODO - make tilemap texture chooseable.
-	compute_room_texture(find_loaded_texture("tilemap/dungeon3"), render_object_slot, room.extent, tile_data);
+	compute_room_texture(find_loaded_texture("tilemap/dungeon4"), render_object_slot, room.extent, tile_data);
 	model_textures[render_object_slot] = get_room_texture((uint32_t)room.size, render_object_slot);
 
 	free(tile_data);
