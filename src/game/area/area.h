@@ -4,14 +4,8 @@
 #include "game/math/vector3D.h"
 #include "util/extent.h"
 
+#include "area_extent.h"
 #include "room.h"
-
-typedef struct area_extent_t {
-	int32_t x1;
-	int32_t y1;
-	int32_t x2;
-	int32_t y2;
-} area_extent_t;
 
 typedef struct area_t {
 
@@ -30,17 +24,12 @@ typedef struct area_t {
 	room_t *rooms;
 
 	// Maps positions in the rectangular map to actual rooms in this area.
-	// The 32-bit unsigned integer limit is used as a magic value to indicate that there is no room at the position;
-	// 	this should not be an issue, as there should never be 4,294,967,295 rooms in an area.
-	// 2D positions are converted to a 1D index into this array.
-	// The length of this array is guaranteed to be equal to the area width times the area length.
-	uint32_t *positions_to_rooms;
+	// The length of this array should be equal to the area width times the area length.
+	int *positions_to_rooms;
 
 } area_t;
 
-// Returns a pointer to the room at the map position in the area.
-// Returns NULL if the room could not be found.
-room_t *area_get_room_ptr(area_t area, offset_t map_position);
+bool area_get_room_ptr(const area_t area, const offset_t room_position, const room_t **room_pptr);
 
 typedef enum direction_t {
 	DIRECTION_ERROR = -1,
@@ -53,5 +42,7 @@ typedef enum direction_t {
 
 // Returns the direction in which the player is leaving the room, or NONE if the player is not leaving the room.
 direction_t test_room_travel(const vector3D_cubic_t player_position, const area_t area, const int current_room_index);
+
+offset_t direction_offset(const direction_t direction);
 
 #endif	// AREA_H

@@ -15,7 +15,7 @@
 #include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
 
-static game_state_flag_bits = 0;
+static game_state_flag_bits_t game_state_flag_bits = 0;
 
 area_t current_area = { 0 };
 static uint32_t current_room_index = 0;
@@ -119,4 +119,16 @@ void tick_game(void) {
 	get_model_texture_ptr(player_entity_ptr->render_handle)->current_animation_cycle = animation_cycle;
 
 	const direction_t travel_direction = test_room_travel(player_entity_ptr->transform.position, current_area, current_room_index);
+	if ((int)travel_direction > 0) {
+
+		const room_t current_room = current_area.rooms[current_room_index];
+		const offset_t room_offset = direction_offset(travel_direction);
+		const offset_t next_room_position = offset_add(current_room.position, room_offset);
+
+		room_t *next_room_ptr = NULL;
+		const bool result = area_get_room_ptr(current_area, next_room_position, &next_room_ptr);
+
+		logf_message(WARNING, "Next room position: (%i, %i).", next_room_position.x, next_room_position.y);
+		logf_message(WARNING, "Result: %i", result);
+	}
 }

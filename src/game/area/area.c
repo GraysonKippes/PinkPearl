@@ -5,34 +5,55 @@
 
 #include "log/logging.h"
 
-room_t *area_get_room_ptr(const area_t area, const offset_t map_position) {
+bool area_get_room_ptr(const area_t area, const offset_t room_position, const room_t **room_pptr) {
 
-	if (map_position.x < area.extent.x1 || map_position.x > area.extent.x2 
-			|| map_position.y < area.extent.y1 || map_position.y > area.extent.y2) {
-		logf_message(WARNING, "Warning getting room pointer: map position (%i, %i) of room falls outside of the area.", map_position.x, map_position.y);
-		return NULL;
+	if (room_pptr == NULL) {
+		log_message(ERROR, "Error getting room pointer: pointer to room pointer is NULL.");
+		return false;
 	}
 
-	const int32_t area_width = area.extent.x2 - area.extent.x1;
-	if (area_width < 1) {
-		logf_message(WARNING, "Warning getting room pointer: the width of the area is not positive (%i).", area_width);
-		return NULL;
+	if (area.rooms == NULL) {
+		log_message(ERROR, "Error getting room pointer: area.rooms is NULL.");
+		return false;
 	}
 
-	const int32_t position_index = map_position.y * area_width + map_position.x;
-	const int32_t room_index = area.positions_to_rooms[position_index];
-	if (room_index >= area.num_rooms) {
-		logf_message(WARNING, "Warning getting room pointer: room index (%i) is greater than or equal to number of rooms.", room_index);
-		return NULL;
+	if (area.positions_to_rooms == NULL) {
+		log_message(ERROR, "Error getting room pointer: area.positions_to_rooms is NULL.");
+		return false;
 	}
 
-	return area.rooms + room_index;
+	// This is an index into the array that maps 1D positions to indices into the area room array.
+	const int room_position_index = area_extent_index(area.extent, room_position);
+	if (room_position_index < 0) {
+		logf_message(ERROR, "Error getting room pointer: room position index is negative (%i).", room_position_index);
+		return false;
+	}
+
+	const int room_index = area.positions_to_rooms[room_position_index];
+
+	if (room_index < 0) {
+		return false;
+	}
+
+	if (room_index >= (int)area.num_rooms) {
+		logf_message(ERROR, "Error getting room pointer: room index (%i) is not less than total number of rooms (%i).", room_index, (int)area.num_rooms);
+		return false;
+	}
+
+	*room_pptr = area.rooms + room_index;
+
+	if (room_position.x != (*room_pptr)->position.x || room_position.y != (*room_pptr)->position.y) {
+		logf_message(WARNING, "Warning getting room pointer: specified room position (%i, %i) does not match the gotten room's position (%i, %i).", 
+				room_position.x, room_position.y, (*room_pptr)->position.x, (*room_pptr)->position.y);
+	}
+
+	return true;
 }
 
 direction_t test_room_travel(const vector3D_cubic_t player_position, const area_t area, const int current_room_index) {
 	
-	if (current_room_index >= area.num_rooms) {
-		logf_message(WARNING, "Warning testing room travel: specified current room index (%i) is not less than total number of rooms in specified area (%u).", current_room_index, area.num_rooms);
+	if (current_room_index >= (int)area.num_rooms) {
+		logf_message(ERROR, "Error testing room travel: specified current room index (%i) is not less than total number of rooms in specified area (%u).", current_room_index, area.num_rooms);
 		return DIRECTION_ERROR;
 	}
 
@@ -43,7 +64,7 @@ direction_t test_room_travel(const vector3D_cubic_t player_position, const area_
 		.y = (double)room.position.y * (double)room_extent.length,
 		.z = 0.0
 	};
-	// Player position in room space (abbreviated IRS)
+	// Player position in room space (abbreviated IRS).
 	const vector3D_cubic_t player_position_irs = vector3D_cubic_subtract(player_position, room_position);
 
 	// TODO - make this check which edge of the room the player actually goes through.
@@ -65,4 +86,16 @@ direction_t test_room_travel(const vector3D_cubic_t player_position, const area_
 	}
 
 	return DIRECTION_NONE;
+}
+
+offset_t direction_offset(const direction_t direction) {
+	
+	switch (direction) {
+		case DIRECTION_NORTH: return (offset_t){ .x = 0, .y = 1 };
+		case DIRECTION_EAST: return (offset_t){ .x = 1, .y = 0 };
+		case DIRECTION_SOUTH: return (offset_t){ .x = 0, .y = -1 };
+		case DIRECTION_WEST: return (offset_t){ .x = -1, .y = 0 };
+	}
+
+	return (offset_t){ 0 };
 }

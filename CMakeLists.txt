@@ -14,6 +14,8 @@ configure_file(src/config.h.in config.h)
 target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
 	-Werror=implicit-function-declaration 
+	-Werror=implicit-int
+	-Werror=sign-compare
 	-Wno-switch)
 
 find_package(Vulkan REQUIRED)
@@ -37,6 +39,7 @@ target_sources(PinkPearl PRIVATE
 	src/main.c
 	src/game/game.c
 	src/game/area/area.c
+	src/game/area/area_extent.c
 	src/game/area/fgm_file_parse.c
 	src/game/area/room.c
 	src/game/entity/entity.c
