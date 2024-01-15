@@ -1,9 +1,12 @@
 #include "renderer.h"
 
+#include <stdbool.h>
+
 #include <GLFW/glfw3.h>
 
 #include "config.h"
 #include "log/logging.h"
+#include "util/time.h"
 
 #include "render_config.h"
 #include "render_object.h"
@@ -19,13 +22,19 @@
 
 
 
-static render_position_t camera_position = { 0 };
+static vector3F_t camera_position = { 0 };
+static vector3F_t old_camera_position = { 0 };
+static vector3F_t new_camera_position = { 0 };
+static bool camera_scrolling = false;
+static uint64_t time_ms_since_scroll_start = 0;
 
 static projection_bounds_t current_projection_bounds;
 
 // Starts off at num_room_render_object_slots - 1 so that the next slot--which the room starts at--is 0.
 // The preprocessor constant is used for static initialization.
 static uint32_t current_room_render_object_slot = NUM_ROOM_RENDER_OBJECT_SLOTS - 1;
+
+static void scroll_camera(void);
 
 
 
@@ -34,7 +43,6 @@ void init_renderer(void) {
 	create_vulkan_objects();
 	create_vulkan_render_objects();
 	load_premade_models();
-	reset_render_position(&camera_position, (vector3F_t){ 0.0F, 0.0F, 0.0F });
 
 	// Load textures
 	texture_pack_t texture_pack = parse_fgt_file(FGT_PATH);
@@ -65,8 +73,25 @@ void terminate_renderer(void) {
 }
 
 void render_frame(float tick_delta_time) {
+
+	if (camera_scrolling) {
+		scroll_camera();
+	}
+
+	//logf_message(INFO, "Camera position = (%.2f, %.2f)", camera_position.x, camera_position.y);
+	//render_position_t player_render_position = render_object_positions[2];
+	//logf_message(INFO, "Player render position = (%.2f, %.2f)", player_render_position.position.x, player_render_position.position.y);
+	//logf_message(INFO, "Player render previous position = (%.2f, %.2f)", player_render_position.previous_position.x, player_render_position.previous_position.y);
+
 	glfwPollEvents();
 	draw_frame(tick_delta_time, camera_position, current_projection_bounds);
+}
+
+void settle_render_positions(void) {
+	
+	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+		settle_render_position(render_object_positions + i);
+	}
 }
 
 void update_projection_bounds(projection_bounds_t new_projection_bounds) {
@@ -89,10 +114,9 @@ void upload_model(uint32_t slot, model_t model, texture_t texture) {
 	set_model_texture(slot, texture);
 }
 
-void upload_room_model(room_t room) {
+void upload_room_model(const room_t room) {
 	
 	uint32_t next_room_model_slot = current_room_render_object_slot + 1;
-	
 	if (next_room_model_slot >= num_room_render_object_slots) {
 		next_room_model_slot = 0;
 	}
@@ -133,4 +157,46 @@ void upload_room_model(room_t room) {
 
 	create_room_texture(room, next_room_model_slot);
 	current_room_render_object_slot = next_room_model_slot;
+}
+
+void begin_room_scroll(const extent_t room_extent, const offset_t previous_room_position, const offset_t next_room_position) {
+
+	old_camera_position = camera_position;
+	
+	const offset_t room_travel_vector = offset_subtract(next_room_position, previous_room_position);
+	const vector3F_t room_scroll_vector = {
+		.x = (float)room_travel_vector.x * (float)room_extent.width,
+		.y = (float)room_travel_vector.y * (float)room_extent.length,
+		.z = old_camera_position.z
+	};
+	new_camera_position = vector3F_add(new_camera_position, room_scroll_vector);
+
+	time_ms_since_scroll_start = get_time_ms();
+	camera_scrolling = true;
+}
+
+bool is_camera_scrolling(void) {
+	return camera_scrolling;
+}
+
+static void scroll_camera(void) {
+
+	static const uint64_t scroll_time_limit_ms = 1024; // Scrolling should last 3 seconds.
+	const uint64_t scroll_delta_time_ms = get_time_ms() - time_ms_since_scroll_start;
+
+	if (scroll_delta_time_ms < scroll_time_limit_ms) {
+
+		const float normalized_delta_time = (float)scroll_delta_time_ms / (float)scroll_time_limit_ms;
+
+		const vector3F_t camera_position_step = {
+			.x = normalized_delta_time * (new_camera_position.x - old_camera_position.x),
+			.y = normalized_delta_time * (new_camera_position.y - old_camera_position.y)
+		};
+		camera_position = vector3F_add(old_camera_position, camera_position_step);
+	}
+	else {
+		camera_position = new_camera_position;
+		old_camera_position = camera_position;
+		camera_scrolling = false;
+	}
 }

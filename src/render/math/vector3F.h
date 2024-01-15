@@ -11,6 +11,6 @@ typedef struct vector3F_t {
 
 extern const vector3F_t zero_vector3F;
 
-vector3F_t vector_add(vector3F_t a, vector3F_t b);
+vector3F_t vector3F_add(const vector3F_t a, const vector3F_t b);
 
 #endif // VECTOR3F_H

@@ -33,7 +33,7 @@ layout(binding = 0, std140) uniform uniform_data_t {
 	float projection_near;
 	float projection_far;
 
-	render_position_t camera_position;
+	vec3 camera_position;
 	render_position_t model_positions[NUM_MODELS];
 
 } uniform_data;
@@ -41,6 +41,17 @@ layout(binding = 0, std140) uniform uniform_data_t {
 layout(binding = 1) writeonly buffer output_buffer {
 	mat4 matrices[NUM_MODELS + 2];
 } output_data;
+
+mat4 make_translation_matrix(vec3 translation) {
+	
+	mat4 translation_matrix;
+	translation_matrix[0] = vec4(1.0, 0.0, 0.0, 0.0);
+	translation_matrix[1] = vec4(0.0, -1.0, 0.0, 0.0);
+	translation_matrix[2] = vec4(0.0, 0.0, 1.0, 0.0);
+	translation_matrix[3] = vec4(translation, 1.0);
+
+	return translation_matrix;
+}
 
 // Makes and returns a "translerp" (portmanteau of "translate" and "lerp") matrix.
 mat4 make_translerp_matrix(render_position_t position, float delta_time) {
@@ -85,10 +96,8 @@ void main() {
 	
 	uint model_slot = gl_LocalInvocationID.x;
 
-	mat4 camera_matrix = make_translerp_matrix(uniform_data.camera_position, uniform_data.delta_time);
-
+	mat4 camera_matrix = make_translation_matrix(uniform_data.camera_position);
 	mat4 projection_matrix = make_orthographic_projection_matrix(uniform_data.projection_left, uniform_data.projection_right, uniform_data.projection_bottom, uniform_data.projection_top, uniform_data.projection_near, uniform_data.projection_far);
-
 	mat4 model_matrix = make_translerp_matrix(uniform_data.model_positions[model_slot], uniform_data.delta_time);
 
 	output_data.matrices[0] = camera_matrix;

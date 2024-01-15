@@ -16,6 +16,7 @@ target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
 	-Werror=implicit-function-declaration 
 	-Werror=implicit-int
 	-Werror=sign-compare
+	-Werror=stringop-overread
 	-Wno-switch)
 
 find_package(Vulkan REQUIRED)

@@ -51,6 +51,8 @@ void update_render_position(render_position_t *render_position_ptr, vector3F_t n
 // Force-updates both the current position and the previous position to the new position.
 void reset_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
 
+// Sets the previous position to the current position.
+void settle_render_position(render_position_t *render_position_ptr);
 
 
 #endif	// RENDER_OBJECT_H

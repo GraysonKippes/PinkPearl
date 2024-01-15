@@ -332,13 +332,13 @@ void set_clear_color(color3F_t color) {
 }
 
 // Send the drawing commands to the GPU to draw the frame.
-void draw_frame(const float tick_delta_time, const render_position_t camera_position, const projection_bounds_t projection_bounds) {
+void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds) {
 
 	uint32_t image_index = 0;
 
 	vkWaitForFences(device, 1, &FRAME.fence_frame_ready, VK_TRUE, UINT64_MAX);
 
-	VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, FRAME.semaphore_image_available, VK_NULL_HANDLE, &image_index);
+	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, FRAME.semaphore_image_available, VK_NULL_HANDLE, &image_index);
 	
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return;
@@ -357,17 +357,12 @@ void draw_frame(const float tick_delta_time, const render_position_t camera_posi
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
 	compute_matrices(tick_delta_time, projection_bounds, camera_position, render_object_positions);
 
-
-
 	// TODO - revise pre-render compute synchronization to use semaphores instead;
 	// 	this would allow graphics command buffer record to happen on the CPU 
 	// 	while the compute command buffers are still being executed on the GPU.
 	vkQueueWaitIdle(compute_queue);
-	
 	vkWaitForFences(device, 1, &FRAME.fence_buffers_up_to_date, VK_TRUE, UINT64_MAX);
-
 	vkResetFences(device, 1, &FRAME.fence_frame_ready);
-
 	vkResetCommandBuffer(FRAME.command_buffer, 0);
 
 	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };

@@ -31,6 +31,8 @@ typedef struct area_t {
 
 bool area_get_room_ptr(const area_t area, const offset_t room_position, const room_t **room_pptr);
 
+int area_get_room_index(const area_t area, const offset_t room_position);
+
 typedef enum direction_t {
 	DIRECTION_ERROR = -1,
 	DIRECTION_NONE = 0,

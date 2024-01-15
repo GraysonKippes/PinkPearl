@@ -340,6 +340,9 @@ void compute_room_texture(texture_t tilemap_texture, uint32_t cache_slot, extent
 	else if (room_extent.width == 32 && room_extent.length == 20) {
 		index += 6;
 	}
+	else {
+		log_message(ERROR, "Error computing room texture: room extent is invalid.");
+	}
 
 	const VkDeviceSize tile_data_size = 16 * room_extent.width * room_extent.length;
 
@@ -353,13 +356,15 @@ void compute_room_texture(texture_t tilemap_texture, uint32_t cache_slot, extent
 	descriptor_set_allocate_info.pSetLayouts = &compute_pipeline_room_texture.descriptor_set_layout;
 
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
-	vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
+	const VkResult allocate_descriptor_set_result = vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
+	if (allocate_descriptor_set_result != 0) {
+		logf_message(ERROR, "Error computing room texture: descriptor set allocation failed. (Error code: %i)", allocate_descriptor_set_result);
+		return;
+	}
 
-	VkDescriptorBufferInfo uniform_buffer_info = make_descriptor_buffer_info(global_uniform_buffer, 128, tile_data_size);
-
-	VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture.image_views[0], tilemap_texture.layout);
-
-	VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, room_texture_transfer_image.view, room_texture_transfer_image.layout);
+	const VkDescriptorBufferInfo uniform_buffer_info = make_descriptor_buffer_info(global_uniform_buffer, 128, tile_data_size);
+	const VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture.image_views[0], tilemap_texture.layout);
+	const VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, room_texture_transfer_image.view, room_texture_transfer_image.layout);
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
 	

@@ -9,16 +9,17 @@
 #include "render/render_object.h"
 #include "render/renderer.h"
 #include "render/vulkan/vulkan_render.h"
+#include "util/bit.h"
 #include "util/time.h"
 
 #include "game_state.h"
 #include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
 
-static game_state_flag_bits_t game_state_flag_bits = 0;
+static game_state_bitfield_t game_state_bitfield = 0;
 
 area_t current_area = { 0 };
-static uint32_t current_room_index = 0;
+static int current_room_index = 0;
 
 static const rect_t player_hitbox = {
 	.x1 = -0.375,
@@ -59,6 +60,16 @@ void tick_game(void) {
 	four_direction_input_state.flags |= 2 * is_input_pressed_or_held(GLFW_KEY_A);	// LEFT
 	four_direction_input_state.flags |= 4 * is_input_pressed_or_held(GLFW_KEY_S);	// DOWN
 	four_direction_input_state.flags |= 8 * is_input_pressed_or_held(GLFW_KEY_D);	// RIGHT
+
+	if (game_state_bitfield & (uint32_t)GAME_STATE_SCROLLING) {
+		if (!is_camera_scrolling()) {
+			game_state_bitfield &= ~((uint32_t)GAME_STATE_SCROLLING);
+		}
+		else {
+			settle_render_positions();
+			return;
+		}
+	}
 
 	entity_t *player_entity_ptr = NULL;
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
@@ -125,10 +136,14 @@ void tick_game(void) {
 		const offset_t room_offset = direction_offset(travel_direction);
 		const offset_t next_room_position = offset_add(current_room.position, room_offset);
 
-		room_t *next_room_ptr = NULL;
+		const room_t *next_room_ptr = NULL;
 		const bool result = area_get_room_ptr(current_area, next_room_position, &next_room_ptr);
 
-		logf_message(WARNING, "Next room position: (%i, %i).", next_room_position.x, next_room_position.y);
-		logf_message(WARNING, "Result: %i", result);
+		if (result && next_room_ptr != NULL) {
+			current_room_index = area_get_room_index(current_area, next_room_position);
+			game_state_bitfield |= (uint32_t)GAME_STATE_SCROLLING;
+			upload_room_model(*next_room_ptr);
+			begin_room_scroll(current_area.room_extent, current_room.position, next_room_ptr->position);
+		}
 	}
 }

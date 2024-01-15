@@ -17,4 +17,6 @@ typedef struct offset_t {
 
 offset_t offset_add(const offset_t a, const offset_t b);
 
+offset_t offset_subtract(const offset_t a, const offset_t b);
+
 #endif	// EXTENT_H

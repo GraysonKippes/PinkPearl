@@ -50,6 +50,23 @@ bool area_get_room_ptr(const area_t area, const offset_t room_position, const ro
 	return true;
 }
 
+int area_get_room_index(const area_t area, const offset_t room_position) {
+
+	if (area.positions_to_rooms == NULL) {
+		log_message(ERROR, "Error getting room index: area.positions_to_rooms is NULL.");
+		return -2;
+	}
+
+	// This is an index into the array that maps 1D positions to indices into the area room array.
+	const int room_position_index = area_extent_index(area.extent, room_position);
+	if (room_position_index < 0) {
+		logf_message(ERROR, "Error getting room pointer: room position index is negative (%i).", room_position_index);
+		return -3;
+	}
+
+	return area.positions_to_rooms[room_position_index];
+}
+
 direction_t test_room_travel(const vector3D_cubic_t player_position, const area_t area, const int current_room_index) {
 	
 	if (current_room_index >= (int)area.num_rooms) {
