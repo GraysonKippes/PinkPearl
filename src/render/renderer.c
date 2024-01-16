@@ -121,6 +121,8 @@ void upload_room_model(const room_t room) {
 		next_room_model_slot = 0;
 	}
 
+	logf_message(INFO, "Next room model slot = %u", next_room_model_slot);
+
 	const float top = -((float)room.extent.length / 2.0F);
 	const float left = -((float)room.extent.width / 2.0F);
 	const float bottom = -top;
@@ -148,7 +150,7 @@ void upload_room_model(const room_t room) {
 
 	stage_model_data((render_handle_t)next_room_model_slot, room_model);
 
-	projection_bounds_t room_projection_bounds = { 
+	const projection_bounds_t room_projection_bounds = { 
 		.left = left, 	.right = right,
 		.bottom = -bottom, 	.top = -top,
 		.near = 15.0F,	.far = -15.0F
@@ -156,6 +158,15 @@ void upload_room_model(const room_t room) {
 	update_projection_bounds(room_projection_bounds);
 
 	create_room_texture(room, next_room_model_slot);
+
+	const vector3F_t room_model_position = {
+		.x = (float)room.extent.width * (float)room.position.x,
+		.y = (float)room.extent.length * (float)room.position.y,
+		.z = 0.0F
+	};
+	reset_render_position(render_object_positions + next_room_model_slot, room_model_position);
+
+	enable_render_object_slot(next_room_model_slot);
 	current_room_render_object_slot = next_room_model_slot;
 }
 
