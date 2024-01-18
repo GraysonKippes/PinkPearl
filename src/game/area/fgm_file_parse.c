@@ -117,6 +117,8 @@ area_t parse_fga_file(const char *filename) {
 
 	for (uint32_t i = 0; i < area.num_rooms; ++i) {
 
+		area.rooms[i].id = (int)i;
+
 		uint32_t room_position = 0;
 		if (!read_data(fga_file, 4, 1, &room_position)) {
 			log_message(ERROR, "Error reading area file: failed to read room position.");

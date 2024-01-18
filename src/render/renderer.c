@@ -34,6 +34,9 @@ static projection_bounds_t current_projection_bounds;
 // The preprocessor constant is used for static initialization.
 static uint32_t current_room_render_object_slot = NUM_ROOM_RENDER_OBJECT_SLOTS - 1;
 
+// Keeps track of which rooms are already loaded into the renderer.
+static int loaded_room_ids[NUM_ROOM_RENDER_OBJECT_SLOTS];
+
 static void scroll_camera(void);
 
 
@@ -56,6 +59,10 @@ void init_renderer(void) {
 		}
 
 		reset_render_position((render_object_positions + i), zero_vector3F);
+	}
+
+	for (uint32_t i = 0; i < num_room_render_object_slots; ++i) {
+		loaded_room_ids[i] = -1;
 	}
 
 	upload_model(2, get_premade_model(0), find_loaded_texture("entity/pearl"));
@@ -116,18 +123,19 @@ void upload_model(uint32_t slot, model_t model, texture_t texture) {
 
 void upload_room_model(const room_t room) {
 	
-	uint32_t next_room_model_slot = current_room_render_object_slot + 1;
-	if (next_room_model_slot >= num_room_render_object_slots) {
-		next_room_model_slot = 0;
+	if (++current_room_render_object_slot >= num_room_render_object_slots) {
+		current_room_render_object_slot = 0;
 	}
 
-	logf_message(INFO, "Next room model slot = %u", next_room_model_slot);
+	if (room.id == loaded_room_ids[current_room_render_object_slot]) {
+		enable_render_object_slot(current_room_render_object_slot);
+		return;
+	}
 
 	const float top = -((float)room.extent.length / 2.0F);
 	const float left = -((float)room.extent.width / 2.0F);
 	const float bottom = -top;
 	const float right = -left;
-
 	static const float depth = 0.0F;
 
 	// The model array data can be allocated on the stack instead of the heap because it will be fully uploaded to a GPU buffer before this function returns.
@@ -148,7 +156,7 @@ void upload_room_model(const room_t room) {
 		2, 3, 0		// Triangle 2
 	};
 
-	stage_model_data((render_handle_t)next_room_model_slot, room_model);
+	stage_model_data((render_handle_t)current_room_render_object_slot, room_model);
 
 	const projection_bounds_t room_projection_bounds = { 
 		.left = left, 	.right = right,
@@ -157,17 +165,17 @@ void upload_room_model(const room_t room) {
 	};
 	update_projection_bounds(room_projection_bounds);
 
-	create_room_texture(room, next_room_model_slot);
+	create_room_texture(room, current_room_render_object_slot);
 
 	const vector3F_t room_model_position = {
 		.x = (float)room.extent.width * (float)room.position.x,
 		.y = (float)room.extent.length * (float)room.position.y,
-		.z = 0.0F
+		.z = depth
 	};
-	reset_render_position(render_object_positions + next_room_model_slot, room_model_position);
+	reset_render_position(render_object_positions + current_room_render_object_slot, room_model_position);
 
-	enable_render_object_slot(next_room_model_slot);
-	current_room_render_object_slot = next_room_model_slot;
+	loaded_room_ids[current_room_render_object_slot] = room.id;
+	enable_render_object_slot(current_room_render_object_slot);
 }
 
 void begin_room_scroll(const extent_t room_extent, const offset_t previous_room_position, const offset_t next_room_position) {

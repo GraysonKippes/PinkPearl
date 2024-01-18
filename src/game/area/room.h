@@ -19,6 +19,7 @@ typedef struct room_t {
 
 	room_size_t size;
 	extent_t extent;
+
 	tile_t *tiles;
 
 	unsigned int num_walls;
@@ -26,6 +27,9 @@ typedef struct room_t {
 
 	// Position of this room in its area.
 	offset_t position;
+
+	// Unique ID of this room in its area.
+	int id;
 
 } room_t;
 
