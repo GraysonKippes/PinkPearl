@@ -55,6 +55,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/model.c
 	src/render/render_config.c
 	src/render/render_object.c
+	src/render/render_position.c
 	src/render/renderer.c
 	src/render/math/vector3F.c
 	src/render/stb/image_data.c

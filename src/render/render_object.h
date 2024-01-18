@@ -7,6 +7,7 @@
 #include "math/vector3F.h"
 
 #include "render_config.h"
+#include "render_position.h"
 
 
 
@@ -35,24 +36,8 @@ void destroy_render_object(render_handle_t);
 // The render object is an abstract concept, and is separated into various components which are
 // stored in their own arrays, for easy vectorization by the renderer.
 
-typedef struct render_position_t {
-	
-	vector3F_t position;
-
-	vector3F_t previous_position;
-
-} render_position_t;
-
 extern render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
 
-// Updates the render position, setting the previous position to what the position was before the update.
-void update_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
-
-// Force-updates both the current position and the previous position to the new position.
-void reset_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
-
-// Sets the previous position to the current position.
-void settle_render_position(render_position_t *render_position_ptr);
 
 
 #endif	// RENDER_OBJECT_H
