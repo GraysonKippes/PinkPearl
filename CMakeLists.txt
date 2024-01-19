@@ -51,12 +51,12 @@ target_sources(PinkPearl PRIVATE
 	src/glfw/glfw_manager.c
 	src/glfw/input_manager.c
 	src/log/logging.c
-	src/render/animation.c
 	src/render/model.c
 	src/render/render_config.c
 	src/render/render_object.c
 	src/render/render_position.c
 	src/render/renderer.c
+	src/render/texture_info.c
 	src/render/math/vector3F.c
 	src/render/stb/image_data.c
 	src/render/vulkan/buffer.c

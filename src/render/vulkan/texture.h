@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "render/animation.h"
+#include "render/texture_info.h"
 #include "render/stb/image_data.h"
 
 #include "image.h"

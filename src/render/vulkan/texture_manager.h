@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "render/animation.h"
+#include "render/texture_info.h"
 
 #include "texture.h"
 

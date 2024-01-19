@@ -1,4 +1,4 @@
-#include "animation.h"
+#include "texture_info.h"
 
 #include <stddef.h>
 #include <stdio.h>
