@@ -2,104 +2,117 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include "config.h"
 #include "log/logging.h"
 
-#define FGA_FILE_DIRECTORY (RESOURCE_PATH "data/area.fga")
+bool area_get_room_ptr(const area_t area, const offset_t room_position, const room_t **room_pptr) {
 
-void read_area_data(const char *path, area_t *area_ptr) {
-
-	log_message(VERBOSE, "Reading area file...");
-
-	if (area_ptr == NULL) {
-		log_message(ERROR, "Error creating area: pointer to area is null.");
-		return;
+	if (room_pptr == NULL) {
+		log_message(ERROR, "Error getting room pointer: pointer to room pointer is NULL.");
+		return false;
 	}
 
-	FILE *file = fopen(FGA_FILE_DIRECTORY, "rb");
-	if (file == NULL) {
-		logf_message(ERROR, "Error reading area file: could not open area file at \"%s\".", path);
-		return;
+	if (area.rooms == NULL) {
+		log_message(ERROR, "Error getting room pointer: area.rooms is NULL.");
+		return false;
 	}
 
-	// Check file label.
-	char label[4];
-	fread(label, 1, 4, file);
-	if (strcmp(label, "FGA") != 0) {
-		logf_message(ERROR, "Error reading area file: invalid file format; found label \"%s\".", label);
-		fclose(file);
-		return;
+	if (area.positions_to_rooms == NULL) {
+		log_message(ERROR, "Error getting room pointer: area.positions_to_rooms is NULL.");
+		return false;
 	}
 
-	// TODO - figure out all the endianness shit
-
-	fread(&area_ptr->extent.width, 4, 1, file);
-	fread(&area_ptr->extent.length, 4, 1, file);
-	fread(&area_ptr->num_rooms, 4, 1, file);
-
-	uint64_t extent_area = area_ptr->extent.width * area_ptr->extent.length;
-
-	logf_message(WARNING, "Area data: width = %u, length = %u, num. rooms = %u", 
-			area_ptr->extent.width, area_ptr->extent.length, area_ptr->num_rooms);
-
-	if (area_ptr->num_rooms > extent_area) {
-		logf_message(ERROR, "Error reading area file: `area.num_rooms` (%u) is greater than `area.extent.width` times `area.extent.height` (%lu).", area_ptr->num_rooms, extent_area);
-		fclose(file);
-		return;
+	// This is an index into the array that maps 1D positions to indices into the area room array.
+	const int room_position_index = area_extent_index(area.extent, room_position);
+	if (room_position_index < 0) {
+		logf_message(ERROR, "Error getting room pointer: room position index is negative (%i).", room_position_index);
+		return false;
 	}
 
-	area_ptr->rooms = malloc(area_ptr->num_rooms * sizeof(room_t));
-	if (area_ptr->rooms == NULL) {
-		log_message(ERROR, "Error creating area: failed to allocate room array.");
-		fclose(file);
-		return;
+	const int room_index = area.positions_to_rooms[room_position_index];
+
+	if (room_index < 0) {
+		return false;
 	}
 
-	area_ptr->positions_to_rooms = malloc(area_ptr->num_rooms * sizeof(uint32_t));
-	if (area_ptr->positions_to_rooms == NULL) {
-		log_message(ERROR, "Error creating area: failed to allocate positions-to-rooms array.");
-		free(area_ptr->rooms);
-		fclose(file);
-		return;
+	if (room_index >= (int)area.num_rooms) {
+		logf_message(ERROR, "Error getting room pointer: room index (%i) is not less than total number of rooms (%i).", room_index, (int)area.num_rooms);
+		return false;
 	}
 
-	for (uint32_t i = 0; i < area_ptr->num_rooms; ++i) {
+	*room_pptr = area.rooms + room_index;
 
-		logf_message(WARNING, "Reading data for room %u.", i);
-
-		uint32_t room_position = 0;
-		fread(&room_position, 4, 1, file);
-		area_ptr->positions_to_rooms[i] = room_position;
-
-		int result = read_room_data(file, (area_ptr->rooms + i));
-		if (result != 0) {
-			logf_message(ERROR, "Error creating area: error encountered while reading data for room %u (Error code = %u).", i, result);
-			free(area_ptr->rooms);
-			area_ptr->rooms = NULL;
-			fclose(file);
-			return;
-		}
+	if (room_position.x != (*room_pptr)->position.x || room_position.y != (*room_pptr)->position.y) {
+		logf_message(WARNING, "Warning getting room pointer: specified room position (%i, %i) does not match the gotten room's position (%i, %i).", 
+				room_position.x, room_position.y, (*room_pptr)->position.x, (*room_pptr)->position.y);
 	}
 
-	fclose(file);
+	return true;
 }
 
-room_t *area_get_room_ptr(area_t area, offset_t map_position) {
-	
-	if (map_position.x >= area.extent.width || map_position.y >= area.extent.length) {
-		return NULL;
-	}
-	
-	const uint32_t position_index = map_position.y * area.extent.width + map_position.x;
-	const uint32_t room_index = area.positions_to_rooms[position_index];
+int area_get_room_index(const area_t area, const offset_t room_position) {
 
-	if (room_index >= area.num_rooms) {
-		return NULL;
+	if (area.positions_to_rooms == NULL) {
+		log_message(ERROR, "Error getting room index: area.positions_to_rooms is NULL.");
+		return -2;
 	}
 
-	return area.rooms + room_index;
+	// This is an index into the array that maps 1D positions to indices into the area room array.
+	const int room_position_index = area_extent_index(area.extent, room_position);
+	if (room_position_index < 0) {
+		logf_message(ERROR, "Error getting room pointer: room position index is negative (%i).", room_position_index);
+		return -3;
+	}
+
+	return area.positions_to_rooms[room_position_index];
+}
+
+direction_t test_room_travel(const vector3D_cubic_t player_position, const area_t area, const int current_room_index) {
+	
+	if (current_room_index >= (int)area.num_rooms) {
+		logf_message(ERROR, "Error testing room travel: specified current room index (%i) is not less than total number of rooms in specified area (%u).", current_room_index, area.num_rooms);
+		return DIRECTION_ERROR;
+	}
+
+	const room_t room = area.rooms[current_room_index];
+	const extent_t room_extent = area.room_extent;
+	const vector3D_cubic_t room_position = {
+		.x = (double)room.position.x * (double)room_extent.width,
+		.y = (double)room.position.y * (double)room_extent.length,
+		.z = 0.0
+	};
+	// Player position in room space (abbreviated IRS).
+	const vector3D_cubic_t player_position_irs = vector3D_cubic_subtract(player_position, room_position);
+
+	// TODO - make this check which edge of the room the player actually goes through.
+
+	if (player_position_irs.x < -((double)room_extent.width / 2.0)) {
+		return DIRECTION_WEST;
+	}
+
+	if (player_position_irs.x > ((double)room_extent.width / 2.0)) {
+		return DIRECTION_EAST;
+	}
+
+	if (player_position_irs.y < -((double)room_extent.length / 2.0)) {
+		return DIRECTION_SOUTH;
+	}
+
+	if (player_position_irs.y > ((double)room_extent.length / 2.0)) {
+		return DIRECTION_NORTH;
+	}
+
+	return DIRECTION_NONE;
+}
+
+offset_t direction_offset(const direction_t direction) {
+	
+	switch (direction) {
+		case DIRECTION_NORTH: return (offset_t){ .x = 0, .y = 1 };
+		case DIRECTION_EAST: return (offset_t){ .x = 1, .y = 0 };
+		case DIRECTION_SOUTH: return (offset_t){ .x = 0, .y = -1 };
+		case DIRECTION_WEST: return (offset_t){ .x = -1, .y = 0 };
+	}
+
+	return (offset_t){ 0 };
 }

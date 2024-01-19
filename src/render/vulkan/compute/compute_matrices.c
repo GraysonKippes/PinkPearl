@@ -36,14 +36,14 @@ const VkDeviceSize matrix_data_size = num_matrices * matrix_size;
 
 
 void init_compute_matrices(void) {
-	compute_pipeline_matrices = create_compute_pipeline(device, compute_matrices_layout, "compute_matrices.spv");
+	compute_pipeline_matrices = create_compute_pipeline(device, compute_matrices_layout, COMPUTE_MATRICES_SHADER_NAME);
 }
 
 void terminate_compute_matrices(void) {
 	destroy_compute_pipeline(device, compute_pipeline_matrices);
 }
 
-void compute_matrices(float delta_time, projection_bounds_t projection_bounds, render_position_t camera_position, render_position_t *positions) {
+void compute_matrices(float delta_time, projection_bounds_t projection_bounds, vector3F_t camera_position, render_position_t *positions) {
 
 	static const VkDeviceSize uniform_data_size = 1024;
 
@@ -52,8 +52,9 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, r
 	memcpy(global_uniform_mapped_memory + 32, &camera_position, sizeof camera_position);
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-		memcpy(global_uniform_mapped_memory + 64 + (i * 32), &positions[i].position, sizeof(vector3F_t));
-		memcpy(global_uniform_mapped_memory + 64 + (i * 32) + 16, &positions[i].previous_position, sizeof(vector3F_t));
+		static const VkDeviceSize starting_offset = 48;
+		memcpy(global_uniform_mapped_memory + starting_offset + (i * 32), &positions[i].position, sizeof(vector3F_t));
+		memcpy(global_uniform_mapped_memory + starting_offset + (i * 32) + 16, &positions[i].previous_position, sizeof(vector3F_t));
 	}
 
 	VkDescriptorSetAllocateInfo descriptor_set_allocate_info = { 0 };

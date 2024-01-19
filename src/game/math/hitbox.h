@@ -22,6 +22,6 @@ rect_t hitbox_to_world_space(hitbox_t hitbox, vector3D_cubic_t position);
 // Returns true if the two rects overlap; returns false otherwise.
 bool rect_overlap(const rect_t a, const rect_t b);
 
-vector3D_cubic_t resolve_collision(const entity_transform_t entity_transform, const rect_t entity_hitbox, const rect_t collision_box);
+vector3D_cubic_t resolve_collision(const vector3D_cubic_t old_position, const vector3D_cubic_t new_position, const rect_t hitbox, const rect_t wall);
 
 #endif	// HITBOX_H

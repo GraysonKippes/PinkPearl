@@ -266,10 +266,10 @@ void create_vulkan_objects(void) {
 	clear_color = (VkClearValue){ { { 0.0F, 0.0F, 0.0F, 1.0F } } };
 
 	VkShaderModule vertex_shader;
-	create_shader_module(device, "vertex_models.spv", &vertex_shader);
+	create_shader_module(device, VERTEX_SHADER_NAME, &vertex_shader);
 
 	VkShaderModule fragment_shader;
-	create_shader_module(device, "fragment_shader.spv", &fragment_shader);
+	create_shader_module(device, FRAGMENT_SHADER_NAME, &fragment_shader);
 
 	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_set_layout, vertex_shader, fragment_shader);
 

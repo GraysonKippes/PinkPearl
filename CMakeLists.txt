@@ -8,12 +8,15 @@ add_executable(PinkPearl)
 
 set(APP_NAME "\"Pink Pearl\"")
 set(RESOURCE_PATH "\"../resources/\"")
-configure_file(config.h.in config.h)
+configure_file(src/config.h.in config.h)
 
 #target_compile_options(PinkPearl PRIVATE /TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address)
 target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
 	-Werror=implicit-function-declaration 
+	-Werror=implicit-int
+	-Werror=sign-compare
+	-Werror=stringop-overread
 	-Wno-switch)
 
 find_package(Vulkan REQUIRED)
@@ -37,6 +40,8 @@ target_sources(PinkPearl PRIVATE
 	src/main.c
 	src/game/game.c
 	src/game/area/area.c
+	src/game/area/area_extent.c
+	src/game/area/fgm_file_parse.c
 	src/game/area/room.c
 	src/game/entity/entity.c
 	src/game/entity/entity_ai.c
@@ -50,6 +55,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/model.c
 	src/render/render_config.c
 	src/render/render_object.c
+	src/render/render_position.c
 	src/render/renderer.c
 	src/render/math/vector3F.c
 	src/render/stb/image_data.c
@@ -74,7 +80,11 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/vulkan_render.c
 	src/render/vulkan/compute/compute_matrices.c
 	src/render/vulkan/compute/compute_room_texture.c
+	src/util/allocate.c
 	src/util/bit.c
+	src/util/extent.c
+	src/util/file_io.c
+	src/util/offset.c
 	src/util/string_array.c
 	src/util/time.c
 )

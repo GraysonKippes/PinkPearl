@@ -9,6 +9,7 @@
 #include "render/model.h"
 #include "render/projection.h"
 #include "render/render_object.h"
+#include "render/math/vector3F.h"
 
 #include "texture.h"
 
@@ -34,6 +35,6 @@ void set_model_texture(uint32_t slot, texture_t texture);
 
 void create_room_texture(room_t room, uint32_t render_object_slot);
 
-void draw_frame(float tick_delta_time, projection_bounds_t projection_bounds);
+void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds);
 
 #endif	// VULKAN_RENDER_H

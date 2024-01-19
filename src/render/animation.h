@@ -17,17 +17,21 @@
 
 
 
-typedef struct animation_t {
+// Contains information necessary to create an animation in the texture creation process.
+typedef struct animation_create_info_t {
 
 	uint32_t start_cell;
 	uint32_t num_frames;
 	uint32_t frames_per_second;
 
-} animation_t;
+} animation_create_info_t;
 
 // `animation_set_t` contains information to read image data from a buffer 
 // 	and create arrays of images for an entire set of animations.
-typedef struct animation_set_t {
+typedef struct texture_create_info_t {
+
+	// The path to the image that will be loaded during image creation.
+	char *path;
 
 	// Dimensions of the base texture atlas, in texels.
 	extent_t atlas_extent;
@@ -39,13 +43,28 @@ typedef struct animation_set_t {
 	extent_t cell_extent;
 
 	uint32_t num_animations;
-	animation_t *animations;
+	animation_create_info_t *animations;
 
-} animation_set_t;
+} texture_create_info_t;
+
+// Contains an array of texture create infos.
+// If this is dynamically created, pass it to `destroy_texture_pack` when no longer in use.
+typedef struct texture_pack_t {
+	
+	uint32_t num_textures;
+
+	texture_create_info_t *texture_create_infos;
+
+} texture_pack_t;
 
 
 
-bool is_animation_set_empty(animation_set_t animation_set);
+bool is_animation_set_empty(texture_create_info_t texture_create_info);
+
+// Use this to destroy a texture pack struct that has been dynamically allocated.
+void destroy_texture_pack(texture_pack_t *texture_pack_ptr);
+
+texture_pack_t parse_fgt_file(const char *filename);
 
 
 

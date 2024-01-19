@@ -31,11 +31,11 @@ void tick_entity(entity_t *entity_ptr) {
 	// The squared length is used instead of the real length because it is only used for comparison.
 	double step_length_squared = SQUARE(position_step.x) + SQUARE(position_step.y) + SQUARE(position_step.z); 
 
-	for (unsigned int i = 0; i < current_area.rooms[0].num_collision_boxes; ++i) {
+	for (unsigned int i = 0; i < current_area.rooms[0].num_walls; ++i) {
 		
-		const rect_t room_rect = current_area.rooms[0].collision_boxes[i];
+		const rect_t wall = current_area.rooms[0].walls[i];
 
-		vector3D_cubic_t resolved_position = resolve_collision(entity_ptr->transform, entity_ptr->hitbox, room_rect);
+		vector3D_cubic_t resolved_position = resolve_collision(old_position, new_position, entity_ptr->hitbox, wall);
 		vector3D_cubic_t resolved_step = vector3D_cubic_subtract(resolved_position, old_position);
 		const double resolved_step_length_squared = SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z);
 

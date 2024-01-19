@@ -9,40 +9,23 @@
 #include "render/render_object.h"
 #include "render/renderer.h"
 #include "render/vulkan/vulkan_render.h"
+#include "util/bit.h"
 #include "util/time.h"
 
+#include "game_state.h"
+#include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
 
+static game_state_bitfield_t game_state_bitfield = 0;
+
 area_t current_area = { 0 };
+static int current_room_index = 0;
 
-static const rect_t test_collision_boxes[1] = {
-	{
-		.x1 = -8.0,
-		.y1 = 2.0,
-		.x2 = 8.0,
-		.y2 = 5.0
-	}
-};
-
-static const rect_t test_collision_boxes_2[1] = {
-	{
-		.x1 = -4.0,
-		.y1 = -2.0,
-		.x2 = -2.0,
-		.y2 = 2.0
-	}
-};
-
-static const hitbox_t player_hitbox = {
-	.width = 0.9,
-	.length = 1.4
-};
-
-static const rect_t player_hitbox_2 = {
-	.x1 = -0.45,
-	.y1 = -0.45,
-	.x2 = 0.45,
-	.y2 = 0.95
+static const rect_t player_hitbox = {
+	.x1 = -0.375,
+	.y1 = -0.5,
+	.x2 = 0.375,
+	.y2 = 0.5
 };
 
 static entity_handle_t player_entity_handle;
@@ -50,11 +33,8 @@ static entity_handle_t player_entity_handle;
 void start_game(void) {
 
 	init_entity_manager();
-	read_area_data("test", &current_area);
+	current_area = parse_fga_file("test");
 	upload_room_model(current_area.rooms[0]);
-
-	current_area.rooms[0].num_collision_boxes = 1;
-	current_area.rooms[0].collision_boxes = (rect_t *)test_collision_boxes_2;
 
 	player_entity_handle = load_entity();
 	if (!validate_entity_handle(player_entity_handle)) {
@@ -64,7 +44,7 @@ void start_game(void) {
 	entity_t *player_entity_ptr = NULL;
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {
-		player_entity_ptr->hitbox = player_hitbox_2;
+		player_entity_ptr->hitbox = player_hitbox;
 		player_entity_ptr->render_handle = load_render_object();
 	}
 }
@@ -80,6 +60,16 @@ void tick_game(void) {
 	four_direction_input_state.flags |= 2 * is_input_pressed_or_held(GLFW_KEY_A);	// LEFT
 	four_direction_input_state.flags |= 4 * is_input_pressed_or_held(GLFW_KEY_S);	// DOWN
 	four_direction_input_state.flags |= 8 * is_input_pressed_or_held(GLFW_KEY_D);	// RIGHT
+
+	if (game_state_bitfield & (uint32_t)GAME_STATE_SCROLLING) {
+		if (!is_camera_scrolling()) {
+			game_state_bitfield &= ~((uint32_t)GAME_STATE_SCROLLING);
+		}
+		else {
+			settle_render_positions();
+			return;
+		}
+	}
 
 	entity_t *player_entity_ptr = NULL;
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
@@ -137,6 +127,23 @@ void tick_game(void) {
 	}
 
 	tick_entities();
-
 	get_model_texture_ptr(player_entity_ptr->render_handle)->current_animation_cycle = animation_cycle;
+
+	const direction_t travel_direction = test_room_travel(player_entity_ptr->transform.position, current_area, current_room_index);
+	if ((int)travel_direction > 0) {
+
+		const room_t current_room = current_area.rooms[current_room_index];
+		const offset_t room_offset = direction_offset(travel_direction);
+		const offset_t next_room_position = offset_add(current_room.position, room_offset);
+
+		const room_t *next_room_ptr = NULL;
+		const bool result = area_get_room_ptr(current_area, next_room_position, &next_room_ptr);
+
+		if (result && next_room_ptr != NULL) {
+			current_room_index = area_get_room_index(current_area, next_room_position);
+			game_state_bitfield |= (uint32_t)GAME_STATE_SCROLLING;
+			upload_room_model(*next_room_ptr);
+			begin_room_scroll(current_area.room_extent, current_room.position, next_room_ptr->position);
+		}
+	}
 }

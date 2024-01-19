@@ -3,10 +3,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#define __STDC_WANT_LIB_EXT1__ 1
 #include <string.h>
 
 #include <vulkan/vulkan.h>
 
+#include "config.h"
 #include "log/logging.h"
 #include "render/stb/image_data.h"
 
@@ -17,19 +19,27 @@
 
 
 
+#define TEXTURE_PATH (RESOURCE_PATH "assets/textures/")
+
 #define NUM_TEXTURES 3
 
 static const uint32_t num_textures = NUM_TEXTURES;
 
+#define TEXTURE_NAME_MAX_LENGTH 256
+
+static const size_t texture_name_max_length = TEXTURE_NAME_MAX_LENGTH;
+
 static texture_t textures[NUM_TEXTURES];
 
-#define IMAGE_STAGING_BUFFER_SIZE 65536
+static char texture_names[NUM_TEXTURES][TEXTURE_NAME_MAX_LENGTH];
+
+#define IMAGE_STAGING_BUFFER_SIZE 262144
 
 
 
-animation_set_t make_unanimated_animation_set(extent_t texture_extent) {
+texture_create_info_t make_texture_create_info(extent_t texture_extent) {
 
-	static const animation_t animations[1] = {
+	static const animation_create_info_t animations[1] = {
 		{
 			.start_cell = 0,
 			.num_frames = 1,
@@ -37,14 +47,14 @@ animation_set_t make_unanimated_animation_set(extent_t texture_extent) {
 		}
 	};
 
-	animation_set_t animation_set = { 0 };
-	animation_set.atlas_extent = texture_extent;
-	animation_set.num_cells = (extent_t){ 1, 1 };
-	animation_set.cell_extent = texture_extent;
-	animation_set.num_animations = 1;
-	animation_set.animations = (animation_t *)animations;
+	texture_create_info_t texture_create_info = { 0 };
+	texture_create_info.atlas_extent = texture_extent;
+	texture_create_info.num_cells = (extent_t){ 1, 1 };
+	texture_create_info.cell_extent = texture_extent;
+	texture_create_info.num_animations = 1;
+	texture_create_info.animations = (animation_create_info_t *)animations;
 
-	return animation_set;
+	return texture_create_info;
 }
 
 
@@ -107,7 +117,7 @@ void destroy_image_staging_buffer(void) {
 	image_staging_buffer.device = VK_NULL_HANDLE;
 }
 
-void load_texture(animation_set_t animation_set, bool is_tilemap, const char *path) {
+void load_texture(const texture_create_info_t texture_create_info, const bool is_tilemap) {
 
 	// TODO - modify this to use semaphores between image transitions and data transfer operations.
 
@@ -117,6 +127,16 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 
 	if (num_textures_loaded >= num_textures) {
 		log_message(ERROR, "Error loading texture: attempted loading an additional texture past max number of textures.");
+		return;
+	}
+
+	if (texture_create_info.path == NULL) {
+		log_message(ERROR, "Error loading texture: texture path is NULL.");
+		return;
+	}
+
+	if (texture_create_info.num_animations > 0 && texture_create_info.animations == NULL) {
+		log_message(ERROR, "Error loading texture: number of animations is greater than zero, but array of animation create infos is NULL.");
 		return;
 	}
 
@@ -134,6 +154,50 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 	vkCreateSemaphore(device, &semaphore_create_info, NULL, &semaphore_transition_finished);
 	vkCreateSemaphore(device, &semaphore_create_info, NULL, &semaphore_transfer_finished);
 
+	// Create full path.
+	
+	char path[TEXTURE_NAME_MAX_LENGTH];
+	memset(path, '\0', texture_name_max_length);
+
+	const size_t directory_length = strlen(TEXTURE_PATH);
+	const errno_t directory_strncpy_result = strncpy_s(path, 256, TEXTURE_PATH, directory_length);
+	if (directory_strncpy_result != 0) {
+		logf_message(WARNING, "Warning loading texture: failed to copy directory into image path buffer. (Error code: %u)", directory_strncpy_result);
+	}
+
+	const size_t filename_length = strnlen_s(texture_create_info.path, 64);
+	const errno_t filename_strncat_result = strncat_s(path, 256, texture_create_info.path, filename_length);
+	if (filename_strncat_result != 0) {
+		logf_message(WARNING, "Warning loading texture: failed to concatenate image filename into image path buffer. (Error code: %u)", filename_strncat_result);
+	}
+
+	// Copy texture name into texture name array.
+
+	// Temporary name buffer -- do the string operations here.
+	char name[TEXTURE_NAME_MAX_LENGTH];
+	memset(name, '\0', texture_name_max_length);
+	const errno_t texture_name_strncpy_result_1 = strncpy_s(name, texture_name_max_length, texture_create_info.path, 64);
+	if (texture_name_strncpy_result_1 != 0) {
+		logf_message(WARNING, "Warning loading texture: failed to copy texture path into temporary texture name buffer. (Error code: %u)", texture_name_strncpy_result_1);
+	}
+
+	// Prune off the file extension if it is found.
+	// TODO - make a safer version of this function...
+	char *file_extension_delimiter_ptr = strrchr(name, '.');
+	if (file_extension_delimiter_ptr != NULL) {
+		const ptrdiff_t file_extension_delimiter_offset = file_extension_delimiter_ptr - name;
+		const size_t remaining_length = file_extension_delimiter_offset >= 0 
+			? texture_name_max_length - file_extension_delimiter_offset
+			: texture_name_max_length;
+		memset(file_extension_delimiter_ptr, '\0', remaining_length);
+	}
+
+	// Copy the processed texture name into the array of texture names.
+	const errno_t texture_name_strncpy_result_2 = strncpy_s(texture_names[texture_index], texture_name_max_length, name, texture_name_max_length);
+	if (texture_name_strncpy_result_2 != 0) {
+		logf_message(WARNING, "Warning loading texture: failed to copy texture name from temporary buffer into texture name array. (Error code: %u)", texture_name_strncpy_result_2);
+	}
+	
 	// Load image data into image staging buffer.
 	image_data_t base_image_data = load_image_data(path, 0);
 	const VkDeviceSize base_image_width = base_image_data.width;
@@ -144,15 +208,14 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 	free_image_data(base_image_data);
 
 	// Create texture images.
-
 	static const VkImageType image_type_default = VK_IMAGE_TYPE_2D;
 	static const VkFormat image_format_default = VK_FORMAT_R8G8B8A8_SRGB;
 
 	// Initial state.
-	textures[texture_index].num_images = animation_set.num_animations;
-	textures[texture_index].images = calloc(animation_set.num_animations, sizeof(VkImage));
-	textures[texture_index].image_views = calloc(animation_set.num_animations, sizeof(VkImageView));
-	textures[texture_index].animation_cycles = calloc(animation_set.num_animations, sizeof(texture_animation_cycle_t));
+	textures[texture_index].num_images = texture_create_info.num_animations;
+	textures[texture_index].images = calloc(texture_create_info.num_animations, sizeof(VkImage));
+	textures[texture_index].image_views = calloc(texture_create_info.num_animations, sizeof(VkImageView));
+	textures[texture_index].animation_cycles = calloc(texture_create_info.num_animations, sizeof(texture_animation_cycle_t));
 	textures[texture_index].current_animation_cycle = 0;
 	textures[texture_index].current_animation_frame = 0;
 	textures[texture_index].last_frame_time = 0;
@@ -169,7 +232,7 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 	}
 
 	// Memory requirments of each image.
-	VkMemoryRequirements2 *image_memory_requirements = calloc(animation_set.num_animations, sizeof(VkMemoryRequirements2));
+	VkMemoryRequirements2 *image_memory_requirements = calloc(texture_create_info.num_animations, sizeof(VkMemoryRequirements2));
 	VkDeviceSize total_required_memory_size = 0;
 
 	// Create images and animation cycles.
@@ -182,11 +245,11 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 		image_create_info.flags = 0;
 		image_create_info.imageType = image_type_default;
 		image_create_info.format = textures[texture_index].format;
-		image_create_info.extent.width = animation_set.cell_extent.width;
-		image_create_info.extent.height = animation_set.cell_extent.length;
+		image_create_info.extent.width = texture_create_info.cell_extent.width;
+		image_create_info.extent.height = texture_create_info.cell_extent.length;
 		image_create_info.extent.depth = 1;
 		image_create_info.mipLevels = 1;
-		image_create_info.arrayLayers = animation_set.animations[i].num_frames;
+		image_create_info.arrayLayers = texture_create_info.animations[i].num_frames;
 		image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
 		image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
 		image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -237,8 +300,8 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 
 		// Copy texture animation cycle from animation set.
 		textures[texture_index].animation_cycles[i] = (texture_animation_cycle_t){
-			.num_frames = animation_set.animations[i].num_frames,
-			.frames_per_second = animation_set.animations[i].frames_per_second
+			.num_frames = texture_create_info.animations[i].num_frames,
+			.frames_per_second = texture_create_info.animations[i].frames_per_second
 		};
 	}
 
@@ -354,7 +417,7 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 
 	for (uint32_t i = 0; i < textures[texture_index].num_images; ++i) {
 		
-		const uint32_t num_copy_regions = animation_set.animations[i].num_frames;
+		const uint32_t num_copy_regions = texture_create_info.animations[i].num_frames;
 		VkBufferImageCopy2 *copy_regions = calloc(num_copy_regions, sizeof(VkBufferImageCopy2));
 
 		for (uint32_t j = 0; j < num_copy_regions; ++j) {
@@ -362,19 +425,19 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 			copy_regions[j].sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
 			copy_regions[j].pNext = NULL;
 
-			uint32_t cell_offset = animation_set.animations[i].start_cell + j;
-			uint32_t cell_offset_x = cell_offset % animation_set.num_cells.width;
-			uint32_t cell_offset_y = cell_offset / animation_set.num_cells.width;
+			uint32_t cell_offset = texture_create_info.animations[i].start_cell + j;
+			uint32_t cell_offset_x = cell_offset % texture_create_info.num_cells.width;
+			uint32_t cell_offset_y = cell_offset / texture_create_info.num_cells.width;
 
-			uint32_t texel_offset_x = cell_offset_x * animation_set.cell_extent.width;
-			uint32_t texel_offset_y = cell_offset_y * animation_set.cell_extent.length;
-			uint32_t texel_offset = texel_offset_y * animation_set.atlas_extent.width + texel_offset_x;
+			uint32_t texel_offset_x = cell_offset_x * texture_create_info.cell_extent.width;
+			uint32_t texel_offset_y = cell_offset_y * texture_create_info.cell_extent.length;
+			uint32_t texel_offset = texel_offset_y * texture_create_info.atlas_extent.width + texel_offset_x;
 
 			static const VkDeviceSize bytes_per_texel = 4;
 
 			copy_regions[j].bufferOffset = (VkDeviceSize)texel_offset * bytes_per_texel;
-			copy_regions[j].bufferRowLength = animation_set.atlas_extent.width;
-			copy_regions[j].bufferImageHeight = animation_set.atlas_extent.length;
+			copy_regions[j].bufferRowLength = texture_create_info.atlas_extent.width;
+			copy_regions[j].bufferImageHeight = texture_create_info.atlas_extent.length;
 
 			copy_regions[j].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			copy_regions[j].imageSubresource.mipLevel = 0;
@@ -385,8 +448,8 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 			copy_regions[j].imageOffset.y = 0;
 			copy_regions[j].imageOffset.z = 0;
 
-			copy_regions[j].imageExtent.width = animation_set.cell_extent.width;
-			copy_regions[j].imageExtent.height = animation_set.cell_extent.length;
+			copy_regions[j].imageExtent.width = texture_create_info.cell_extent.width;
+			copy_regions[j].imageExtent.height = texture_create_info.cell_extent.length;
 			copy_regions[j].imageExtent.depth = 1;
 		}
 
@@ -492,67 +555,48 @@ void load_texture(animation_set_t animation_set, bool is_tilemap, const char *pa
 	}
 }
 
-void load_textures(void) {
+void load_textures(const texture_pack_t texture_pack) {
 
 	log_message(VERBOSE, "Loading textures...");
+
+	if (texture_pack.num_textures == 0) {
+		log_message(WARNING, "Warning loading textures: loaded texture pack is empty.");
+	}
+
+	if (texture_pack.texture_create_infos == NULL) {
+		log_message(ERROR, "Error loading textures: array of texture create infos is NULL.");
+		return;
+	}
 	
 	create_image_staging_buffer();
 
-	load_texture(make_unanimated_animation_set((extent_t){ 16, 16 }), false, "../resources/assets/textures/missing.png");
-	load_texture(make_unanimated_animation_set((extent_t){ 32, 32 }), true, "../resources/assets/textures/tilemap/dungeon2.png");
-
-	static const uint32_t fps = 4;
-
-	animation_set_t animation_set_1 = {
-		.atlas_extent = (extent_t){ 48, 96 },
-		.num_cells = (extent_t){ 3, 4 },
-		.cell_extent = (extent_t){ 16, 24 },
-		.num_animations = 8,
-		.animations = (animation_t[8]){
-			(animation_t){
-				.start_cell = 0,
-				.num_frames = 1,
-				.frames_per_second = 0
-			},
-			(animation_t){
-				.start_cell = 1,
-				.num_frames = 2,
-				.frames_per_second = fps
-			},
-			(animation_t){
-				.start_cell = 3,
-				.num_frames = 1,
-				.frames_per_second = 0
-			},
-			(animation_t){
-				.start_cell = 4,
-				.num_frames = 2,
-				.frames_per_second = fps
-			},
-			(animation_t){
-				.start_cell = 6,
-				.num_frames = 1,
-				.frames_per_second = 0
-			},
-			(animation_t){
-				.start_cell = 7,
-				.num_frames = 2,
-				.frames_per_second = fps
-			},
-			(animation_t){
-				.start_cell = 9,
-				.num_frames = 1,
-				.frames_per_second = 0
-			},
-			(animation_t){
-				.start_cell = 10,
-				.num_frames = 2,
-				.frames_per_second = fps
-			}
+	texture_create_info_t missing_texture_create_info = { 0 };
+	missing_texture_create_info.path = "missing.png";
+	missing_texture_create_info.atlas_extent.width = 16;
+	missing_texture_create_info.atlas_extent.length = 16;
+	missing_texture_create_info.num_cells.width = 1;
+	missing_texture_create_info.num_cells.length = 1;
+	missing_texture_create_info.cell_extent.width = 16;
+	missing_texture_create_info.cell_extent.length = 16;
+	missing_texture_create_info.num_animations = 1;
+	missing_texture_create_info.animations = (animation_create_info_t[1]){
+		{
+			.start_cell = 0,
+			.num_frames = 1,
+			.frames_per_second = 0
 		}
 	};
 
-	load_texture(animation_set_1, false, "../resources/assets/textures/entity/pearl.png");
+	load_texture(missing_texture_create_info, false);
+
+	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
+		
+		// TODO - this is temporary, make it so that tilemap textures do not need a special flag
+		if (i == 0)
+			load_texture(texture_pack.texture_create_infos[i], true);
+		else
+			load_texture(texture_pack.texture_create_infos[i], false);
+	}
 
 	destroy_image_staging_buffer();
 
@@ -572,8 +616,42 @@ texture_t get_loaded_texture(uint32_t texture_index) {
 	
 	if (texture_index >= num_textures) {
 		logf_message(ERROR, "Error getting loaded texture: texture index (%u) exceeds total number of loaded textures (%u).", texture_index, num_textures);
-		return (texture_t){ 0 };
+		return textures[0];
 	}
 
 	return textures[texture_index];
+}
+
+texture_t find_loaded_texture(const char *const name) {
+
+	if (name == NULL) {
+		log_message(ERROR, "Error finding loaded texture: given texture name is NULL.");
+		return textures[0];
+	}
+
+	const size_t name_length = strnlen_s(name, texture_name_max_length);
+
+	// Depth-first search for matching texture name.
+	for (uint32_t i = 0; i < num_textures; ++i) {
+	
+		bool name_matches = true;
+
+		for (size_t j = 0; j < name_length; ++j) {
+			
+			const char c = name[j];
+			const char d = texture_names[i][j];
+
+			if (c != d) {
+				name_matches = false;
+				break;
+			}
+		}
+
+		if (name_matches) {
+			return textures[i];
+		}
+	}
+
+	logf_message(WARNING, "Warning finding loaded texture: texture \"%s\" not found.", name);
+	return textures[0];
 }

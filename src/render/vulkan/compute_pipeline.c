@@ -30,7 +30,8 @@ compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t 
 
 	create_descriptor_set_layout(device, descriptor_layout, &compute_pipeline.descriptor_set_layout);
 	create_pipeline_layout(device, compute_pipeline.descriptor_set_layout, &compute_pipeline.layout);
-	create_descriptor_pool(device, 1, descriptor_layout, &compute_pipeline.descriptor_pool);
+	// TODO - manage descriptor set memory better.
+	create_descriptor_pool(device, 256, descriptor_layout, &compute_pipeline.descriptor_pool);
 
 	VkComputePipelineCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

@@ -293,6 +293,10 @@ void animate_texture(uint32_t slot) {
 	}
 }
 
+void set_current_tilemap_texture(const texture_t texture) {
+
+}
+
 void create_room_texture(room_t room, uint32_t render_object_slot) {
 
 	// Create the properly aligned tile data array, aligned to 16 bytes.
@@ -302,7 +306,7 @@ void create_room_texture(room_t room, uint32_t render_object_slot) {
 
 	uint32_t *tile_data = calloc(num_tiles, tile_datum_size);
 	if (tile_data == NULL) {
-		log_message(ERROR, "Allocation of aligned tile data array failed.");
+		log_message(ERROR, "Error creating room texture: allocation of aligned tile data array failed.");
 		return;
 	}
 
@@ -313,7 +317,8 @@ void create_room_texture(room_t room, uint32_t render_object_slot) {
 		tile_data[index] = room.tiles[i].tilemap_slot;
 	}
 
-	compute_room_texture(get_loaded_texture(1), render_object_slot, room.extent, tile_data);
+	// TODO - make tilemap texture chooseable.
+	compute_room_texture(find_loaded_texture("tilemap/dungeon4"), render_object_slot, room.extent, tile_data);
 	model_textures[render_object_slot] = get_room_texture((uint32_t)room.size, render_object_slot);
 
 	free(tile_data);
@@ -327,13 +332,13 @@ void set_clear_color(color3F_t color) {
 }
 
 // Send the drawing commands to the GPU to draw the frame.
-void draw_frame(float tick_delta_time, projection_bounds_t projection_bounds) {
+void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds) {
 
 	uint32_t image_index = 0;
 
 	vkWaitForFences(device, 1, &FRAME.fence_frame_ready, VK_TRUE, UINT64_MAX);
 
-	VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, FRAME.semaphore_image_available, VK_NULL_HANDLE, &image_index);
+	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, FRAME.semaphore_image_available, VK_NULL_HANDLE, &image_index);
 	
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return;
@@ -350,22 +355,14 @@ void draw_frame(float tick_delta_time, projection_bounds_t projection_bounds) {
 
 	// Compute matrices
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
-
-	render_position_t camera_position = { 0 };
-
 	compute_matrices(tick_delta_time, projection_bounds, camera_position, render_object_positions);
-
-
 
 	// TODO - revise pre-render compute synchronization to use semaphores instead;
 	// 	this would allow graphics command buffer record to happen on the CPU 
 	// 	while the compute command buffers are still being executed on the GPU.
 	vkQueueWaitIdle(compute_queue);
-	
 	vkWaitForFences(device, 1, &FRAME.fence_buffers_up_to_date, VK_TRUE, UINT64_MAX);
-
 	vkResetFences(device, 1, &FRAME.fence_frame_ready);
-
 	vkResetCommandBuffer(FRAME.command_buffer, 0);
 
 	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };

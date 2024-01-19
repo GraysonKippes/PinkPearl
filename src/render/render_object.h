@@ -7,12 +7,15 @@
 #include "math/vector3F.h"
 
 #include "render_config.h"
-
-
+#include "render_position.h"
 
 typedef uint32_t render_handle_t;
 
 extern const uint32_t render_handle_invalid;
+
+// The render object is an abstract concept, and is separated into various components which are
+// stored in their own arrays, for easy vectorization by the renderer.
+extern render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
 
 render_handle_t load_render_object(void);
 
@@ -29,26 +32,5 @@ bool is_render_handle_to_room_render_object(render_handle_t handle);
 render_handle_t create_render_object(void);
 
 void destroy_render_object(render_handle_t);
-
-
-
-// The render object is an abstract concept, and is separated into various components which are
-// stored in their own arrays, for easy vectorization by the renderer.
-
-typedef struct render_position_t {
-	
-	vector3F_t position;
-
-	vector3F_t previous_position;
-
-} render_position_t;
-
-extern render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
-
-void update_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
-
-void reset_render_position(render_position_t *render_position_ptr, vector3F_t new_position);
-
-
 
 #endif	// RENDER_OBJECT_H
