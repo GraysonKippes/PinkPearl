@@ -1,7 +1,7 @@
 #ifndef AREA_EXTENT_H
 #define AREA_EXTENT_H
 
-#include "util/extent.h"
+#include "util/offset.h"
 
 typedef struct area_extent_t {
 	int x1;

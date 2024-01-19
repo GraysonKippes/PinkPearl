@@ -3,6 +3,7 @@
 
 #include "game/math/vector3D.h"
 #include "util/extent.h"
+#include "util/offset.h"
 
 #include "area_extent.h"
 #include "room.h"

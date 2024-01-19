@@ -3,8 +3,10 @@
 
 #include <stdio.h>
 
-#include "util/extent.h"
 #include "game/math/hitbox.h"
+#include "util/extent.h"
+#include "util/offset.h"
+
 #include "tile.h"
 
 // The size of a room, given as ratio of the default room size (24x15).
