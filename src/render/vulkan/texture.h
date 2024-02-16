@@ -33,6 +33,7 @@ typedef struct texture_t {
 } texture_t;
 
 texture_t make_null_texture(void);
+bool is_texture_null(const texture_t texture);
 
 // Creates and returns a blank texture with undefined layout.
 texture_t create_texture(texture_create_info_t texture_create_info);

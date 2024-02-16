@@ -50,100 +50,27 @@ texture_t init_room_texture(const room_size_t room_size, const uint32_t cache_sl
 
 	const extent_t room_extent = room_size_to_extent(room_size);
 
-	texture_t room_texture = { 0 };
-	room_texture.num_images = 1;
-	if (!allocate((void **)&room_texture.images, room_texture.num_images, sizeof(texture_image_t))) {
-		log_message(ERROR, "Error creating room texture: failed to allocate texture image pointer-array.");
-		return (texture_t){ 0 };
-	}
-	room_texture.images[0].vk_image = VK_NULL_HANDLE;
-	room_texture.images[0].vk_image_view = VK_NULL_HANDLE;
-	room_texture.images[0].image_array_length = 1;
-	//room_texture.images[0].image_array_length = room_texture_cache_size;
-	room_texture.images[0].frames_per_second = 0;
-	room_texture.format = VK_FORMAT_R8G8B8A8_SRGB;
-	room_texture.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-	room_texture.memory = VK_NULL_HANDLE;
-	room_texture.device = device;
-
-	// Create image.
-	const VkImageCreateInfo image_create_info = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.imageType = VK_IMAGE_TYPE_2D,
-		.format = room_texture.format,
-		.extent.width = room_extent.width * 16,
-		.extent.height = room_extent.length * 16,
-		.extent.depth = 1,
-		.mipLevels = 1,
-		.arrayLayers = 1,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	texture_create_info_t room_texture_create_info = { 0 };
+	room_texture_create_info.path = "missing.png";
+	room_texture_create_info.atlas_extent.width = 16 * room_extent.width;
+	room_texture_create_info.atlas_extent.length = 16 * room_extent.length;
+	room_texture_create_info.num_cells.width = 1;
+	room_texture_create_info.num_cells.length = 1;
+	room_texture_create_info.cell_extent.width = room_texture_create_info.atlas_extent.width;
+	room_texture_create_info.cell_extent.length = room_texture_create_info.atlas_extent.length;
+	room_texture_create_info.num_animations = 1;
+	room_texture_create_info.animations = (animation_create_info_t[1]){
+		{
+			.start_cell = 0,
+			.num_frames = room_texture_cache_size,
+			.frames_per_second = 0
+		}
 	};
 
-	const VkResult image_create_result = vkCreateImage(room_texture.device, &image_create_info, NULL, &room_texture.images[0].vk_image);
-	if (image_create_result != VK_SUCCESS) {
-		logf_message(ERROR, "Error creating room texture: image creation failed. (Error code: %i)", image_create_result);
-		return (texture_t){ 0 };
-	}
-
-	// Query memory requirements for the room texture image.
-	VkImageMemoryRequirementsInfo2 image_memory_requirements_info = { 0 };
-	image_memory_requirements_info.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
-	image_memory_requirements_info.pNext = NULL;
-	image_memory_requirements_info.image = room_texture.images[0].vk_image;
-
-	VkMemoryRequirements2 image_memory_requirements = { 0 };
-	image_memory_requirements.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-	image_memory_requirements.pNext = NULL;
-
-	vkGetImageMemoryRequirements2(room_texture.device, &image_memory_requirements_info, &image_memory_requirements);
-
-	// Allocate memory for the room texture.
-	VkMemoryAllocateInfo allocate_info = { 0 };
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.pNext = NULL;
-	allocate_info.allocationSize = image_memory_requirements.memoryRequirements.size;
-	allocate_info.memoryTypeIndex = memory_type_set.graphics_resources;
-
-	VkResult memory_allocation_result = vkAllocateMemory(device, &allocate_info, NULL, &room_texture.memory);
-	if (memory_allocation_result != VK_SUCCESS) {
-		logf_message(ERROR, "Error creating room texture: failed to allocate memory. (Error code: %i)", memory_allocation_result);
-		// TODO - clean up previous image objects and return here.
-		return (texture_t){ 0 };
-	}
-
-	// Bind the room texture image to memory.
-	VkBindImageMemoryInfo image_bind_info = { 0 };
-	image_bind_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
-	image_bind_info.pNext = NULL;
-	image_bind_info.image = room_texture.images[0].vk_image;
-	image_bind_info.memory = room_texture.memory;
-	image_bind_info.memoryOffset = 0;
-
-	vkBindImageMemory2(device, 1, &image_bind_info);
-
-	// Create the image view for the room texture.
-	VkImageViewCreateInfo image_view_create_info = { 0 };
-	image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	image_view_create_info.pNext = NULL;
-	image_view_create_info.flags = 0;
-	image_view_create_info.image = room_texture.images[0].vk_image;
-	image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-	image_view_create_info.format = room_texture.format;
-	image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-	image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-	image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-	image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-	image_view_create_info.subresourceRange = image_subresource_range;
-
-	const VkResult image_view_create_result = vkCreateImageView(room_texture.device, &image_view_create_info, NULL, &room_texture.images[0].vk_image_view);
-	if (image_view_create_result != VK_SUCCESS) {
-		logf_message(ERROR, "Error loading texture: image view creation failed. (Error code: %i)", image_view_create_result);
-		return (texture_t){ 0 };
+	texture_t room_texture = create_texture(room_texture_create_info);
+	if (is_texture_null(room_texture)) {
+		log_message(ERROR, "Error creating room texture: texture creation failed.");
+		return room_texture;
 	}
 
 	// Transition the room texture image layout from undefined to shader read-only optimal.

@@ -22,6 +22,13 @@ texture_t make_null_texture(void) {
 	};
 }
 
+bool is_texture_null(const texture_t texture) {
+	return texture.num_images == 0
+		|| texture.images == NULL
+		|| texture.memory == VK_NULL_HANDLE
+		|| texture.device == VK_NULL_HANDLE;
+}
+
 static VkFormat texture_image_format(const texture_type_t texture_type) {
 	switch (texture_type) {
 		case TEXTURE_TYPE_NORMAL: return VK_FORMAT_R8G8B8A8_SRGB;
@@ -190,15 +197,6 @@ texture_t create_texture(texture_create_info_t texture_create_info) {
 		destroy_texture(&texture);
 		return texture;
 	}
-
-	// Subresource range used in all image views and layout transitions.
-	static const VkImageSubresourceRange image_subresource_range = {
-		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = 0,
-		.layerCount = VK_REMAINING_ARRAY_LAYERS
-	};
 
 	// Bind each image to memory and create an image view for it.
 	VkDeviceSize accumulated_memory_offset = 0;
