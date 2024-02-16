@@ -4,16 +4,17 @@
 #include <stdint.h>
 
 #define NUM_FRAMES_IN_FLIGHT 2
-
-extern const uint32_t num_frames_in_flight;
-
 #define NUM_RENDER_OBJECT_SLOTS 64
-
-extern const uint32_t num_render_object_slots;
-
 #define NUM_ROOM_RENDER_OBJECT_SLOTS 2
 
+extern const uint32_t num_frames_in_flight;
+extern const uint32_t num_render_object_slots;
 extern const uint32_t num_room_render_object_slots;
+
+// This config variable controls how many images for the room texture are loaded at a time.
+// Because multiple rooms are visible when scrolling between them, at least two images
+// must be available for rendering. Therefore, this variable must be at least two.
+extern const uint32_t room_texture_cache_size;
 
 #define VERTEX_SHADER_NAME 		"vertex_shader.spv"
 #define FRAGMENT_SHADER_NAME 		"fragment_shader.spv"

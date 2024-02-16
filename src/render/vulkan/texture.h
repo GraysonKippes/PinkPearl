@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "render/texture_info.h"
+
 typedef struct texture_image_t {
 
 	uint32_t image_array_length;
@@ -31,6 +33,9 @@ typedef struct texture_t {
 } texture_t;
 
 texture_t make_null_texture(void);
+
+// Creates and returns a blank texture with undefined layout.
+texture_t create_texture(texture_create_info_t texture_create_info);
 
 bool destroy_texture(texture_t *restrict const texture_ptr);
 

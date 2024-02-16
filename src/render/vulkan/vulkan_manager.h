@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.h>
 
 #include "game/area/room.h"
-#include "render/color.h"
 #include "render/model.h"
 #include "render/projection.h"
 #include "render/render_object.h"

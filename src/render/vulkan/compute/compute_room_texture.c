@@ -59,9 +59,10 @@ texture_t init_room_texture(const room_size_t room_size, const uint32_t cache_sl
 	room_texture.images[0].vk_image = VK_NULL_HANDLE;
 	room_texture.images[0].vk_image_view = VK_NULL_HANDLE;
 	room_texture.images[0].image_array_length = 1;
+	//room_texture.images[0].image_array_length = room_texture_cache_size;
 	room_texture.images[0].frames_per_second = 0;
 	room_texture.format = VK_FORMAT_R8G8B8A8_SRGB;
-	room_texture.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	room_texture.layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	room_texture.memory = VK_NULL_HANDLE;
 	room_texture.device = device;
 

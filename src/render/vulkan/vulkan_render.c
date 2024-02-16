@@ -18,8 +18,6 @@
 
 
 
-static VkClearValue clear_color;
-
 // TODO - collate storage buffers as much as possible, and move to vulkan_manager.
 
 // Buffers for compute_matrices shader.
@@ -217,13 +215,6 @@ void transfer_model_data(void) {
 	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
 }
 
-void set_clear_color(color3F_t color) {
-	clear_color.color.float32[0] = color.red;
-	clear_color.color.float32[1] = color.green;
-	clear_color.color.float32[2] = color.blue;
-	clear_color.color.float32[3] = color.alpha;
-}
-
 // Send the drawing commands to the GPU to draw the frame.
 void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds) {
 
@@ -329,6 +320,8 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 	vkBeginCommandBuffer(FRAME.command_buffer, &begin_info);
 
+	static const VkClearValue clear_value = { { { 0 } } };
+
 	VkRenderPassBeginInfo render_pass_info = { 0 };
 	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	render_pass_info.pNext = NULL;
@@ -338,7 +331,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	render_pass_info.renderArea.offset.y = 0;
 	render_pass_info.renderArea.extent = swapchain.extent;
 	render_pass_info.clearValueCount = 1;
-	render_pass_info.pClearValues = &clear_color;
+	render_pass_info.pClearValues = &clear_value;
 
 	vkCmdBeginRenderPass(FRAME.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 

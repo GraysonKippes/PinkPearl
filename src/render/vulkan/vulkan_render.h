@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 #include "game/area/room.h"
-#include "render/color.h"
 #include "render/model.h"
 #include "render/projection.h"
 #include "render/render_object.h"
@@ -19,8 +18,6 @@
 void create_vulkan_render_objects(void);
 
 void destroy_vulkan_render_objects(void);
-
-void set_clear_color(color3F_t color);
 
 void stage_model_data(uint32_t slot, model_t model);
 
