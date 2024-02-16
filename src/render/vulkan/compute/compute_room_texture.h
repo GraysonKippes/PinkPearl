@@ -3,14 +3,16 @@
 
 #include <stdint.h>
 
+#include "game/area/room.h"
+
 #include "../texture.h"
 
 void init_compute_room_texture(void);
 
 void terminate_compute_room_texture(void);
 
-void compute_room_texture(texture_t tilemap_texture, uint32_t cache_slot, extent_t room_extent, uint32_t *tile_data);
+texture_t init_room_texture(const room_size_t room_size, const uint32_t cache_slot);
 
-texture_t get_room_texture(uint32_t room_size, uint32_t room_texture_cache_slot);
+void compute_room_texture(const texture_t tilemap_texture, const room_size_t room_size, const uint32_t *tile_data, texture_t *const room_texture_ptr);
 
 #endif	// COMPUTE_ROOM_TEXTURE_H

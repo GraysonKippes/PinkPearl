@@ -69,7 +69,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 		goto end_read;
 	}
 
-	if (!allocate(texture_pack.num_textures, sizeof(texture_create_info_t), &texture_pack.texture_create_infos)) {
+	if (!allocate((void **)&texture_pack.texture_create_infos, texture_pack.num_textures, sizeof(texture_create_info_t))) {
 		log_message(ERROR, "Error reading texture file: texture create info array allocation failed.");
 		goto end_read;
 	}
@@ -80,7 +80,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 
 		texture_create_info_t *restrict info_ptr = texture_pack.texture_create_infos + i;
 
-		if (!allocate(sizeof(char), max_path_len, &info_ptr->path)) {
+		if (!allocate((void **)&info_ptr->path, max_path_len, sizeof(char))) {
 			log_message(ERROR, "Error reading texture file: texture create info path allocation failed.");
 			goto end_read;
 		}
@@ -94,44 +94,42 @@ texture_pack_t parse_fgt_file(const char *path) {
 			log_message(WARNING, "Warning reading texture file: texture create info path reached max length before finding null-terminator; the data is likely not formatted well.");
 		}
 
-		// Read number of cells in texture atlas.
+		// Read texture type.
+		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->type)) {
+			log_message(ERROR, "Error reading texture file: failed to read texture type.");
+			goto end_read;
+		}
 
+		// Read number of cells in texture atlas.
 		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->num_cells.width)) {
 			log_message(ERROR, "Error reading texture file: failed to read number of texture cells widthwise.");
 			goto end_read;
 		}
-
 		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->num_cells.length)) {
 			log_message(ERROR, "Error reading texture file: failed to read number of texture cells lengthwise.");
 			goto end_read;
 		}
 
 		// Read texture cell extent.
-
 		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->cell_extent.width)) {
 			log_message(ERROR, "Error reading texture file: failed to read texture cell width.");
 			goto end_read;
 		}
-
 		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->cell_extent.length)) {
 			log_message(ERROR, "Error reading texture file: failed to read texture cell length.");
 			goto end_read;
 		}
 
 		// Check extents -- if any of them are zero, then there certainly was an error.
-
 		if (info_ptr->num_cells.width == 0) {
 			log_message(WARNING, "Warning reading texture file: texture create info number of cells widthwise is zero.");
 		}
-		
 		if (info_ptr->num_cells.length == 0) {
 			log_message(WARNING, "Warning reading texture file: texture create info number of cells lengthwise is zero.");
 		}
-		
 		if (info_ptr->cell_extent.width == 0) {
 			log_message(WARNING, "Warning reading texture file: texture create info cell extent width is zero.");
 		}
-		
 		if (info_ptr->cell_extent.length == 0) {
 			log_message(WARNING, "Warning reading texture file: texture create info cell extent length is zero.");
 		}
@@ -149,7 +147,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 
 		if (info_ptr->num_animations > 0) {
 
-			if (!allocate(info_ptr->num_animations, sizeof(animation_create_info_t), &info_ptr->animations)) {
+			if (!allocate((void **)&info_ptr->animations, info_ptr->num_animations, sizeof(animation_create_info_t))) {
 				logf_message(ERROR, "Error reading texture file: failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}
@@ -178,7 +176,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 			// 	and set the first (and only) animation to a default value.
 			// This eliminates the need for branching when querying animation cycles in a texture.
 			info_ptr->num_animations = 1;
-			if (!allocate(info_ptr->num_animations, sizeof(animation_create_info_t), &info_ptr->animations)) {
+			if (!allocate((void **)&info_ptr->animations, info_ptr->num_animations, sizeof(animation_create_info_t))) {
 				logf_message(ERROR, "Error reading texture file: failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}

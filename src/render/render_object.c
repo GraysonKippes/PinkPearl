@@ -9,18 +9,19 @@ const uint32_t render_handle_invalid = UINT32_MAX;
 const uint32_t render_handle_dangling = render_handle_invalid - 1;
 
 render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
+texture_state_t render_object_texture_states[NUM_RENDER_OBJECT_SLOTS];
 
-static uint64_t loaded_render_slot_flags = 3;
+static uint64_t render_object_slot_enabled_flags = 3;
 
 render_handle_t load_render_object(void) {
 
-	if (loaded_render_slot_flags == UINT64_MAX) {
+	if (render_object_slot_enabled_flags == UINT64_MAX) {
 		return render_handle_invalid;
 	}
 
 	for (uint32_t i = 0; i < num_render_object_slots && i < 64; ++i) {
-		if (is_bit_off(loaded_render_slot_flags, i)) {
-			loaded_render_slot_flags = set_bit_on(loaded_render_slot_flags, i);
+		if (is_bit_off(render_object_slot_enabled_flags, i)) {
+			render_object_slot_enabled_flags = set_bit_on(render_object_slot_enabled_flags, i);
 			return (render_handle_t)i;
 		}
 	}
@@ -39,12 +40,27 @@ void unload_render_object(render_handle_t *handle_ptr) {
 		return;
 	}
 
-	if (is_bit_off(loaded_render_slot_flags, *handle_ptr)) {
+	if (is_bit_off(render_object_slot_enabled_flags, *handle_ptr)) {
 		logf_message(WARNING, "Unloading already unused render object slot (%u).", *handle_ptr);
 	}
 
-	loaded_render_slot_flags = set_bit_off(loaded_render_slot_flags, *handle_ptr);
+	render_object_slot_enabled_flags = set_bit_off(render_object_slot_enabled_flags, *handle_ptr);
 	*handle_ptr = render_handle_dangling;
+}
+
+bool is_render_object_slot_enabled(const uint32_t slot) {
+
+	if (validate_render_handle(slot)) {
+		return (render_object_slot_enabled_flags >> slot) & 1LL;
+	}
+	return false;
+}
+
+void enable_render_object_slot(const uint32_t slot) {
+
+	if (validate_render_handle(slot)) {
+		render_object_slot_enabled_flags |= (1LL << (uint64_t)slot);
+	}
 }
 
 bool validate_render_handle(render_handle_t handle) {
@@ -63,4 +79,15 @@ render_position_t *get_render_position_ptr(render_handle_t handle) {
 	}
 
 	return render_object_positions + handle;
+}
+
+bool swap_render_object_texture_state(const render_handle_t render_handle, const texture_state_t texture_state) {
+
+	if (!validate_render_handle(render_handle)) {
+		return false;
+	}
+
+	destroy_texture_state(&render_object_texture_states[render_handle]);
+	render_object_texture_states[render_handle] = texture_state;
+	return true;
 }

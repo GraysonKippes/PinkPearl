@@ -12,6 +12,7 @@
 
 
 
+// TODO - change this to have image count, and work in texture struct.
 typedef struct image_t {
 
 	VkImage handle;

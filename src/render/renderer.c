@@ -37,6 +37,8 @@ static uint32_t current_room_render_object_slot = NUM_ROOM_RENDER_OBJECT_SLOTS -
 // Keeps track of which rooms are already loaded into the renderer.
 static int loaded_room_ids[NUM_ROOM_RENDER_OBJECT_SLOTS];
 
+static texture_state_t tilemap_texture_state;
+
 static void scroll_camera(void);
 
 
@@ -51,26 +53,19 @@ void init_renderer(void) {
 	texture_pack_t texture_pack = parse_fgt_file(FGT_PATH);
 	load_textures(texture_pack);
 	destroy_texture_pack(&texture_pack);
+	set_tilemap("tilemap/dungeon4");
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-
-		if (i >= num_room_render_object_slots) {
-			set_model_texture(i, get_loaded_texture(0));
-		}
-
-		reset_render_position((render_object_positions + i), zero_vector3F);
+		reset_render_position(&render_object_positions[i], zero_vector3F);
+		render_object_texture_states[i] = missing_texture_state();
 	}
 
 	for (uint32_t i = 0; i < num_room_render_object_slots; ++i) {
 		loaded_room_ids[i] = -1;
 	}
 
-	upload_model(2, get_premade_model(0), find_loaded_texture("entity/pearl"));
-
 	enable_render_object_slot(0);
 	enable_render_object_slot(2);
-
-	get_model_texture_ptr(2)->current_animation_cycle = 3;
 }
 
 void terminate_renderer(void) {
@@ -85,10 +80,9 @@ void render_frame(float tick_delta_time) {
 		scroll_camera();
 	}
 
-	//logf_message(INFO, "Camera position = (%.2f, %.2f)", camera_position.x, camera_position.y);
-	//render_position_t player_render_position = render_object_positions[2];
-	//logf_message(INFO, "Player render position = (%.2f, %.2f)", player_render_position.position.x, player_render_position.position.y);
-	//logf_message(INFO, "Player render previous position = (%.2f, %.2f)", player_render_position.previous_position.x, player_render_position.previous_position.y);
+	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+		texture_state_animate(render_object_texture_states + i);
+	}
 
 	glfwPollEvents();
 	draw_frame(tick_delta_time, camera_position, current_projection_bounds);
@@ -105,7 +99,12 @@ void update_projection_bounds(projection_bounds_t new_projection_bounds) {
 	current_projection_bounds = new_projection_bounds;
 }
 
-void upload_model(uint32_t slot, model_t model, texture_t texture) {
+void set_tilemap(const char *const tilemap_name) {
+	destroy_texture_state(&tilemap_texture_state);
+	tilemap_texture_state = make_new_texture_state(find_loaded_texture_handle(tilemap_name));
+}
+
+void upload_model(uint32_t slot, model_t model, const char *const texture_name) {
 
 	if (slot >= num_render_object_slots) {
 		logf_message(ERROR, "Error uploading model: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
@@ -113,12 +112,13 @@ void upload_model(uint32_t slot, model_t model, texture_t texture) {
 	}
 
 	if (slot < num_room_render_object_slots) {
-		logf_message(FATAL, "Error uploading model: attempted uploading non-room model in a render object slot (%u) reserved for room models.", slot);
+		logf_message(ERROR, "Error uploading model: attempted uploading non-room model in a render object slot (%u) reserved for room models.", slot);
 		return;
 	}
 
 	stage_model_data(slot, model);
-	set_model_texture(slot, texture);
+	const texture_state_t texture_state = make_new_texture_state(find_loaded_texture_handle(texture_name));
+	swap_render_object_texture_state(slot, texture_state);
 }
 
 void upload_room_model(const room_t room) {
@@ -165,7 +165,9 @@ void upload_room_model(const room_t room) {
 	};
 	update_projection_bounds(room_projection_bounds);
 
-	create_room_texture(room, current_room_render_object_slot);
+	create_room_texture(room, tilemap_texture_state.handle, current_room_render_object_slot);
+	const texture_state_t room_texture_state = make_new_texture_state(get_room_texture_handle(room.size, current_room_render_object_slot));
+	swap_render_object_texture_state((render_handle_t)current_room_render_object_slot, room_texture_state);
 
 	const vector3F_t room_model_position = {
 		.x = (float)room.extent.width * (float)room.position.x,

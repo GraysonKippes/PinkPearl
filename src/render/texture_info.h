@@ -26,12 +26,21 @@ typedef struct animation_create_info_t {
 
 } animation_create_info_t;
 
+typedef enum texture_type_t {
+	TEXTURE_TYPE_NORMAL = 0,
+	TEXTURE_TYPE_TILEMAP = 1
+} texture_type_t;
+
 // `animation_set_t` contains information to read image data from a buffer 
 // 	and create arrays of images for an entire set of animations.
 typedef struct texture_create_info_t {
 
 	// The path to the image that will be loaded during image creation.
 	char *path;
+
+	texture_type_t type;
+
+	// TODO - delete one of these extents, probably atlas_extent.
 
 	// Dimensions of the base texture atlas, in texels.
 	extent_t atlas_extent;

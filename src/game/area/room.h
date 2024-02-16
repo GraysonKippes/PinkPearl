@@ -9,6 +9,10 @@
 
 #include "tile.h"
 
+#define NUM_ROOM_SIZES 4
+
+extern const uint32_t num_room_sizes;
+
 // The size of a room, given as ratio of the default room size (24x15).
 typedef enum room_size_t {
 	ONE_TO_THREE = 0,	// 8 x 5	-- Tiny room size, used in small bonus areas.

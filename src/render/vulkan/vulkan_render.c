@@ -6,7 +6,6 @@
 
 #include "log/logging.h"
 #include "render/render_config.h"
-#include "render/render_object.h"
 #include "util/time.h"
 
 #include "command_buffer.h"
@@ -18,10 +17,6 @@
 #include "compute/compute_room_texture.h"
 
 
-
-// Render object slots.
-static uint64_t render_object_slot_enable_flags = 0;
-static texture_t model_textures[NUM_RENDER_OBJECT_SLOTS];
 
 static VkClearValue clear_color;
 
@@ -132,30 +127,6 @@ void destroy_vulkan_render_objects(void) {
 	destroy_textures();
 }
 
-bool is_render_object_slot_enabled(uint32_t slot) {
-	return (render_object_slot_enable_flags & (1LL << (uint64_t)slot)) >= 1;
-}
-
-void enable_render_object_slot(uint32_t slot) {
-	
-	if (slot >= num_render_object_slots) {
-		logf_message(ERROR, "Error enabling render object slot: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
-		return;
-	}
-
-	render_object_slot_enable_flags |= (1LL << (uint64_t)slot);
-}
-
-void disable_render_object_slot(uint32_t slot) {
-	
-	if (slot >= num_render_object_slots) {
-		logf_message(ERROR, "Error disabling render object slot: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
-		return;
-	}
-
-	render_object_slot_enable_flags &= ~(1LL << (uint64_t)slot);
-}
-
 // Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.
 void stage_model_data(uint32_t slot, model_t model) {
 
@@ -246,84 +217,6 @@ void transfer_model_data(void) {
 	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
 }
 
-texture_t *get_model_texture_ptr(uint32_t slot) {
-	
-	if (slot >= num_render_object_slots) {
-		logf_message(ERROR, "Error getting model texture: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
-		return NULL;
-	}
-
-	return model_textures + slot;
-}
-
-void set_model_texture(uint32_t slot, texture_t texture) {
-
-	if (slot >= num_render_object_slots) {
-		logf_message(ERROR, "Error setting model texture: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
-		return;
-	}
-
-	model_textures[slot] = texture;
-	model_textures[slot].last_frame_time = get_time_ms();
-}
-
-void animate_texture(uint32_t slot) {
-
-	uint64_t current_time_ms = get_time_ms();
-
-	// Time difference between last frame change for this texture and current time, in seconds.
-	const uint64_t delta_time_ms = current_time_ms - model_textures[slot].last_frame_time;
-	const double delta_time = (double)delta_time_ms / 1000.0;
-
-	// Frames per second of the current animation cycle of this texture, in frames per second.
-	const double frames_per_second = (double)model_textures[slot].animation_cycles[model_textures[slot].current_animation_cycle].frames_per_second;
-
-	// Time in seconds * frames per second = frames.
-	const uint32_t frames = (uint32_t)(delta_time * frames_per_second);
-
-	// Total number of frames in the current animation cycle of this texture.
-	const uint32_t num_frames = model_textures[slot].animation_cycles[model_textures[slot].current_animation_cycle].num_frames;
-
-	// Update the current frame and last frame time of this texture.
-	model_textures[slot].current_animation_frame += frames;
-	model_textures[slot].current_animation_frame %= num_frames;
-
-	if (frames > 0) {
-		model_textures[slot].last_frame_time = current_time_ms;
-	}
-}
-
-void set_current_tilemap_texture(const texture_t texture) {
-
-}
-
-void create_room_texture(room_t room, uint32_t render_object_slot) {
-
-	// Create the properly aligned tile data array, aligned to 16 bytes.
-
-	const uint64_t num_tiles = room.extent.width * room.extent.length;
-	static const uint64_t tile_datum_size = 16;	// Bytes per tile datum--the buffer is aligned to 16 bytes.
-
-	uint32_t *tile_data = calloc(num_tiles, tile_datum_size);
-	if (tile_data == NULL) {
-		log_message(ERROR, "Error creating room texture: allocation of aligned tile data array failed.");
-		return;
-	}
-
-	for (uint64_t i = 0; i < num_tiles; ++i) {
-		// The indexing is in increments of sizeof(uint32_t), not of 1 byte;
-		// 	therefore, multiply i by the alignment size (16 bytes) then divided i by sizeof(uint32_t).
-		uint64_t index = i * (tile_datum_size / sizeof(uint32_t));
-		tile_data[index] = room.tiles[i].tilemap_slot;
-	}
-
-	// TODO - make tilemap texture chooseable.
-	compute_room_texture(find_loaded_texture("tilemap/dungeon4"), render_object_slot, room.extent, tile_data);
-	model_textures[render_object_slot] = get_room_texture((uint32_t)room.size, render_object_slot);
-
-	free(tile_data);
-}
-
 void set_clear_color(color3F_t color) {
 	clear_color.color.float32[0] = color.red;
 	clear_color.color.float32[1] = color.green;
@@ -351,7 +244,6 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	if (vkGetFenceStatus(device, FRAME.fence_buffers_up_to_date) == VK_NOT_READY) {
 		transfer_model_data();
 	}
-
 
 	// Compute matrices
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
@@ -385,17 +277,17 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	VkDescriptorImageInfo texture_infos[NUM_RENDER_OBJECT_SLOTS];
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-
 		if (is_render_object_slot_enabled(i)) {
-			animate_texture(i);
+			const texture_state_t texture_state = render_object_texture_states[i];
+			const texture_t texture = get_loaded_texture(texture_state.handle);
 			texture_infos[i].sampler = sampler_default;
-			texture_infos[i].imageView = model_textures[i].image_views[model_textures[i].current_animation_cycle];
-			texture_infos[i].imageLayout = model_textures[i].layout;
+			texture_infos[i].imageView = texture.images[texture_state.current_animation_cycle].vk_image_view;
+			texture_infos[i].imageLayout = texture.layout;
 		}
 		else {
-			texture_t missing_texture = get_loaded_texture(0);
+			const texture_t missing_texture = get_loaded_texture(missing_texture_handle);
 			texture_infos[i].sampler = sampler_default;
-			texture_infos[i].imageView = missing_texture.image_views[0];
+			texture_infos[i].imageView = missing_texture.images[0].vk_image_view;
 			texture_infos[i].imageLayout = missing_texture.layout;
 		}
 	}
@@ -451,12 +343,9 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	vkCmdBeginRenderPass(FRAME.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
 	vkCmdBindPipeline(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
-
 	vkCmdBindDescriptorSets(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &FRAME.descriptor_set, 0, NULL);
-
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(FRAME.command_buffer, 0, 1, &FRAME.model_buffer.handle, offsets);
-
 	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
@@ -468,16 +357,14 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 		const uint32_t render_object_slot = i;
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
 
-		const uint32_t current_animation_frame = model_textures[i].current_animation_frame;
+		const uint32_t current_animation_frame = render_object_texture_states[i].current_frame;
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
 
 		uint32_t first_index = render_object_slot * num_indices_per_rect;
-
 		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, 0, 0);
 	}
 
 	vkCmdEndRenderPass(FRAME.command_buffer);
-
 	vkEndCommandBuffer(FRAME.command_buffer);
 
 

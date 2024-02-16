@@ -8,7 +8,8 @@
 #include "log/logging.h"
 #include "render/render_object.h"
 #include "render/renderer.h"
-#include "render/vulkan/vulkan_render.h"
+#include "render/texture_state.h"
+#include "render/vulkan/texture_manager.h"
 #include "util/bit.h"
 #include "util/time.h"
 
@@ -46,6 +47,8 @@ void start_game(void) {
 	if (player_entity_ptr != NULL || result == 0) {
 		player_entity_ptr->hitbox = player_hitbox;
 		player_entity_ptr->render_handle = load_render_object();
+		upload_model(player_entity_ptr->render_handle, get_premade_model(0), "entity/pearl");
+		render_object_texture_states[player_entity_ptr->render_handle].current_animation_cycle = 3;
 	}
 }
 
@@ -127,7 +130,9 @@ void tick_game(void) {
 	}
 
 	tick_entities();
-	get_model_texture_ptr(player_entity_ptr->render_handle)->current_animation_cycle = animation_cycle;
+	if (animation_cycle != render_object_texture_states[player_entity_ptr->render_handle].current_animation_cycle) {
+		texture_state_set_animation_cycle(&render_object_texture_states[player_entity_ptr->render_handle], animation_cycle);
+	}
 
 	const direction_t travel_direction = test_room_travel(player_entity_ptr->transform.position, current_area, current_room_index);
 	if ((int)travel_direction > 0) {

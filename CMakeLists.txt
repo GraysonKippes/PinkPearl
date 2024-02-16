@@ -17,6 +17,7 @@ target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
 	-Werror=implicit-int
 	-Werror=sign-compare
 	-Werror=stringop-overread
+	-Werror=int-conversion
 	-Wno-switch)
 
 find_package(Vulkan REQUIRED)
@@ -57,6 +58,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/render_position.c
 	src/render/renderer.c
 	src/render/texture_info.c
+	src/render/texture_state.c
 	src/render/math/vector3F.c
 	src/render/stb/image_data.c
 	src/render/vulkan/buffer.c
@@ -73,6 +75,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/shader.c
 	src/render/vulkan/swapchain.c
 	src/render/vulkan/texture.c
+	src/render/vulkan/texture_loader.c
 	src/render/vulkan/texture_manager.c
 	src/render/vulkan/vertex_input.c
 	src/render/vulkan/vulkan_instance.c

@@ -7,7 +7,7 @@
 // Allocates (at least) `num_bytes_per_object` * `num_objects` bytes, which are zeroed-out.
 // Returns true if the allocation was successful, false otherwise.
 // If allocation fails, then the contents of ptr_ptr are not changed.
-bool allocate(size_t num_objects, size_t num_bytes_per_object, void **ptr_ptr);
+bool allocate(void **ptr_ptr, size_t num_objects, size_t num_bytes_per_object);
 
 // Frees the memory stored at the pointer pointed to by `ptr_ptr`.
 // Sets the pointer stored at `ptr_ptr` (`*ptr_ptr`) to NULL.

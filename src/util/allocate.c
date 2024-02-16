@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-bool allocate(size_t num_objects, size_t num_bytes_per_object, void **ptr_ptr) {
+bool allocate(void **ptr_ptr, size_t num_objects, size_t num_bytes_per_object) {
 
 	if (ptr_ptr != NULL && num_objects > 0 && num_bytes_per_object > 0) {
 		void *ptr = calloc(num_objects, num_bytes_per_object);
