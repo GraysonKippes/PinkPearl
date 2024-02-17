@@ -35,17 +35,17 @@ const VkDeviceSize matrix_data_size = num_matrices * matrix_size;
 
 
 
-void init_compute_matrices(void) {
-	compute_pipeline_matrices = create_compute_pipeline(device, compute_matrices_layout, COMPUTE_MATRICES_SHADER_NAME);
+void init_compute_matrices(const VkDevice vk_device) {
+	compute_pipeline_matrices = create_compute_pipeline(vk_device, compute_matrices_layout, COMPUTE_MATRICES_SHADER_NAME);
 }
 
 void terminate_compute_matrices(void) {
-	destroy_compute_pipeline(device, compute_pipeline_matrices);
+	destroy_compute_pipeline(&compute_pipeline_matrices);
 }
 
 void compute_matrices(float delta_time, projection_bounds_t projection_bounds, vector3F_t camera_position, render_position_t *positions) {
 
-	static const VkDeviceSize uniform_data_size = 1024;
+	static const VkDeviceSize uniform_data_size = GLOBAL_UNIFORM_MEMORY_COMPUTE_MATRICES_SIZE;
 
 	memcpy(global_uniform_mapped_memory, &delta_time, sizeof delta_time);
 	memcpy(global_uniform_mapped_memory + 4, &projection_bounds, sizeof projection_bounds);

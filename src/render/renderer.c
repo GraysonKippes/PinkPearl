@@ -32,7 +32,7 @@ static projection_bounds_t current_projection_bounds;
 
 // Starts off at num_room_render_object_slots - 1 so that the next slot--which the room starts at--is 0.
 // The preprocessor constant is used for static initialization.
-static uint32_t current_room_render_object_slot = NUM_ROOM_RENDER_OBJECT_SLOTS - 1;
+static uint32_t current_room_cache_slot = NUM_ROOM_RENDER_OBJECT_SLOTS - 1;
 
 // Keeps track of which rooms are already loaded into the renderer.
 static int loaded_room_ids[NUM_ROOM_RENDER_OBJECT_SLOTS];
@@ -123,12 +123,12 @@ void upload_model(uint32_t slot, model_t model, const char *const texture_name) 
 
 void upload_room_model(const room_t room) {
 	
-	if (++current_room_render_object_slot >= num_room_render_object_slots) {
-		current_room_render_object_slot = 0;
+	if (++current_room_cache_slot >= room_texture_cache_size) {
+		current_room_cache_slot = 0;
 	}
 
-	if (room.id == loaded_room_ids[current_room_render_object_slot]) {
-		enable_render_object_slot(current_room_render_object_slot);
+	if (room.id == loaded_room_ids[current_room_cache_slot]) {
+		enable_render_object_slot(current_room_cache_slot);
 		return;
 	}
 
@@ -138,9 +138,9 @@ void upload_room_model(const room_t room) {
 	const float right = -left;
 	static const float depth = 0.0F;
 
+	// TODO - generate room/area meshes with mesh shader.
 	// The model array data can be allocated on the stack instead of the heap because it will be fully uploaded to a GPU buffer before this function returns.
 	model_t room_model = { 0 };
-
 	room_model.num_vertices = 20;
 	room_model.vertices = (float[20]){
 		// Positions		Texture	
@@ -149,14 +149,12 @@ void upload_room_model(const room_t room) {
 		right, bottom, depth,	1.0F, 1.0F,	// Bottom-right
 		left, bottom, depth,	0.0F, 1.0F	// Bottom-left
 	};
-
 	room_model.num_indices = 6;
 	room_model.indices = (index_t[6]){
 		0, 1, 2,	// Triangle 1
 		2, 3, 0		// Triangle 2
 	};
-
-	stage_model_data((render_handle_t)current_room_render_object_slot, room_model);
+	stage_model_data((render_handle_t)current_room_cache_slot, room_model);
 
 	const projection_bounds_t room_projection_bounds = { 
 		.left = left, 	.right = right,
@@ -165,19 +163,19 @@ void upload_room_model(const room_t room) {
 	};
 	update_projection_bounds(room_projection_bounds);
 
-	create_room_texture(room, tilemap_texture_state.handle, current_room_render_object_slot);
-	const texture_state_t room_texture_state = make_new_texture_state(get_room_texture_handle(room.size, current_room_render_object_slot));
-	swap_render_object_texture_state((render_handle_t)current_room_render_object_slot, room_texture_state);
+	create_room_texture(room, current_room_cache_slot, tilemap_texture_state.handle);
+	const texture_state_t room_texture_state = make_new_texture_state(get_room_texture_handle(room.size, current_room_cache_slot));
+	swap_render_object_texture_state((render_handle_t)current_room_cache_slot, room_texture_state);
 
 	const vector3F_t room_model_position = {
 		.x = (float)room.extent.width * (float)room.position.x,
 		.y = (float)room.extent.length * (float)room.position.y,
 		.z = depth
 	};
-	reset_render_position(render_object_positions + current_room_render_object_slot, room_model_position);
+	reset_render_position(render_object_positions + current_room_cache_slot, room_model_position);
 
-	loaded_room_ids[current_room_render_object_slot] = room.id;
-	enable_render_object_slot(current_room_render_object_slot);
+	loaded_room_ids[current_room_cache_slot] = room.id;
+	enable_render_object_slot(current_room_cache_slot);
 }
 
 void begin_room_scroll(const extent_t room_extent, const offset_t previous_room_position, const offset_t next_room_position) {

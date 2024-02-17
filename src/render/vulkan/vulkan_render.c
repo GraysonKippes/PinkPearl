@@ -15,6 +15,7 @@
 #include "vulkan_manager.h"
 #include "compute/compute_matrices.h"
 #include "compute/compute_room_texture.h"
+#include "compute/compute_area_mesh.h"
 
 
 
@@ -106,8 +107,9 @@ void create_vulkan_render_objects(void) {
 
 	log_message(VERBOSE, "Creating Vulkan render objects...");
 
-	init_compute_matrices();
-	init_compute_room_texture();
+	init_compute_matrices(device);
+	init_compute_room_texture(device);
+	init_compute_area_mesh(device);
 	create_vulkan_render_buffers();
 	create_pbr_texture();
 }
@@ -130,7 +132,7 @@ void stage_model_data(uint32_t slot, model_t model) {
 
 	// Vertex Data
 
-	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
 		vkResetFences(device, 1, &frames[i].fence_buffers_up_to_date);
 		frames[i].model_update_flags |= (1LL << (uint64_t)slot);
 	}
@@ -348,9 +350,8 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 		}
 
 		const uint32_t render_object_slot = i;
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
-
 		const uint32_t current_animation_frame = render_object_texture_states[i].current_frame;
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
 
 		uint32_t first_index = render_object_slot * num_indices_per_rect;
@@ -393,5 +394,5 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 	vkQueuePresentKHR(present_queue, &present_info);
 
-	current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+	current_frame = (current_frame + 1) % NUM_FRAMES_IN_FLIGHT;
 }

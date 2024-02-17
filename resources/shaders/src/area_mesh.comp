@@ -1,0 +1,55 @@
+#version 450
+
+// Generates a quad for each room in an area.
+// Let gl_NumWorkGroups.x equal the number of rooms in the area whose mesh is being generated.
+// Let gl_WorkGroupID.x equal the index of the room currently being processed.
+// Let gl_NumWorkGroups.y equal the number of vertices per room, which is always 4.
+// Let gl_WorkGroupID.y equal the index of the vertex currently being generated.
+
+#define MAX_AREA_EXTENT_X 	32
+#define MAX_AREA_EXTENT_Y 	32
+#define NUM_VERTICES_PER_ROOM	4
+#define NUM_INDICES_PER_ROOM	6
+
+layout(local_size_x = 1) in;
+layout(local_size_y = 1) in;
+layout(local_size_z = 1) in;
+
+layout(std140, set = 0, binding = 0) readonly uniform area_data_t {
+	uvec2 room_extent;
+	ivec2 room_positions[MAX_AREA_EXTENT_X * MAX_AREA_EXTENT_Y];
+} area_data;
+
+struct vertex_t {
+	vec3 position;
+	vec2 tex_coord;
+};
+
+layout(std140, set = 0, binding = 1) writeonly buffer mesh_data_t {
+	vertex_t vertices[MAX_AREA_EXTENT_X * MAX_AREA_EXTENT_Y * NUM_VERTICES_PER_ROOM];
+	uint indices[MAX_AREA_EXTENT_X * MAX_AREA_EXTENT_Y * NUM_INDICES_PER_ROOM];
+} mesh_data;
+
+const vec2[4] tex_coords = {
+	vec2(0.0, 0.0),	// Top-left
+	vec2(1.0, 0.0),	// Top-right
+	vec2(1.0, 1.0),	// Bottom-right
+	vec2(0.0, 1.0)	// Bottom-left
+};
+
+void main() {
+
+	const uint vertices_index = gl_WorkGroupID.x * gl_NumWorkGroups.y + gl_WorkGroupID.y;
+	mesh_data.vertices[vertices_index].position.x = (area_data.room_extent.x / 2.0) * area_data.room_positions[gl_WorkGroupID.x].x;
+	mesh_data.vertices[vertices_index].position.y = (area_data.room_extent.y / 2.0) * area_data.room_positions[gl_WorkGroupID.x].y;
+	mesh_data.vertices[vertices_index].position.z = 0.0;
+	mesh_data.vertices[vertices_index].tex_coord = tex_coords[gl_WorkGroupID.y];
+
+	const uint indices_index = gl_WorkGroupID.x * 6;
+	mesh_data.indices[indices_index + 0] = 0;
+	mesh_data.indices[indices_index + 1] = 1;
+	mesh_data.indices[indices_index + 2] = 2;
+	mesh_data.indices[indices_index + 3] = 2;
+	mesh_data.indices[indices_index + 4] = 3;
+	mesh_data.indices[indices_index + 5] = 0;
+}

@@ -40,6 +40,8 @@ typedef struct descriptor_pool_t {
 
 
 
+extern const VkSampler no_sampler;
+
 /* -- FUNCTION DECLARATIONS -- */
 
 void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr);
@@ -52,8 +54,6 @@ void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool
 
 // Convenience function. Makes and returns a VkDescriptorBufferInfo struct with the specified parameters.
 VkDescriptorBufferInfo make_descriptor_buffer_info(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
-
-extern const VkSampler no_sampler;
 
 // Convenience function. Makes and returns a VkDescriptorImageInfo struct with the specified parameters.
 // Pass VK_NULL_HANDLE for the sampler if the image in question is not going to be sampled.

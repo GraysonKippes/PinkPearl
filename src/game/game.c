@@ -10,6 +10,7 @@
 #include "render/renderer.h"
 #include "render/texture_state.h"
 #include "render/vulkan/texture_manager.h"
+#include "render/vulkan/compute/compute_area_mesh.h"
 #include "util/bit.h"
 #include "util/time.h"
 
@@ -36,6 +37,8 @@ void start_game(void) {
 	init_entity_manager();
 	current_area = parse_fga_file("test");
 	upload_room_model(current_area.rooms[0]);
+	// TODO - this is test, remove this eventually...
+	compute_area_mesh(current_area);
 
 	player_entity_handle = load_entity();
 	if (!validate_entity_handle(player_entity_handle)) {

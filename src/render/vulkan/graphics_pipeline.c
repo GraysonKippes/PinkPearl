@@ -25,15 +25,10 @@ const descriptor_layout_t graphics_descriptor_set_layout = {
 /* -- FUNCTION DECLARATIONS -- */
 
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void);
-
 static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_ptr, VkRect2D *scissor_ptr);
-
 static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void);
-
 static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void);
-
 static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void);
-
 static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState *attachment_ptr);
 
 static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr);
@@ -140,19 +135,14 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 	vertex_input_info.vertexAttributeDescriptionCount = VERTEX_INPUT_NUM_ATTRIBUTES;
 	vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions;
 
-	VkPipelineInputAssemblyStateCreateInfo input_assembly = make_input_assembly_info();
-
 	VkViewport viewport = make_viewport(swapchain.extent);
 	VkRect2D scissor = make_scissor(swapchain.extent);
 
+	VkPipelineInputAssemblyStateCreateInfo input_assembly = make_input_assembly_info();
 	VkPipelineViewportStateCreateInfo viewport_state = make_viewport_state_info(&viewport, &scissor);
-
 	VkPipelineRasterizationStateCreateInfo rasterizer = make_rasterization_info();
-
 	VkPipelineMultisampleStateCreateInfo multisampling = make_multisampling_info();
-
 	VkPipelineColorBlendAttachmentState color_blend_attachment = make_color_blend_attachment();
-
 	VkPipelineColorBlendStateCreateInfo color_blending = make_color_blend_info(&color_blend_attachment);
 
 	VkGraphicsPipelineCreateInfo create_info = { 0 };

@@ -162,27 +162,9 @@ void load_textures(const texture_pack_t texture_pack) {
 	log_message(VERBOSE, "Done loading textures.");
 }
 
-void create_room_texture(const room_t room, const texture_handle_t tilemap_texture_handle, const uint32_t cache_slot) {
-
-	// Create the properly aligned tile data array, aligned to 16 bytes.
-	static const uint64_t tile_datum_size = 16;	// Bytes per tile datum--the buffer is aligned to 16 bytes.
-	const uint64_t num_tiles = room.extent.width * room.extent.length;
-	uint32_t *tile_data = calloc(num_tiles, tile_datum_size);
-	if (tile_data == NULL) {
-		log_message(ERROR, "Error creating room texture: allocation of aligned tile data array failed.");
-		return;
-	}
-
-	for (uint64_t i = 0; i < num_tiles; ++i) {
-		// The indexing is in increments of sizeof(uint32_t), not of 1 byte;
-		// 	therefore, multiply i by the alignment size (16 bytes) then divided i by sizeof(uint32_t).
-		uint64_t index = i * (tile_datum_size / sizeof(uint32_t));
-		tile_data[index] = room.tiles[i].tilemap_slot;
-	}
-
-	const uint32_t texture_index = (uint32_t)get_room_texture_handle(room.size, cache_slot);
-	compute_room_texture(textures[tilemap_texture_handle], room.size, tile_data, &textures[texture_index]);
-	free(tile_data);
+void create_room_texture(const room_t room, const uint32_t cache_slot, const texture_handle_t tilemap_texture_handle) {
+	const uint32_t texture_index = (uint32_t)get_room_texture_handle(room.size, 0);
+	compute_room_texture(room, cache_slot, textures[tilemap_texture_handle], &textures[texture_index]);
 }
 
 void destroy_textures(void) {

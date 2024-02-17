@@ -33,21 +33,13 @@
 /* -- Vulkan Objects -- */
 
 static vulkan_instance_t vulkan_instance = { 0 };
-
 static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
-
 VkSurfaceKHR surface = VK_NULL_HANDLE;
-
 physical_device_t physical_device = { 0 };
-
 memory_type_set_t memory_type_set = { 0 };
-
 VkDevice device = VK_NULL_HANDLE;
-
 swapchain_t swapchain = { 0 };
-
 graphics_pipeline_t graphics_pipeline = { 0 };
-
 VkSampler sampler_default = VK_NULL_HANDLE;
 
 /* -- Compute -- */
@@ -73,10 +65,7 @@ VkCommandPool compute_command_pool;
 
 static VkClearValue clear_color;
 
-#define MAX_FRAMES_IN_FLIGHT	2
-
-frame_t frames[MAX_FRAMES_IN_FLIGHT];
-
+frame_t frames[NUM_FRAMES_IN_FLIGHT];
 size_t current_frame = 0;
 
 #define FRAME (frames[current_frame])
@@ -95,12 +84,12 @@ static const VkDeviceSize global_staging_buffer_size = 16384;
 VkBuffer global_uniform_buffer = VK_NULL_HANDLE;
 VkDeviceMemory global_uniform_memory = VK_NULL_HANDLE;
 byte_t *global_uniform_mapped_memory = NULL;
-static const VkDeviceSize global_uniform_buffer_size = 2560 + 10240;
+static const VkDeviceSize global_uniform_buffer_size = 16384;
 
 // Used for GPU-only bulk storage data.
 VkBuffer global_storage_buffer = VK_NULL_HANDLE;
 VkDeviceMemory global_storage_memory = VK_NULL_HANDLE;
-static const VkDeviceSize global_storage_buffer_size = 8192;
+static const VkDeviceSize global_storage_buffer_size = 131072;
 
 
 
@@ -202,7 +191,7 @@ static void create_global_storage_buffer(void) {
 	buffer_create_info.pNext = NULL;
 	buffer_create_info.flags = 0;
 	buffer_create_info.size = global_storage_buffer_size;
-	buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	buffer_create_info.queueFamilyIndexCount = 0;
 	buffer_create_info.pQueueFamilyIndices = NULL;
@@ -295,7 +284,7 @@ void destroy_vulkan_objects(void) {
 
 	vkDestroySampler(device, sampler_default, NULL);
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
 		destroy_frame(device, frames[i]);
 	}
 

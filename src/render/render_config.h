@@ -19,6 +19,7 @@ extern const uint32_t room_texture_cache_size;
 #define VERTEX_SHADER_NAME 		"vertex_shader.spv"
 #define FRAGMENT_SHADER_NAME 		"fragment_shader.spv"
 #define COMPUTE_MATRICES_SHADER_NAME 	"compute_matrices.spv"
+#define AREA_MESH_SHADER_NAME		"area_mesh.spv"
 #define ROOM_TEXTURE_SHADER_NAME 	"room_texture.spv"
 
 #endif	// RENDER_CONFIG_H

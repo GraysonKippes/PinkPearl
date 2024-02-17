@@ -20,13 +20,13 @@ void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_se
 	vkCreatePipelineLayout(device, &create_info, NULL, pipeline_layout_ptr);
 }
 
-compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t descriptor_layout, const char *compute_shader_name) {
+compute_pipeline_t create_compute_pipeline(const VkDevice device, const descriptor_layout_t descriptor_layout, const char *const compute_shader_name) {
 	
 	VkShaderModule compute_shader;
-
 	create_shader_module(device, compute_shader_name, &compute_shader);
 
 	compute_pipeline_t compute_pipeline = { 0 };
+	compute_pipeline.device = device;
 
 	create_descriptor_set_layout(device, descriptor_layout, &compute_pipeline.descriptor_set_layout);
 	create_pipeline_layout(device, compute_pipeline.descriptor_set_layout, &compute_pipeline.layout);
@@ -53,9 +53,25 @@ compute_pipeline_t create_compute_pipeline(VkDevice device, descriptor_layout_t 
 	return compute_pipeline;
 }
 
-void destroy_compute_pipeline(VkDevice device, compute_pipeline_t compute_pipeline) {
-	vkDestroyPipeline(device, compute_pipeline.handle, NULL);
-	vkDestroyPipelineLayout(device, compute_pipeline.layout, NULL);
-	vkDestroyDescriptorPool(device, compute_pipeline.descriptor_pool, NULL);
-	vkDestroyDescriptorSetLayout(device, compute_pipeline.descriptor_set_layout, NULL);
+bool destroy_compute_pipeline(compute_pipeline_t *const compute_pipeline_ptr) {
+
+	if (compute_pipeline_ptr == NULL) {
+		return false;
+	}
+
+	vkDestroyPipeline(compute_pipeline_ptr->device, compute_pipeline_ptr->handle, NULL);
+	compute_pipeline_ptr->handle = VK_NULL_HANDLE;
+
+	vkDestroyPipelineLayout(compute_pipeline_ptr->device, compute_pipeline_ptr->layout, NULL);
+	compute_pipeline_ptr->layout = VK_NULL_HANDLE;
+
+	vkDestroyDescriptorPool(compute_pipeline_ptr->device, compute_pipeline_ptr->descriptor_pool, NULL);
+	compute_pipeline_ptr->descriptor_pool = VK_NULL_HANDLE;
+
+	vkDestroyDescriptorSetLayout(compute_pipeline_ptr->device, compute_pipeline_ptr->descriptor_set_layout, NULL);
+	compute_pipeline_ptr->descriptor_set_layout = VK_NULL_HANDLE;
+
+	compute_pipeline_ptr->device = VK_NULL_HANDLE;
+
+	return true;
 }

@@ -13,7 +13,7 @@ extern const uint32_t num_textures;
 extern const texture_handle_t missing_texture_handle;
 
 void load_textures(const texture_pack_t texture_pack);
-void create_room_texture(const room_t room, const texture_handle_t tilemap_texture_handle, const uint32_t cache_slot);
+void create_room_texture(const room_t room, const uint32_t cache_slot, const texture_handle_t tilemap_texture_handle);
 void destroy_textures(void);
 
 texture_t get_loaded_texture(const texture_handle_t texture_handle);
