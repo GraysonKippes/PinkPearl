@@ -75,11 +75,7 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, v
 	vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 0);
-
-	VkDescriptorBufferInfo matrix_buffer_info = { 0 };
-	matrix_buffer_info.buffer = global_storage_buffer;
-	matrix_buffer_info.offset = 0;
-	matrix_buffer_info.range = matrix_data_size;
+	const VkDescriptorBufferInfo storage_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
 
 	VkWriteDescriptorSet descriptor_writes[2] = { { 0 } };
 
@@ -99,7 +95,7 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, v
 	descriptor_writes[1].dstArrayElement = 0;
 	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	descriptor_writes[1].descriptorCount = 1;
-	descriptor_writes[1].pBufferInfo = &matrix_buffer_info;
+	descriptor_writes[1].pBufferInfo = &storage_buffer_info;
 	descriptor_writes[1].pImageInfo = NULL;
 	descriptor_writes[1].pTexelBufferView = NULL;
 
@@ -117,9 +113,7 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, v
 	vkBeginCommandBuffer(compute_command_buffer, &begin_info);
 
 	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.handle);
-
 	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_matrices.layout, 0, 1, &descriptor_set, 0, NULL);
-
 	vkCmdDispatch(compute_command_buffer, 1, 1, 1);
 
 	vkEndCommandBuffer(compute_command_buffer);

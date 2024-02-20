@@ -121,8 +121,21 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 	
 	vkGetPhysicalDeviceProperties2(buffer_partition_create_info.physical_device, &physical_device_properties);
 
-	// TODO - add a check for the buffer type (i.e. uniform, storage, texel, etc).
-	const VkDeviceSize offset_alignment = physical_device_properties.properties.limits.minUniformBufferOffsetAlignment;
+	// Determine minimum subresource alignment requirements depending on buffer usage.
+	// Default value is a generous 256 bytes.
+	VkDeviceSize offset_alignment = 256;
+	switch (buffer_partition_create_info.buffer_type) {
+		case BUFFER_TYPE_STAGING:
+			offset_alignment = physical_device_properties.properties.limits.minMemoryMapAlignment;
+			break;
+		case BUFFER_TYPE_UNIFORM:
+			offset_alignment = physical_device_properties.properties.limits.minUniformBufferOffsetAlignment;
+			break;
+		case BUFFER_TYPE_STORAGE:
+			offset_alignment = physical_device_properties.properties.limits.minStorageBufferOffsetAlignment;
+			break;
+	}
+
 	for (uint32_t i = 0; i < buffer_partition.num_ranges; ++i) {
 		const VkDeviceSize partition_size = buffer_partition_create_info.partition_sizes[i];
 		buffer_partition.ranges[i].offset = buffer_partition.total_memory_size;
@@ -130,12 +143,25 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 		buffer_partition.total_memory_size += align_offset(partition_size, offset_alignment);
 	}
 
+	VkBufferUsageFlags buffer_usage_flags = 0;
+	switch (buffer_partition_create_info.buffer_type) {
+		case BUFFER_TYPE_STAGING:
+			buffer_usage_flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+			break;
+		case BUFFER_TYPE_UNIFORM:
+			buffer_usage_flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+			break;
+		case BUFFER_TYPE_STORAGE:
+			buffer_usage_flags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			break;
+	}
+
 	VkBufferCreateInfo buffer_create_info = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
 		.size = buffer_partition.total_memory_size,
-		.usage = buffer_partition_create_info.buffer_usage_flags,
+		.usage = buffer_usage_flags,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices = NULL
@@ -175,11 +201,24 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 
 	vkGetBufferMemoryRequirements2(buffer_partition.device, &memory_requirements_info, &memory_requirements);
 
+	memory_type_index_t memory_type_index = 0;
+	switch (buffer_partition_create_info.buffer_type) {
+		case BUFFER_TYPE_STAGING:
+			memory_type_index = buffer_partition_create_info.memory_type_set.resource_staging;
+			break;
+		case BUFFER_TYPE_UNIFORM:
+			memory_type_index = buffer_partition_create_info.memory_type_set.uniform_data;
+			break;
+		case BUFFER_TYPE_STORAGE:
+			memory_type_index = buffer_partition_create_info.memory_type_set.graphics_resources;
+			break;
+	}
+
 	const VkMemoryAllocateInfo memory_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.pNext = NULL,
 		.allocationSize = memory_requirements.memoryRequirements.size,
-		.memoryTypeIndex = buffer_partition_create_info.memory_type_index
+		.memoryTypeIndex = memory_type_index
 	};
 
 	const VkResult memory_allocate_result = vkAllocateMemory(buffer_partition.device, &memory_allocate_info, NULL, &buffer_partition.memory);

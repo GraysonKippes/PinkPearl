@@ -41,6 +41,12 @@ typedef struct staging_buffer_t {
 
 
 
+typedef enum buffer_type_t {
+	BUFFER_TYPE_STAGING,
+	BUFFER_TYPE_UNIFORM,
+	BUFFER_TYPE_STORAGE
+} buffer_type_t;
+
 typedef struct memory_range_t {
 	VkDeviceSize offset;
 	VkDeviceSize size;
@@ -51,8 +57,8 @@ typedef struct buffer_partition_create_info_t {
 	VkPhysicalDevice physical_device;
 	VkDevice device;
 
-	VkBufferUsageFlags buffer_usage_flags;
-	memory_type_index_t memory_type_index;
+	buffer_type_t buffer_type;
+	memory_type_set_t memory_type_set;
 
 	uint32_t num_queue_family_indices;
 	uint32_t *queue_family_indices;

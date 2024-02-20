@@ -44,15 +44,6 @@ void compute_area_mesh(const area_t area) {
 
 	log_message(VERBOSE, "Generating area mesh...");
 
-	static const VkDeviceSize uniform_offset = GLOBAL_UNIFORM_MEMORY_COMPUTE_MESH_AREA_OFFSET;
-	static const VkDeviceSize uniform_size = GLOBAL_UNIFORM_MEMORY_COMPUTE_MESH_AREA_SIZE;
-
-	static const VkDeviceSize storage_offset = GLOBAL_STORAGE_MEMORY_COMPUTE_MESH_AREA_OFFSET;
-	static const VkDeviceSize storage_size = GLOBAL_STORAGE_MEMORY_COMPUTE_MESH_AREA_SIZE;
-
-	const VkDeviceSize mesh_vertices_size = 32 * 32 * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	const VkDeviceSize mesh_indices_size = 32 * 32 * num_indices_per_rect * sizeof(index_t);
-
 	const uint32_t dispatch_x = area.num_rooms;
 	const uint32_t dispatch_y = 4; // Number of vertices per room.
 	const uint32_t dispatch_z = 1;
@@ -88,7 +79,7 @@ void compute_area_mesh(const area_t area) {
 	}
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 2);
-	const VkDescriptorBufferInfo storage_buffer_info = make_descriptor_buffer_info(global_storage_buffer, storage_offset, storage_size);
+	const VkDescriptorBufferInfo storage_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 1);
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
 	

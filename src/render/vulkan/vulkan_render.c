@@ -130,6 +130,8 @@ void destroy_vulkan_render_objects(void) {
 // Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.
 void stage_model_data(uint32_t slot, model_t model) {
 
+	byte_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 0);
+
 	// Vertex Data
 
 	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
@@ -141,7 +143,7 @@ void stage_model_data(uint32_t slot, model_t model) {
 	VkDeviceSize model_size = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	VkDeviceSize model_offset = slot * model_size;
 
-	memcpy((global_staging_mapped_memory + model_offset), model.vertices, model_size);
+	memcpy((mapped_memory + model_offset), model.vertices, model_size);
 
 	// Index Data
 
@@ -158,14 +160,15 @@ void stage_model_data(uint32_t slot, model_t model) {
 		rect_indices[i] += slot * num_vertices_per_rect;
 	}
 
-	memcpy((global_staging_mapped_memory + indices_offset), rect_indices, indices_size);
+	memcpy((mapped_memory + indices_offset), rect_indices, indices_size);
+
+	buffer_partition_unmap_memory(global_staging_buffer_partition);
 }
 
 void transfer_model_data(void) {
 
 	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
 	allocate_command_buffers(device, transfer_command_pool, 1, &transfer_command_buffer);
-
 	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	VkBufferCopy vertex_copy_regions[NUM_RENDER_OBJECT_SLOTS] = { { 0 } };
@@ -176,7 +179,6 @@ void transfer_model_data(void) {
 
 	const VkDeviceSize copy_size_vertices = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	const VkDeviceSize copy_size_indices = num_indices_per_rect * sizeof(index_t);
-
 	const VkDeviceSize indices_base_offset = (VkDeviceSize)num_render_object_slots * copy_size_vertices;
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
@@ -200,8 +202,8 @@ void transfer_model_data(void) {
 
 	FRAME.model_update_flags = 0;
 
-	vkCmdCopyBuffer(transfer_command_buffer, global_staging_buffer, FRAME.model_buffer.handle, num_pending_models, vertex_copy_regions);
-	vkCmdCopyBuffer(transfer_command_buffer, global_staging_buffer, FRAME.index_buffer.handle, num_pending_models, index_copy_regions);
+	vkCmdCopyBuffer(transfer_command_buffer, global_staging_buffer_partition.buffer, FRAME.model_buffer.handle, num_pending_models, vertex_copy_regions);
+	vkCmdCopyBuffer(transfer_command_buffer, global_staging_buffer_partition.buffer, FRAME.index_buffer.handle, num_pending_models, index_copy_regions);
 
 	vkEndCommandBuffer(transfer_command_buffer);
 
@@ -211,9 +213,9 @@ void transfer_model_data(void) {
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &transfer_command_buffer;
 
+	// TODO - use better synchronization, probably semaphores.
 	vkQueueSubmit(transfer_queue, 1, &submit_info, FRAME.fence_buffers_up_to_date);
 	vkQueueWaitIdle(transfer_queue);
-
 	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
 }
 
@@ -250,12 +252,9 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	vkResetFences(device, 1, &FRAME.fence_frame_ready);
 	vkResetCommandBuffer(FRAME.command_buffer, 0);
 
-	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };
+	const VkDescriptorBufferInfo matrix_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
 
-	VkDescriptorBufferInfo matrix_buffer_info = { 0 };
-	matrix_buffer_info.buffer = global_storage_buffer;
-	matrix_buffer_info.offset = 0;
-	matrix_buffer_info.range = matrix_data_size;
+	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };
 
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[0].dstSet = FRAME.descriptor_set;

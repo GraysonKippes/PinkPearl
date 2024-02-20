@@ -23,69 +23,6 @@ static const size_t texture_name_max_length = TEXTURE_NAME_MAX_LENGTH;
 
 
 
-// TODO - eventually (maybe) collate this with the global staging buffer.
-static staging_buffer_t image_staging_buffer = { 
-	.handle = VK_NULL_HANDLE,
-	.memory = VK_NULL_HANDLE,
-	.size = 0,
-	.mapped_memory = NULL,
-	.device = VK_NULL_HANDLE
-};
-
-void create_image_staging_buffer(void) {
-
-	static const VkDeviceSize image_staging_buffer_size = 262144LL;
-
-	image_staging_buffer.device = device;
-	image_staging_buffer.size = image_staging_buffer_size;
-
-	VkBufferCreateInfo buffer_create_info = { 0 };
-	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffer_create_info.pNext = NULL;
-	buffer_create_info.flags = 0;
-	buffer_create_info.size = image_staging_buffer.size;
-	buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	buffer_create_info.queueFamilyIndexCount = 0;
-	buffer_create_info.pQueueFamilyIndices = NULL;
-
-	VkResult buffer_create_result = vkCreateBuffer(image_staging_buffer.device, &buffer_create_info, NULL, &image_staging_buffer.handle);
-	if (buffer_create_result != VK_SUCCESS) {
-		logf_message(FATAL, "Image staging buffer for texture loading failed. (Error code: %i)", buffer_create_result);
-		return;
-	}
-
-	VkMemoryRequirements memory_requirements;
-	vkGetBufferMemoryRequirements(image_staging_buffer.device, image_staging_buffer.handle, &memory_requirements);
-
-	VkMemoryAllocateInfo allocate_info = { 0 };
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.pNext = NULL;
-	allocate_info.allocationSize = memory_requirements.size;
-	allocate_info.memoryTypeIndex = memory_type_set.resource_staging;
-
-	// TODO - error handling
-	vkAllocateMemory(image_staging_buffer.device, &allocate_info, NULL, &image_staging_buffer.memory);
-
-	vkBindBufferMemory(image_staging_buffer.device, image_staging_buffer.handle, image_staging_buffer.memory, 0);
-
-	vkMapMemory(image_staging_buffer.device, image_staging_buffer.memory, 0, VK_WHOLE_SIZE, 0, &image_staging_buffer.mapped_memory);
-}
-
-void destroy_image_staging_buffer(void) {
-
-	vkDestroyBuffer(image_staging_buffer.device, image_staging_buffer.handle, NULL);
-	vkFreeMemory(image_staging_buffer.device, image_staging_buffer.memory, NULL);
-
-	image_staging_buffer.handle = VK_NULL_HANDLE;
-	image_staging_buffer.memory = VK_NULL_HANDLE;
-	image_staging_buffer.size = 0;
-	image_staging_buffer.mapped_memory = NULL;
-	image_staging_buffer.device = VK_NULL_HANDLE;
-}
-
-
-
 static void make_image_path(const char *const info_path, char *const image_path) {
 
 	if (info_path == NULL || image_path == NULL) {
@@ -142,13 +79,15 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 	make_image_path(texture_create_info.path, path);
 
 	// Load image data into image staging buffer.
+	byte_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 1);
 	image_data_t base_image_data = load_image_data(path, 0);
 	const VkDeviceSize base_image_width = base_image_data.width;
 	const VkDeviceSize base_image_height = base_image_data.height;
 	const VkDeviceSize base_image_channels = base_image_data.num_channels;
 	const VkDeviceSize base_image_size = base_image_width * base_image_height * base_image_channels;
-	memcpy(image_staging_buffer.mapped_memory, base_image_data.data, base_image_size);
+	memcpy(mapped_memory, base_image_data.data, base_image_size);
 	free_image_data(base_image_data);
+	buffer_partition_unmap_memory(global_staging_buffer_partition);
 
 	// Subresource range used in all image views and layout transitions.
 	static const VkImageSubresourceRange image_subresource_range = {
@@ -221,6 +160,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 			return texture;
 		}
 
+		const VkDeviceSize buffer_partition_offset = global_staging_buffer_partition.ranges[1].offset;
 		for (uint32_t j = 0; j < num_copy_regions; ++j) {
 
 			copy_regions[j].sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
@@ -236,7 +176,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 
 			static const VkDeviceSize bytes_per_texel = 4;
 
-			copy_regions[j].bufferOffset = (VkDeviceSize)texel_offset * bytes_per_texel;
+			copy_regions[j].bufferOffset = buffer_partition_offset + (VkDeviceSize)texel_offset * bytes_per_texel;
 			copy_regions[j].bufferRowLength = texture_create_info.atlas_extent.width;
 			copy_regions[j].bufferImageHeight = texture_create_info.atlas_extent.length;
 
@@ -257,7 +197,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 		VkCopyBufferToImageInfo2 copy_info = { 0 };
 		copy_info.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2;
 		copy_info.pNext = NULL;
-		copy_info.srcBuffer = image_staging_buffer.handle;
+		copy_info.srcBuffer = global_staging_buffer_partition.buffer;
 		copy_info.dstImage = texture.images[i].vk_image;
 		copy_info.dstImageLayout = texture.layout;
 		copy_info.regionCount = num_copy_regions;

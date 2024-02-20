@@ -30,7 +30,7 @@ void main() {
 	const vec3 texture_coordinates = vec3(frag_tex_coord, float(draw_data.animation_frame));
 
 	// Ambient light
-	const vec3 ambient_light_color = vec3(0.5, 0.75, 1.0);
+	const vec3 ambient_light_color = vec3(1.0, 0.75, 0.5);
 	const float ambient_lighting_intensity = 0.825;
 	const vec3 ambient_lighting = ambient_light_color * ambient_lighting_intensity;
 

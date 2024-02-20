@@ -116,8 +116,6 @@ void load_textures(const texture_pack_t texture_pack) {
 		return;
 	}
 	
-	create_image_staging_buffer();
-
 	// Nullify each texture first.
 	for (uint32_t i = 0; i < num_textures; ++i) {
 		textures[i] = make_null_texture();
@@ -156,8 +154,6 @@ void load_textures(const texture_pack_t texture_pack) {
 		textures[texture_index] = load_texture(texture_pack.texture_create_infos[i]);
 		set_texture_name(i, texture_pack.texture_create_infos[i]);
 	}
-
-	destroy_image_staging_buffer();
 
 	log_message(VERBOSE, "Done loading textures.");
 }
