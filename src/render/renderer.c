@@ -63,9 +63,6 @@ void init_renderer(void) {
 	for (uint32_t i = 0; i < num_room_render_object_slots; ++i) {
 		loaded_room_ids[i] = -1;
 	}
-
-	enable_render_object_slot(0);
-	enable_render_object_slot(2);
 }
 
 void terminate_renderer(void) {

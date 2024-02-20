@@ -67,9 +67,10 @@ void compute_area_mesh(const area_t area) {
 		room_positions[i] = area.rooms[i].position;
 	}
 
-	byte_t *const uniform_memory = (byte_t *)global_uniform_mapped_memory + uniform_offset;
-	memcpy(uniform_memory, &area.room_extent, sizeof area.room_extent);
-	memcpy(uniform_memory + sizeof area.room_extent, room_positions, area.num_rooms * sizeof *room_positions);
+	byte_t *const mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 2);
+	memcpy(mapped_memory, &area.room_extent, sizeof area.room_extent);
+	memcpy(mapped_memory + sizeof area.room_extent, room_positions, area.num_rooms * sizeof *room_positions);
+	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 	
 	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -86,7 +87,7 @@ void compute_area_mesh(const area_t area) {
 		return;
 	}
 
-	const VkDescriptorBufferInfo uniform_buffer_info = make_descriptor_buffer_info(global_uniform_buffer, uniform_offset, uniform_size);
+	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 2);
 	const VkDescriptorBufferInfo storage_buffer_info = make_descriptor_buffer_info(global_storage_buffer, storage_offset, storage_size);
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };

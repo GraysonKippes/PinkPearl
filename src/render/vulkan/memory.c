@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #include "log/logging.h"
+#include "util/allocate.h"
 
 memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 
@@ -55,17 +56,10 @@ memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 	return memory_type_set;
 }
 
-void allocate_device_memory(VkDevice device, VkDeviceSize size, uint32_t memory_type, VkDeviceMemory *memory_ptr) {
-	
-	VkMemoryAllocateInfo allocate_info = { 0 };
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.pNext = NULL;
-	allocate_info.allocationSize = size;
-	allocate_info.memoryTypeIndex = memory_type;
-
-	vkAllocateMemory(device, &allocate_info, NULL, memory_ptr);
-}
-
-void bind_buffer_to_memory(buffer_t buffer, VkDeviceMemory memory, VkDeviceSize offset) {
-	vkBindBufferMemory(buffer.device, buffer.handle, memory, offset);
+VkDeviceSize align_offset(const VkDeviceSize offset, const VkDeviceSize alignment) {
+	const VkDeviceSize remainder = offset % alignment;
+	if (remainder != 0) {
+		return offset + (alignment - remainder);
+	}
+	return offset;
 }

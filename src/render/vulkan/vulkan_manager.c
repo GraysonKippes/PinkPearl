@@ -44,6 +44,7 @@ VkSampler sampler_default = VK_NULL_HANDLE;
 
 /* -- Compute -- */
 
+// TODO - get this out of here.
 compute_pipeline_t compute_pipeline_matrices;
 
 /* -- Queues -- */
@@ -81,10 +82,7 @@ byte_t *global_staging_mapped_memory = NULL;
 static const VkDeviceSize global_staging_buffer_size = 16384;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
-VkBuffer global_uniform_buffer = VK_NULL_HANDLE;
-VkDeviceMemory global_uniform_memory = VK_NULL_HANDLE;
-byte_t *global_uniform_mapped_memory = NULL;
-static const VkDeviceSize global_uniform_buffer_size = 16384;
+buffer_partition_t global_uniform_buffer_partition;
 
 // Used for GPU-only bulk storage data.
 VkBuffer global_storage_buffer = VK_NULL_HANDLE;
@@ -102,6 +100,7 @@ static void create_window_surface(void) {
 	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), NULL, &surface);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Window surface creation failed. (Error code: %i)", result);
+		// TODO - do not use exit() here.
 		exit(1);
 	}
 }
@@ -138,9 +137,7 @@ static void create_global_staging_buffer(void) {
 
 	// TODO - error handling
 	vkAllocateMemory(device, &allocate_info, NULL, &global_staging_memory);
-
 	vkBindBufferMemory(device, global_staging_buffer, global_staging_memory, 0);
-
 	vkMapMemory(device, global_staging_memory, 0, VK_WHOLE_SIZE, 0, (void **)&global_staging_mapped_memory);
 }
 
@@ -148,38 +145,22 @@ static void create_global_uniform_buffer(void) {
 
 	log_message(VERBOSE, "Creating global uniform buffer...");
 
-	VkBufferCreateInfo buffer_create_info = { 0 };
-	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffer_create_info.pNext = NULL;
-	buffer_create_info.flags = 0;
-	buffer_create_info.size = global_uniform_buffer_size;
-	buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	buffer_create_info.queueFamilyIndexCount = 0;
-	buffer_create_info.pQueueFamilyIndices = NULL;
-
-	// TODO - error handling
-	VkResult result = vkCreateBuffer(device, &buffer_create_info, NULL, &global_uniform_buffer);
-	if (result != VK_SUCCESS) {
-		logf_message(ERROR, "Global uniform buffer creation failed. (Error code: %i)", result);
-		return;
-	}
-
-	VkMemoryRequirements memory_requirements;
-	vkGetBufferMemoryRequirements(device, global_uniform_buffer, &memory_requirements);
-
-	VkMemoryAllocateInfo allocate_info = { 0 };
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.pNext = NULL;
-	allocate_info.allocationSize = memory_requirements.size;
-	allocate_info.memoryTypeIndex = memory_type_set.uniform_data;
-
-	// TODO - error handling
-	vkAllocateMemory(device, &allocate_info, NULL, &global_uniform_memory);
-
-	vkBindBufferMemory(device, global_uniform_buffer, global_uniform_memory, 0);
-
-	vkMapMemory(device, global_uniform_memory, 0, VK_WHOLE_SIZE, 0, (void **)&global_uniform_mapped_memory);
+	const buffer_partition_create_info_t buffer_partition_create_info = {
+		.physical_device = physical_device.handle,
+		.device = device,
+		.buffer_usage_flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		.memory_type_index = memory_type_set.uniform_data,
+		.num_queue_family_indices = 0,
+		.queue_family_indices = NULL,
+		.num_partition_sizes = 3,
+		.partition_sizes = (VkDeviceSize[3]){
+			2096,	// Compute matrices
+			10240,	// Compute room texture
+			8200	// Compute area mesh
+		}
+	};
+	
+	global_uniform_buffer_partition = create_buffer_partition(buffer_partition_create_info);
 }
 
 static void create_global_storage_buffer(void) {
@@ -214,7 +195,6 @@ static void create_global_storage_buffer(void) {
 
 	// TODO - error handling
 	vkAllocateMemory(device, &allocate_info, NULL, &global_storage_memory);
-
 	vkBindBufferMemory(device, global_storage_buffer, global_storage_memory, 0);
 }
 
@@ -295,20 +275,16 @@ void destroy_vulkan_objects(void) {
 	vkDestroyCommandPool(device, transfer_command_pool, NULL);
 	vkDestroyCommandPool(device, compute_command_pool, NULL);
 
+	destroy_buffer_partition(&global_uniform_buffer_partition);
+
 	vkDestroyBuffer(device, global_storage_buffer, NULL);
 	vkFreeMemory(device, global_storage_memory, NULL);
-
-	vkDestroyBuffer(device, global_uniform_buffer, NULL);
-	vkFreeMemory(device, global_uniform_memory, NULL);
 
 	vkDestroyBuffer(device, global_staging_buffer, NULL);
 	vkFreeMemory(device, global_staging_memory, NULL);
 
 	vkDestroyDevice(device, NULL);
-
 	vkDestroySurfaceKHR(vulkan_instance.handle, surface, NULL);
-
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
-
 	destroy_vulkan_instance(vulkan_instance);
 }

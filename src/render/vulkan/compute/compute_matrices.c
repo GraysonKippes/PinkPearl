@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "log/logging.h"
 #include "render/render_config.h"
 
 #include "../command_buffer.h"
@@ -45,17 +46,23 @@ void terminate_compute_matrices(void) {
 
 void compute_matrices(float delta_time, projection_bounds_t projection_bounds, vector3F_t camera_position, render_position_t *positions) {
 
-	static const VkDeviceSize uniform_data_size = GLOBAL_UNIFORM_MEMORY_COMPUTE_MATRICES_SIZE;
+	byte_t *mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 0);
+	if (mapped_memory == NULL) {
+		log_message(ERROR, "Error computing matrices: uniform buffer memory mapping failed.");
+		return;
+	}
 
-	memcpy(global_uniform_mapped_memory, &delta_time, sizeof delta_time);
-	memcpy(global_uniform_mapped_memory + 4, &projection_bounds, sizeof projection_bounds);
-	memcpy(global_uniform_mapped_memory + 32, &camera_position, sizeof camera_position);
+	memcpy(mapped_memory, &delta_time, sizeof delta_time);
+	memcpy(mapped_memory + 4, &projection_bounds, sizeof projection_bounds);
+	memcpy(mapped_memory + 32, &camera_position, sizeof camera_position);
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
 		static const VkDeviceSize starting_offset = 48;
-		memcpy(global_uniform_mapped_memory + starting_offset + (i * 32), &positions[i].position, sizeof(vector3F_t));
-		memcpy(global_uniform_mapped_memory + starting_offset + (i * 32) + 16, &positions[i].previous_position, sizeof(vector3F_t));
+		memcpy(mapped_memory + starting_offset + (i * 32), &positions[i].position, sizeof(vector3F_t));
+		memcpy(mapped_memory + starting_offset + (i * 32) + 16, &positions[i].previous_position, sizeof(vector3F_t));
 	}
+
+	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 
 	VkDescriptorSetAllocateInfo descriptor_set_allocate_info = { 0 };
 	descriptor_set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -67,10 +74,7 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, v
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
 	vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
 
-	VkDescriptorBufferInfo uniform_buffer_info = { 0 };
-	uniform_buffer_info.buffer = global_uniform_buffer;
-	uniform_buffer_info.offset = 0;
-	uniform_buffer_info.range = uniform_data_size;
+	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 0);
 
 	VkDescriptorBufferInfo matrix_buffer_info = { 0 };
 	matrix_buffer_info.buffer = global_storage_buffer;

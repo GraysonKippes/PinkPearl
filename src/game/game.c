@@ -49,7 +49,7 @@ void start_game(void) {
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {
 		player_entity_ptr->hitbox = player_hitbox;
-		player_entity_ptr->render_handle = load_render_object();
+		player_entity_ptr->render_handle = load_render_object(); // DEBUG - this returns 3 instead of 2 for some reason.
 		upload_model(player_entity_ptr->render_handle, get_premade_model(0), "entity/pearl");
 		render_object_texture_states[player_entity_ptr->render_handle].current_animation_cycle = 3;
 	}

@@ -47,11 +47,7 @@ void tick_entity(entity_t *entity_ptr) {
 
 	entity_ptr->transform.position = new_position;
 
-	// Render object updates.
-
 	const render_handle_t render_handle = entity_ptr->render_handle;
-
-	// Make sure that the render handle of this entity goes to a valid entity render object.
 	if (!validate_render_handle(render_handle) || is_render_handle_to_room_render_object(render_handle)) {
 		return;
 	}

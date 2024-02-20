@@ -10,6 +10,7 @@
 #include "render/render_object.h"
 #include "util/byte.h"
 
+#include "buffer.h"
 #include "compute_pipeline.h"
 #include "frame.h"
 #include "graphics_pipeline.h"
@@ -52,15 +53,7 @@ extern VkDeviceMemory global_staging_memory;
 extern byte_t *global_staging_mapped_memory;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
-#define GLOBAL_UNIFORM_MEMORY_COMPUTE_MATRICES_OFFSET		0
-#define GLOBAL_UNIFORM_MEMORY_COMPUTE_MATRICES_SIZE		128
-#define GLOBAL_UNIFORM_MEMORY_COMPUTE_ROOM_TEXTURE_OFFSET	GLOBAL_UNIFORM_MEMORY_COMPUTE_MATRICES_SIZE
-#define GLOBAL_UNIFORM_MEMORY_COMPUTE_ROOM_TEXTURE_SIZE		1024
-#define GLOBAL_UNIFORM_MEMORY_COMPUTE_MESH_AREA_OFFSET		GLOBAL_UNIFORM_MEMORY_COMPUTE_MATRICES_SIZE + GLOBAL_UNIFORM_MEMORY_COMPUTE_ROOM_TEXTURE_SIZE
-#define GLOBAL_UNIFORM_MEMORY_COMPUTE_MESH_AREA_SIZE		8200
-extern VkBuffer global_uniform_buffer;
-extern VkDeviceMemory global_uniform_memory;
-extern byte_t *global_uniform_mapped_memory;
+extern buffer_partition_t global_uniform_buffer_partition;
 
 // Used for GPU-only bulk storage data.
 #define GLOBAL_STORAGE_MEMORY_COMPUTE_MATRICES_OFFSET		0

@@ -234,7 +234,10 @@ void compute_room_texture(const room_t room, const uint32_t cache_slot, const te
 		uint64_t index = i * (tile_datum_size / sizeof(uint32_t));
 		tile_data[index] = room.tiles[i].tilemap_slot;
 	}
-	memcpy((global_uniform_mapped_memory + 128), tile_data, tile_data_size);
+
+	byte_t *mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 1);
+	memcpy(mapped_memory, tile_data, tile_data_size);
+	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 
 	VkDescriptorSetAllocateInfo descriptor_set_allocate_info = { 0 };
 	descriptor_set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -250,7 +253,7 @@ void compute_room_texture(const room_t room, const uint32_t cache_slot, const te
 		return;
 	}
 
-	const VkDescriptorBufferInfo uniform_buffer_info = make_descriptor_buffer_info(global_uniform_buffer, 128, tile_data_size);
+	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 1);
 	const VkDescriptorImageInfo tilemap_texture_info = make_descriptor_image_info(no_sampler, tilemap_texture.images[0].vk_image_view, tilemap_texture.layout);
 	const VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, room_texture_transfer_image.view, room_texture_transfer_image.layout);
 	const VkDescriptorImageInfo storage_image_infos[2] = { tilemap_texture_info, room_texture_storage_info };

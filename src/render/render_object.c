@@ -21,7 +21,8 @@ render_handle_t load_render_object(void) {
 
 	for (uint32_t i = 0; i < num_render_object_slots && i < 64; ++i) {
 		if (is_bit_off(render_object_slot_enabled_flags, i)) {
-			render_object_slot_enabled_flags = set_bit_on(render_object_slot_enabled_flags, i);
+			//render_object_slot_enabled_flags = set_bit_on(render_object_slot_enabled_flags, i);
+			enable_render_object_slot(i);
 			return (render_handle_t)i;
 		}
 	}
@@ -49,7 +50,6 @@ void unload_render_object(render_handle_t *handle_ptr) {
 }
 
 bool is_render_object_slot_enabled(const uint32_t slot) {
-
 	if (validate_render_handle(slot)) {
 		return (render_object_slot_enabled_flags >> slot) & 1LL;
 	}
@@ -57,7 +57,6 @@ bool is_render_object_slot_enabled(const uint32_t slot) {
 }
 
 void enable_render_object_slot(const uint32_t slot) {
-
 	if (validate_render_handle(slot)) {
 		render_object_slot_enabled_flags |= (1LL << (uint64_t)slot);
 	}

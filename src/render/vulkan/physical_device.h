@@ -48,9 +48,7 @@ typedef struct physical_device_t {
 	VkPhysicalDeviceFeatures features;
 
 	queue_family_indices_t queue_family_indices;
-
 	swapchain_support_details_t swapchain_support_details;
-
 	string_array_t extension_names;
 
 } physical_device_t;

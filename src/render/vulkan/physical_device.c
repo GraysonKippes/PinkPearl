@@ -211,19 +211,17 @@ int rate_physical_device(physical_device_t physical_device) {
 }
 
 physical_device_t make_new_physical_device(void) {
-
-	physical_device_t physical_device;
-	physical_device.handle = VK_NULL_HANDLE;
-	physical_device.queue_family_indices.graphics_family_ptr = NULL;
-	physical_device.queue_family_indices.present_family_ptr = NULL;
-	physical_device.queue_family_indices.transfer_family_ptr = NULL;
-	physical_device.queue_family_indices.compute_family_ptr = NULL;
-	physical_device.swapchain_support_details.formats = NULL;
-	physical_device.swapchain_support_details.present_modes = NULL;
-	physical_device.extension_names.num_strings = 0;
-	physical_device.extension_names.strings = NULL;
-
-	return physical_device;
+	return (physical_device_t){
+		.handle = VK_NULL_HANDLE,
+		.queue_family_indices.graphics_family_ptr = NULL,
+		.queue_family_indices.present_family_ptr = NULL,
+		.queue_family_indices.transfer_family_ptr = NULL,
+		.queue_family_indices.compute_family_ptr = NULL,
+		.swapchain_support_details.formats = NULL,
+		.swapchain_support_details.present_modes = NULL,
+		.extension_names.num_strings = 0,
+		.extension_names.strings = NULL
+	};
 }
 
 physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKHR surface) {
