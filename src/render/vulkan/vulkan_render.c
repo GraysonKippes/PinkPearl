@@ -362,16 +362,24 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 
 
-	VkPipelineStageFlags wait_stages[1] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	const VkSemaphore wait_semaphores[2] = {
+		FRAME.semaphore_image_available,
+		compute_matrices_semaphore
+	};
+
+	const VkPipelineStageFlags wait_stages[2] = { 
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+	};
 
 	VkSubmitInfo submit_info = { 0 };
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submit_info.pNext = NULL;
+	submit_info.waitSemaphoreCount = 2;
+	submit_info.pWaitSemaphores = wait_semaphores;
 	submit_info.pWaitDstStageMask = wait_stages;
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &FRAME.command_buffer;
-	submit_info.waitSemaphoreCount = 1;
-	submit_info.pWaitSemaphores = &FRAME.semaphore_image_available;
 	submit_info.signalSemaphoreCount = 1;
 	submit_info.pSignalSemaphores = &FRAME.semaphore_render_finished;
 

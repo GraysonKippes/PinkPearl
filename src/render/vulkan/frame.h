@@ -33,8 +33,6 @@ typedef struct frame_t {
 	// 	this can be either when a request is put in to update the buffer data, OR when the request is being currently fulfilled.
 	VkFence fence_buffers_up_to_date;
 
-	VkSemaphore semaphore_compute_matrices_finished;
-
 	// Each bit indicates if a slot in the model buffer needs to be updated.
 	uint64_t model_update_flags;
 
@@ -62,5 +60,23 @@ typedef struct frame_t {
 frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout);
 
 void destroy_frame(VkDevice device, frame_t frame);
+
+typedef struct frame_array_create_info_t {
+
+	VkPhysicalDevice physical_device;
+	VkDevice device;
+	uint32_t num_frames;
+
+} frame_array_create_info_t;
+
+typedef struct frame_array_t {
+
+	uint32_t num_frames;
+	frame_t *frames;
+
+	VkDeviceMemory buffer_memory;
+	VkDevice device;
+
+} frame_array_t;
 
 #endif	// FRAME_H

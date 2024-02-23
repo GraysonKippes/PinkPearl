@@ -3,6 +3,7 @@
 #include "log/logging.h"
 #include "render/model.h"
 #include "render/render_config.h"
+#include "util/allocate.h"
 
 #include "command_buffer.h"
 #include "queue.h"
@@ -28,7 +29,6 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 
 	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_image_available);
 	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_render_finished);
-	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_compute_matrices_finished);
 
 	vkCreateFence(device, &fence_info, NULL, &frame.fence_frame_ready);
 	vkCreateFence(device, &fence_info, NULL, &frame.fence_buffers_up_to_date);
@@ -74,11 +74,58 @@ void destroy_frame(VkDevice device, frame_t frame) {
 
 	vkDestroySemaphore(device, frame.semaphore_image_available, NULL);
 	vkDestroySemaphore(device, frame.semaphore_render_finished, NULL);
-	vkDestroySemaphore(device, frame.semaphore_compute_matrices_finished, NULL);
 
 	vkDestroyFence(device, frame.fence_frame_ready, NULL);
 	vkDestroyFence(device, frame.fence_buffers_up_to_date, NULL);
 
 	destroy_buffer(&frame.model_buffer);
 	destroy_buffer(&frame.index_buffer);
+}
+
+frame_array_t create_frame_array(const frame_array_create_info_t frame_array_create_info) {
+
+	static const uint32_t max_num_frames = 3;
+
+	frame_array_t frame_array = { 
+		.num_frames = 0,
+		.frames = NULL,
+		.buffer_memory = VK_NULL_HANDLE,
+		.device = VK_NULL_HANDLE
+	};
+
+	if (frame_array_create_info.num_frames == 0) {
+		frame_array.num_frames = 1;
+	}
+	else if (frame_array_create_info.num_frames > max_num_frames) {
+		frame_array.num_frames = max_num_frames;
+	}
+	else {
+		frame_array.num_frames = frame_array_create_info.num_frames;
+	}
+
+	if (!allocate((void **)frame_array.frames, frame_array.num_frames, sizeof(frame_t))) {
+		log_message(ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
+		return (frame_array_t){ 0 };
+	}
+
+	static const VkDeviceSize vertex_buffer_size = 5120 + 81920;
+	static const VkDeviceSize index_buffer_size = 768 + 12288;
+
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		
+		const VkSemaphoreCreateInfo semaphore_create_info = {
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+			.pNext = NULL,
+			.flags = 0
+		};
+
+		const VkFenceCreateInfo fence_create_info = {
+			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+			.pNext = NULL,
+			.flags = VK_FENCE_CREATE_SIGNALED_BIT
+		};
+
+	}
+
+	return frame_array;
 }
