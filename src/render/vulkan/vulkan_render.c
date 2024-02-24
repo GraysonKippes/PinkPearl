@@ -178,6 +178,8 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	uint32_t image_index = 0;
 
 	vkWaitForFences(device, 1, &FRAME.fence_frame_ready, VK_TRUE, UINT64_MAX);
+	vkResetFences(device, 1, &FRAME.fence_frame_ready);
+	vkResetCommandBuffer(FRAME.command_buffer, 0);
 
 	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, FRAME.semaphore_image_available, VK_NULL_HANDLE, &image_index);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -190,13 +192,6 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	// Compute matrices
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
 	compute_matrices(tick_delta_time, projection_bounds, camera_position, render_object_positions);
-
-	// TODO - revise pre-render compute synchronization to use semaphores instead;
-	// 	this would allow graphics command buffer record to happen on the CPU 
-	// 	while the compute command buffers are still being executed on the GPU.
-	vkQueueWaitIdle(compute_queue);
-	vkResetFences(device, 1, &FRAME.fence_frame_ready);
-	vkResetCommandBuffer(FRAME.command_buffer, 0);
 
 	const VkDescriptorBufferInfo matrix_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
 
