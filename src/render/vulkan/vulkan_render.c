@@ -17,96 +17,7 @@
 #include "compute/compute_room_texture.h"
 #include "compute/compute_area_mesh.h"
 
-
-
-// TODO - collate storage buffers as much as possible, and move to vulkan_manager.
-
-// Buffers for compute_matrices shader.
-static buffer_t matrix_buffer;		// Storage - GPU only
-
-// TODO - move this into general texture functionality.
-static image_t room_texture_pbr;	// Graphics - GPU only
-
-// TODO - temporary synchronization for buffer transfer operations.
-static VkFence transfer_fences[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
-
 static void transfer_model_data(void);
-
-
-
-void create_vulkan_render_buffers(void) {
-
-	log_message(VERBOSE, "Creating Vulkan render buffers...");
-
-	static const VkDeviceSize num_matrices = NUM_RENDER_OBJECT_SLOTS + 2;
-	static const VkDeviceSize matrix4F_size = 16 * sizeof(float);
-	static const VkDeviceSize matrix_buffer_size = num_matrices * matrix4F_size;
-
-	matrix_buffer = create_buffer(physical_device.handle, device, matrix_buffer_size, 
-			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			queue_family_set_null);
-}
-
-// TEST
-void create_pbr_texture(void) {
-
-	VkDeviceSize staging_buffer_size = 256 * 160 * 4;
-
-	buffer_t image_staging_buffer_2 = create_buffer(physical_device.handle, device, staging_buffer_size, 
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			queue_family_set_null);
-
-	image_data_t image_data = load_image_data("../resources/assets/textures/pbr_test_2.png", 0);
-
-	map_data_to_whole_buffer(device, image_staging_buffer_2, image_data.data);
-
-	image_dimensions_t room_texture_dimensions = { (uint32_t)image_data.width, (uint32_t)image_data.height };
-
-	queue_family_set_t queue_family_set_0 = {
-		.num_queue_families = 2,
-		.queue_families = (uint32_t[2]){
-			*physical_device.queue_family_indices.graphics_family_ptr,
-			*physical_device.queue_family_indices.transfer_family_ptr,
-		}
-	};
-
-	room_texture_pbr = create_image(physical_device.handle, device, 
-			room_texture_dimensions, 
-			VK_FORMAT_R8G8B8A8_SRGB, true,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-			queue_family_set_0);
-
-	transition_image_layout(graphics_queue, render_command_pool, &room_texture_pbr, IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_TRANSFER_DST);
-
-	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
-	allocate_command_buffers(device, transfer_command_pool, 1, &transfer_command_buffer);
-	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-	VkBufferImageCopy2 copy_region = make_buffer_image_copy((VkOffset2D){ 0 }, (VkExtent2D){ 256, 160 });
-
-	VkCopyBufferToImageInfo2 copy_info = { 0 };
-	copy_info.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2;
-	copy_info.pNext = NULL;
-	copy_info.srcBuffer = image_staging_buffer_2.handle;
-	copy_info.dstImage = room_texture_pbr.handle;
-	copy_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	copy_info.regionCount = 1;
-	copy_info.pRegions = &copy_region;
-
-	vkCmdCopyBufferToImage2(transfer_command_buffer, &copy_info);
-
-	vkEndCommandBuffer(transfer_command_buffer);
-	submit_command_buffers_async(transfer_queue, 1, &transfer_command_buffer);
-	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
-
-	destroy_buffer(&image_staging_buffer_2);
-	free_image_data(image_data);
-
-	transition_image_layout(graphics_queue, render_command_pool, &room_texture_pbr, IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_SHADER_READ_ONLY);
-}
 
 void create_vulkan_render_objects(void) {
 
@@ -115,24 +26,6 @@ void create_vulkan_render_objects(void) {
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
 	init_compute_area_mesh(device);
-	create_vulkan_render_buffers();
-	create_pbr_texture();
-
-	const VkFenceCreateInfo fence_create_info = {
-		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = VK_FENCE_CREATE_SIGNALED_BIT
-	};
-	
-	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
-		const VkResult fence_create_result = vkCreateFence(device, &fence_create_info, NULL, &transfer_fences[i]);
-		if (fence_create_result < 0) {
-			logf_message(ERROR, "Error creating Vulkan render objects: fence creation failed (result code: %i).", fence_create_result);
-		}
-		else if (fence_create_result > 0) {
-			logf_message(WARNING, "Warning creating Vulkan render objects: fence creation returned with warning (result code: %i).", fence_create_result);
-		}
-	}
 }
 
 void destroy_vulkan_render_objects(void) {
@@ -141,8 +34,6 @@ void destroy_vulkan_render_objects(void) {
 
 	log_message(VERBOSE, "Destroying Vulkan render objects...");
 
-	destroy_buffer(&matrix_buffer);
-	destroy_image(room_texture_pbr);
 	terminate_compute_room_texture();
 	terminate_compute_matrices();
 	destroy_textures();
@@ -186,12 +77,28 @@ void stage_model_data(uint32_t slot, model_t model) {
 
 static void transfer_model_data(void) {
 
+	// TODO - use deletion queue to delete command buffers after execution, instead of reusing same command buffers.
+
 	static VkCommandBuffer transfer_command_buffers[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
 
-	// TODO - use the timeline semaphore instead.
-	vkWaitForFences(device, 1, transfer_fences, VK_TRUE, UINT64_MAX);
-	vkResetFences(device, 1, transfer_fences);
+	VkSemaphore wait_semaphores[NUM_FRAMES_IN_FLIGHT];
+	uint64_t wait_semaphore_values[NUM_FRAMES_IN_FLIGHT];
 
+	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
+		wait_semaphores[i] = frames[i].semaphore_buffers_ready.semaphore;
+		wait_semaphore_values[i] = frames[i].semaphore_buffers_ready.wait_counter;
+	}
+
+	const VkSemaphoreWaitInfo semaphore_wait_info = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.semaphoreCount = num_frames_in_flight,
+		.pSemaphores = wait_semaphores,
+		.pValues = wait_semaphore_values
+	};
+
+	vkWaitSemaphores(device, &semaphore_wait_info, UINT64_MAX);
 	vkFreeCommandBuffers(device, transfer_command_pool, num_frames_in_flight, transfer_command_buffers);
 	allocate_command_buffers(device, transfer_command_pool, num_frames_in_flight, transfer_command_buffers);
 
@@ -262,7 +169,7 @@ static void transfer_model_data(void) {
 			.pSignalSemaphoreInfos = &semaphore_signal_submit_infos[i]
 		};
 	}
-	vkQueueSubmit2(transfer_queue, num_frames_in_flight, submit_infos, transfer_fences[0]);
+	vkQueueSubmit2(transfer_queue, num_frames_in_flight, submit_infos, VK_NULL_HANDLE);
 }
 
 // Send the drawing commands to the GPU to draw the frame.
@@ -293,7 +200,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 	const VkDescriptorBufferInfo matrix_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
 
-	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };
+	VkWriteDescriptorSet descriptor_writes[2] = { { 0 } };
 
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[0].dstSet = FRAME.descriptor_set;
@@ -333,22 +240,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	descriptor_writes[1].pImageInfo = texture_infos;
 	descriptor_writes[1].pTexelBufferView = NULL;
 
-	VkDescriptorImageInfo room_texture_pbr_info = { 0 };
-	room_texture_pbr_info.sampler = sampler_default;
-	room_texture_pbr_info.imageView = room_texture_pbr.view;
-	room_texture_pbr_info.imageLayout = room_texture_pbr.layout;
-
-	descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[2].dstSet = FRAME.descriptor_set;
-	descriptor_writes[2].dstBinding = 2;
-	descriptor_writes[2].dstArrayElement = 0;
-	descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptor_writes[2].descriptorCount = 1;
-	descriptor_writes[2].pBufferInfo = NULL;
-	descriptor_writes[2].pImageInfo = &room_texture_pbr_info;
-	descriptor_writes[2].pTexelBufferView = NULL;
-
-	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, NULL);
+	vkUpdateDescriptorSets(device, 2, descriptor_writes, 0, NULL);
 
 
 
@@ -442,7 +334,6 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	};
 
 	vkQueueSubmit2(graphics_queue, 1, &submit_info, FRAME.fence_frame_ready);
-
 
 
 

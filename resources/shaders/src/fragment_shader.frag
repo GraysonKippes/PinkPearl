@@ -12,7 +12,6 @@ layout(push_constant) uniform draw_data_t {
 // PBR map ()
 
 layout(binding = 1) uniform sampler2DArray[NUM_MODELS] texture_samplers;
-layout(binding = 2) uniform sampler2DArray pbr_sampler;
 
 layout(location = 0) in vec2 frag_tex_coord;
 layout(location = 1) in vec3 frag_position;	// Model space
