@@ -15,13 +15,14 @@
 #include "../vertex_input.h"
 #include "../vulkan_manager.h"
 
-static const descriptor_binding_t compute_area_mesh_bindings[2] = {
+static const descriptor_binding_t compute_area_mesh_bindings[3] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
 };
 
 static const descriptor_layout_t compute_area_mesh_layout = {
-	.num_bindings = 2,
+	.num_bindings = 3,
 	.bindings = (descriptor_binding_t *)compute_area_mesh_bindings
 };
 
@@ -45,7 +46,7 @@ void compute_area_mesh(const area_t area) {
 	log_message(VERBOSE, "Generating area mesh...");
 
 	const uint32_t dispatch_x = area.num_rooms;
-	const uint32_t dispatch_y = 4; // Number of vertices per room.
+	const uint32_t dispatch_y = 1;
 	const uint32_t dispatch_z = 1;
 
 	offset_t *room_positions = NULL;
@@ -79,9 +80,10 @@ void compute_area_mesh(const area_t area) {
 	}
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 2);
-	const VkDescriptorBufferInfo storage_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 1);
+	const VkDescriptorBufferInfo vertices_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 1);
+	const VkDescriptorBufferInfo indices_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 2);
 
-	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
+	VkWriteDescriptorSet write_descriptor_sets[3] = { { 0 } };
 	
 	write_descriptor_sets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	write_descriptor_sets[0].pNext = NULL;
@@ -102,10 +104,21 @@ void compute_area_mesh(const area_t area) {
 	write_descriptor_sets[1].descriptorCount = 1;
 	write_descriptor_sets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	write_descriptor_sets[1].pImageInfo = NULL;
-	write_descriptor_sets[1].pBufferInfo = &storage_buffer_info;
+	write_descriptor_sets[1].pBufferInfo = &vertices_buffer_info;
 	write_descriptor_sets[1].pTexelBufferView = NULL;
 
-	vkUpdateDescriptorSets(compute_area_mesh_pipeline.device, 2, write_descriptor_sets, 0, NULL);
+	write_descriptor_sets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	write_descriptor_sets[2].pNext = NULL;
+	write_descriptor_sets[2].dstSet = descriptor_set;
+	write_descriptor_sets[2].dstBinding = 2;
+	write_descriptor_sets[2].dstArrayElement = 0;
+	write_descriptor_sets[2].descriptorCount = 1;
+	write_descriptor_sets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	write_descriptor_sets[2].pImageInfo = NULL;
+	write_descriptor_sets[2].pBufferInfo = &indices_buffer_info;
+	write_descriptor_sets[2].pTexelBufferView = NULL;
+
+	vkUpdateDescriptorSets(compute_area_mesh_pipeline.device, 3, write_descriptor_sets, 0, NULL);
 
 	VkCommandBuffer compute_command_buffer = VK_NULL_HANDLE;
 	allocate_command_buffers(device, compute_command_pool, 1, &compute_command_buffer);
@@ -118,4 +131,52 @@ void compute_area_mesh(const area_t area) {
 	vkEndCommandBuffer(compute_command_buffer);
 	submit_command_buffers_async(compute_queue, 1, &compute_command_buffer);
 	vkFreeCommandBuffers(device, compute_command_pool, 1, &compute_command_buffer);
+
+	/* TRANSFER */
+
+	VkCommandBuffer transfer_command_buffers[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
+	allocate_command_buffers(device, transfer_command_pool, num_frames_in_flight, transfer_command_buffers);
+
+	const VkBufferCopy vertex_buffer_copy = { 
+		.srcOffset = global_storage_buffer_partition.ranges[1].offset,
+		.dstOffset = 5120,
+		.size = global_storage_buffer_partition.ranges[1].size
+		
+	};
+
+	const VkBufferCopy index_buffer_copy = { 
+		.srcOffset = global_storage_buffer_partition.ranges[2].offset,
+		.dstOffset = 768,
+		.size = global_storage_buffer_partition.ranges[2].size
+	};
+
+	VkCommandBufferSubmitInfo command_buffer_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSemaphoreSubmitInfo semaphore_wait_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSemaphoreSubmitInfo semaphore_signal_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSubmitInfo2 submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	
+	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
+
+		begin_command_buffer(transfer_command_buffers[i], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].model_buffer.handle, 1, &vertex_buffer_copy);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].index_buffer.handle, 1, &index_buffer_copy);
+		vkEndCommandBuffer(transfer_command_buffers[i]);
+
+		command_buffer_submit_infos[i] = make_command_buffer_submit_info(transfer_command_buffers[i]);
+		semaphore_wait_submit_infos[i] = make_timeline_semaphore_wait_submit_info(frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		semaphore_signal_submit_infos[i] = make_timeline_semaphore_signal_submit_info(frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		frames[i].semaphore_buffers_ready.wait_counter += 1;
+
+		submit_infos[i] = (VkSubmitInfo2){
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			.pNext = NULL,
+			.waitSemaphoreInfoCount = 1,
+			.pWaitSemaphoreInfos = &semaphore_wait_submit_infos[i],
+			.commandBufferInfoCount = 1,
+			.pCommandBufferInfos = &command_buffer_submit_infos[i],
+			.signalSemaphoreInfoCount = 1,
+			.pSignalSemaphoreInfos = &semaphore_signal_submit_infos[i]
+		};
+	}
+	vkQueueSubmit2(transfer_queue, num_frames_in_flight, submit_infos, VK_NULL_HANDLE);
 }

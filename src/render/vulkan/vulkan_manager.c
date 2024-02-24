@@ -150,10 +150,11 @@ static void create_global_storage_buffer(void) {
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
 		.queue_family_indices = NULL,
-		.num_partition_sizes = 2,
-		.partition_sizes = (VkDeviceSize[2]){
+		.num_partition_sizes = 3,
+		.partition_sizes = (VkDeviceSize[3]){
 			4224,	// Compute matrices
-			81920	// Mesh data for area
+			81920,	// Area mesh data--vertices
+			12288	// Area mesh data--indices
 		}
 	};
 	
