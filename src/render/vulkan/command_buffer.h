@@ -17,6 +17,8 @@ void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFl
 
 void begin_render_pass(VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkExtent2D extent, VkClearValue *clear_value);
 
+VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer command_buffer);
+
 // Submits command buffers to the specified queue, without synchronization from either semaphores or fences.
 // Useful for single-use command buffers such as those used for transfer operations.
 void submit_command_buffers_async(VkQueue queue, uint32_t num_command_buffers, VkCommandBuffer *command_buffers);

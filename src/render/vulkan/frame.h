@@ -6,6 +6,7 @@
 #include "buffer.h"
 #include "descriptor.h"
 #include "physical_device.h"
+#include "synchronization.h"
 
 // The frame is a set of resources used in drawing a frame.
 // They are placed in a struct for easy duplication, so that multiple frames can be pipelined.
@@ -23,15 +24,17 @@ typedef struct frame_t {
 	VkSemaphore semaphore_image_available;
 
 	// Signaled when this frame is done being rendered and can be displayed to the surface.
-	VkSemaphore semaphore_render_finished;
+	binary_semaphore_t semaphore_present_ready;
+	timeline_semaphore_t semaphore_render_finished;
 
 	// Signaled when this frame is done being presented.
 	VkFence fence_frame_ready;
 
 	// Signaled when the buffers are fully updated after a transfer operation.
 	// Unsignaled when there is a pending transfer operation;
-	// 	this can be either when a request is put in to update the buffer data, OR when the request is being currently fulfilled.
-	VkFence fence_buffers_up_to_date;
+	// 	this can be either when a request is put in to update the buffer data, 
+	// 	OR when the request is being currently fulfilled.
+	timeline_semaphore_t semaphore_buffers_ready;
 
 	// Each bit indicates if a slot in the model buffer needs to be updated.
 	uint64_t model_update_flags;
@@ -51,6 +54,7 @@ typedef struct frame_t {
 	// In the future, an additional partition may be added for larger models.
 	// Render handles are used to index into this partition.
 	//
+	// TODO - rename to vertex_buffer
 	buffer_t model_buffer;
 
 	buffer_t index_buffer;
@@ -58,7 +62,6 @@ typedef struct frame_t {
 } frame_t;
 
 frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout);
-
 void destroy_frame(VkDevice device, frame_t frame);
 
 typedef struct frame_array_create_info_t {

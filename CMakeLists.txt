@@ -17,6 +17,7 @@ target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
 	-Werror=implicit-int
 	-Werror=sign-compare
 	-Werror=stringop-overread
+	-Werror=incompatible-pointer-types
 	-Werror=int-conversion
 	-Wno-switch)
 
@@ -74,6 +75,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/queue.c
 	src/render/vulkan/shader.c
 	src/render/vulkan/swapchain.c
+	src/render/vulkan/synchronization.c
 	src/render/vulkan/texture.c
 	src/render/vulkan/texture_loader.c
 	src/render/vulkan/texture_manager.c

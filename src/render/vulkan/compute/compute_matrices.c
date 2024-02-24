@@ -156,15 +156,15 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, v
 
 	vkUpdateDescriptorSets(device, 2, descriptor_writes, 0, NULL);
 
-	//vkResetDescriptorPool(device, compute_matrices_pipeline.descriptor_pool, 0);
 	vkFreeCommandBuffers(compute_matrices_pipeline.device, compute_command_pool, 1, &compute_matrices_command_buffer);
 	allocate_command_buffers(compute_matrices_pipeline.device, compute_command_pool, 1, &compute_matrices_command_buffer);
 
-	VkCommandBufferBeginInfo begin_info = { 0 };
-	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_info.pNext = NULL;
-	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	begin_info.pInheritanceInfo = NULL;
+	const VkCommandBufferBeginInfo begin_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = NULL,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+		.pInheritanceInfo = NULL
+	};
 
 	vkBeginCommandBuffer(compute_matrices_command_buffer, &begin_info);
 

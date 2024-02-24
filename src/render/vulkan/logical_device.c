@@ -59,18 +59,35 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 	uint32_t num_queue_create_infos = 0;
 	VkDeviceQueueCreateInfo *queue_create_infos = make_queue_create_infos(physical_device.queue_family_indices, &num_queue_create_infos);
 
-	VkPhysicalDeviceFeatures device_features = { 0 };
-	device_features.samplerAnisotropy = VK_TRUE;
+	VkPhysicalDeviceVulkan13Features device_vk13_features = { VK_FALSE };
+	device_vk13_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	device_vk13_features.pNext = NULL;
+	device_vk13_features.synchronization2 = VK_TRUE;
+
+	VkPhysicalDeviceVulkan12Features device_vk12_features = { VK_FALSE };
+	device_vk12_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	device_vk12_features.pNext = &device_vk13_features;
+	device_vk12_features.timelineSemaphore = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 device_features = { 
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+		.pNext = &device_vk12_features,
+		.features = (VkPhysicalDeviceFeatures){ 0 }
+	};
+	device_features.features.samplerAnisotropy = VK_TRUE;
 	
-	VkDeviceCreateInfo create_info = {0};
-	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	create_info.pNext = NULL;
-	create_info.flags = 0;
-	create_info.queueCreateInfoCount = num_queue_create_infos;
-	create_info.pQueueCreateInfos = queue_create_infos;
-	create_info.pEnabledFeatures = &device_features;
-	create_info.enabledExtensionCount = physical_device.extension_names.num_strings;
-	create_info.ppEnabledExtensionNames = physical_device.extension_names.strings;
+	VkDeviceCreateInfo create_info = {
+		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+		.pNext = &device_features,
+		.flags = 0,
+		.queueCreateInfoCount = num_queue_create_infos,
+		.pQueueCreateInfos = queue_create_infos,
+		.enabledLayerCount = 0,
+		.ppEnabledLayerNames = NULL,
+		.enabledExtensionCount = physical_device.extension_names.num_strings,
+		.ppEnabledExtensionNames = physical_device.extension_names.strings,
+		.pEnabledFeatures = NULL
+	};
 
 	// Compatibility
 	if (debug_enabled) {

@@ -62,6 +62,15 @@ void begin_render_pass(VkCommandBuffer command_buffer, VkRenderPass render_pass,
 	vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
+VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer command_buffer) {
+	return (VkCommandBufferSubmitInfo){
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		.pNext = NULL,
+		.commandBuffer = command_buffer,
+		.deviceMask = 0
+	};
+}
+
 void submit_command_buffers_async(VkQueue queue, uint32_t num_command_buffers, VkCommandBuffer *command_buffers) {
 
 	VkSubmitInfo submit_info = { 0 };

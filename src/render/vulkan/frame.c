@@ -13,25 +13,42 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 
 	frame_t frame = { 0 };
 
-	VkSemaphoreCreateInfo semaphore_info = { 0 };
-	semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphore_info.pNext = NULL;
-	semaphore_info.flags = 0;
+	const VkSemaphoreCreateInfo semaphore_create_info = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0
+	};
 
-	VkFenceCreateInfo fence_info = { 0 };
-	fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fence_info.pNext = NULL;
-	fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	const VkSemaphoreTypeCreateInfo timeline_semaphore_type_create_info = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+		.pNext = NULL,
+		.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
+		.initialValue = 0
+	};
+
+	const VkSemaphoreCreateInfo timeline_semaphore_create_info = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+		.pNext = &timeline_semaphore_type_create_info,
+		.flags = 0
+	};
+
+	const VkFenceCreateInfo fence_create_info = {
+		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = VK_FENCE_CREATE_SIGNALED_BIT
+	};
 
 	const VkDeviceSize num_elements_per_rect = num_vertices_per_rect * vertex_input_element_stride;
 	const VkDeviceSize model_buffer_size = (num_render_object_slots * num_elements_per_rect) * sizeof(float);
 	const VkDeviceSize index_buffer_size = (num_render_object_slots * num_indices_per_rect) * sizeof(index_t);
 
-	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_image_available);
-	vkCreateSemaphore(device, &semaphore_info, NULL, &frame.semaphore_render_finished);
+	vkCreateSemaphore(device, &semaphore_create_info, NULL, &frame.semaphore_image_available);
+	
+	frame.semaphore_present_ready = create_binary_semaphore(device);
+	frame.semaphore_render_finished = create_timeline_semaphore(device);
+	frame.semaphore_buffers_ready = create_timeline_semaphore(device);
 
-	vkCreateFence(device, &fence_info, NULL, &frame.fence_frame_ready);
-	vkCreateFence(device, &fence_info, NULL, &frame.fence_buffers_up_to_date);
+	vkCreateFence(device, &fence_create_info, NULL, &frame.fence_frame_ready);
 
 	frame.model_update_flags = 0;
 
@@ -73,10 +90,10 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 void destroy_frame(VkDevice device, frame_t frame) {
 
 	vkDestroySemaphore(device, frame.semaphore_image_available, NULL);
-	vkDestroySemaphore(device, frame.semaphore_render_finished, NULL);
-
+	destroy_binary_semaphore(&frame.semaphore_present_ready);
+	destroy_timeline_semaphore(&frame.semaphore_render_finished);
+	destroy_timeline_semaphore(&frame.semaphore_buffers_ready);
 	vkDestroyFence(device, frame.fence_frame_ready, NULL);
-	vkDestroyFence(device, frame.fence_buffers_up_to_date, NULL);
 
 	destroy_buffer(&frame.model_buffer);
 	destroy_buffer(&frame.index_buffer);

@@ -27,6 +27,11 @@ static buffer_t matrix_buffer;		// Storage - GPU only
 // TODO - move this into general texture functionality.
 static image_t room_texture_pbr;	// Graphics - GPU only
 
+// TODO - temporary synchronization for buffer transfer operations.
+static VkFence transfer_fences[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
+
+static void transfer_model_data(void);
+
 
 
 void create_vulkan_render_buffers(void) {
@@ -112,6 +117,22 @@ void create_vulkan_render_objects(void) {
 	init_compute_area_mesh(device);
 	create_vulkan_render_buffers();
 	create_pbr_texture();
+
+	const VkFenceCreateInfo fence_create_info = {
+		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = VK_FENCE_CREATE_SIGNALED_BIT
+	};
+	
+	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
+		const VkResult fence_create_result = vkCreateFence(device, &fence_create_info, NULL, &transfer_fences[i]);
+		if (fence_create_result < 0) {
+			logf_message(ERROR, "Error creating Vulkan render objects: fence creation failed (result code: %i).", fence_create_result);
+		}
+		else if (fence_create_result > 0) {
+			logf_message(WARNING, "Warning creating Vulkan render objects: fence creation returned with warning (result code: %i).", fence_create_result);
+		}
+	}
 }
 
 void destroy_vulkan_render_objects(void) {
@@ -135,14 +156,12 @@ void stage_model_data(uint32_t slot, model_t model) {
 	// Vertex Data
 
 	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
-		vkResetFences(device, 1, &frames[i].fence_buffers_up_to_date);
 		frames[i].model_update_flags |= (1LL << (uint64_t)slot);
 	}
 
 	// Model size is standard rect model size (4 vertices * 5 sp-floats per vertex * 4 bytes per sp-float = 80 bytes)
 	VkDeviceSize model_size = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	VkDeviceSize model_offset = slot * model_size;
-
 	memcpy((mapped_memory + model_offset), model.vertices, model_size);
 
 	// Index Data
@@ -161,15 +180,31 @@ void stage_model_data(uint32_t slot, model_t model) {
 	}
 
 	memcpy((mapped_memory + indices_offset), rect_indices, indices_size);
-
 	buffer_partition_unmap_memory(global_staging_buffer_partition);
+	transfer_model_data();
 }
 
-void transfer_model_data(void) {
+static void transfer_model_data(void) {
 
-	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
-	allocate_command_buffers(device, transfer_command_pool, 1, &transfer_command_buffer);
-	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	static VkCommandBuffer transfer_command_buffers[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
+
+	// TODO - use the timeline semaphore instead.
+	vkWaitForFences(device, 1, transfer_fences, VK_TRUE, UINT64_MAX);
+	vkResetFences(device, 1, transfer_fences);
+
+	vkFreeCommandBuffers(device, transfer_command_pool, num_frames_in_flight, transfer_command_buffers);
+	allocate_command_buffers(device, transfer_command_pool, num_frames_in_flight, transfer_command_buffers);
+
+	const VkCommandBufferBeginInfo begin_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = NULL,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+		.pInheritanceInfo = NULL
+	};
+
+	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
+		vkBeginCommandBuffer(transfer_command_buffers[i], &begin_info);
+	}
 
 	VkBufferCopy vertex_copy_regions[NUM_RENDER_OBJECT_SLOTS] = { { 0 } };
 	VkBufferCopy index_copy_regions[NUM_RENDER_OBJECT_SLOTS] = { { 0 } };
@@ -200,23 +235,34 @@ void transfer_model_data(void) {
 		++num_pending_models;
 	}
 
-	FRAME.model_update_flags = 0;
+	VkCommandBufferSubmitInfo command_buffer_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSemaphoreSubmitInfo semaphore_wait_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSemaphoreSubmitInfo semaphore_signal_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSubmitInfo2 submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
 
-	vkCmdCopyBuffer(transfer_command_buffer, global_staging_buffer_partition.buffer, FRAME.model_buffer.handle, num_pending_models, vertex_copy_regions);
-	vkCmdCopyBuffer(transfer_command_buffer, global_staging_buffer_partition.buffer, FRAME.index_buffer.handle, num_pending_models, index_copy_regions);
+	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
 
-	vkEndCommandBuffer(transfer_command_buffer);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].model_buffer.handle, num_pending_models, vertex_copy_regions);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].index_buffer.handle, num_pending_models, index_copy_regions);
+		vkEndCommandBuffer(transfer_command_buffers[i]);
 
-	VkSubmitInfo submit_info = { 0 };
-	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit_info.pNext = NULL;
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &transfer_command_buffer;
+		command_buffer_submit_infos[i] = make_command_buffer_submit_info(transfer_command_buffers[i]);
+		semaphore_wait_submit_infos[i] = make_timeline_semaphore_wait_submit_info(frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		semaphore_signal_submit_infos[i] = make_timeline_semaphore_signal_submit_info(frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		frames[i].semaphore_buffers_ready.wait_counter += 1;
 
-	// TODO - use better synchronization, probably semaphores.
-	vkQueueSubmit(transfer_queue, 1, &submit_info, FRAME.fence_buffers_up_to_date);
-	vkQueueWaitIdle(transfer_queue);
-	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
+		submit_infos[i] = (VkSubmitInfo2){
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			.pNext = NULL,
+			.waitSemaphoreInfoCount = 1,
+			.pWaitSemaphoreInfos = &semaphore_wait_submit_infos[i],
+			.commandBufferInfoCount = 1,
+			.pCommandBufferInfos = &command_buffer_submit_infos[i],
+			.signalSemaphoreInfoCount = 1,
+			.pSignalSemaphoreInfos = &semaphore_signal_submit_infos[i]
+		};
+	}
+	vkQueueSubmit2(transfer_queue, num_frames_in_flight, submit_infos, transfer_fences[0]);
 }
 
 // Send the drawing commands to the GPU to draw the frame.
@@ -227,17 +273,11 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	vkWaitForFences(device, 1, &FRAME.fence_frame_ready, VK_TRUE, UINT64_MAX);
 
 	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, FRAME.semaphore_image_available, VK_NULL_HANDLE, &image_index);
-	
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
 		// TODO - error handling
-	}
-
-	// If the buffers of this frame are not up-to-date, update them.
-	if (vkGetFenceStatus(device, FRAME.fence_buffers_up_to_date) == VK_NOT_READY) {
-		transfer_model_data();
 	}
 
 	// Compute matrices
@@ -248,7 +288,6 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	// 	this would allow graphics command buffer record to happen on the CPU 
 	// 	while the compute command buffers are still being executed on the GPU.
 	vkQueueWaitIdle(compute_queue);
-	vkWaitForFences(device, 1, &FRAME.fence_buffers_up_to_date, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &FRAME.fence_frame_ready);
 	vkResetCommandBuffer(FRAME.command_buffer, 0);
 
@@ -362,44 +401,64 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 
 
-	const VkSemaphore wait_semaphores[2] = {
-		FRAME.semaphore_image_available,
-		compute_matrices_semaphore
+	const VkCommandBufferSubmitInfo command_buffer_submit_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		.pNext = NULL,
+		.commandBuffer = FRAME.command_buffer,
+		.deviceMask = 0
 	};
 
-	const VkPipelineStageFlags wait_stages[2] = { 
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+	VkSemaphoreSubmitInfo wait_semaphore_submit_infos[3] = { 0 };
+	wait_semaphore_submit_infos[1] = make_timeline_semaphore_wait_submit_info(FRAME.semaphore_buffers_ready, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT);
+
+	wait_semaphore_submit_infos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	wait_semaphore_submit_infos[0].pNext = NULL;
+	wait_semaphore_submit_infos[0].semaphore = FRAME.semaphore_image_available;
+	wait_semaphore_submit_infos[0].value = 0;
+	wait_semaphore_submit_infos[0].stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+	wait_semaphore_submit_infos[0].deviceIndex = 0;
+
+	wait_semaphore_submit_infos[2].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	wait_semaphore_submit_infos[2].pNext = NULL;
+	wait_semaphore_submit_infos[2].semaphore = compute_matrices_semaphore;
+	wait_semaphore_submit_infos[2].value = 0;
+	wait_semaphore_submit_infos[2].stageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+	wait_semaphore_submit_infos[2].deviceIndex = 0;
+
+	VkSemaphoreSubmitInfo signal_semaphore_submit_infos[1] = { 0 };
+	signal_semaphore_submit_infos[0] = make_timeline_semaphore_signal_submit_info(FRAME.semaphore_render_finished, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT);
+	FRAME.semaphore_render_finished.wait_counter += 1;
+
+	const VkSubmitInfo2 submit_info = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+		.pNext = NULL,
+		.flags = 0,
+		.waitSemaphoreInfoCount = 3,
+		.pWaitSemaphoreInfos = wait_semaphore_submit_infos,
+		.commandBufferInfoCount = 1,
+		.pCommandBufferInfos = &command_buffer_submit_info,
+		.signalSemaphoreInfoCount = 1,
+		.pSignalSemaphoreInfos = signal_semaphore_submit_infos
 	};
 
-	VkSubmitInfo submit_info = { 0 };
-	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit_info.pNext = NULL;
-	submit_info.waitSemaphoreCount = 2;
-	submit_info.pWaitSemaphores = wait_semaphores;
-	submit_info.pWaitDstStageMask = wait_stages;
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &FRAME.command_buffer;
-	submit_info.signalSemaphoreCount = 1;
-	submit_info.pSignalSemaphores = &FRAME.semaphore_render_finished;
-
-	if (vkQueueSubmit(graphics_queue, 1, &submit_info, FRAME.fence_frame_ready) != VK_SUCCESS) {
-		// TODO - error handling
-	}
+	vkQueueSubmit2(graphics_queue, 1, &submit_info, FRAME.fence_frame_ready);
 
 
 
-	VkPresentInfoKHR present_info = { 0 };
-	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	present_info.pNext = NULL;
-	present_info.waitSemaphoreCount = 1;
-	present_info.pWaitSemaphores = &FRAME.semaphore_render_finished;
-	present_info.swapchainCount = 1;
-	present_info.pSwapchains = &swapchain.handle;
-	present_info.pImageIndices = &image_index;
-	present_info.pResults = NULL;
 
+	const VkPresentInfoKHR present_info = {
+		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.pNext = NULL,
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = &FRAME.semaphore_present_ready.semaphore,
+		.swapchainCount = 1,
+		.pSwapchains = &swapchain.handle,
+		.pImageIndices = &image_index,
+		.pResults = NULL
+	};
+
+	timeline_to_binary_semaphore_signal(graphics_queue, FRAME.semaphore_render_finished, FRAME.semaphore_present_ready);
 	vkQueuePresentKHR(present_queue, &present_info);
 
-	current_frame = (current_frame + 1) % NUM_FRAMES_IN_FLIGHT;
+	current_frame = (current_frame + 1) % num_frames_in_flight;
 }
