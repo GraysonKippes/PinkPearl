@@ -11,7 +11,7 @@ const uint32_t render_handle_dangling = render_handle_invalid - 1;
 render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
 texture_state_t render_object_texture_states[NUM_RENDER_OBJECT_SLOTS];
 
-static uint64_t render_object_slot_enabled_flags = 3;
+static uint64_t render_object_slot_enabled_flags = 0;
 
 render_handle_t load_render_object(void) {
 
@@ -21,7 +21,6 @@ render_handle_t load_render_object(void) {
 
 	for (uint32_t i = 0; i < num_render_object_slots && i < 64; ++i) {
 		if (is_bit_off(render_object_slot_enabled_flags, i)) {
-			//render_object_slot_enabled_flags = set_bit_on(render_object_slot_enabled_flags, i);
 			enable_render_object_slot(i);
 			return (render_handle_t)i;
 		}
@@ -64,10 +63,6 @@ void enable_render_object_slot(const uint32_t slot) {
 
 bool validate_render_handle(render_handle_t handle) {
 	return handle < num_render_object_slots && handle < flags_bitwidth;
-}
-
-bool is_render_handle_to_room_render_object(render_handle_t handle) {
-	return handle < num_room_render_object_slots;
 }
 
 render_position_t *get_render_position_ptr(render_handle_t handle) {

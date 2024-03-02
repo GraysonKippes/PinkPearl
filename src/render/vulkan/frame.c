@@ -41,7 +41,7 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 	//const VkDeviceSize num_elements_per_rect = num_vertices_per_rect * vertex_input_element_stride;
 	//const VkDeviceSize model_buffer_size = (num_render_object_slots * num_elements_per_rect) * sizeof(float);
 	//const VkDeviceSize index_buffer_size = (num_render_object_slots * num_indices_per_rect) * sizeof(index_t);
-	const VkDeviceSize model_buffer_size = 5120 + 81920;
+	const VkDeviceSize model_buffer_size = (num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float)) + 81920;
 	const VkDeviceSize index_buffer_size = 768 + 12288;
 
 	vkCreateSemaphore(device, &semaphore_create_info, NULL, &frame.semaphore_image_available);

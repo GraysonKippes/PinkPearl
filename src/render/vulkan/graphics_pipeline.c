@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "game/area/room.h"
 #include "log/logging.h"
 #include "render/render_config.h"
 
@@ -13,7 +14,7 @@
 
 static descriptor_binding_t graphics_descriptor_bindings[2] = {
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = NUM_RENDER_OBJECT_SLOTS, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },
+	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_SIZES, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },
 };
 
 const descriptor_layout_t graphics_descriptor_set_layout = {
@@ -123,7 +124,9 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 	create_graphics_pipeline_layout(device, pipeline.descriptor_set_layout, &pipeline.layout);
 
 	VkVertexInputBindingDescription binding_description = get_binding_description();
-	VkVertexInputAttributeDescription *attribute_descriptions = get_attribute_descriptions();
+
+	VkVertexInputAttributeDescription attribute_descriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { 0 } };
+	get_attribute_descriptions(attribute_descriptions);
 
 	VkPipelineVertexInputStateCreateInfo vertex_input_info = { 0 };
 	vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -131,7 +134,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 	vertex_input_info.flags = 0;
 	vertex_input_info.vertexBindingDescriptionCount = 1;
 	vertex_input_info.pVertexBindingDescriptions = &binding_description;
-	vertex_input_info.vertexAttributeDescriptionCount = VERTEX_INPUT_NUM_ATTRIBUTES;
+	vertex_input_info.vertexAttributeDescriptionCount = vertex_input_num_attributes;
 	vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions;
 
 	VkViewport viewport = make_viewport(swapchain.extent);
@@ -168,8 +171,6 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
 	}
-
-	free(attribute_descriptions);
 
 	return pipeline;
 }

@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-void update_render_position(render_position_t *render_position_ptr, vector3F_t new_position) {
+void update_render_position(render_position_t *const render_position_ptr, vector3F_t new_position) {
 
 	if (render_position_ptr == NULL) {
 		return;
@@ -12,7 +12,7 @@ void update_render_position(render_position_t *render_position_ptr, vector3F_t n
 	render_position_ptr->position = new_position;
 }
 
-void reset_render_position(render_position_t *render_position_ptr, vector3F_t new_position) {
+void reset_render_position(render_position_t *const render_position_ptr, vector3F_t new_position) {
 
 	if (render_position_ptr == NULL) {
 		return;
@@ -22,7 +22,7 @@ void reset_render_position(render_position_t *render_position_ptr, vector3F_t ne
 	render_position_ptr->previous_position = new_position;
 }
 
-void settle_render_position(render_position_t *render_position_ptr) {
+void settle_render_position(render_position_t *const render_position_ptr) {
 
 	if (render_position_ptr == NULL) {
 		return;

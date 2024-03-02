@@ -106,9 +106,10 @@ static void create_global_staging_buffer(void) {
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
 		.queue_family_indices = NULL,
-		.num_partition_sizes = 2,
-		.partition_sizes = (VkDeviceSize[2]){
-			5120,	// Render object model data
+		.num_partition_sizes = 3,
+		.partition_sizes = (VkDeviceSize[3]){
+			5120,	// Render object mesh data--vertices
+			768,	// Render object mesh data--indices
 			262144	// Loaded image data
 
 		}

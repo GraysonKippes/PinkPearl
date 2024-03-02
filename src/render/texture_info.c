@@ -78,7 +78,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 
 		static const size_t max_path_len = 64;
 
-		texture_create_info_t *restrict info_ptr = texture_pack.texture_create_infos + i;
+		texture_create_info_t *info_ptr = texture_pack.texture_create_infos + i;
 
 		if (!allocate((void **)&info_ptr->path, max_path_len, sizeof(char))) {
 			log_message(ERROR, "Error reading texture file: texture create info path allocation failed.");
@@ -154,6 +154,8 @@ texture_pack_t parse_fgt_file(const char *path) {
 
 			for (uint32_t j = 0; j < info_ptr->num_animations; ++j) {
 
+				info_ptr->animations[j].cell_extent = info_ptr->cell_extent;
+
 				if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].start_cell)) {
 					logf_message(ERROR, "Error reading texture file: texture %u, animation %u: failed to read starting cell index.", i, j);
 					goto end_read;
@@ -181,6 +183,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 				goto end_read;
 			}
 
+			info_ptr->animations[0].cell_extent = info_ptr->cell_extent;
 			info_ptr->animations[0].start_cell = 0;
 			info_ptr->animations[0].num_frames = 1;
 			info_ptr->animations[0].frames_per_second = 0;

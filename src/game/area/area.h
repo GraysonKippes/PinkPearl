@@ -11,13 +11,13 @@
 typedef struct area_t {
 
 	char *name;
-
 	char *tilemap_name;
 
 	// The extent of this area in number of rooms.
 	area_extent_t extent;
 
 	// The extent of each room in this area in tiles.
+	room_size_t room_size;
 	extent_t room_extent;
 
 	// The rooms in this area.

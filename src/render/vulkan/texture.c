@@ -57,15 +57,14 @@ static VkImage create_texture_image(const texture_t texture, const texture_creat
 		queue_family_indices[1] = *physical_device.queue_family_indices.transfer_family_ptr;
 	}
 
-	// Create image.
 	const VkImageCreateInfo image_create_info = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
 		.imageType = VK_IMAGE_TYPE_2D,
 		.format = texture.format,
-		.extent.width = texture_create_info.cell_extent.width,
-		.extent.height = texture_create_info.cell_extent.length,
+		.extent.width = animation_create_info.cell_extent.width,
+		.extent.height = animation_create_info.cell_extent.length,
 		.extent.depth = 1,
 		.mipLevels = 1,
 		.arrayLayers = animation_create_info.num_frames,

@@ -12,6 +12,7 @@
 static const uint32_t num_device_extensions = 1;
 
 static const char *device_extensions[1] = {
+	
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 

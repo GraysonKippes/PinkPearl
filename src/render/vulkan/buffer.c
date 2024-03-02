@@ -152,7 +152,7 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 			buffer_usage_flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 			break;
 		case BUFFER_TYPE_STORAGE:
-			buffer_usage_flags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			buffer_usage_flags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 			break;
 	}
 

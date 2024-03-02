@@ -20,12 +20,14 @@
 // Contains information necessary to create an animation in the texture creation process.
 typedef struct animation_create_info_t {
 
+	extent_t cell_extent;
 	uint32_t start_cell;
 	uint32_t num_frames;
 	uint32_t frames_per_second;
 
 } animation_create_info_t;
 
+// TODO - rename to texture_info_type_t.
 typedef enum texture_type_t {
 	TEXTURE_TYPE_NORMAL = 0,
 	TEXTURE_TYPE_TILEMAP = 1
@@ -40,8 +42,6 @@ typedef struct texture_create_info_t {
 
 	texture_type_t type;
 
-	// TODO - delete one of these extents, probably atlas_extent.
-
 	// Dimensions of the base texture atlas, in texels.
 	extent_t atlas_extent;
 
@@ -49,6 +49,7 @@ typedef struct texture_create_info_t {
 	extent_t num_cells;
 
 	// The dimensions of each cell, in texels.
+	// TODO - delete this, eventually.
 	extent_t cell_extent;
 
 	uint32_t num_animations;
@@ -59,11 +60,8 @@ typedef struct texture_create_info_t {
 // Contains an array of texture create infos.
 // If this is dynamically created, pass it to `destroy_texture_pack` when no longer in use.
 typedef struct texture_pack_t {
-	
 	uint32_t num_textures;
-
 	texture_create_info_t *texture_create_infos;
-
 } texture_pack_t;
 
 

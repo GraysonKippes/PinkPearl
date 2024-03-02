@@ -30,9 +30,6 @@ void enable_render_object_slot(const uint32_t slot);
 // 	returns false otherwise.
 bool validate_render_handle(render_handle_t handle);
 
-// Returns true if the render handle goes to a render object slot dedicated to room render objects.
-bool is_render_handle_to_room_render_object(render_handle_t handle);
-
 // Destroys the previous texture state of the render object controlled by the handle, and sets it to the next texture state.
 bool swap_render_object_texture_state(const render_handle_t render_handle, const texture_state_t texture_state);
 

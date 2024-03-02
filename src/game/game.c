@@ -6,6 +6,7 @@
 
 #include "glfw/input_manager.h"
 #include "log/logging.h"
+#include "render/area_render_state.h"
 #include "render/render_object.h"
 #include "render/renderer.h"
 #include "render/texture_state.h"
@@ -36,9 +37,7 @@ void start_game(void) {
 
 	init_entity_manager();
 	current_area = parse_fga_file("test");
-	upload_room_model(current_area.rooms[0]);
-	// TODO - this is test, remove this eventually...
-	compute_area_mesh(current_area);
+	area_render_state_reset(current_area, current_area.rooms[current_room_index]);
 
 	player_entity_handle = load_entity();
 	if (!validate_entity_handle(player_entity_handle)) {
@@ -49,7 +48,7 @@ void start_game(void) {
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {
 		player_entity_ptr->hitbox = player_hitbox;
-		player_entity_ptr->render_handle = load_render_object(); // DEBUG - this returns 3 instead of 2 for some reason.
+		player_entity_ptr->render_handle = load_render_object();
 		upload_model(player_entity_ptr->render_handle, get_premade_model(0), "entity/pearl");
 		render_object_texture_states[player_entity_ptr->render_handle].current_animation_cycle = 3;
 	}
@@ -68,7 +67,7 @@ void tick_game(void) {
 	four_direction_input_state.flags |= 8 * is_input_pressed_or_held(GLFW_KEY_D);	// RIGHT
 
 	if (game_state_bitfield & (uint32_t)GAME_STATE_SCROLLING) {
-		if (!is_camera_scrolling()) {
+		if (!area_render_state_is_scrolling()) {
 			game_state_bitfield &= ~((uint32_t)GAME_STATE_SCROLLING);
 		}
 		else {
@@ -150,8 +149,7 @@ void tick_game(void) {
 		if (result && next_room_ptr != NULL) {
 			current_room_index = area_get_room_index(current_area, next_room_position);
 			game_state_bitfield |= (uint32_t)GAME_STATE_SCROLLING;
-			upload_room_model(*next_room_ptr);
-			begin_room_scroll(current_area.room_extent, current_room.position, next_room_ptr->position);
+			area_render_state_next_room(*next_room_ptr);
 		}
 	}
 }

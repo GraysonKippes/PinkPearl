@@ -61,7 +61,7 @@ void compute_area_mesh(const area_t area) {
 
 	byte_t *const mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 2);
 	memcpy(mapped_memory, &area.room_extent, sizeof area.room_extent);
-	memcpy(mapped_memory + sizeof area.room_extent, room_positions, area.num_rooms * sizeof *room_positions);
+	memcpy(mapped_memory + sizeof area.room_extent, room_positions, (size_t)area.num_rooms * sizeof(offset_t));
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 	
 	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
@@ -133,13 +133,15 @@ void compute_area_mesh(const area_t area) {
 	vkFreeCommandBuffers(device, compute_command_pool, 1, &compute_command_buffer);
 
 	/* TRANSFER */
+	log_message(VERBOSE, "Transfering area mesh to graphics buffers.");
 
 	VkCommandBuffer transfer_command_buffers[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
 	allocate_command_buffers(device, transfer_command_pool, num_frames_in_flight, transfer_command_buffers);
 
 	const VkBufferCopy vertex_buffer_copy = { 
 		.srcOffset = global_storage_buffer_partition.ranges[1].offset,
-		.dstOffset = 5120,
+		// TODO - use frame buffer partition when it is implemented.
+		.dstOffset = num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float),
 		.size = global_storage_buffer_partition.ranges[1].size
 		
 	};
@@ -158,8 +160,8 @@ void compute_area_mesh(const area_t area) {
 	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
 
 		begin_command_buffer(transfer_command_buffers[i], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].model_buffer.handle, 1, &vertex_buffer_copy);
-		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].index_buffer.handle, 1, &index_buffer_copy);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frames[i].model_buffer.handle, 1, &vertex_buffer_copy);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frames[i].index_buffer.handle, 1, &index_buffer_copy);
 		vkEndCommandBuffer(transfer_command_buffers[i]);
 
 		command_buffer_submit_infos[i] = make_command_buffer_submit_info(transfer_command_buffers[i]);

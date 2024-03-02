@@ -44,6 +44,7 @@ static void make_image_path(const char *const info_path, char *const image_path)
 	}
 }
 
+// Loaded textures are required to have animation create infos all with the same extent.
 texture_t load_texture(const texture_create_info_t texture_create_info) {
 
 	// TODO - modify this to use semaphores between image transitions and data transfer operations.
@@ -55,9 +56,23 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 		return make_null_texture();
 	}
 
+	if (texture_create_info.num_animations == 0) {
+		log_message(ERROR, "Error loading texture: number of animation create infos is zero.");
+	}
+
 	if (texture_create_info.num_animations > 0 && texture_create_info.animations == NULL) {
-		log_message(ERROR, "Error loading texture: number of animations is greater than zero, but array of animation create infos is NULL.");
+		log_message(ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is NULL.");
 		return make_null_texture();
+	}
+
+	const extent_t first_cell_extent = texture_create_info.animations[0].cell_extent;
+	for (uint32_t i = 1; i < texture_create_info.num_animations; ++i) {
+		const extent_t test_cell_extent = texture_create_info.animations[i].cell_extent;
+		if (!extent_equals(first_cell_extent, test_cell_extent)) {
+			logf_message(ERROR, "Error loading texture: animation %u cell extent (%u, %u) is different from first animation cell extent (%u, %u).",
+					i, test_cell_extent.width, test_cell_extent.length, first_cell_extent.width, first_cell_extent.length);
+			return make_null_texture();
+		}
 	}
 
 	texture_t texture = create_texture(texture_create_info);
@@ -79,7 +94,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 	make_image_path(texture_create_info.path, path);
 
 	// Load image data into image staging buffer.
-	byte_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 1);
+	byte_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 2);
 	image_data_t base_image_data = load_image_data(path, 0);
 	const VkDeviceSize base_image_width = base_image_data.width;
 	const VkDeviceSize base_image_height = base_image_data.height;
@@ -160,7 +175,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 			return texture;
 		}
 
-		const VkDeviceSize buffer_partition_offset = global_staging_buffer_partition.ranges[1].offset;
+		const VkDeviceSize buffer_partition_offset = global_staging_buffer_partition.ranges[2].offset;
 		for (uint32_t j = 0; j < num_copy_regions; ++j) {
 
 			copy_regions[j].sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;

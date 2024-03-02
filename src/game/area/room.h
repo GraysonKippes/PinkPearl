@@ -23,19 +23,15 @@ typedef enum room_size_t {
 
 typedef struct room_t {
 
+	int id;
 	room_size_t size;
 	extent_t extent;
+	offset_t position;
 
 	tile_t *tiles;
 
 	unsigned int num_walls;
 	rect_t *walls;
-
-	// Position of this room in its area.
-	offset_t position;
-
-	// Unique ID of this room in its area.
-	int id;
 
 } room_t;
 

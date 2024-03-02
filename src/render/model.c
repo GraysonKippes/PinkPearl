@@ -11,23 +11,16 @@
 #define NUM_PREMADE_MODELS 1
 
 static const uint32_t num_premade_models = NUM_PREMADE_MODELS;
-
 static model_t premade_models[NUM_PREMADE_MODELS];
 
 
 
-const size_t model_index_one_by_one = 0;
-
-const size_t model_index_one_by_one_point_five = 1;
-
-
-
-static const float model0_vertices[20] = {
+static const float model0_vertices[32] = {
 	// Positions		Texture
-	-0.5F, -1.0F, 0.0F,	0.0F, 0.0F,	// Top-left
-	0.5F, -1.0F, 0.0F,	1.0F, 0.0F,	// Top-right
-	0.5F, 0.5F, 0.0F,	1.0F, 1.0F,	// Bottom-right
-	-0.5F, 0.5F, 0.0F,	0.0F, 1.0F	// Bottom-left
+	-0.5F, -1.0F, 0.0F,	0.0F, 0.0F,	1.0F, 1.0F, 1.0F,	// Top-left
+	0.5F, -1.0F, 0.0F,	1.0F, 0.0F,	1.0F, 1.0F, 1.0F,	// Top-right
+	0.5F, 0.5F, 0.0F,	1.0F, 1.0F,	1.0F, 1.0F, 1.0F,	// Bottom-right
+	-0.5F, 0.5F, 0.0F,	0.0F, 1.0F,	1.0F, 1.0F, 1.0F	// Bottom-left
 };
 
 static const index_t model_indices[6] = {
@@ -62,7 +55,7 @@ void free_model(model_t model) {
 }
 
 void load_premade_models(void) {
-	premade_models[0] = create_model(20, model0_vertices, 6, model_indices);
+	premade_models[0] = create_model(32, model0_vertices, 6, model_indices);
 }
 
 void free_premade_models(void) {

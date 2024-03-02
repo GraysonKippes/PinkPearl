@@ -129,7 +129,6 @@ vulkan_instance_t create_vulkan_instance(void) {
 		size_t debug_extension_name_length = strlen(VK_EXT_DEBUG_UTILS_EXTENSION_NAME) + 1;
 		*(extensions + num_extensions - 1) = calloc(debug_extension_name_length, sizeof(char));
 		strncpy(*(extensions + num_extensions - 1), VK_EXT_DEBUG_UTILS_EXTENSION_NAME, debug_extension_name_length);
-		//strcpy(*(extensions + num_extensions - 1), VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 	else {
 		

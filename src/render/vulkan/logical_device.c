@@ -67,11 +67,18 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 	VkPhysicalDeviceVulkan12Features device_vk12_features = { VK_FALSE };
 	device_vk12_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 	device_vk12_features.pNext = &device_vk13_features;
+	device_vk12_features.scalarBlockLayout = VK_TRUE;
 	device_vk12_features.timelineSemaphore = VK_TRUE;
+	
+	VkPhysicalDeviceVulkan11Features device_vk11_features = { VK_FALSE };
+	device_vk11_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	device_vk11_features.pNext = &device_vk12_features;
+	device_vk11_features.storageBuffer16BitAccess = VK_TRUE;
+	device_vk11_features.uniformAndStorageBuffer16BitAccess = VK_TRUE;
 
 	VkPhysicalDeviceFeatures2 device_features = { 
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-		.pNext = &device_vk12_features,
+		.pNext = &device_vk11_features,
 		.features = (VkPhysicalDeviceFeatures){ 0 }
 	};
 	device_features.features.samplerAnisotropy = VK_TRUE;

@@ -83,6 +83,7 @@ area_t parse_fga_file(const char *filename) {
 	}
 
 	const room_size_t room_size = (room_size_t)room_extent_type;
+	area.room_size = room_size;
 	area.room_extent = room_size_to_extent(room_size);
 
 	// Read number of rooms.

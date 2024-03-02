@@ -33,27 +33,42 @@
 
 #define TEXTURE_PATH (RESOURCE_PATH "assets/textures/")
 
-#define NUM_RESERVED_TEXTURES 1
-#define NUM_ROOM_TEXTURES (NUM_ROOM_RENDER_OBJECT_SLOTS * NUM_ROOM_SIZES)
+#define NUM_RESERVED_TEXTURES 2
 #define NUM_LOADED_TEXTURES 3
-#define NUM_TEXTURES NUM_RESERVED_TEXTURES + NUM_ROOM_TEXTURES + NUM_LOADED_TEXTURES
+#define NUM_TEXTURES NUM_RESERVED_TEXTURES + NUM_LOADED_TEXTURES
 
 static const uint32_t num_reserved_textures = NUM_RESERVED_TEXTURES;
-static const uint32_t num_room_textures = NUM_ROOM_TEXTURES;
 const uint32_t num_loaded_textures = NUM_LOADED_TEXTURES;
 const uint32_t num_textures = NUM_TEXTURES;
 
+static texture_t textures[NUM_TEXTURES];
+
 const texture_handle_t missing_texture_handle = 0;
+const texture_handle_t room_texture_handle = 1;
 
 #define TEXTURE_NAME_MAX_LENGTH 256
 
 static const size_t texture_name_max_length = TEXTURE_NAME_MAX_LENGTH;
-
-static texture_t textures[NUM_TEXTURES];
-
 static char texture_names[NUM_TEXTURES][TEXTURE_NAME_MAX_LENGTH];
 
-
+static const texture_create_info_t missing_texture_create_info = {
+	.path = "missing.png",
+	.atlas_extent.width = 16,
+	.atlas_extent.length = 16,
+	.num_cells.width = 1,
+	.num_cells.length = 1,
+	.cell_extent.width = 16,
+	.cell_extent.length = 16,
+	.num_animations = 1,
+	.animations = (animation_create_info_t[1]){
+		{
+			.cell_extent = { 16, 16 },
+			.start_cell = 0,
+			.num_frames = 1,
+			.frames_per_second = 0
+		}
+	}
+};
 
 texture_create_info_t make_texture_create_info(extent_t texture_extent) {
 
@@ -121,36 +136,12 @@ void load_textures(const texture_pack_t texture_pack) {
 		textures[i] = make_null_texture();
 	}
 
-	const texture_create_info_t missing_texture_create_info = {
-		.path = "missing.png",
-		.atlas_extent.width = 16,
-		.atlas_extent.length = 16,
-		.num_cells.width = 1,
-		.num_cells.length = 1,
-		.cell_extent.width = 16,
-		.cell_extent.length = 16,
-		.num_animations = 1,
-		.animations = (animation_create_info_t[1]){
-			{
-				.start_cell = 0,
-				.num_frames = 1,
-				.frames_per_second = 0
-			}
-		}
-	};
 	textures[0] = load_texture(missing_texture_create_info);
-
-	for (uint32_t i = 0; i < num_room_textures; ++i) {
-		const room_size_t room_size = (room_size_t)(i / num_room_render_object_slots);
-		const uint32_t cache_slot = i % num_room_render_object_slots;
-		// Offset for missing texture placeholder.
-		const uint32_t texture_index = num_reserved_textures + i;
-		textures[texture_index] = init_room_texture(room_size, cache_slot);
-	}
+	textures[1] = init_room_texture();
 
 	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
 		// Offset for room textures and missing texture placeholder.
-		const uint32_t texture_index = num_reserved_textures + num_room_textures + i;
+		const uint32_t texture_index = num_reserved_textures + i;
 		textures[texture_index] = load_texture(texture_pack.texture_create_infos[i]);
 		set_texture_name(i, texture_pack.texture_create_infos[i]);
 	}
@@ -159,8 +150,7 @@ void load_textures(const texture_pack_t texture_pack) {
 }
 
 void create_room_texture(const room_t room, const uint32_t cache_slot, const texture_handle_t tilemap_texture_handle) {
-	const uint32_t texture_index = (uint32_t)get_room_texture_handle(room.size, 0);
-	compute_room_texture(room, cache_slot, textures[tilemap_texture_handle], &textures[texture_index]);
+	compute_room_texture(room, cache_slot, textures[tilemap_texture_handle], &textures[room_texture_handle]);
 }
 
 void destroy_textures(void) {
@@ -172,6 +162,10 @@ void destroy_textures(void) {
 	}
 }
 
+texture_t get_room_texture(const room_size_t room_size) {
+	return textures[num_reserved_textures + (uint32_t)room_size];
+}
+
 texture_t get_loaded_texture(const texture_handle_t texture_handle) {
 	
 	if (texture_handle >= num_textures) {
@@ -180,15 +174,6 @@ texture_t get_loaded_texture(const texture_handle_t texture_handle) {
 	}
 
 	return textures[texture_handle];
-}
-
-texture_handle_t get_room_texture_handle(const room_size_t room_size, const uint32_t cache_slot) {
-	
-	if (cache_slot >= num_room_render_object_slots) {
-		return missing_texture_handle;
-	}
-
-	return (uint32_t)room_size * num_room_render_object_slots + cache_slot + num_reserved_textures;
 }
 
 texture_handle_t find_loaded_texture_handle(const char *restrict const texture_name) {
@@ -214,7 +199,7 @@ texture_handle_t find_loaded_texture_handle(const char *restrict const texture_n
 		}
 
 		if (texture_name_matches) {
-			return (texture_handle_t)(num_reserved_textures + num_room_textures + i);
+			return (texture_handle_t)(num_reserved_textures + i);
 		}
 	}
 

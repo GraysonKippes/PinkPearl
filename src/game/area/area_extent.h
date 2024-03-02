@@ -13,7 +13,6 @@ typedef struct area_extent_t {
 area_extent_t new_area_extent(const int x1, const int y1, const int x2, const int y2);
 
 int area_extent_width(const area_extent_t area_extent);
-
 int area_extent_length(const area_extent_t area_extent);
 
 // Returns a one-dimension index into the `area_extent` that corresponds to `position`.

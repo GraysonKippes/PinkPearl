@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "log/logging.h"
+#include "game/area/room.h"
 #include "render/render_config.h"
 #include "util/time.h"
 
@@ -42,8 +43,6 @@ void destroy_vulkan_render_objects(void) {
 // Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.
 void stage_model_data(uint32_t slot, model_t model) {
 
-	byte_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 0);
-
 	// Vertex Data
 
 	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
@@ -53,13 +52,15 @@ void stage_model_data(uint32_t slot, model_t model) {
 	// Model size is standard rect model size (4 vertices * 5 sp-floats per vertex * 4 bytes per sp-float = 80 bytes)
 	VkDeviceSize model_size = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	VkDeviceSize model_offset = slot * model_size;
-	memcpy((mapped_memory + model_offset), model.vertices, model_size);
+
+	byte_t *const mapped_memory_vertices = buffer_partition_map_memory(global_staging_buffer_partition, 0);
+	memcpy((mapped_memory_vertices + model_offset), model.vertices, model_size);
+	buffer_partition_unmap_memory(global_staging_buffer_partition);
 
 	// Index Data
 
-	VkDeviceSize base_offset = model_size * num_render_object_slots;
 	VkDeviceSize indices_size = num_indices_per_rect * sizeof(index_t);
-	VkDeviceSize indices_offset = base_offset + slot * indices_size;
+	VkDeviceSize indices_offset = slot * indices_size;
 
 	index_t rect_indices[6] = {
 		0, 1, 2,
@@ -70,7 +71,8 @@ void stage_model_data(uint32_t slot, model_t model) {
 		rect_indices[i] += slot * num_vertices_per_rect;
 	}
 
-	memcpy((mapped_memory + indices_offset), rect_indices, indices_size);
+	byte_t *const mapped_memory_indices = buffer_partition_map_memory(global_staging_buffer_partition, 1);
+	memcpy((mapped_memory_indices + indices_offset), rect_indices, indices_size);
 	buffer_partition_unmap_memory(global_staging_buffer_partition);
 	transfer_model_data();
 }
@@ -109,10 +111,6 @@ static void transfer_model_data(void) {
 		.pInheritanceInfo = NULL
 	};
 
-	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
-		vkBeginCommandBuffer(transfer_command_buffers[i], &begin_info);
-	}
-
 	VkBufferCopy vertex_copy_regions[NUM_RENDER_OBJECT_SLOTS] = { { 0 } };
 	VkBufferCopy index_copy_regions[NUM_RENDER_OBJECT_SLOTS] = { { 0 } };
 
@@ -121,7 +119,7 @@ static void transfer_model_data(void) {
 
 	const VkDeviceSize copy_size_vertices = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	const VkDeviceSize copy_size_indices = num_indices_per_rect * sizeof(index_t);
-	const VkDeviceSize indices_base_offset = (VkDeviceSize)num_render_object_slots * copy_size_vertices;
+	const VkDeviceSize indices_base_offset = global_staging_buffer_partition.ranges[1].offset;
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
 		
@@ -149,6 +147,7 @@ static void transfer_model_data(void) {
 
 	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
 
+		vkBeginCommandBuffer(transfer_command_buffers[i], &begin_info);
 		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].model_buffer.handle, num_pending_models, vertex_copy_regions);
 		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].index_buffer.handle, num_pending_models, index_copy_regions);
 		vkEndCommandBuffer(transfer_command_buffers[i]);
@@ -172,15 +171,13 @@ static void transfer_model_data(void) {
 	vkQueueSubmit2(transfer_queue, num_frames_in_flight, submit_infos, VK_NULL_HANDLE);
 }
 
-// Send the drawing commands to the GPU to draw the frame.
-void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds) {
-
-	uint32_t image_index = 0;
+void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds, const area_render_state_t area_render_state) {
 
 	vkWaitForFences(device, 1, &FRAME.fence_frame_ready, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &FRAME.fence_frame_ready);
 	vkResetCommandBuffer(FRAME.command_buffer, 0);
 
+	uint32_t image_index = 0;
 	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, FRAME.semaphore_image_available, VK_NULL_HANDLE, &image_index);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return;
@@ -189,7 +186,6 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 		// TODO - error handling
 	}
 
-	// Compute matrices
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
 	compute_matrices(tick_delta_time, projection_bounds, camera_position, render_object_positions);
 
@@ -207,7 +203,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	descriptor_writes[0].pImageInfo = NULL;
 	descriptor_writes[0].pTexelBufferView = NULL;
 
-	VkDescriptorImageInfo texture_infos[NUM_RENDER_OBJECT_SLOTS];
+	VkDescriptorImageInfo texture_infos[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_SIZES];
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
 		if (is_render_object_slot_enabled(i)) {
@@ -225,12 +221,20 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 		}
 	}
 	
+	for (uint32_t i = 0; i < num_room_sizes; ++i) {
+		const texture_t room_texture = get_loaded_texture(room_texture_handle);
+		const uint32_t index = num_render_object_slots + i;
+		texture_infos[index].sampler = sampler_default;
+		texture_infos[index].imageView = room_texture.images[i].vk_image_view;
+		texture_infos[index].imageLayout = room_texture.layout;
+	}
+
 	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[1].dstSet = FRAME.descriptor_set;
 	descriptor_writes[1].dstBinding = 1;
 	descriptor_writes[1].dstArrayElement = 0;
 	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptor_writes[1].descriptorCount = num_render_object_slots;
+	descriptor_writes[1].descriptorCount = num_render_object_slots + num_room_sizes;
 	descriptor_writes[1].pBufferInfo = NULL;
 	descriptor_writes[1].pImageInfo = texture_infos;
 	descriptor_writes[1].pTexelBufferView = NULL;
@@ -264,9 +268,34 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 	vkCmdBindPipeline(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
 	vkCmdBindDescriptorSets(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &FRAME.descriptor_set, 0, NULL);
-	VkDeviceSize offsets[] = { 0 };
+	const VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(FRAME.command_buffer, 0, 1, &FRAME.model_buffer.handle, offsets);
 	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
+	
+	{
+		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
+		const uint32_t current_animation_frame = area_render_state.current_cache_slot;
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
+
+		const uint32_t room_id = area_render_state.cache_slots_to_room_ids[area_render_state.current_cache_slot];
+		const uint32_t first_index = 0;
+		const int32_t vertex_offset = (int32_t)((num_render_object_slots + room_id) * num_vertices_per_rect);
+		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, vertex_offset, 0);
+	}
+	
+	if (area_render_state_is_scrolling()) {
+		
+		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
+		const uint32_t current_animation_frame = area_render_state.next_cache_slot;
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
+
+		const uint32_t room_id = area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot];
+		const uint32_t first_index = 0;
+		const int32_t vertex_offset = (int32_t)((num_render_object_slots + room_id) * num_vertices_per_rect);
+		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, vertex_offset, 0);
+	}
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
 
@@ -279,7 +308,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
 
-		uint32_t first_index = render_object_slot * num_indices_per_rect;
+		const uint32_t first_index = render_object_slot * num_indices_per_rect;
 		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, 0, 0);
 	}
 

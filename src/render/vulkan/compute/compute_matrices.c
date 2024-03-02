@@ -106,7 +106,7 @@ void terminate_compute_matrices(void) {
 	destroy_compute_pipeline(&compute_matrices_pipeline);
 }
 
-void compute_matrices(float delta_time, projection_bounds_t projection_bounds, vector3F_t camera_position, render_position_t *positions) {
+void compute_matrices(const float delta_time, const projection_bounds_t projection_bounds, const vector3F_t camera_position, const render_position_t *const positions) {
 
 	vkWaitForFences(compute_matrices_pipeline.device, 1, &compute_matrices_fence, VK_TRUE, UINT64_MAX);
 	vkResetFences(compute_matrices_pipeline.device, 1, &compute_matrices_fence);
@@ -117,12 +117,12 @@ void compute_matrices(float delta_time, projection_bounds_t projection_bounds, v
 		return;
 	}
 
-	memcpy(mapped_memory, &delta_time, sizeof delta_time);
-	memcpy(mapped_memory + 4, &projection_bounds, sizeof projection_bounds);
-	memcpy(mapped_memory + 32, &camera_position, sizeof camera_position);
+	memcpy(mapped_memory, &projection_bounds, sizeof projection_bounds);
+	memcpy(mapped_memory + 32, &delta_time, sizeof delta_time);
+	memcpy(mapped_memory + 48, &camera_position, sizeof camera_position);
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-		static const VkDeviceSize starting_offset = 48;
+		static const VkDeviceSize starting_offset = 64;
 		memcpy(mapped_memory + starting_offset + (i * 32), &positions[i].position, sizeof(vector3F_t));
 		memcpy(mapped_memory + starting_offset + (i * 32) + 16, &positions[i].previous_position, sizeof(vector3F_t));
 	}

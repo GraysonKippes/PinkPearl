@@ -14,6 +14,6 @@ extern const VkDeviceSize matrix_data_size;
 bool init_compute_matrices(const VkDevice vk_device);
 void terminate_compute_matrices(void);
 
-void compute_matrices(float delta_time, projection_bounds_t projection_bounds, vector3F_t camera_position, render_position_t *positions);
+void compute_matrices(const float delta_time, const projection_bounds_t projection_bounds, const vector3F_t camera_position, const render_position_t *const positions);
 
 #endif	// COMPUTE_MATRICES_H
