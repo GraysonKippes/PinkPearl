@@ -10,9 +10,9 @@
 
 #include "area_extent.h"
 
-#define FGA_FILE_DIRECTORY (RESOURCE_PATH "data/area.fga")
+#define FGA_FILE_DIRECTORY (RESOURCE_PATH "data/area2.fga")
 
-static int read_room_data(FILE *file, room_t *room_ptr, const room_size_t room_size, const extent_t room_extent);
+static int read_room_data(FILE *file, room_t *const room_ptr);
 
 area_t parse_fga_file(const char *filename) {
 
@@ -31,26 +31,12 @@ area_t parse_fga_file(const char *filename) {
 		logf_message(ERROR, "Error reading area file: invalid file format; found label \"%s\".", label);
 		goto end_read;
 	}
+	fseek(fga_file, 0x10, SEEK_SET);
 
 	// Read area extent.
 	
-	if (!read_data(fga_file, 4, 1, &area.extent.x1)) {
-		log_message(ERROR, "Error reading area file: failed to read area extent coordinate x1.");
-		goto end_read;
-	}
-
-	if (!read_data(fga_file, 4, 1, &area.extent.y1)) {
-		log_message(ERROR, "Error reading area file: failed to read area extent coordinate y1.");
-		goto end_read;
-	}
-
-	if (!read_data(fga_file, 4, 1, &area.extent.x2)) {
-		log_message(ERROR, "Error reading area file: failed to read area extent coordinate x2.");
-		goto end_read;
-	}
-
-	if (!read_data(fga_file, 4, 1, &area.extent.y2)) {
-		log_message(ERROR, "Error reading area file: failed to read area extent coordinate y2.");
+	if (!read_data(fga_file, sizeof(area.extent), 1, &area.extent)) {
+		log_message(ERROR, "Error reading area file: failed to read area extent.");
 		goto end_read;
 	}
 
@@ -68,6 +54,8 @@ area_t parse_fga_file(const char *filename) {
 		goto end_read;
 	}
 
+	fseek(fga_file, 0x20, SEEK_SET);
+
 	// Read room extent type.
 	
 	uint32_t room_extent_type = 0;
@@ -76,10 +64,9 @@ area_t parse_fga_file(const char *filename) {
 		goto end_read;
 	}
 
-	// TODO - this is a hotfix, adjust the enum values.
-	room_extent_type--;
-	if (room_extent_type > 3) {
+	if (room_extent_type >= num_room_sizes) {
 		logf_message(ERROR, "Error creating area: room extent type is invalid value (%u).", room_extent_type);
+		goto end_read;
 	}
 
 	const room_size_t room_size = (room_size_t)room_extent_type;
@@ -116,25 +103,14 @@ area_t parse_fga_file(const char *filename) {
 		area.positions_to_rooms[i] = -1;
 	}
 
+	fseek(fga_file, 0x30, SEEK_SET);
 	for (uint32_t i = 0; i < area.num_rooms; ++i) {
 
 		area.rooms[i].id = (int)i;
+		area.rooms[i].size = area.room_size;
+		area.rooms[i].extent = area.room_extent;
 
-		uint32_t room_position = 0;
-		if (!read_data(fga_file, 4, 1, &room_position)) {
-			log_message(ERROR, "Error reading area file: failed to read room position.");
-			free(area.rooms);
-			area.rooms = NULL;
-			goto end_read;
-		}
-
-		if ((int64_t)room_position >= extent_area) {
-			logf_message(WARNING, "Warning creating area: room position (%u) is greater than extent area (%li).", room_position, extent_area);
-		}
-
-		area.positions_to_rooms[room_position] = i;
-
-		int result = read_room_data(fga_file, (area.rooms + i), room_size, area.room_extent);
+		const int result = read_room_data(fga_file, &area.rooms[i]);
 		if (result != 0) {
 			logf_message(ERROR, "Error creating area: error encountered while reading data for room %u (Error code = %u).", i, result);
 			free(area.rooms);
@@ -142,8 +118,8 @@ area_t parse_fga_file(const char *filename) {
 			goto end_read;
 		}
 
-		area.rooms[i].position.x = ((int64_t)room_position % area_width) + area.extent.x1;
-		area.rooms[i].position.y = ((int64_t)room_position / area_width) + area.extent.y1;
+		const int room_position = area_extent_index(area.extent, area.rooms[i].position); 
+		area.positions_to_rooms[room_position] = i;
 	}
 
 end_read:
@@ -151,80 +127,46 @@ end_read:
 	return area;
 }
 
-static int read_room_data(FILE *file, room_t *room_ptr, const room_size_t room_size, const extent_t room_extent) {
+static int read_room_data(FILE *file, room_t *const room_ptr) {
 	
 	// Must not close file.
 	
-	room_ptr->size = room_size;
-	room_ptr->extent = room_extent;
+	const uint64_t num_tiles = extent_area(room_ptr->extent);
 
-	room_ptr->tiles = calloc(extent_area(room_extent), sizeof(tile_t));
-	if (room_ptr->tiles == NULL) {
-		log_message(ERROR, "Error creating room: failed to allocate tile array.");
+	if (!read_data(file, sizeof(offset_t), 1, &room_ptr->position)) {
+		log_message(ERROR, "Error reading area file: failed to read room position.");
 		return -1;
 	}
 
-	// Read wall information.
+	room_ptr->tiles = calloc(num_tiles, sizeof(tile_t));
+	if (room_ptr->tiles == NULL) {
+		log_message(ERROR, "Error reading area file: failed to allocate tile array.");
+		return -2;
+	}
 
+	// Read wall information.
 	uint32_t num_walls = 0;
 	fread(&num_walls, 4, 1, file);
-
+	fseek(file, 4, SEEK_CUR);
 	if (num_walls > 0) {
 
 		room_ptr->num_walls = num_walls;
 		room_ptr->walls = calloc(num_walls, sizeof(rect_t));
 		if (room_ptr->walls == NULL) {
-			log_message(ERROR, "Error creating room: failed to allocate wall array.");
-			return -2;
+			log_message(ERROR, "Error reading area file: failed to allocate wall array.");
+			return -3;
 		}
 
-		for (uint32_t i = 0; i < num_walls; ++i) {
-			rect_t wall = { 0 };
-			fread(&wall.x1, sizeof(double), 1, file);
-			fread(&wall.y1, sizeof(double), 1, file);
-			fread(&wall.x2, sizeof(double), 1, file);
-			fread(&wall.y2, sizeof(double), 1, file);
-			room_ptr->walls[i] = wall;
+		if (!read_data(file, sizeof(rect_t), room_ptr->num_walls, room_ptr->walls)) {
+			log_message(ERROR, "Error reading area file: failed to read room wall data.");
+			return -4;
 		}
 	}
 
 	// Read tile information.
-
-	const uint64_t num_tiles = extent_area(room_ptr->extent);
-	uint64_t tiles_filled = 0;
-
-	// Read data for each tile here.
-	while (tiles_filled < num_tiles) {
-
-		uint32_t fill_range = 0;
-		tile_t tile = { 0 };
-
-		if (!read_data(file, 4, 1, &fill_range)) {
-			log_message(ERROR, "Error reading room data: failed to read tile fill range.");
-			return -3;
-		}
-
-		if (!read_data(file, 4, 1, &tile.tilemap_slot)) {
-			log_message(ERROR, "Error reading room data: failed to read tile tilemap slot.");
-			return -4;
-		}
-
-		if (fill_range == 0) {
-			log_message(ERROR, "Error creating room: tile fill range is zero.");
-			free(room_ptr->tiles);
-			return -5;
-		}
-
-		if (tiles_filled + (uint64_t)fill_range > num_tiles) {
-			logf_message(ERROR, "Error creating room: tile fill range (%lu + %u) exceeds room area (%lu).", tiles_filled, fill_range, num_tiles);
-			free(room_ptr->tiles);
-			return -6;
-		}
-
-		for (uint32_t j = 0; j < fill_range; ++j) {
-			room_ptr->tiles[tiles_filled + (uint64_t)j] = tile;
-		}
-		tiles_filled += (uint64_t)fill_range;
+	if (!read_data(file, sizeof(tile_t), num_tiles, room_ptr->tiles)) {
+		log_message(ERROR, "Error reading area file: failed to read room tile data.");
+		return -5;
 	}
 
 	return 0;

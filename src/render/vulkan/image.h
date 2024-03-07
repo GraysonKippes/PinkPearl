@@ -6,31 +6,41 @@
 
 #include <vulkan/vulkan.h>
 
+#include "render/stb/image_data.h"
+#include "util/extent.h"
+
+#include "memory.h"
 #include "physical_device.h"
 #include "queue.h"
-#include "render/stb/image_data.h"
 
+typedef struct image_create_info_t {
+	
+	uint32_t num_image_array_layers;
+	extent_t image_dimensions;
+	
+	VkFormat format;
+	VkImageUsageFlags usage;
+	queue_family_set_t queue_family_set;
+	memory_type_index_t memory_type_index;
+	
+	VkPhysicalDevice physical_device;
+	VkDevice device;
+	
+} image_create_info_t;
 
-
-// TODO - change this to have image count, and work in texture struct.
 typedef struct image_t {
 
-	VkImage handle;
+	uint32_t num_array_layers;
 	VkFormat format;
-	VkImageView view;
 	VkImageLayout layout;
 
+	VkImage vk_image;
+	VkImageView vk_image_view;
+
+	VkDevice device;
 	VkDeviceMemory memory;
 
-	// The device with which this image was created.
-	VkDevice device;
-
 } image_t;
-
-typedef struct image_dimensions_t {
-	uint32_t width;
-	uint32_t height;
-} image_dimensions_t;
 
 typedef enum image_layout_transition_t {
 	IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_GENERAL,
@@ -43,9 +53,9 @@ typedef enum image_layout_transition_t {
 
 extern const VkImageSubresourceLayers image_subresource_layers_default;
 
-image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_dimensions_t dimensions, VkFormat format, bool is_array, VkImageUsageFlags usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set);
+image_t create_image(const image_create_info_t image_create_info);
 
-void destroy_image(image_t image);
+bool destroy_image(image_t *const image_ptr);
 
 // Make sure the command pool has reset bit on.
 void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t *image_ptr, image_layout_transition_t image_layout_transition);

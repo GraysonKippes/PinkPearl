@@ -35,7 +35,7 @@ typedef struct room_t {
 
 } room_t;
 
-extent_t room_size_to_extent(room_size_t room_size);
+extent_t room_size_to_extent(const room_size_t room_size);
 
 void destroy_room(room_t room);
 

@@ -4,113 +4,120 @@
 
 #include "command_buffer.h"
 
-
-
-static const VkImageType image_type_default = VK_IMAGE_TYPE_2D;
-
 static const VkImageSubresourceRange image_subresource_range_default = {
 	.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	.baseMipLevel = 0,
 	.levelCount = 1,
 	.baseArrayLayer = 0,
-	.layerCount = 1
+	.layerCount = VK_REMAINING_ARRAY_LAYERS
 };
 
 const VkImageSubresourceLayers image_subresource_layers_default = {
 	.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	.mipLevel = 0,
 	.baseArrayLayer = 0,
-	.layerCount = 1
+	.layerCount = VK_REMAINING_ARRAY_LAYERS
 };
 
-
-
-image_t create_image(VkPhysicalDevice physical_device, VkDevice device, image_dimensions_t dimensions, VkFormat format, bool is_array, VkImageUsageFlags usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set) {
+image_t create_image(const image_create_info_t image_create_info) {
 	
 	image_t image = { 0 };
 
-	image.format = format;
+	image.num_array_layers = image_create_info.num_image_array_layers;
+	image.format = image_create_info.format;
 	image.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-	image.device = device;
+	image.device = image_create_info.device;
 
-	VkImageCreateInfo image_create_info = { 0 };
-	image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	image_create_info.pNext = NULL;
-	image_create_info.flags = 0;
-	image_create_info.imageType = image_type_default;
-	image_create_info.format = image.format;
-	image_create_info.extent.width = dimensions.width;
-	image_create_info.extent.height = dimensions.height;
-	image_create_info.extent.depth = 1;
-	image_create_info.mipLevels = 1;
-	image_create_info.arrayLayers = 1;
-	image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-	image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-	image_create_info.usage = usage;
-	image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	VkImageCreateInfo vk_image_create_info = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = image.format,
+		.extent.width = image_create_info.image_dimensions.width,
+		.extent.height = image_create_info.image_dimensions.length,
+		.extent.depth = 1,
+		.mipLevels = 1,
+		.arrayLayers = image.num_array_layers,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.tiling = VK_IMAGE_TILING_OPTIMAL,
+		.usage = image_create_info.usage,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 0,
+		.pQueueFamilyIndices = NULL,
+		.initialLayout = image.layout
+	};
 
-	if (is_queue_family_set_null(queue_family_set)) {
-		image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		image_create_info.queueFamilyIndexCount = 0;
-		image_create_info.pQueueFamilyIndices = NULL;
-	}
-	else {
-		image_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		image_create_info.queueFamilyIndexCount = queue_family_set.num_queue_families;
-		image_create_info.pQueueFamilyIndices = queue_family_set.queue_families;
+	if (!is_queue_family_set_null(image_create_info.queue_family_set)) {
+		vk_image_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+		vk_image_create_info.queueFamilyIndexCount = image_create_info.queue_family_set.num_queue_families;
+		vk_image_create_info.pQueueFamilyIndices = image_create_info.queue_family_set.queue_families;
 	}
 	
-	vkCreateImage(device, &image_create_info, NULL, &image.handle);
+	vkCreateImage(image.device, &vk_image_create_info, NULL, &image.vk_image);
 
 	VkMemoryRequirements memory_requirements;
-	vkGetImageMemoryRequirements(device, image.handle, &memory_requirements);
+	vkGetImageMemoryRequirements(image.device, image.vk_image, &memory_requirements);
 
-	VkMemoryAllocateInfo allocate_info = { 0 };
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.pNext = NULL;
-	allocate_info.allocationSize = memory_requirements.size;
-	if(!find_physical_device_memory_type(physical_device, memory_requirements.memoryTypeBits, memory_properties, &allocate_info.memoryTypeIndex)) {
-		// TODO - error handling
-	}
+	const VkMemoryAllocateInfo allocate_info = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.pNext = NULL,
+		.allocationSize = memory_requirements.size,
+		.memoryTypeIndex = image_create_info.memory_type_index
+	};
 
-	vkAllocateMemory(device, &allocate_info, NULL, &image.memory);
+	vkAllocateMemory(image.device, &allocate_info, NULL, &image.memory);
 
-	VkBindImageMemoryInfo bind_info = { 0 };
-	bind_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
-	bind_info.pNext = NULL;
-	bind_info.image = image.handle;
-	bind_info.memory = image.memory;
-	bind_info.memoryOffset = 0;
+	const VkBindImageMemoryInfo image_bind_info = {
+		.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+		.pNext = NULL,
+		.image = image.vk_image,
+		.memory = image.memory,
+		.memoryOffset = 0
+	};
 
-	vkBindImageMemory2(device, 1, &bind_info);
+	vkBindImageMemory2(image.device, 1, &image_bind_info);
 
-	VkImageViewCreateInfo image_view_create_info = { 0 };
-	image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	image_view_create_info.pNext = NULL;
-	image_view_create_info.flags = 0;
-	image_view_create_info.image = image.handle;
-	if (is_array) {
-		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-	}
-	else {
-		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	}
-	image_view_create_info.format = image.format;
-	image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-	image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-	image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-	image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-	image_view_create_info.subresourceRange = image_subresource_range_default;
+	const VkImageViewCreateInfo image_view_create_info = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.image = image.vk_image,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+		.format = image.format,
+		.components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.subresourceRange = image_subresource_range_default
+	};
 
-	vkCreateImageView(device, &image_view_create_info, NULL, &image.view);
+	vkCreateImageView(image.device, &image_view_create_info, NULL, &image.vk_image_view);
 
 	return image;
 }
 
-void destroy_image(image_t image) {
-	vkDestroyImage(image.device, image.handle, NULL);
-	vkDestroyImageView(image.device, image.view, NULL);
-	vkFreeMemory(image.device, image.memory, NULL);
+bool destroy_image(image_t *const image_ptr) {
+	
+	if (image_ptr == NULL) {
+		return false;
+	}
+	
+	vkDestroyImage(image_ptr->device, image_ptr->vk_image, NULL);
+	image_ptr->vk_image = VK_NULL_HANDLE;
+	
+	vkDestroyImageView(image_ptr->device, image_ptr->vk_image_view, NULL);
+	image_ptr->vk_image_view = VK_NULL_HANDLE;
+	
+	vkFreeMemory(image_ptr->device, image_ptr->memory, NULL);
+	image_ptr->memory = VK_NULL_HANDLE;
+	
+	image_ptr->num_array_layers = 0;
+	image_ptr->format = VK_FORMAT_UNDEFINED;
+	image_ptr->layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	image_ptr->device = VK_NULL_HANDLE;
+	
+	return true;
 }
 
 void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t *image_ptr, image_layout_transition_t image_layout_transition) {
@@ -132,7 +139,7 @@ void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t 
 	memory_barrier.newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memory_barrier.image = image_ptr->handle;
+	memory_barrier.image = image_ptr->vk_image;
 	memory_barrier.subresourceRange = image_subresource_range_default;
 
 	VkPipelineStageFlags source_stage = 0;

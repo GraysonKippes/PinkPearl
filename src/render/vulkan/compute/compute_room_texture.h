@@ -10,7 +10,7 @@
 void init_compute_room_texture(const VkDevice vk_device);
 void terminate_compute_room_texture(void);
 
-texture_t init_room_texture();
+texture_t init_room_texture(void);
 
 void compute_room_texture(const room_t room, const uint32_t cache_slot, const texture_t tilemap_texture, texture_t *const room_texture_ptr);
 

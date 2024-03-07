@@ -272,29 +272,30 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	vkCmdBindVertexBuffers(FRAME.command_buffer, 0, 1, &FRAME.model_buffer.handle, offsets);
 	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
 	
+	// TODO - use depth buffer for room layers and entities.
+
+	const uint32_t current_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.current_cache_slot];
+	const uint32_t next_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot];
+
 	{
 		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
-		const uint32_t current_animation_frame = area_render_state.current_cache_slot;
+		const uint32_t current_animation_frame = area_render_state.current_cache_slot * num_room_layers;
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
 
-		const uint32_t room_id = area_render_state.cache_slots_to_room_ids[area_render_state.current_cache_slot];
-		const uint32_t first_index = 0;
-		const int32_t vertex_offset = (int32_t)((num_render_object_slots + room_id) * num_vertices_per_rect);
-		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, vertex_offset, 0);
+		const int32_t vertex_offset = (int32_t)((num_render_object_slots + current_room_id) * num_vertices_per_rect);
+		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, 0, vertex_offset, 0);
 	}
 	
 	if (area_render_state_is_scrolling()) {
 		
 		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
-		const uint32_t current_animation_frame = area_render_state.next_cache_slot;
+		const uint32_t current_animation_frame = area_render_state.next_cache_slot * num_room_layers;
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
 		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
 
-		const uint32_t room_id = area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot];
-		const uint32_t first_index = 0;
-		const int32_t vertex_offset = (int32_t)((num_render_object_slots + room_id) * num_vertices_per_rect);
-		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, vertex_offset, 0);
+		const int32_t vertex_offset = (int32_t)((num_render_object_slots + next_room_id) * num_vertices_per_rect);
+		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, 0, vertex_offset, 0);
 	}
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
@@ -310,6 +311,28 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 		const uint32_t first_index = render_object_slot * num_indices_per_rect;
 		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, 0, 0);
+	}
+
+	// Draw foreground...
+	{
+		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
+		const uint32_t current_animation_frame = area_render_state.current_cache_slot * num_room_layers + 1;
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
+
+		const int32_t vertex_offset = (int32_t)((num_render_object_slots + current_room_id) * num_vertices_per_rect);
+		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, 0, vertex_offset, 0);
+	}
+
+	if (area_render_state_is_scrolling()) {
+		
+		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
+		const uint32_t current_animation_frame = area_render_state.next_cache_slot * num_room_layers + 1;
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
+		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
+
+		const int32_t vertex_offset = (int32_t)((num_render_object_slots + next_room_id) * num_vertices_per_rect);
+		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, 0, vertex_offset, 0);
 	}
 
 	vkCmdEndRenderPass(FRAME.command_buffer);
