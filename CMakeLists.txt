@@ -19,15 +19,16 @@ target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
 	-Werror=stringop-overread
 	-Werror=incompatible-pointer-types
 	-Werror=int-conversion
-	-Wno-switch)
+	-Wno-switch
+)
 
 find_package(Vulkan REQUIRED)
 
 target_link_libraries(PinkPearl PRIVATE 
 	Vulkan::Vulkan 
-	#"${PROJECT_SOURCE_DIR}/lib/glfw3.lib"
+	#"C:/msys64/mingw64/lib/libportaudio.a" 
+	"${PROJECT_SOURCE_DIR}/lib/libportaudio.dll" 
 	"${PROJECT_SOURCE_DIR}/lib/libglfw3.a"
-	#"${PROJECT_SOURCE_DIR}/lib/portaudio.lib"
 )
 
 target_include_directories(PinkPearl PRIVATE
@@ -41,6 +42,7 @@ target_sources(PinkPearl PRIVATE
 	src/debug.c
 	src/main.c
 	src/game/game.c
+	src/audio/portaudio/portaudio_manager.c
 	src/game/area/area.c
 	src/game/area/area_extent.c
 	src/game/area/fgm_file_parse.c

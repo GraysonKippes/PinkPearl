@@ -6,6 +6,7 @@
 
 #include "client.h"
 #include "debug.h"
+#include "audio/portaudio/portaudio_manager.h"
 #include "game/game.h"
 #include "glfw/glfw_manager.h"
 #include "log/logging.h"
@@ -23,12 +24,14 @@ int main(void) {
 
 	init_GLFW();
 	init_renderer();
+	init_portaudio();
 	start_game();
 
 	log_message(INFO, "Ready to play Pink Pearl!");
 
 	run_client();
 
+	terminate_portaudio();
 	terminate_renderer();
 	terminate_GLFW();
 
