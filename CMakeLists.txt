@@ -11,7 +11,7 @@ set(RESOURCE_PATH "\"../resources/\"")
 configure_file(src/config.h.in config.h)
 
 #target_compile_options(PinkPearl PRIVATE /TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address)
-target_compile_options(PinkPearl PRIVATE -std=c17 -g -Wpedantic -Wall -Wextra
+target_compile_options(PinkPearl PRIVATE -std=c17 -lpthread -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
 	-Werror=implicit-function-declaration 
 	-Werror=implicit-int
@@ -42,6 +42,10 @@ target_sources(PinkPearl PRIVATE
 	src/debug.c
 	src/main.c
 	src/game/game.c
+	src/audio/audio_config.c
+	src/audio/audio_loader.c
+	src/audio/audio_mixer.c
+	src/audio/audio_queue.c
 	src/audio/portaudio/portaudio_manager.c
 	src/game/area/area.c
 	src/game/area/area_extent.c
