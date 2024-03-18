@@ -44,11 +44,12 @@ void terminate_audio_mixer(void) {
 	log_message(VERBOSE, "Terminating audio mixer...");
 	
 	atomic_store(&audio_mixer_running, false);
-	
 	const int thread_join_result = pthread_join(audio_mixer_thread, NULL);
 	if (thread_join_result != 0) {
 		logf_message(ERROR, "Error terminating audio mixer: thread joining returned with code %i.", thread_join_result);
 	}
+	
+	destroy_audio_queue(&audio_mixer_queue);
 	
 	log_message(VERBOSE, "Done terminating audio mixer.");
 }

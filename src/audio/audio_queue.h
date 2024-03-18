@@ -30,5 +30,6 @@ typedef struct audio_queue_t {
 } audio_queue_t;
 
 audio_queue_t make_audio_queue(void);
+bool destroy_audio_queue(audio_queue_t *const audio_queue_ptr);
 
 #endif	// AUDIO_QUEUE_H
