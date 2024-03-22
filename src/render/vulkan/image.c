@@ -12,7 +12,7 @@ static const VkImageSubresourceRange image_subresource_range_default = {
 	.layerCount = VK_REMAINING_ARRAY_LAYERS
 };
 
-const VkImageSubresourceLayers image_subresource_layers_default = {
+static const VkImageSubresourceLayers image_subresource_layers_default = {
 	.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	.mipLevel = 0,
 	.baseArrayLayer = 0,
@@ -118,98 +118,6 @@ bool destroy_image(image_t *const image_ptr) {
 	image_ptr->device = VK_NULL_HANDLE;
 	
 	return true;
-}
-
-void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t *image_ptr, image_layout_transition_t image_layout_transition) {
-
-	if (image_ptr == NULL) {
-		return;
-	}
-
-	VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-	allocate_command_buffers(image_ptr->device, command_pool, 1, &command_buffer);
-	begin_command_buffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-	VkImageMemoryBarrier memory_barrier = { 0 };
-	memory_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	memory_barrier.pNext = NULL;
-	memory_barrier.srcAccessMask = VK_ACCESS_NONE;
-	memory_barrier.dstAccessMask = VK_ACCESS_NONE;
-	memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	memory_barrier.newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memory_barrier.image = image_ptr->vk_image;
-	memory_barrier.subresourceRange = image_subresource_range_default;
-
-	VkPipelineStageFlags source_stage = 0;
-	VkPipelineStageFlags destination_stage = 0;
-
-	switch (image_layout_transition) {
-		case IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_GENERAL:
-
-			memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			memory_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-			memory_barrier.srcAccessMask = VK_ACCESS_NONE;
-			memory_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-		
-			source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-			destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-
-			break;
-		case IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_TRANSFER_DST:
-
-			memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-			memory_barrier.srcAccessMask = VK_ACCESS_NONE;
-			memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		
-			source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-			destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-			break;
-		case IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_SHADER_READ_ONLY:
-
-			memory_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			memory_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-			memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-			source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-			destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-			break;
-		case IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_GENERAL:
-
-			memory_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			memory_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-			memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-			source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-			destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-			break;
-	}
-
-	if (memory_barrier.oldLayout != image_ptr->layout) {
-		return;
-	}
-
-	vkCmdPipelineBarrier(command_buffer, source_stage, destination_stage, 0,
-			0, NULL,
-			0, NULL,
-			1, &memory_barrier);
-
-	vkEndCommandBuffer(command_buffer);
-	submit_command_buffers_async(queue, 1, &command_buffer);
-	vkFreeCommandBuffers(image_ptr->device, command_pool, 1, &command_buffer);
-
-	image_ptr->layout = memory_barrier.newLayout;
 }
 
 void create_sampler(physical_device_t physical_device, VkDevice device, VkSampler *sampler_ptr) {

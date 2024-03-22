@@ -51,14 +51,8 @@ typedef enum image_layout_transition_t {
 
 
 
-extern const VkImageSubresourceLayers image_subresource_layers_default;
-
 image_t create_image(const image_create_info_t image_create_info);
-
 bool destroy_image(image_t *const image_ptr);
-
-// Make sure the command pool has reset bit on.
-void transition_image_layout(VkQueue queue, VkCommandPool command_pool, image_t *image_ptr, image_layout_transition_t image_layout_transition);
 
 void create_sampler(physical_device_t physical_device, VkDevice device, VkSampler *sampler_ptr);
 
