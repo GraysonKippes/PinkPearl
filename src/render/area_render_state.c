@@ -6,6 +6,7 @@
 
 #include "math/lerp.h"
 #include "vulkan/texture_manager.h"
+#include "vulkan/vulkan_render.h"
 #include "vulkan/compute/compute_area_mesh.h"
 
 static area_render_state_t area_render_state = { 0 };
@@ -60,6 +61,7 @@ void area_render_state_reset(const area_t area, const room_t initial_room) {
 	area_render_state.current_cache_slot = 0;
 	area_render_state.next_cache_slot = 0;
 	
+	upload_draw_data(area_render_state);
 	create_room_texture(initial_room, area_render_state.current_cache_slot, area_render_state.tilemap_texture_state.handle);
 	
 	log_message(VERBOSE, "Done resetting area render state.");
@@ -105,6 +107,8 @@ bool area_render_state_next_room(const room_t next_room) {
 	area_render_state.room_ids_to_cache_slots[room_id] = area_render_state.next_cache_slot;
 	area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot] = room_id;
 	
+	// Update Vulkan engine.
+	upload_draw_data(area_render_state);
 	if (!room_already_loaded) {
 		create_room_texture(next_room, area_render_state.next_cache_slot, area_render_state.tilemap_texture_state.handle);
 	}

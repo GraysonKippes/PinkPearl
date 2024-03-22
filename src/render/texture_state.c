@@ -40,25 +40,25 @@ bool texture_state_set_animation_cycle(texture_state_t *const texture_state_ptr,
 	return true;
 }
 
-bool texture_state_animate(texture_state_t *const texture_state_ptr) {
+int texture_state_animate(texture_state_t *const texture_state_ptr) {
 
 	if (texture_state_ptr == NULL) {
-		return false;
+		return 0;
 	}
 
 	if (texture_state_ptr->animation_cycles == NULL) {
-		return false;
+		return 0;
 	}
 
 	if (texture_state_ptr->current_animation_cycle >= texture_state_ptr->num_animation_cycles) {
 		logf_message(WARNING, "Warning updating texture animation state: current animation cycle index (%u) is not less than number of animation cycles (%u).", texture_state_ptr->current_animation_cycle, texture_state_ptr->num_animation_cycles);
 		texture_state_ptr->current_animation_cycle = 0;
-		return false;
+		return 0;
 	}
 
 	if (texture_state_ptr->last_frame_time_ms == 0) {
 		texture_state_ptr->last_frame_time_ms = get_time_ms();
-		return true;
+		return 1;
 	}
 
 	const texture_animation_cycle_t animation_cycle = texture_state_ptr->animation_cycles[texture_state_ptr->current_animation_cycle];
@@ -76,7 +76,8 @@ bool texture_state_animate(texture_state_t *const texture_state_ptr) {
 		texture_state_ptr->current_frame += frames;
 		texture_state_ptr->current_frame %= animation_cycle.num_frames;
 		texture_state_ptr->last_frame_time_ms = current_time_ms;
+		return 2;
 	}
 
-	return true;
+	return 1;
 }

@@ -3,7 +3,10 @@
 #include <stddef.h>
 
 #include "log/logging.h"
+#include "vulkan/vulkan_render.h"
 #include "util/bit.h"
+
+#include "area_render_state.h"
 
 const uint32_t render_handle_invalid = UINT32_MAX;
 const uint32_t render_handle_dangling = render_handle_invalid - 1;
@@ -46,6 +49,7 @@ void unload_render_object(render_handle_t *handle_ptr) {
 
 	render_object_slot_enabled_flags = set_bit_off(render_object_slot_enabled_flags, *handle_ptr);
 	*handle_ptr = render_handle_dangling;
+	upload_draw_data(get_global_area_render_state());
 }
 
 bool is_render_object_slot_enabled(const uint32_t slot) {

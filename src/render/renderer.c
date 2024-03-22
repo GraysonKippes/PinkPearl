@@ -49,7 +49,9 @@ void render_frame(float tick_delta_time) {
 	const projection_bounds_t projection_bounds = area_render_state_projection_bounds();
 	
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-		texture_state_animate(render_object_texture_states + i);
+		if (texture_state_animate(&render_object_texture_states[i]) == 2) {
+			upload_draw_data(get_global_area_render_state());
+		}
 	}
 
 	glfwPollEvents();
@@ -57,7 +59,6 @@ void render_frame(float tick_delta_time) {
 }
 
 void settle_render_positions(void) {
-	
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
 		settle_render_position(render_object_positions + i);
 	}
@@ -73,4 +74,5 @@ void upload_model(uint32_t slot, model_t model, const char *const texture_name) 
 	stage_model_data(slot, model);
 	const texture_state_t texture_state = make_new_texture_state(find_loaded_texture_handle(texture_name));
 	swap_render_object_texture_state(slot, texture_state);
+	upload_draw_data(get_global_area_render_state());
 }

@@ -28,6 +28,9 @@ bool destroy_texture_state(texture_state_t *texture_state_ptr);
 
 bool texture_state_set_animation_cycle(texture_state_t *const texture_state_ptr, const uint32_t next_animation_cycle);
 
-bool texture_state_animate(texture_state_t *const texture_state_ptr);
+// Returns 0 if an error occurs.
+// Returns 1 if no error occurs and the texture state was not updated.
+// Returns 2 if no error occurs and the texture state was updated.
+int texture_state_animate(texture_state_t *const texture_state_ptr);
 
 #endif // TEXTURE_STATE_H

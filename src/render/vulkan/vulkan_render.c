@@ -171,7 +171,13 @@ static void transfer_model_data(void) {
 	vkQueueSubmit2(transfer_queue, num_frames_in_flight, submit_infos, VK_NULL_HANDLE);
 }
 
-static void upload_draw_data(const area_render_state_t area_render_state) {
+void upload_draw_data(const area_render_state_t area_render_state) {
+	
+	// Needs to be called in the following situations:
+	// 	Texture is animated.
+	// 	New render object is created/used.
+	//	Any render object is destroyed/released.
+	//	Area render enters/exits scroll state.
 	
 	typedef struct draw_info_t {
 		// Indirect draw info
@@ -389,9 +395,6 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	vkCmdBindVertexBuffers(FRAME.command_buffer, 0, 1, &FRAME.model_buffer.handle, offsets);
 	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
 	
-	// TODO - use depth buffer for room layers and entities.
-	
-	upload_draw_data(area_render_state);
 	const uint32_t draw_data_offset = global_draw_data_buffer_partition.ranges[1].offset;
 	vkCmdDrawIndexedIndirectCount(FRAME.command_buffer, global_draw_data_buffer_partition.buffer, draw_data_offset, global_draw_data_buffer_partition.buffer, 0, 68, 28);
 

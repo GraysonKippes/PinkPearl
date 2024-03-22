@@ -19,6 +19,7 @@
 void create_vulkan_render_objects(void);
 void destroy_vulkan_render_objects(void);
 void stage_model_data(uint32_t slot, model_t model);
+void upload_draw_data(const area_render_state_t area_render_state);
 void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds, const area_render_state_t area_render_state);
 
 #endif	// VULKAN_RENDER_H
