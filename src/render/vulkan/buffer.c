@@ -134,6 +134,9 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 		case BUFFER_TYPE_STORAGE:
 			offset_alignment = physical_device_properties.properties.limits.minStorageBufferOffsetAlignment;
 			break;
+		case BUFFER_TYPE_DRAW_DATA:
+			offset_alignment = physical_device_properties.properties.limits.minUniformBufferOffsetAlignment;
+			break;
 	}
 
 	for (uint32_t i = 0; i < buffer_partition.num_ranges; ++i) {
@@ -153,6 +156,9 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 			break;
 		case BUFFER_TYPE_STORAGE:
 			buffer_usage_flags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+			break;
+		case BUFFER_TYPE_DRAW_DATA:
+			buffer_usage_flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 			break;
 	}
 
@@ -211,6 +217,9 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 			break;
 		case BUFFER_TYPE_STORAGE:
 			memory_type_index = buffer_partition_create_info.memory_type_set.graphics_resources;
+			break;
+		case BUFFER_TYPE_DRAW_DATA:
+			memory_type_index = buffer_partition_create_info.memory_type_set.uniform_data;
 			break;
 	}
 

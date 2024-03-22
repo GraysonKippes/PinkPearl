@@ -78,6 +78,7 @@ size_t current_frame = 0;
 buffer_partition_t global_staging_buffer_partition;
 buffer_partition_t global_uniform_buffer_partition;
 buffer_partition_t global_storage_buffer_partition;
+buffer_partition_t global_draw_data_buffer_partition;
 
 
 
@@ -162,6 +163,27 @@ static void create_global_storage_buffer(void) {
 	global_storage_buffer_partition = create_buffer_partition(buffer_partition_create_info);
 }
 
+static void create_global_draw_data_buffer(void) {
+
+	log_message(VERBOSE, "Creating global draw data buffer...");
+
+	const buffer_partition_create_info_t buffer_partition_create_info = {
+		.physical_device = physical_device.handle,
+		.device = device,
+		.buffer_type = BUFFER_TYPE_DRAW_DATA,
+		.memory_type_set = memory_type_set,
+		.num_queue_family_indices = 0,
+		.queue_family_indices = NULL,
+		.num_partition_sizes = 2,
+		.partition_sizes = (VkDeviceSize[2]){
+			4,			// Indirect draw count
+			68 * 7 * 4	// Indirect draw data
+		}
+	};
+	
+	global_draw_data_buffer_partition = create_buffer_partition(buffer_partition_create_info);
+}
+
 void create_vulkan_objects(void) {
 
 	log_message(INFO, "Initializing Vulkan...");
@@ -182,6 +204,7 @@ void create_vulkan_objects(void) {
 	create_global_staging_buffer();
 	create_global_uniform_buffer();
 	create_global_storage_buffer();
+	create_global_draw_data_buffer();
 
 	log_message(VERBOSE, "Retrieving device queues...");
 

@@ -56,6 +56,8 @@ extern buffer_partition_t global_uniform_buffer_partition;
 // Used for GPU-only bulk storage data.
 extern buffer_partition_t global_storage_buffer_partition;
 
+extern buffer_partition_t global_draw_data_buffer_partition;
+
 
 
 extern frame_t frames[NUM_FRAMES_IN_FLIGHT];

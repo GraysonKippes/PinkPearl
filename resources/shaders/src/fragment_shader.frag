@@ -1,19 +1,32 @@
-#version 450
+#version 460
+#extension GL_EXT_scalar_block_layout : require
 
 #define NUM_RENDER_OBJECTS 64
 #define NUM_ROOM_TEXTURE_IMAGES 4
 #define NUM_IMAGES (NUM_RENDER_OBJECTS + NUM_ROOM_TEXTURE_IMAGES)
 
-layout(push_constant) uniform draw_data_t {
-	uint model_slot;
-	uint animation_frame;
+struct draw_info_t {
+	// Indirect draw info
+	uint index_count;
+	uint instance_count;
+	uint first_index;
+	int vertex_offset;
+	uint first_instance;
+	// Additional draw data
+	uint render_object_slot;
+	uint image_index;
+};
+
+layout(scalar, set = 0, binding = 0) readonly uniform draw_data_t {
+	draw_info_t draw_infos[68];
 } draw_data;
 
-layout(binding = 1) uniform sampler2DArray[NUM_IMAGES] texture_samplers;
+layout(set = 0, binding = 2) uniform sampler2DArray[NUM_IMAGES] texture_samplers;
 
 layout(location = 0) in vec3 in_position;	// Model space
 layout(location = 1) in vec2 in_tex_coord;
 layout(location = 2) in vec3 in_color;
+layout(location = 3) in flat uint in_draw_index;
 
 layout(location = 0) out vec4 out_color;
 
@@ -25,7 +38,7 @@ float calculate_attenuation(vec3 src, vec3 dst, float k_q, float k_l) {
 
 void main() {
 
-	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_data.animation_frame)) * in_color;
+	draw_info_t draw_info = draw_data.draw_infos[in_draw_index];
 
 	// Ambient light
 	const vec3 ambient_light_color = vec3(0.125, 0.25, 0.5);
@@ -38,7 +51,8 @@ void main() {
 	texel_position.y = floor(in_position.y * 16.0) / 16.0;
 
 	// Apply lighting
-	out_color = texture(texture_samplers[draw_data.model_slot], texture_coordinates);
+	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.image_index)) * in_color;
+	out_color = texture(texture_samplers[draw_info.render_object_slot], texture_coordinates);
 	out_color.xyz *= ambient_lighting;
 	
 	// Light level granularity

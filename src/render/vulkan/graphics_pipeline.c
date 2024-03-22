@@ -12,13 +12,14 @@
 
 /* -- DESCRIPTOR LAYOUT -- */
 
-static descriptor_binding_t graphics_descriptor_bindings[2] = {
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_SIZES, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },
+static descriptor_binding_t graphics_descriptor_bindings[3] = {
+	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },	// Draw data
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },	// Matrix buffer
+	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_SIZES, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }	// Texture array
 };
 
 const descriptor_layout_t graphics_descriptor_set_layout = {
-	.num_bindings = 2,
+	.num_bindings = 3,
 	.bindings = graphics_descriptor_bindings 
 };
 
@@ -284,26 +285,14 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 
 	log_message(VERBOSE, "Creating graphics pipeline layout...");
 
-	VkPushConstantRange push_constant_ranges[2] = { { 0 } };
-
-	// Current model slot
-	push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	push_constant_ranges[0].offset = 0;
-	push_constant_ranges[0].size = sizeof(uint32_t);
-
-	// Current animation frame
-	push_constant_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	push_constant_ranges[1].offset = 0;
-	push_constant_ranges[1].size = 2 * sizeof(uint32_t);
-
 	VkPipelineLayoutCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	create_info.pNext = NULL;
 	create_info.flags = 0;
 	create_info.setLayoutCount = 1;
 	create_info.pSetLayouts = &descriptor_set_layout;
-	create_info.pushConstantRangeCount = 2;
-	create_info.pPushConstantRanges = push_constant_ranges;
+	create_info.pushConstantRangeCount = 0;
+	create_info.pPushConstantRanges = NULL;
 
 	VkResult result = vkCreatePipelineLayout(device, &create_info, NULL, pipeline_layout_ptr);
 	if (result != VK_SUCCESS) {

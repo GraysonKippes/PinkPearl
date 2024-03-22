@@ -171,6 +171,113 @@ static void transfer_model_data(void) {
 	vkQueueSubmit2(transfer_queue, num_frames_in_flight, submit_infos, VK_NULL_HANDLE);
 }
 
+static void upload_draw_data(const area_render_state_t area_render_state) {
+	
+	typedef struct draw_info_t {
+		// Indirect draw info
+		uint32_t index_count;
+		uint32_t instance_count;
+		uint32_t first_index;
+		int32_t vertex_offset;
+		uint32_t first_instance;
+		// Additional draw info
+		uint32_t render_object_slot;
+		uint32_t image_index;
+	} draw_info_t;
+	
+	uint32_t draw_count = 0;
+	const uint32_t max_draw_count = NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS;
+	draw_info_t draw_infos[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS];
+	
+	for (uint32_t i = 0; i < max_draw_count; ++i) {
+		draw_infos[i] = (draw_info_t){
+			.index_count = 6,
+			.instance_count = 1,
+			.first_index = 0,
+			.vertex_offset = 0,
+			.first_instance = 0,
+			.render_object_slot = 0,
+			.image_index = 0
+		};
+	}
+
+	const uint32_t current_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.current_cache_slot];
+	const uint32_t next_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot];
+	
+	// Current room background
+	draw_infos[draw_count++] = (draw_info_t){
+		.index_count = 6,
+		.instance_count = 1,
+		.first_index = 0,
+		.vertex_offset = (int32_t)((num_render_object_slots + current_room_id) * num_vertices_per_rect),
+		.first_instance = 0,
+		.render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size,
+		.image_index = area_render_state.current_cache_slot * num_room_layers
+	};
+	
+	// Next room background
+	if (area_render_state_is_scrolling()) {
+		draw_infos[draw_count++] = (draw_info_t){
+			.index_count = 6,
+			.instance_count = 1,
+			.first_index = 0,
+			.vertex_offset = (int32_t)((num_render_object_slots + next_room_id) * num_vertices_per_rect),
+			.first_instance = 0,
+			.render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size,
+			.image_index = area_render_state.next_cache_slot * num_room_layers
+		};
+	}
+	
+	// Render objects
+	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+		if (!is_render_object_slot_enabled(i)) {
+			continue;
+		}
+		
+		draw_infos[draw_count++] = (draw_info_t){
+			.index_count = 6,
+			.instance_count = 1,
+			.first_index = 0,
+			.vertex_offset = (int32_t)(i * num_vertices_per_rect),
+			.first_instance = 0,
+			.render_object_slot = i,
+			.image_index = render_object_texture_states[i].current_frame
+		};
+	}
+	
+	// Current room foreground
+	draw_infos[draw_count++] = (draw_info_t){
+		.index_count = 6,
+		.instance_count = 1,
+		.first_index = 0,
+		.vertex_offset = (int32_t)((num_render_object_slots + current_room_id) * num_vertices_per_rect),
+		.first_instance = 0,
+		.render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size,
+		.image_index = area_render_state.current_cache_slot * num_room_layers + 1
+	};
+	
+	// Next room foreground
+	if (area_render_state_is_scrolling()) {
+		draw_infos[draw_count++] = (draw_info_t){
+			.index_count = 6,
+			.instance_count = 1,
+			.first_index = 0,
+			.vertex_offset = (int32_t)((num_render_object_slots + next_room_id) * num_vertices_per_rect),
+			.first_instance = 0,
+			.render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size,
+			.image_index = area_render_state.next_cache_slot * num_room_layers + 1
+		};
+	}
+	
+	byte_t *draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
+	memcpy(draw_count_mapped_memory, &draw_count, sizeof(draw_count));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	
+	byte_t *draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	memcpy(draw_data_mapped_memory, draw_infos, max_draw_count * sizeof(draw_info_t));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+}
+
 void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds, const area_render_state_t area_render_state) {
 
 	vkWaitForFences(device, 1, &FRAME.fence_frame_ready, VK_TRUE, UINT64_MAX);
@@ -189,19 +296,29 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
 	compute_matrices(tick_delta_time, projection_bounds, camera_position, render_object_positions);
 
-	const VkDescriptorBufferInfo matrix_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
+	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };
 
-	VkWriteDescriptorSet descriptor_writes[2] = { { 0 } };
-
+	const VkDescriptorBufferInfo draw_data_buffer_info = buffer_partition_descriptor_info(global_draw_data_buffer_partition, 1);
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[0].dstSet = FRAME.descriptor_set;
 	descriptor_writes[0].dstBinding = 0;
 	descriptor_writes[0].dstArrayElement = 0;
-	descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptor_writes[0].descriptorCount = 1;
-	descriptor_writes[0].pBufferInfo = &matrix_buffer_info;
+	descriptor_writes[0].pBufferInfo = &draw_data_buffer_info;
 	descriptor_writes[0].pImageInfo = NULL;
 	descriptor_writes[0].pTexelBufferView = NULL;
+
+	const VkDescriptorBufferInfo matrix_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
+	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptor_writes[1].dstSet = FRAME.descriptor_set;
+	descriptor_writes[1].dstBinding = 1;
+	descriptor_writes[1].dstArrayElement = 0;
+	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	descriptor_writes[1].descriptorCount = 1;
+	descriptor_writes[1].pBufferInfo = &matrix_buffer_info;
+	descriptor_writes[1].pImageInfo = NULL;
+	descriptor_writes[1].pTexelBufferView = NULL;
 
 	VkDescriptorImageInfo texture_infos[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_SIZES];
 
@@ -229,17 +346,17 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 		texture_infos[index].imageLayout = room_texture.layout;
 	}
 
-	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[1].dstSet = FRAME.descriptor_set;
-	descriptor_writes[1].dstBinding = 1;
-	descriptor_writes[1].dstArrayElement = 0;
-	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptor_writes[1].descriptorCount = num_render_object_slots + num_room_sizes;
-	descriptor_writes[1].pBufferInfo = NULL;
-	descriptor_writes[1].pImageInfo = texture_infos;
-	descriptor_writes[1].pTexelBufferView = NULL;
+	descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptor_writes[2].dstSet = FRAME.descriptor_set;
+	descriptor_writes[2].dstBinding = 2;
+	descriptor_writes[2].dstArrayElement = 0;
+	descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptor_writes[2].descriptorCount = num_render_object_slots + num_room_sizes;
+	descriptor_writes[2].pBufferInfo = NULL;
+	descriptor_writes[2].pImageInfo = texture_infos;
+	descriptor_writes[2].pTexelBufferView = NULL;
 
-	vkUpdateDescriptorSets(device, 2, descriptor_writes, 0, NULL);
+	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, NULL);
 
 
 
@@ -273,67 +390,10 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
 	
 	// TODO - use depth buffer for room layers and entities.
-
-	const uint32_t current_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.current_cache_slot];
-	const uint32_t next_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot];
-
-	{
-		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
-		const uint32_t current_animation_frame = area_render_state.current_cache_slot * num_room_layers;
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
-
-		const int32_t vertex_offset = (int32_t)((num_render_object_slots + current_room_id) * num_vertices_per_rect);
-		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, 0, vertex_offset, 0);
-	}
 	
-	if (area_render_state_is_scrolling()) {
-		
-		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
-		const uint32_t current_animation_frame = area_render_state.next_cache_slot * num_room_layers;
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
-
-		const int32_t vertex_offset = (int32_t)((num_render_object_slots + next_room_id) * num_vertices_per_rect);
-		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, 0, vertex_offset, 0);
-	}
-
-	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-
-		if (!is_render_object_slot_enabled(i)) {
-			continue;
-		}
-
-		const uint32_t render_object_slot = i;
-		const uint32_t current_animation_frame = render_object_texture_states[i].current_frame;
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
-
-		const uint32_t first_index = render_object_slot * num_indices_per_rect;
-		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, first_index, 0, 0);
-	}
-
-	// Draw foreground...
-	{
-		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
-		const uint32_t current_animation_frame = area_render_state.current_cache_slot * num_room_layers + 1;
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
-
-		const int32_t vertex_offset = (int32_t)((num_render_object_slots + current_room_id) * num_vertices_per_rect);
-		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, 0, vertex_offset, 0);
-	}
-
-	if (area_render_state_is_scrolling()) {
-		
-		const uint32_t render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size;
-		const uint32_t current_animation_frame = area_render_state.next_cache_slot * num_room_layers + 1;
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, (sizeof render_object_slot), &render_object_slot);
-		vkCmdPushConstants(FRAME.command_buffer, graphics_pipeline.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t), sizeof(uint32_t), &current_animation_frame);
-
-		const int32_t vertex_offset = (int32_t)((num_render_object_slots + next_room_id) * num_vertices_per_rect);
-		vkCmdDrawIndexed(FRAME.command_buffer, num_indices_per_rect, 1, 0, vertex_offset, 0);
-	}
+	upload_draw_data(area_render_state);
+	const uint32_t draw_data_offset = global_draw_data_buffer_partition.ranges[1].offset;
+	vkCmdDrawIndexedIndirectCount(FRAME.command_buffer, global_draw_data_buffer_partition.buffer, draw_data_offset, global_draw_data_buffer_partition.buffer, 0, 68, 28);
 
 	vkCmdEndRenderPass(FRAME.command_buffer);
 	vkEndCommandBuffer(FRAME.command_buffer);

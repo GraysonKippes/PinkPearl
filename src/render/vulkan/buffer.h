@@ -44,7 +44,8 @@ typedef struct staging_buffer_t {
 typedef enum buffer_type_t {
 	BUFFER_TYPE_STAGING,
 	BUFFER_TYPE_UNIFORM,
-	BUFFER_TYPE_STORAGE
+	BUFFER_TYPE_STORAGE,
+	BUFFER_TYPE_DRAW_DATA
 } buffer_type_t;
 
 typedef struct memory_range_t {

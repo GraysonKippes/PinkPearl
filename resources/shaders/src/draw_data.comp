@@ -1,0 +1,39 @@
+#version 460
+#extension GL_EXT_scalar_block_layout : require
+
+#define MAX_NUM_MODELS 64
+
+layout(local_size_x = 1) in;
+layout(local_size_y = 1) in;
+layout(local_size_z = 1) in;
+
+layout(scalar, set = 0, binding = 0) readonly uniform input_data_t {
+	uint enabled_slots[MAX_NUM_MODELS];
+} input_data;
+
+struct draw_info_t {
+	uint index_count;
+	uint instance_count;
+	uint first_index;
+	int vertex_offset;
+	uint first_instance;
+};
+
+layout(scalar, set = 0, binding = 1) writeonly buffer draw_data_t {
+	uint draw_count;
+	draw_info_t draw_infos[MAX_NUM_MODELS];
+} draw_data;
+
+const uint max_num_models = MAX_NUM_MODELS;
+const uint num_vertices_per_model = 4;
+const uint num_indices_per_model = 6;
+
+void main() {
+	const uint model_index = gl_WorkGroupID.x;
+	draw_data.draw_count = gl_NumWorkGroups.x;
+	draw_data.draw_infos[model_index].index_count = num_indices_per_model;
+	draw_data.draw_infos[model_index].instance_count = 1;
+	draw_data.draw_infos[model_index].first_index = 0;
+	draw_data.draw_infos[model_index].vertex_offset = enabled_slots[model_index] * num_vertices_per_model;
+	draw_data.draw_infos[model_index].first_instance = 0;
+}
