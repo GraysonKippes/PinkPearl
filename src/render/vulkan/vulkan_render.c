@@ -284,7 +284,65 @@ void upload_draw_data(const area_render_state_t area_render_state) {
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
-void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds, const area_render_state_t area_render_state) {
+static void upload_lighting_data(void) {
+	
+	typedef struct ambient_light_t {
+		float red;
+		float green;
+		float blue;
+		float intensity;
+	} ambient_light_t;
+	
+	typedef struct point_light_t {
+		float pos_x;
+		float pos_y;
+		float pos_z;
+		float red;
+		float green;
+		float blue;
+		float intensity;
+	} point_light_t;
+	
+	ambient_light_t ambient_lighting = {
+		.red = 0.125F,
+		.green = 0.25F,
+		.blue = 0.5F,
+		.intensity = 0.825
+	};
+	
+	const uint32_t num_point_lights = 1;
+	point_light_t point_lights[NUM_RENDER_OBJECT_SLOTS];
+	
+	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+		point_lights[i] = (point_light_t){
+			.pos_x = 0.0F,
+			.pos_y = 0.0F,
+			.pos_z = 0.0F,
+			.red = 0.0F,
+			.green = 0.0F,
+			.blue = 0.0F,
+			.intensity = 0.0F
+		};
+	}
+	
+	point_lights[0] = (point_light_t){
+		.pos_x = 0.0F,
+		.pos_y = 0.0F,
+		.pos_z = 0.5F,
+		.red = 1.0F,
+		.green = 0.825F,
+		.blue = 0.0F,
+		.intensity = 1.0F
+	};
+	
+	byte_t *lighting_data_mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 3);
+	memcpy(lighting_data_mapped_memory, &ambient_lighting, sizeof(ambient_lighting));
+	memcpy(&lighting_data_mapped_memory[16], &num_point_lights, sizeof(uint32_t));
+	memcpy(&lighting_data_mapped_memory[20], point_lights, num_render_object_slots * sizeof(point_light_t));
+	buffer_partition_unmap_memory(global_uniform_buffer_partition);
+}
+
+void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds) {
 
 	vkWaitForFences(device, 1, &FRAME.fence_frame_ready, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &FRAME.fence_frame_ready);
@@ -302,7 +360,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
 	compute_matrices(tick_delta_time, projection_bounds, camera_position, render_object_positions);
 
-	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };
+	VkWriteDescriptorSet descriptor_writes[4] = { { 0 } };
 
 	const VkDescriptorBufferInfo draw_data_buffer_info = buffer_partition_descriptor_info(global_draw_data_buffer_partition, 1);
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -362,8 +420,20 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	descriptor_writes[2].pImageInfo = texture_infos;
 	descriptor_writes[2].pTexelBufferView = NULL;
 
-	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, NULL);
+	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 3);
+	descriptor_writes[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptor_writes[3].dstSet = FRAME.descriptor_set;
+	descriptor_writes[3].dstBinding = 3;
+	descriptor_writes[3].dstArrayElement = 0;
+	descriptor_writes[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptor_writes[3].descriptorCount = 1;
+	descriptor_writes[3].pBufferInfo = &lighting_buffer_info;
+	descriptor_writes[3].pImageInfo = NULL;
+	descriptor_writes[3].pTexelBufferView = NULL;
 
+	vkUpdateDescriptorSets(device, 4, descriptor_writes, 0, NULL);
+
+	upload_lighting_data();
 
 
 	VkCommandBufferBeginInfo begin_info = { 0 };
@@ -388,16 +458,13 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	render_pass_info.pClearValues = &clear_value;
 
 	vkCmdBeginRenderPass(FRAME.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
-
 	vkCmdBindPipeline(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
 	vkCmdBindDescriptorSets(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &FRAME.descriptor_set, 0, NULL);
 	const VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(FRAME.command_buffer, 0, 1, &FRAME.model_buffer.handle, offsets);
 	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
-	
 	const uint32_t draw_data_offset = global_draw_data_buffer_partition.ranges[1].offset;
 	vkCmdDrawIndexedIndirectCount(FRAME.command_buffer, global_draw_data_buffer_partition.buffer, draw_data_offset, global_draw_data_buffer_partition.buffer, 0, 68, 28);
-
 	vkCmdEndRenderPass(FRAME.command_buffer);
 	vkEndCommandBuffer(FRAME.command_buffer);
 

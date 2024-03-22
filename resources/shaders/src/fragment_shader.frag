@@ -23,6 +23,26 @@ layout(scalar, set = 0, binding = 0) readonly uniform draw_data_t {
 
 layout(set = 0, binding = 2) uniform sampler2DArray[NUM_IMAGES] texture_samplers;
 
+struct ambient_light_t {
+	vec3 color;
+	float intensity;
+};
+
+struct point_light_t {
+	vec3 position;
+	vec3 color;
+	float intensity;
+};
+
+layout(scalar, set = 0, binding = 3) readonly uniform lighting_data_t {
+
+	ambient_light_t ambient_lighting;
+
+	uint num_point_lights;
+	point_light_t point_lights[NUM_RENDER_OBJECTS];
+	
+} lighting_data;
+
 layout(location = 0) in vec3 in_position;	// Model space
 layout(location = 1) in vec2 in_tex_coord;
 layout(location = 2) in vec3 in_color;
@@ -30,9 +50,9 @@ layout(location = 3) in flat uint in_draw_index;
 
 layout(location = 0) out vec4 out_color;
 
-float calculate_attenuation(vec3 src, vec3 dst, float k_q, float k_l) {
-	float d = distance(src, dst);
-	float r = k_q * (d * d) + k_l * d + 1.0;
+float calculate_attenuation(const vec3 src, const vec3 dst, const float coefficient_quadratic, const float coefficient_linear) {
+	const float d = distance(src, dst);
+	const float r = coefficient_quadratic * (d * d) + coefficient_linear * d + 1.0;
 	return 1.0 / r;
 }
 
@@ -40,24 +60,26 @@ void main() {
 
 	draw_info_t draw_info = draw_data.draw_infos[in_draw_index];
 
-	// Ambient light
-	const vec3 ambient_light_color = vec3(0.125, 0.25, 0.5);
-	const float ambient_lighting_intensity = 0.825;
-	const vec3 ambient_lighting = ambient_light_color * ambient_lighting_intensity;
-
 	// Texel position
 	vec3 texel_position = in_position;
 	texel_position.x = floor(in_position.x * 16.0) / 16.0;
 	texel_position.y = floor(in_position.y * 16.0) / 16.0;
 
+	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.image_index));
+	out_color = texture(texture_samplers[draw_info.render_object_slot], texture_coordinates) * vec4(in_color, 1.0);
+	
 	// Apply lighting
-	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.image_index)) * in_color;
-	out_color = texture(texture_samplers[draw_info.render_object_slot], texture_coordinates);
-	out_color.xyz *= ambient_lighting;
+	out_color.rgb *= (lighting_data.ambient_lighting.color * lighting_data.ambient_lighting.intensity);
+	vec3 point_light_color = vec3(1.0);
+	for (uint i = 0; i < lighting_data.num_point_lights; ++i) {
+		const point_light_t point_light = lighting_data.point_lights[i];
+		point_light_color *= (point_light.color * point_light.intensity * calculate_attenuation(point_light.position, texel_position, 0.07, 0.14));
+	}
+	out_color.rgb *= point_light_color;
 	
 	// Light level granularity
 	const float light_level = 32.0;
-	out_color.x = round(out_color.x * light_level) / light_level;
-	out_color.y = round(out_color.y * light_level) / light_level;
-	out_color.z = round(out_color.z * light_level) / light_level;
+	out_color.r = round(out_color.r * light_level) / light_level;
+	out_color.g = round(out_color.g * light_level) / light_level;
+	out_color.b = round(out_color.b * light_level) / light_level;
 }

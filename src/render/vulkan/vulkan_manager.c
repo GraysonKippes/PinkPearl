@@ -130,11 +130,12 @@ static void create_global_uniform_buffer(void) {
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
 		.queue_family_indices = NULL,
-		.num_partition_sizes = 3,
-		.partition_sizes = (VkDeviceSize[3]){
+		.num_partition_sizes = 4,
+		.partition_sizes = (VkDeviceSize[4]){
 			2096,	// Compute matrices
 			10240,	// Compute room texture
-			8200	// Compute area mesh
+			8200,	// Compute area mesh
+			1812	// Lighting data
 		}
 	};
 	

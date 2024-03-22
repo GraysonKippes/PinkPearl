@@ -55,7 +55,7 @@ void render_frame(float tick_delta_time) {
 	}
 
 	glfwPollEvents();
-	draw_frame(tick_delta_time, camera_position, projection_bounds, get_global_area_render_state());
+	draw_frame(tick_delta_time, camera_position, projection_bounds);
 }
 
 void settle_render_positions(void) {
