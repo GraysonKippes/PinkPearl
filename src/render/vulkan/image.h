@@ -6,7 +6,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "render/stb/image_data.h"
 #include "util/extent.h"
 
 #include "memory.h"
@@ -42,20 +41,9 @@ typedef struct image_t {
 
 } image_t;
 
-typedef enum image_layout_transition_t {
-	IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_GENERAL,
-	IMAGE_LAYOUT_TRANSITION_UNDEFINED_TO_TRANSFER_DST,
-	IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_SHADER_READ_ONLY,
-	IMAGE_LAYOUT_TRANSITION_TRANSFER_DST_TO_GENERAL
-} image_layout_transition_t;
-
-
-
 image_t create_image(const image_create_info_t image_create_info);
 bool destroy_image(image_t *const image_ptr);
 
 void create_sampler(physical_device_t physical_device, VkDevice device, VkSampler *sampler_ptr);
-
-VkBufferImageCopy2 make_buffer_image_copy(VkOffset2D image_offset, VkExtent2D image_extent);
 
 #endif	// IMAGE_H

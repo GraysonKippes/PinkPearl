@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "log/logging.h"
+#include "render/stb/image_data.h"
 #include "util/allocate.h"
 
 #include "buffer.h"

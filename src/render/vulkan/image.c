@@ -1,9 +1,5 @@
 #include "image.h"
 
-#include <stdint.h>
-
-#include "command_buffer.h"
-
 static const VkImageSubresourceRange image_subresource_range_default = {
 	.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	.baseMipLevel = 0,
@@ -148,21 +144,3 @@ void create_sampler(physical_device_t physical_device, VkDevice device, VkSample
 	vkCreateSampler(device, &create_info, NULL, sampler_ptr);
 }
 
-VkBufferImageCopy2 make_buffer_image_copy(VkOffset2D image_offset, VkExtent2D image_extent) {
-
-	VkBufferImageCopy2 copy_region = { 0 };
-	copy_region.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
-	copy_region.pNext = NULL;
-	copy_region.bufferOffset = 0;
-	copy_region.bufferRowLength = 0;
-	copy_region.bufferImageHeight = 0;
-	copy_region.imageSubresource = image_subresource_layers_default;
-	copy_region.imageOffset.x = image_offset.x;
-	copy_region.imageOffset.y = image_offset.y;
-	copy_region.imageOffset.z = 0;
-	copy_region.imageExtent.width = image_extent.width;
-	copy_region.imageExtent.height = image_extent.height;
-	copy_region.imageExtent.depth = 1;
-
-	return copy_region;
-}
