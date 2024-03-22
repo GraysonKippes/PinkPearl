@@ -22,34 +22,33 @@ void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_se
 
 compute_pipeline_t create_compute_pipeline(const VkDevice device, const descriptor_layout_t descriptor_layout, const char *const compute_shader_name) {
 	
-	VkShaderModule compute_shader;
-	create_shader_module(device, compute_shader_name, &compute_shader);
+	shader_module_t compute_shader_module = create_shader_module(device, compute_shader_name);
 
 	compute_pipeline_t compute_pipeline = { 0 };
-	compute_pipeline.device = device;
 
 	create_descriptor_set_layout(device, descriptor_layout, &compute_pipeline.descriptor_set_layout);
 	create_pipeline_layout(device, compute_pipeline.descriptor_set_layout, &compute_pipeline.layout);
 	// TODO - manage descriptor set memory better.
 	create_descriptor_pool(device, 256, descriptor_layout, &compute_pipeline.descriptor_pool);
 
-	VkComputePipelineCreateInfo create_info = { 0 };
-	create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-	create_info.pNext = NULL;
-	create_info.flags = 0;
-	create_info.layout = compute_pipeline.layout;
-	create_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-	create_info.stage.module = compute_shader;
-	create_info.stage.pName = "main";
+	const VkComputePipelineCreateInfo create_info = {
+		.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.layout = compute_pipeline.layout,
+		.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT,
+		.stage.module = compute_shader_module.module_handle,
+		.stage.pName = "main"
+	};
 
-	VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &compute_pipeline.handle);
+	const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &compute_pipeline.handle);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Compute pipeline creation failed. (Error code: %i)", result);
+		logf_message(FATAL, "Compute pipeline creation failed (error code: %i).", result);
 	}
+	compute_pipeline.device = device;
 
-	vkDestroyShaderModule(device, compute_shader, NULL);
-
+	destroy_shader_module(&compute_shader_module);
 	return compute_pipeline;
 }
 

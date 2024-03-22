@@ -8,64 +8,84 @@
 
 #include "config.h"
 #include "log/logging.h"
+#include "util/allocate.h"
+#include "util/byte.h"
 
 #define SHADER_DIRECTORY (RESOURCE_PATH "shaders/")
 
-static const char *shader_directory = SHADER_DIRECTORY;
+typedef struct shader_bytecode_t {
+	uint32_t bytecode_size;
+	byte_t *bytecode;
+} shader_bytecode_t;
 
+static const char *shader_directory = SHADER_DIRECTORY;
 static const uint32_t initial_buffer_size = 8192;
 
-char *read_file(const char *path, uint32_t *file_size_ptr) {
+static shader_bytecode_t read_shader_file(const char *const path) {
 
-	// TODO - use safe "_s" io functions
-
-	log_message(VERBOSE, "Reading shader file...");
-	logf_message(VERBOSE, "Opening shader file at \"%s\"...", path);
+	logf_message(VERBOSE, "Reading shader file at \"%s\"...", path);
+	
+	shader_bytecode_t shader_bytecode = {
+		.bytecode_size = 0,
+		.bytecode = NULL
+	};
+	
+	if (path == NULL) {
+		log_message(ERROR, "Error reading shader file: pointer to path string is null.");
+		return shader_bytecode;
+	}
 
 	FILE *file = fopen(path, "rb");
 	if (file == NULL) {
 		log_message(ERROR, "Error reading shader file: could not open file.");
-		return NULL;
+		return shader_bytecode;
+	}
+	
+	while (fgetc(file) != EOF) {
+		++shader_bytecode.bytecode_size;
+	}
+	
+	if (!allocate((void **)&shader_bytecode.bytecode, initial_buffer_size, sizeof(byte_t))) {
+		log_message(ERROR, "Error reading shader file: failed to allocate buffer for shader bytecode.");
+		return shader_bytecode;
 	}
 
-	char *contents = calloc(initial_buffer_size, sizeof(char));
-	if (contents == NULL) {
-		log_message(ERROR, "Error reading shader file: could not allocate buffer for shader bytecode.");
-		return NULL;
-	}
-
-	// TODO - make this able to process larger shader files.
 	uint32_t file_size = 0;
+	rewind(file);
 	char next_char = fgetc(file);
 	while (next_char != EOF) {
-		contents[file_size++] = next_char;
+		shader_bytecode.bytecode[file_size++] = next_char;
 		next_char = fgetc(file);
 	}
 
 	fclose(file);
-
-	if (file_size_ptr != NULL) {
-		*file_size_ptr = file_size;
-	}
-	else {
-		log_message(WARNING, "Warning reading shader file: pointer to return file size is NULL.");
-	}
-
-	return contents;
+	return shader_bytecode;
 }
 
-void create_shader_module(VkDevice device, const char *filename, VkShaderModule *shader_module_ptr) {
+static bool destroy_shader_bytecode(shader_bytecode_t *const shader_bytecode_ptr) {
+	
+	if (shader_bytecode_ptr == NULL) {
+		return false;
+	}
+	
+	deallocate((void **)&shader_bytecode_ptr->bytecode);
+	shader_bytecode_ptr->bytecode_size = 0;
+	
+	return true;
+}
+
+shader_module_t create_shader_module(VkDevice device, const char *const filename) {
 
 	logf_message(VERBOSE, "Loading shader \"%s\"...", filename);
 
+	shader_module_t shader_module = {
+		.module_handle = VK_NULL_HANDLE,
+		.device = VK_NULL_HANDLE
+	};
+
 	if (filename == NULL) {
 		log_message(ERROR, "Error creating shader module: pointer to filename is NULL.");
-		return;
-	}
-
-	if (shader_module_ptr == NULL) {
-		log_message(ERROR, "Error creating shader module: pointer to shader module is NULL");
-		return;
+		return shader_module;
 	}
 
 	char path[256];
@@ -86,7 +106,7 @@ void create_shader_module(VkDevice device, const char *filename, VkShaderModule 
 			log_message(WARNING, "Failed to get error message.");
 			log_message(ERROR, "Error creating shader module: failed to copy shader directory into shader path buffer.");
 		}
-		return;
+		return shader_module;
 	}
 
 	const errno_t filename_strncat_result = strncat_s(path, 256, filename, filename_length); 
@@ -100,28 +120,43 @@ void create_shader_module(VkDevice device, const char *filename, VkShaderModule 
 			log_message(WARNING, "Failed to get error message.");
 			log_message(ERROR, "Error creating shader module: failed to copy shader filename into shader path buffer.");
 		}
-		return;
+		return shader_module;
 	}
 
-	uint32_t file_size = 0;
-	char *bytecode = read_file(path, &file_size);
-
-	if (bytecode == NULL) {
+	const shader_bytecode_t shader_bytecode = read_shader_file(path);
+	if (shader_bytecode.bytecode == NULL) {
 		log_message(FATAL, "Fatal error creating shader module: shader file reading failed.");
-		return;
+		return shader_module;
 	}
 
-	VkShaderModuleCreateInfo create_info = { 0 };
-	create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	create_info.pNext = NULL;
-	create_info.flags = 0;
-	create_info.codeSize = file_size;
-	create_info.pCode = (uint32_t *)bytecode;
+	const VkShaderModuleCreateInfo create_info = {
+		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.codeSize = shader_bytecode.bytecode_size,
+		.pCode = (uint32_t *)shader_bytecode.bytecode
+	};
 
-	VkResult result = vkCreateShaderModule(device, &create_info, NULL, shader_module_ptr);
+	const VkResult result = vkCreateShaderModule(device, &create_info, NULL, &shader_module.module_handle);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Fatal error creating shader module: shader module creation failed. (Error code: %i)", result);
+		logf_message(FATAL, "Fatal error creating shader module: shader module creation failed (error code: %i).", result);
+		return shader_module;
 	}
+	shader_module.device = device;
 
-	free(bytecode);
+	destroy_shader_bytecode(&shader_bytecode);
+	return shader_module;
+}
+
+bool destroy_shader_module(shader_module_t *const shader_module_ptr) {
+	
+	if (shader_module_ptr == NULL) {
+		return false;
+	}
+	
+	vkDestroyShaderModule(shader_module_ptr->device, shader_module_ptr->module_handle, NULL);
+	shader_module_ptr->module_handle = VK_NULL_HANDLE;
+	shader_module_ptr->device = VK_NULL_HANDLE;
+	
+	return true;
 }

@@ -1,14 +1,16 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-/* PLANNED SHADERS
- *
- * compute_matrices - creates and multiplies a matrix for each renderable entity on screen.
- * compute_vertices - generates vertices for models, particularly for tilesets.
-*/
+#include <stdbool.h>
 
 #include <vulkan/vulkan.h>
 
-void create_shader_module(VkDevice device, const char *filename, VkShaderModule *shader_module_ptr);
+typedef struct shader_module_t {
+	VkShaderModule module_handle;
+	VkDevice device;
+} shader_module_t;
+
+shader_module_t create_shader_module(VkDevice device, const char *const filename);
+bool destroy_shader_module(shader_module_t *const shader_module_ptr);
 
 #endif	// SHADER_H

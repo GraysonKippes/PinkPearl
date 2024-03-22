@@ -218,22 +218,16 @@ void create_vulkan_objects(void) {
 	create_command_pool(device, transfer_command_pool_flags, *physical_device.queue_family_indices.transfer_family_ptr, &transfer_command_pool);
 	create_command_pool(device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, *physical_device.queue_family_indices.compute_family_ptr, &compute_command_pool);
 
-	swapchain = create_swapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
-
 	clear_color = (VkClearValue){ { { 0.0F, 0.0F, 0.0F, 1.0F } } };
 
-	VkShaderModule vertex_shader;
-	create_shader_module(device, VERTEX_SHADER_NAME, &vertex_shader);
-
-	VkShaderModule fragment_shader;
-	create_shader_module(device, FRAGMENT_SHADER_NAME, &fragment_shader);
-
-	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_set_layout, vertex_shader, fragment_shader);
-
-	vkDestroyShaderModule(device, vertex_shader, NULL);
-	vkDestroyShaderModule(device, fragment_shader, NULL);
-
+	swapchain = create_swapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
+	shader_module_t vertex_shader_module = create_shader_module(device, VERTEX_SHADER_NAME);
+	shader_module_t fragment_shader_module = create_shader_module(device, FRAGMENT_SHADER_NAME);
+	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_set_layout, vertex_shader_module.module_handle, fragment_shader_module.module_handle);
 	create_framebuffers(device, graphics_pipeline.render_pass, &swapchain);
+
+	destroy_shader_module(&vertex_shader_module);
+	destroy_shader_module(&fragment_shader_module);
 
 	log_message(VERBOSE, "Creating frame objects...");
 
