@@ -23,8 +23,10 @@ bool deallocate(void **ptr_ptr) {
 		return false;
 	}
 
-	free(*ptr_ptr);
-	*ptr_ptr = NULL;
+	if (*ptr_ptr != NULL) {
+		free(*ptr_ptr);
+		*ptr_ptr = NULL;
+	}
 
 	return true;
 }

@@ -99,6 +99,7 @@ target_sources(PinkPearl PRIVATE
 	src/util/extent.c
 	src/util/file_io.c
 	src/util/offset.c
+	src/util/string.c
 	src/util/string_array.c
 	src/util/time.c
 )
