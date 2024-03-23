@@ -44,7 +44,7 @@ typedef enum direction_t {
 } direction_t;
 
 // Returns the direction in which the player is leaving the room, or NONE if the player is not leaving the room.
-direction_t test_room_travel(const vector3D_cubic_t player_position, const area_t area, const int current_room_index);
+direction_t test_room_travel(const vector3D_t player_position, const area_t area, const int current_room_index);
 
 offset_t direction_offset(const direction_t direction);
 

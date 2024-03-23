@@ -67,7 +67,7 @@ int area_get_room_index(const area_t area, const offset_t room_position) {
 	return area.positions_to_rooms[room_position_index];
 }
 
-direction_t test_room_travel(const vector3D_cubic_t player_position, const area_t area, const int current_room_index) {
+direction_t test_room_travel(const vector3D_t player_position, const area_t area, const int current_room_index) {
 	
 	if (current_room_index >= (int)area.num_rooms) {
 		logf_message(ERROR, "Error testing room travel: specified current room index (%i) is not less than total number of rooms in specified area (%u).", current_room_index, area.num_rooms);
@@ -76,13 +76,13 @@ direction_t test_room_travel(const vector3D_cubic_t player_position, const area_
 
 	const room_t room = area.rooms[current_room_index];
 	const extent_t room_extent = area.room_extent;
-	const vector3D_cubic_t room_position = {
+	const vector3D_t room_position = {
 		.x = (double)room.position.x * (double)room_extent.width,
 		.y = (double)room.position.y * (double)room_extent.length,
 		.z = 0.0
 	};
 	// Player position in room space (abbreviated IRS).
-	const vector3D_cubic_t player_position_irs = vector3D_cubic_subtract(player_position, room_position);
+	const vector3D_t player_position_irs = vector3D_subtract(player_position, room_position);
 
 	// TODO - make this check which edge of the room the player actually goes through.
 

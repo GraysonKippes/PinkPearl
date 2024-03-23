@@ -21,10 +21,9 @@ void tick_entity(entity_t *entity_ptr) {
 		return;
 	}
 
-	const vector3D_cubic_t old_position = entity_ptr->transform.position;
-	const vector3D_cubic_t position_step = vector3D_spherical_to_cubic(entity_ptr->transform.velocity);
-
-	vector3D_cubic_t new_position = vector3D_cubic_add(old_position, position_step);
+	const vector3D_t old_position = entity_ptr->transform.position;
+	const vector3D_t position_step = entity_ptr->transform.velocity;
+	vector3D_t new_position = vector3D_add(old_position, position_step);
 
 	// The square of the distance of the currently selected new position from the old position.
 	// This variable is used to track which resolved new position is the shortest from the entity.
@@ -35,8 +34,8 @@ void tick_entity(entity_t *entity_ptr) {
 		
 		const rect_t wall = current_area.rooms[0].walls[i];
 
-		vector3D_cubic_t resolved_position = resolve_collision(old_position, new_position, entity_ptr->hitbox, wall);
-		vector3D_cubic_t resolved_step = vector3D_cubic_subtract(resolved_position, old_position);
+		vector3D_t resolved_position = resolve_collision(old_position, new_position, entity_ptr->hitbox, wall);
+		vector3D_t resolved_step = vector3D_subtract(resolved_position, old_position);
 		const double resolved_step_length_squared = SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z);
 
 		if (resolved_step_length_squared < step_length_squared) {

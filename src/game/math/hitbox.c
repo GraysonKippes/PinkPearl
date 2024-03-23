@@ -4,7 +4,7 @@
 
 #define SQUARE(x) (x * x)
 
-rect_t hitbox_to_world_space(hitbox_t hitbox, vector3D_cubic_t position) {
+rect_t hitbox_to_world_space(hitbox_t hitbox, vector3D_t position) {
 	return (rect_t){
 		.x1 = position.x - hitbox.width / 2.0,
 		.y1 = position.y - hitbox.length / 2.0,
@@ -73,7 +73,7 @@ bool rect_overlap(const rect_t a, const rect_t b) {
  *
  * */
 
-vector3D_cubic_t resolve_collision(const vector3D_cubic_t old_position, const vector3D_cubic_t new_position, const rect_t hitbox, const rect_t wall) {
+vector3D_t resolve_collision(const vector3D_t old_position, const vector3D_t new_position, const rect_t hitbox, const rect_t wall) {
 	
 	// Collision detection and correction works by transforming 
 	// the entity's velocity vector into a linear function:
@@ -180,9 +180,9 @@ vector3D_cubic_t resolve_collision(const vector3D_cubic_t old_position, const ve
 	// This parameter determines how much the entity is slowed down when sliding against a wall.
 	static const double friction_factor = 0.75;
 
-	const vector3D_cubic_t position_step = vector3D_cubic_subtract(new_position, old_position);
+	const vector3D_t position_step = vector3D_subtract(new_position, old_position);
 
-	vector3D_cubic_t resolved_position = new_position; 
+	vector3D_t resolved_position = new_position; 
 
 	if (position_step.x > 0.0) {
 
@@ -206,10 +206,10 @@ vector3D_cubic_t resolve_collision(const vector3D_cubic_t old_position, const ve
 
 			// If the entity is flush against the wall, then strip the x-component from the entity's velocity.
 			if (old_position.x + hitbox.x2 == wall.x1) {
-				vector3D_cubic_t resolved_step = position_step;
+				vector3D_t resolved_step = position_step;
 				resolved_step.x = 0.0;
 				resolved_step.y *= friction_factor;
-				resolved_position = vector3D_cubic_add(old_position, resolved_step);
+				resolved_position = vector3D_add(old_position, resolved_step);
 			}
 			else {
 				resolved_position = new_position;
@@ -242,10 +242,10 @@ vector3D_cubic_t resolve_collision(const vector3D_cubic_t old_position, const ve
 
 			// If the entity is flush against the wall, then strip the x-component from the entity's velocity.
 			if (old_position.x + hitbox.x1 == wall.x2) {
-				vector3D_cubic_t resolved_step = position_step;
+				vector3D_t resolved_step = position_step;
 				resolved_step.x = 0.0;
 				resolved_step.y *= friction_factor;
-				resolved_position = vector3D_cubic_add(old_position, resolved_step);
+				resolved_position = vector3D_add(old_position, resolved_step);
 			}
 			else {
 				resolved_position = new_position;
@@ -278,10 +278,10 @@ vector3D_cubic_t resolve_collision(const vector3D_cubic_t old_position, const ve
 
 			// If the entity is flush against the wall, then strip the y-component from the entity's velocity.
 			if (old_position.y + hitbox.y2 == wall.y1) {
-				vector3D_cubic_t resolved_step = position_step;
+				vector3D_t resolved_step = position_step;
 				resolved_step.y = 0.0;
 				resolved_step.x *= friction_factor;
-				resolved_position = vector3D_cubic_add(old_position, resolved_step);
+				resolved_position = vector3D_add(old_position, resolved_step);
 			}
 			else {
 				resolved_position = new_position;
@@ -313,10 +313,10 @@ vector3D_cubic_t resolve_collision(const vector3D_cubic_t old_position, const ve
 
 			// If the entity is flush against the wall, then strip the y-component from the entity's velocity.
 			if (old_position.y + hitbox.y1 == wall.y2) {
-				vector3D_cubic_t resolved_step = position_step;
+				vector3D_t resolved_step = position_step;
 				resolved_step.y = 0.0;
 				resolved_step.x *= friction_factor;
-				resolved_position = vector3D_cubic_add(old_position, resolved_step);
+				resolved_position = vector3D_add(old_position, resolved_step);
 			}
 			else {
 				resolved_position = new_position;
