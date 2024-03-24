@@ -5,14 +5,17 @@
 
 #include "allocate.h"
 
-string_t new_string_empty(const size_t capacity) {
-	
-	string_t string = {
+string_t make_null_string(void) {
+	return (string_t){
 		.length = 0,
 		.capacity = 0,
 		.buffer = NULL
 	};
+}
+
+string_t new_string_empty(const size_t capacity) {
 	
+	string_t string = make_null_string();
 	if (!allocate((void **)&string.buffer, capacity, sizeof(char))) {
 		return string;
 	}
@@ -48,6 +51,19 @@ bool destroy_string(string_t *const string_ptr) {
 	string_ptr->capacity = 0;
 	
 	return true;
+}
+
+bool string_compare(const string_t a, const string_t b) {
+	
+	if (is_string_null(a) || is_string_null(b)) {
+		return false;
+	}
+	
+	if (a.length != b.length) {
+		return false;
+	}
+	
+	return strncmp(a.buffer, b.buffer, a.length) == 0;
 }
 
 bool is_string_null(const string_t string) {

@@ -54,6 +54,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/entity/entity.c
 	src/game/entity/entity_ai.c
 	src/game/entity/entity_manager.c
+	src/game/entity/entity_registry.c
 	src/game/math/hitbox.c
 	src/game/math/vector3D.c
 	src/glfw/glfw_manager.c

@@ -19,10 +19,12 @@ typedef struct string_t {
 	
 } string_t;
 
+string_t make_null_string(void);
 string_t new_string_empty(const size_t capacity);
 string_t new_string(const size_t capacity, const char *const initial_data);
 bool destroy_string(string_t *const string_ptr);
 
+bool string_compare(const string_t a, const string_t b);
 bool is_string_null(const string_t string);
 
 #endif	// UTIL_STRING_H

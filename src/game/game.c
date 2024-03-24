@@ -18,6 +18,7 @@
 #include "game_state.h"
 #include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
+#include "entity/entity_registry.h"
 
 static game_state_bitfield_t game_state_bitfield = 0;
 
@@ -35,6 +36,7 @@ static entity_handle_t player_entity_handle;
 
 void start_game(void) {
 
+	init_entity_registry();
 	init_entity_manager();
 	current_area = parse_fga_file("test");
 	area_render_state_reset(current_area, current_area.rooms[current_room_index]);
