@@ -109,8 +109,8 @@ area_t parse_fga_file(const char *filename) {
 		area.rooms[i].id = (int)i;
 		area.rooms[i].size = area.room_size;
 		area.rooms[i].extent = area.room_extent;
-		area.rooms[i].num_entities = 0;
-		area.rooms[i].entities = NULL;
+		area.rooms[i].num_entity_spawners = 0;
+		area.rooms[i].entity_spawners = NULL;
 
 		const int result = read_room_data(fga_file, &area.rooms[i]);
 		if (result != 0) {

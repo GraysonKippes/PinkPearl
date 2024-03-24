@@ -1,7 +1,7 @@
 #ifndef ROOM_H
 #define ROOM_H
 
-#include "game/entity/entity.h"
+#include "game/entity/entity_spawner.h"
 #include "game/math/hitbox.h"
 #include "util/extent.h"
 #include "util/offset.h"
@@ -32,8 +32,8 @@ typedef struct room_t {
 	unsigned int num_walls;
 	rect_t *walls;
 	
-	unsigned int num_entities;
-	entity_t *entities;
+	unsigned int num_entity_spawners;
+	entity_spawner_t *entity_spawners;
 
 } room_t;
 
