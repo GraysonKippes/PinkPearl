@@ -1,8 +1,6 @@
 #ifndef ROOM_H
 #define ROOM_H
 
-#include <stdio.h>
-
 #include "game/math/hitbox.h"
 #include "util/extent.h"
 #include "util/offset.h"
