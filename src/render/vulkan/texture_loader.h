@@ -6,7 +6,6 @@
 #include "texture.h"
 
 void create_image_staging_buffer(void);
-
 void destroy_image_staging_buffer(void);
 
 texture_t load_texture(const texture_create_info_t texture_create_info);

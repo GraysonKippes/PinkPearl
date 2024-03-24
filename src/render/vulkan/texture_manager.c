@@ -70,26 +70,6 @@ static const texture_create_info_t missing_texture_create_info = {
 	}
 };
 
-texture_create_info_t make_texture_create_info(extent_t texture_extent) {
-
-	static const animation_create_info_t animations[1] = {
-		{
-			.start_cell = 0,
-			.num_frames = 1,
-			.frames_per_second = 0
-		}
-	};
-
-	texture_create_info_t texture_create_info = { 0 };
-	texture_create_info.atlas_extent = texture_extent;
-	texture_create_info.num_cells = (extent_t){ 1, 1 };
-	texture_create_info.cell_extent = texture_extent;
-	texture_create_info.num_animations = 1;
-	texture_create_info.animations = (animation_create_info_t *)animations;
-
-	return texture_create_info;
-}
-
 static void set_texture_name(const uint32_t index, const texture_create_info_t texture_create_info) {
 	
 	// Temporary name buffer -- do the string operations here.

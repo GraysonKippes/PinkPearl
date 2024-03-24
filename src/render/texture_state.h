@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef uint32_t texture_handle_t;
+typedef unsigned int texture_handle_t;
 
 typedef struct texture_animation_cycle_t {
 	uint32_t num_frames;
