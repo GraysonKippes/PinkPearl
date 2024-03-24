@@ -8,15 +8,10 @@
 #include "render/render_object.h"
 
 typedef struct entity_t {
-
 	entity_transform_t transform;
-
 	rect_t hitbox;
-
 	entity_ai_t ai;
-
 	render_handle_t render_handle;
-
 } entity_t;
 
 // Returns an entity with default values.
