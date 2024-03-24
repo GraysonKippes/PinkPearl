@@ -26,5 +26,6 @@ bool destroy_string(string_t *const string_ptr);
 
 bool string_compare(const string_t a, const string_t b);
 bool is_string_null(const string_t string);
+size_t string_hash(const string_t string, const size_t limit);
 
 #endif	// UTIL_STRING_H
