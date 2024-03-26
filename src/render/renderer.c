@@ -72,7 +72,9 @@ void upload_model(uint32_t slot, model_t model, const char *const texture_name) 
 	}
 
 	stage_model_data(slot, model);
-	const texture_state_t texture_state = make_new_texture_state(find_loaded_texture_handle(texture_name));
+	string_t texture_id = new_string(256, texture_name);
+	const texture_state_t texture_state = make_new_texture_state(find_loaded_texture_handle(texture_id));
+	destroy_string(&texture_id);
 	swap_render_object_texture_state(slot, texture_state);
 	upload_draw_data(get_global_area_render_state());
 }

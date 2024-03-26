@@ -6,6 +6,7 @@
 #include "game/area/room.h"
 #include "render/texture_info.h"
 #include "render/texture_state.h"
+#include "util/string.h"
 
 #include "texture.h"
 
@@ -19,7 +20,7 @@ void destroy_textures(void);
 
 texture_t get_room_texture(const room_size_t room_size);
 texture_t get_loaded_texture(const texture_handle_t texture_handle);
-texture_handle_t find_loaded_texture_handle(const char *restrict const texture_name);
+texture_handle_t find_loaded_texture_handle(const string_t texture_id);
 
 texture_state_t missing_texture_state(void);
 texture_state_t make_new_texture_state(const texture_handle_t texture_handle);

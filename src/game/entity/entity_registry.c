@@ -31,7 +31,7 @@ bool register_entity_record(const entity_record_t entity_record) {
 	return false;
 }
 
-bool retrieve_entity_record(const string_t entity_id, entity_record_t *const entity_record_ptr) {
+bool find_entity_record(const string_t entity_id, entity_record_t *const entity_record_ptr) {
 	size_t hash_index = string_hash(entity_id, num_entity_records);
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		if (string_compare(entity_id, entity_records[i].entity_id)) {

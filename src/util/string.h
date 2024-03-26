@@ -24,8 +24,15 @@ string_t new_string_empty(const size_t capacity);
 string_t new_string(const size_t capacity, const char *const initial_data);
 bool destroy_string(string_t *const string_ptr);
 
-bool string_compare(const string_t a, const string_t b);
+// String analysis
 bool is_string_null(const string_t string);
+bool string_compare(const string_t a, const string_t b);
+size_t string_reverse_search_char(const string_t string, const char c);
+
+// String mutation
+bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_chars);
+
+// Miscellaneous
 size_t string_hash(const string_t string, const size_t limit);
 
 #endif	// UTIL_STRING_H

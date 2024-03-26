@@ -53,6 +53,10 @@ bool destroy_string(string_t *const string_ptr) {
 	return true;
 }
 
+bool is_string_null(const string_t string) {
+	return string.capacity == 0 || string.buffer == NULL;
+}
+
 bool string_compare(const string_t a, const string_t b) {
 	
 	if (is_string_null(a) || is_string_null(b)) {
@@ -66,9 +70,35 @@ bool string_compare(const string_t a, const string_t b) {
 	return strncmp(a.buffer, b.buffer, a.length) == 0;
 }
 
-bool is_string_null(const string_t string) {
-	return string.capacity == 0 || string.buffer == NULL;
+size_t string_reverse_search_char(const string_t string, const char c) {
+	
+	if (is_string_null(string)) {
+		return 0;
+	}
+	
+	const char *reverse_search_result = strrchr(string.buffer, c);
+	if (reverse_search_result == NULL) {
+		return string.length;
+	}
+	
+	const ptrdiff_t ptr_difference = reverse_search_result - string.buffer;
+	return (size_t)ptr_difference;
 }
+
+bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_chars) {
+	
+	if (string_ptr == NULL) {
+		return false;
+	}
+	
+	if (is_string_null(*string_ptr) || num_chars > string_ptr->length) {
+		return false;
+	}
+	
+	string_ptr->length -= num_chars;
+	return true;
+}
+
 
 static size_t exponentiate(const size_t base, const size_t exponent) {
 	// Recursive binary exponentiation.

@@ -46,10 +46,14 @@ static texture_t textures[NUM_TEXTURES];
 const texture_handle_t missing_texture_handle = 0;
 const texture_handle_t room_texture_handle = 1;
 
-#define TEXTURE_NAME_MAX_LENGTH 256
+// Record for a *loaded* texture.
+// Textures that are generated rather than loaded (e.g. room textures) do not have records.
+typedef struct texture_record_t {
+	string_t texture_id;
+	texture_handle_t texture_handle;
+} texture_record_t;
 
-static const size_t texture_name_max_length = TEXTURE_NAME_MAX_LENGTH;
-static char texture_names[NUM_TEXTURES][TEXTURE_NAME_MAX_LENGTH];
+texture_record_t texture_records[NUM_LOADED_TEXTURES];
 
 static const texture_create_info_t missing_texture_create_info = {
 	.path = "missing.png",
@@ -70,31 +74,29 @@ static const texture_create_info_t missing_texture_create_info = {
 	}
 };
 
-static void set_texture_name(const uint32_t index, const texture_create_info_t texture_create_info) {
+static void register_loaded_texture(const texture_handle_t texture_handle, const texture_create_info_t texture_create_info) {
 	
-	// Temporary name buffer -- do the string operations here.
-	char name[TEXTURE_NAME_MAX_LENGTH];
-	memset(name, '\0', texture_name_max_length);
-	const errno_t texture_name_strncpy_result_1 = strncpy_s(name, texture_name_max_length, texture_create_info.path, 64);
-	if (texture_name_strncpy_result_1 != 0) {
-		logf_message(WARNING, "Warning loading texture: failed to copy texture path into temporary texture name buffer. (Error code: %u)", texture_name_strncpy_result_1);
+	string_t texture_id = new_string(256, texture_create_info.path);
+	const size_t file_extension_delimiter_index = string_reverse_search_char(texture_id, '.');
+	if (file_extension_delimiter_index < texture_id.length) {
+		const size_t num_chars_to_remove = texture_id.length - file_extension_delimiter_index;
+		string_remove_trailing_chars(&texture_id, num_chars_to_remove);
 	}
-
-	// Prune off the file extension if it is found.
-	// TODO - make a safer version of this function...
-	char *file_extension_delimiter_ptr = strrchr(name, '.');
-	if (file_extension_delimiter_ptr != NULL) {
-		const ptrdiff_t file_extension_delimiter_offset = file_extension_delimiter_ptr - name;
-		const size_t remaining_length = file_extension_delimiter_offset >= 0 
-			? texture_name_max_length - file_extension_delimiter_offset
-			: texture_name_max_length;
-		memset(file_extension_delimiter_ptr, '\0', remaining_length);
-	}
-
-	// Copy the processed texture name into the array of texture names.
-	const errno_t texture_name_strncpy_result_2 = strncpy_s(texture_names[index], texture_name_max_length, name, texture_name_max_length);
-	if (texture_name_strncpy_result_2 != 0) {
-		logf_message(WARNING, "Warning loading texture: failed to copy texture name from temporary buffer into texture name array. (Error code: %u)", texture_name_strncpy_result_2);
+	
+	const texture_record_t texture_record = {
+		.texture_id = texture_id,
+		.texture_handle = texture_handle
+	};
+	
+	size_t hash_index = string_hash(texture_id, (size_t)num_loaded_textures);
+	for (size_t i = 0; i < (size_t)num_loaded_textures; ++i) {
+		if (is_string_null(texture_records[hash_index].texture_id)) {
+			texture_records[hash_index] = texture_record;
+		}
+		else {
+			hash_index++;
+			hash_index %= (size_t)num_loaded_textures;
+		}
 	}
 }
 
@@ -120,10 +122,18 @@ void load_textures(const texture_pack_t texture_pack) {
 	textures[1] = init_room_texture();
 
 	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
+		texture_records[i].texture_id = make_null_string();
+		texture_records[i].texture_handle = missing_texture_handle;
+	}
+
+	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
+		
 		// Offset for room textures and missing texture placeholder.
-		const uint32_t texture_index = num_reserved_textures + i;
-		textures[texture_index] = load_texture(texture_pack.texture_create_infos[i]);
-		set_texture_name(i, texture_pack.texture_create_infos[i]);
+		const texture_handle_t texture_handle = num_reserved_textures + i;
+		const texture_create_info_t texture_create_info = texture_pack.texture_create_infos[i];
+		
+		textures[texture_handle] = load_texture(texture_create_info);
+		register_loaded_texture(texture_handle, texture_create_info);
 	}
 
 	log_message(VERBOSE, "Done loading textures.");
@@ -156,34 +166,23 @@ texture_t get_loaded_texture(const texture_handle_t texture_handle) {
 	return textures[texture_handle];
 }
 
-texture_handle_t find_loaded_texture_handle(const char *restrict const texture_name) {
+texture_handle_t find_loaded_texture_handle(const string_t texture_id) {
 
-	if (texture_name == NULL) {
-		log_message(ERROR, "Error finding loaded texture: given texture name is NULL.");
+	if (is_string_null(texture_id)) {
+		log_message(ERROR, "Error finding loaded texture: given texture ID is NULL.");
 		return missing_texture_handle;
 	}
-
-	const size_t texture_name_length = strnlen_s(texture_name, texture_name_max_length);
-
-	// Depth-first search for matching texture name.
-	for (uint32_t i = 0; i < num_textures; ++i) {
 	
-		bool texture_name_matches = true;
-		for (size_t j = 0; j < texture_name_length; ++j) {
-			const char c = texture_name[j];
-			const char d = texture_names[i][j];
-			if (c != d) {
-				texture_name_matches = false;
-				break;
-			}
+	size_t hash_index = string_hash(texture_id, (size_t)num_loaded_textures);
+	for (size_t i = 0; i < (size_t)num_loaded_textures; ++i) {
+		if (string_compare(texture_id, texture_records[i].texture_id)) {
+			return texture_records[i].texture_handle;
 		}
-
-		if (texture_name_matches) {
-			return (texture_handle_t)(num_reserved_textures + i);
+		else {
+			hash_index++;
+			hash_index %= num_loaded_textures;
 		}
 	}
-
-	logf_message(WARNING, "Warning finding loaded texture: texture \"%s\" not found.", texture_name);
 	return missing_texture_handle;
 }
 

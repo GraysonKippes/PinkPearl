@@ -20,7 +20,9 @@ void area_render_state_reset(const area_t area, const room_t initial_room) {
 	log_message(VERBOSE, "Resetting area render state...");
 	
 	destroy_texture_state(&area_render_state.tilemap_texture_state);
-	area_render_state.tilemap_texture_state = make_new_texture_state(find_loaded_texture_handle("tilemap/dungeon4"));
+	string_t tilemap_texture_id = new_string(64, "tilemap/dungeon4");
+	area_render_state.tilemap_texture_state = make_new_texture_state(find_loaded_texture_handle(tilemap_texture_id));
+	destroy_string(&tilemap_texture_id);
 	compute_area_mesh(area);
 	
 	// TODO - use reallocate function when it is implemented.

@@ -14,6 +14,6 @@ typedef struct entity_record_t {
 
 void init_entity_registry(void);
 bool register_entity_record(const entity_record_t entity_record);
-bool retrieve_entity_record(const string_t entity_id, entity_record_t *const entity_record_ptr);
+bool find_entity_record(const string_t entity_id, entity_record_t *const entity_record_ptr);
 
 #endif	// ENTITY_REGISTRY_H
