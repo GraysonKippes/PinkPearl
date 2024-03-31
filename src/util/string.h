@@ -30,6 +30,7 @@ bool string_compare(const string_t a, const string_t b);
 size_t string_reverse_search_char(const string_t string, const char c);
 
 // String mutation
+bool string_concatenate_char(string_t *const string_ptr, const char c);
 bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_chars);
 
 // Miscellaneous

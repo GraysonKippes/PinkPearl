@@ -44,3 +44,21 @@ int read_string(FILE *restrict stream, const size_t max_str_len, char *str) {
 	}
 	return 0;
 }
+
+string_t read_string2(FILE *restrict stream, const size_t max_string_length) {
+	
+	if (stream == NULL) {
+		return make_null_string();
+	}
+	
+	string_t string = new_string_empty(max_string_length);
+	
+	char c = fgetc(stream);
+	size_t i = 0;
+	while (c != '\0' && i < max_string_length) {
+		string_concatenate_char(&string, c);
+		c = fgetc(stream);
+	}
+	
+	return string;
+}

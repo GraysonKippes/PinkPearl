@@ -85,6 +85,26 @@ size_t string_reverse_search_char(const string_t string, const char c) {
 	return (size_t)ptr_difference;
 }
 
+bool string_concatenate_char(string_t *const string_ptr, const char c) {
+	
+	if (string_ptr == NULL) {
+		return false;
+	}
+	
+	if (is_string_null(*string_ptr)) {
+		return false;
+	}
+	
+	if (string_ptr->length + 1 >= string_ptr->capacity) {
+		// TODO - sanitize reallocation.
+		string_ptr->buffer = realloc(string_ptr->buffer, ++string_ptr->capacity * sizeof(char));
+	}
+	string_ptr->buffer[string_ptr->length++] = c;
+	string_ptr->buffer[string_ptr->length] = '\0';
+	
+	return true;
+}
+
 bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_chars) {
 	
 	if (string_ptr == NULL) {
