@@ -59,6 +59,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/math/vector3D.c
 	src/glfw/glfw_manager.c
 	src/glfw/input_manager.c
+	src/log/log_stack.c
 	src/log/logging.c
 	src/render/area_render_state.c
 	src/render/model.c

@@ -4,15 +4,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "log_stack.h"
+
 #define LOG_OUT stderr
 
 #define WIN32_FORMATTING
 
 static const log_level_t severity_threshold = VERBOSE;
-
-static const char *log_format(log_level_t level);
-
-static const char *log_deformat(void);
 
 static const char *severity_labels[5] = {
 	"VERBOSE",
@@ -21,6 +19,9 @@ static const char *severity_labels[5] = {
 	"ERROR",
 	"FATAL"
 };
+
+static const char *log_format(log_level_t level);
+static const char *log_deformat(void);
 
 // TODO - use safe "_s" io functions
 
@@ -57,10 +58,10 @@ static const char *log_format(log_level_t level) {
 	switch (level) {
 		default:
 		case VERBOSE: 	return "\x1B[40;90m";	// bg: Black	fg: Bright Black
-		case INFO: 	return "\x1B[40;37m";	// bg: Black	fg: White
+		case INFO: 		return "\x1B[40;37m";	// bg: Black	fg: White
 		case WARNING:	return "\x1B[40;93m";	// bg: Black	fg: Bright Yellow
-		case ERROR:	return "\x1B[40;91m";	// bg: Black	fg: Bright Red
-		case FATAL:	return "\x1B[41;97m";	// bg: Red	fg: Bright White
+		case ERROR:		return "\x1B[40;91m";	// bg: Black	fg: Bright Red
+		case FATAL:		return "\x1B[41;97m";	// bg: Red		fg: Bright White
 	}
 }
 
