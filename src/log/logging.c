@@ -10,7 +10,7 @@
 
 #define WIN32_FORMATTING
 
-static const log_level_t severity_threshold = VERBOSE;
+static const log_level_t severity_threshold = WARNING;
 
 static const char *severity_labels[5] = {
 	"VERBOSE",

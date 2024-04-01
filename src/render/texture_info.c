@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log/error_code.h"
+#include "log/log_stack.h"
 #include "log/logging.h"
 #include "util/allocate.h"
 #include "util/file_io.h"
@@ -34,6 +36,9 @@ void destroy_texture_pack(texture_pack_t *texture_pack_ptr) {
 
 texture_pack_t parse_fgt_file(const char *path) {
 
+	log_stack_push("LoadTexturePack");
+	logf_message(VERBOSE, "Loading texture pack from \"%s\"...", path);
+
 	texture_pack_t texture_pack = { 0 };
 	texture_pack.num_textures = 0;
 	texture_pack.texture_create_infos = NULL;
@@ -42,8 +47,6 @@ texture_pack_t parse_fgt_file(const char *path) {
 		log_message(ERROR, "Error loading texture pack file: filename is NULL.");
 		return texture_pack;
 	}
-
-	logf_message(VERBOSE, "Loading texture pack from \"%s\"...", path);
 
 	FILE *fgt_file = fopen(path, "rb");
 	if (fgt_file == NULL) {
@@ -59,10 +62,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 		goto end_read;
 	}
 
-	if (!read_data(fgt_file, sizeof(uint32_t), 1, &texture_pack.num_textures)) {
-		log_message(ERROR, "Error reading texture file: number of textures not found.");
-		goto end_read;
-	}
+	read_data(fgt_file, sizeof(uint32_t), 1, &texture_pack.num_textures);
 
 	if (texture_pack.num_textures == 0) {
 		log_message(ERROR, "Error reading texture file: number of textures specified as zero.");
@@ -95,30 +95,15 @@ texture_pack_t parse_fgt_file(const char *path) {
 		}
 
 		// Read texture type.
-		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->type)) {
-			log_message(ERROR, "Error reading texture file: failed to read texture type.");
-			goto end_read;
-		}
+		read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->type);
 
 		// Read number of cells in texture atlas.
-		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->num_cells.width)) {
-			log_message(ERROR, "Error reading texture file: failed to read number of texture cells widthwise.");
-			goto end_read;
-		}
-		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->num_cells.length)) {
-			log_message(ERROR, "Error reading texture file: failed to read number of texture cells lengthwise.");
-			goto end_read;
-		}
+		read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->num_cells.width);
+		read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->num_cells.length);
 
 		// Read texture cell extent.
-		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->cell_extent.width)) {
-			log_message(ERROR, "Error reading texture file: failed to read texture cell width.");
-			goto end_read;
-		}
-		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->cell_extent.length)) {
-			log_message(ERROR, "Error reading texture file: failed to read texture cell length.");
-			goto end_read;
-		}
+		read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->cell_extent.width);
+		read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->cell_extent.length);
 
 		// Check extents -- if any of them are zero, then there certainly was an error.
 		if (info_ptr->num_cells.width == 0) {
@@ -139,12 +124,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 		info_ptr->atlas_extent.length = info_ptr->num_cells.length * info_ptr->cell_extent.length;
 
 		// Read animation create infos.
-
-		if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->num_animations)) {
-			logf_message(ERROR, "Error reading texture file: failed to read number of animations in texture %u.", i);
-			goto end_read;
-		}
-
+		read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->num_animations);
 		if (info_ptr->num_animations > 0) {
 
 			if (!allocate((void **)&info_ptr->animations, info_ptr->num_animations, sizeof(animation_create_info_t))) {
@@ -153,23 +133,10 @@ texture_pack_t parse_fgt_file(const char *path) {
 			}
 
 			for (uint32_t j = 0; j < info_ptr->num_animations; ++j) {
-
 				info_ptr->animations[j].cell_extent = info_ptr->cell_extent;
-
-				if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].start_cell)) {
-					logf_message(ERROR, "Error reading texture file: texture %u, animation %u: failed to read starting cell index.", i, j);
-					goto end_read;
-				}
-
-				if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].num_frames)) {
-					logf_message(ERROR, "Error reading texture file: texture %u, animation %u: failed to read number of frames.", i, j);
-					goto end_read;
-				}
-
-				if (!read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].frames_per_second)) {
-					logf_message(ERROR, "Error reading texture file: texture %u, animation %u: failed to read frames per second.", i, j);
-					goto end_read;
-				}
+				read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].start_cell);
+				read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].num_frames);
+				read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].frames_per_second);
 			}
 		}
 		else {
@@ -188,10 +155,11 @@ texture_pack_t parse_fgt_file(const char *path) {
 			info_ptr->animations[0].num_frames = 1;
 			info_ptr->animations[0].frames_per_second = 0;
 		}
-
 	}
 
 end_read:
 	fclose(fgt_file);
+	error_queue_flush();
+	log_stack_pop();
 	return texture_pack;
 }

@@ -2,6 +2,9 @@
 
 #include <stddef.h>
 
+#include "log/error_code.h"
+#include "log/logging.h"
+
 bool read_data(FILE *restrict stream, const size_t num_bytes_per_object, const size_t num_objects, void *restrict buffer) {
 	
 	if (stream == NULL || buffer == NULL) {
@@ -9,16 +12,11 @@ bool read_data(FILE *restrict stream, const size_t num_bytes_per_object, const s
 	}
 
 	const size_t num_objects_read = fread(buffer, num_bytes_per_object, num_objects, stream);
+	if (num_objects_read != num_objects) {
+		error_queue_push(ERROR, ERROR_CODE_FILE_READ_FAILED);
+	}
 
 	return num_objects_read == num_objects;
-
-	/*
-	if (num_objects_read < num_objects) {
-		const int end_of_file = feof(stream);
-		const int file_error = ferror(stream);
-		return false;
-	}
-	*/
 }
 
 int read_string(FILE *restrict stream, const size_t max_str_len, char *str) {
