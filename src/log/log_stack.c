@@ -6,73 +6,45 @@
 #include "log/logging.h"
 #include "util/allocate.h"
 
-typedef struct string_stack_node_t {
+static const char log_stack_delimiter = '/';
+
+typedef struct log_stack_t {
 	string_t string;
-	struct string_stack_node_t *next_node_ptr;
-} string_stack_node_t;
-
-typedef struct string_stack_t {
-	string_stack_node_t *top_node_ptr;
-	size_t height;
-} string_stack_t;
-
-static void string_stack_push(string_stack_t *const string_stack_ptr, const string_t string) {
-	
-	if (string_stack_ptr == NULL || is_string_null(string)) {
-		return;
-	}
-	
-	string_stack_node_t *new_node_ptr = NULL;
-	allocate((void **)&new_node_ptr, 1, sizeof(string_stack_node_t));
-	new_node_ptr->string = string;
-	new_node_ptr->next_node_ptr = string_stack_ptr->top_node_ptr;
-	string_stack_ptr->top_node_ptr = new_node_ptr;
-	string_stack_ptr->height += 1;
-}
-
-static string_t string_stack_pop(string_stack_t *const string_stack_ptr) {
-	
-	if (string_stack_ptr == NULL) {
-		return make_null_string();
-	}
-	
-	if (string_stack_ptr->top_node_ptr == NULL || string_stack_ptr->height == 0) {
-		return make_null_string();
-	}
-	
-	const string_t string = string_stack_ptr->top_node_ptr->string;
-	string_stack_node_t *temp_node_ptr = string_stack_ptr->top_node_ptr;
-	string_stack_ptr->top_node_ptr = string_stack_ptr->top_node_ptr->next_node_ptr;
-	deallocate((void **)&temp_node_ptr);
-	string_stack_ptr->height -= 1;
-	return string;
-}
+	size_t height;	// Number of sub-strings in stack.
+} log_stack_t;
 
 // Contains names of functions/procedures/engine layers.
-static string_stack_t log_stack;
+static log_stack_t log_stack;
 
 void init_log_stack(void) {
-	log_stack = (string_stack_t){
-		.top_node_ptr = NULL,
+	log_stack = (log_stack_t){
+		.string = new_string_empty(64),
 		.height = 0
 	};
-	string_stack_push(&log_stack, new_string(64, APP_NAME));
+	log_stack_push("PinkPearl");
 }
 
-void log_stack_push(const string_t string) {
-	string_stack_push(&log_stack, string);
-}
-
-string_t log_stack_peek(void) {
-	if (log_stack.top_node_ptr == NULL) {
-		return make_null_string();
+void log_stack_push(const char *const pstring) {
+	if (log_stack.height > 0) {
+		string_concatenate_char(&log_stack.string, log_stack_delimiter);
 	}
-	return log_stack.top_node_ptr->string;
+	string_concatenate_pstring(&log_stack.string, pstring);
+	log_stack.height += 1;
+}
+
+const string_t log_stack_get_string(void) {
+	return log_stack.string;
 }
 
 void log_stack_pop(void) {
 	if (log_stack.height > 0) {
-		// Discard pop result, not needed for log pop.
-		string_stack_pop(&log_stack);
+		const size_t delimiter_position = string_reverse_search_char(log_stack.string, log_stack_delimiter);
+		string_remove_trailing_chars(&log_stack.string, log_stack.string.length - delimiter_position);
+		log_stack.height -= 1;
 	}
+}
+
+void terminate_log_stack(void) {
+	destroy_string(&log_stack.string);
+	log_stack.height = 0;
 }

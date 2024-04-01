@@ -32,7 +32,7 @@ void log_message(log_level_t level, const char *message) {
 	}
 
 	fprintf(LOG_OUT, "%s", log_format(level));
-	fprintf(LOG_OUT, "[%s] %s", severity_labels[level], message);
+	fprintf(LOG_OUT, "[%s] (%s) %s", severity_labels[level], log_stack_get_string().buffer, message);
 	fprintf(LOG_OUT, "%s\n", log_deformat());
 }
 
@@ -43,7 +43,7 @@ void logf_message(log_level_t level, const char *format, ...) {
 	}
 
 	fprintf(LOG_OUT, "%s", log_format(level));
-	fprintf(LOG_OUT, "[%s] ", severity_labels[level]);
+	fprintf(LOG_OUT, "[%s] (%s) ", severity_labels[level], log_stack_get_string().buffer);
 
 	va_list args;
 	va_start(args, format);

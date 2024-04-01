@@ -19,6 +19,7 @@ target_compile_options(PinkPearl PRIVATE -std=c17 -lpthread -g -Wpedantic -Wall 
 	-Werror=stringop-overread
 	-Werror=incompatible-pointer-types
 	-Werror=int-conversion
+	-Werror=format 
 	-Wno-switch
 )
 

@@ -105,6 +105,54 @@ bool string_concatenate_char(string_t *const string_ptr, const char c) {
 	return true;
 }
 
+bool string_concatenate_string(string_t *const dest_ptr, const string_t src) {
+	
+	if (dest_ptr == NULL) {
+		return false;
+	}
+	
+	if (is_string_null(*dest_ptr) || is_string_null(src)) {
+		return false;
+	}
+	
+	const size_t new_length = dest_ptr->length + src.length;
+	if (dest_ptr->capacity <= new_length) {
+		// Reallocate new_length + 1 bytes for the buffer, for the extra byte at the end.
+		dest_ptr->buffer = realloc(dest_ptr->buffer, (new_length + 1) * sizeof(char));
+	}
+	
+	strncpy_s(&dest_ptr->buffer[dest_ptr->length], dest_ptr->length, src.buffer, src.length);
+	dest_ptr->length = new_length;
+	
+	return true;
+}
+
+bool string_concatenate_pstring(string_t *const dest_ptr, const char *const src_pstring) {
+	
+	if (dest_ptr == NULL || src_pstring == NULL) {
+		return false;
+	}
+	
+	if (is_string_null(*dest_ptr)) {
+		return false;
+	}
+	
+	const size_t src_length = strlen(src_pstring);
+	const size_t new_length = dest_ptr->length + src_length;
+	if (dest_ptr->capacity <= new_length) {
+		// Reallocate new_length + 1 bytes for the buffer, for the extra byte at the end.
+		dest_ptr->buffer = realloc(dest_ptr->buffer, (new_length + 1) * sizeof(char));
+	}
+	
+	for (size_t i = 0; i < src_length; ++i) {
+		const size_t dest_index = dest_ptr->length + i;
+		dest_ptr->buffer[dest_index] = src_pstring[i];
+	}
+	dest_ptr->length = new_length;
+	
+	return true;
+}
+
 bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_chars) {
 	
 	if (string_ptr == NULL) {
@@ -116,9 +164,9 @@ bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_c
 	}
 	
 	string_ptr->length -= num_chars;
+	string_ptr->buffer[string_ptr->length] = '\0';
 	return true;
 }
-
 
 static size_t exponentiate(const size_t base, const size_t exponent) {
 	// Recursive binary exponentiation.
@@ -130,7 +178,7 @@ static size_t exponentiate(const size_t base, const size_t exponent) {
         // X^1 = X.
         return base;
     }
-    else if (exponent & 1 == 0) {
+    else if ((exponent & 1) == 0) {
         // If N is even, X^N = X^(N/2) * X^(N/2) = (X^2)^(N/2).
         return exponentiate(base * base, exponent / 2);
     }

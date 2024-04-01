@@ -44,10 +44,6 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 
 	log_message(VERBOSE, "Checking validation layer support...");
 
-	for (size_t i = 0; i < num_required_layers; ++i) {
-		logf_message(VERBOSE, "Required layer: \"%s\"", required_layers[i]);
-	}
-
 	uint32_t num_available_layers = 0;
 	vkEnumerateInstanceLayerProperties(&num_available_layers, NULL);
 
@@ -63,10 +59,6 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 
 	VkLayerProperties *available_layers = calloc(num_available_layers, sizeof(VkLayerProperties));
 	vkEnumerateInstanceLayerProperties(&num_available_layers, available_layers);
-
-	for (size_t i = 0; i < num_available_layers; ++i) {
-		logf_message(VERBOSE, "Available layer: \"%s\"", available_layers[i].layerName);
-	}
 
 	for (size_t i = 0; i < num_required_layers; ++i) {
 

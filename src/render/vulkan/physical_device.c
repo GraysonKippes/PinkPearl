@@ -55,10 +55,6 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 		return true;
 	}
 
-	for (size_t i = 0; i < required_layer_names.num_strings; ++i) {
-		logf_message(VERBOSE, "Required layer: \"%s\"", required_layer_names.strings[i]);
-	}
-
 	uint32_t num_available_layers = 0;
 	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, NULL);
 
@@ -70,10 +66,6 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 
 	VkLayerProperties *available_layers = calloc(num_available_layers, sizeof(VkLayerProperties));
 	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, available_layers);
-
-	for (size_t i = 0; i < num_available_layers; ++i) {
-		logf_message(VERBOSE, "Available layer: \"%s\"", available_layers[i].layerName);
-	}
 
 	for (size_t i = 0; i < required_layer_names.num_strings; ++i) {
 
@@ -122,8 +114,6 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 		vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
 		VkBool32 transfer_support = TEST_MASK(queue_family.queueFlags, VK_QUEUE_TRANSFER_BIT);
 		VkBool32 compute_support = TEST_MASK(queue_family.queueFlags, VK_QUEUE_COMPUTE_BIT);
-
-		logf_message(VERBOSE, "\tQueue family %i: \n\t\tGRAPHICS: %i\n\t\tPRESENT: %i\n\t\tTRANSFER: %i\n\t\tCOMPUTE: %i", i, graphics_support, present_support, transfer_support, compute_support);
 
 		if ((queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.graphics_family_ptr == NULL) {
 			queue_family_indices.graphics_family_ptr = malloc(sizeof(uint32_t));
@@ -284,8 +274,6 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 
 	vkGetPhysicalDeviceProperties2(selected_physical_device.handle, &physical_device_properties);
 
-	logf_message(WARNING, "Max buffer size = %lu", physical_device_maintenance.maxBufferSize);
-
 	free(physical_devices);
 	return selected_physical_device;
 }
@@ -323,7 +311,6 @@ void list_physical_device_memories(VkPhysicalDevice physical_device) {
 	VkPhysicalDeviceMemoryProperties memory_properties;
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
 
-	logf_message(VERBOSE, "Device memory type count = %u", memory_properties.memoryTypeCount);
 	for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
 
 		VkMemoryType memory_type = memory_properties.memoryTypes[i];
@@ -336,8 +323,5 @@ void list_physical_device_memories(VkPhysicalDevice physical_device) {
 		bool host_visible = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) >= 1;
 		bool host_coherent = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) >= 1;
 		bool host_cached = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) >= 1;
-
-		logf_message(VERBOSE, "Memory type %u\n\tSize: %lu bytes\n\tHeap device-local: %u\n\tDevice-local: %u\n\tHost-visible: %u\n\tHost-coherent: %u\n\tHost-cached: %u", 
-				i, heap_size, heap_device_local, device_local, host_visible, host_coherent, host_cached);
 	}
 }

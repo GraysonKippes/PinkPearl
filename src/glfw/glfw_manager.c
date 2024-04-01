@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include "debug.h"
+#include "log/log_stack.h"
 #include "log/logging.h"
 #include "render/stb/image_data.h"
 
@@ -16,6 +17,7 @@ void glfw_error_callback(int code, const char *description);
 
 void init_GLFW(void) {
 
+	log_stack_push("GLFW");
 	log_message(INFO, "Initializing GLFW...");
 
 	if (glfwInit() != GLFW_TRUE) {
@@ -51,6 +53,8 @@ void init_GLFW(void) {
 	init_input_manager(window);
 
 	// TODO - add window icons.
+	
+	log_stack_pop();
 }
 
 void terminate_GLFW(void) {
