@@ -29,7 +29,6 @@ void init_renderer(void) {
 	create_vulkan_render_objects();
 	load_premade_models();
 
-	// Load textures
 	texture_pack_t texture_pack = parse_fgt_file(FGT_PATH);
 	load_textures(texture_pack);
 	destroy_texture_pack(&texture_pack);

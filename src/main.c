@@ -10,6 +10,7 @@
 #include "audio/portaudio/portaudio_manager.h"
 #include "game/game.h"
 #include "glfw/glfw_manager.h"
+#include "log/error_code.h"
 #include "log/log_stack.h"
 #include "log/logging.h"
 #include "render/renderer.h"
@@ -27,6 +28,7 @@ int main(void) {
 	init_audio_mixer();
 	init_portaudio();
 	start_game();
+	error_queue_flush();
 
 	log_message(INFO, "Ready to play Pink Pearl!");
 	run_client();
@@ -35,8 +37,10 @@ int main(void) {
 	terminate_audio_mixer();
 	terminate_renderer();
 	terminate_GLFW();
-	terminate_log_stack();
 
 	log_message(INFO, "Stopping Pink Pearl. Goodbye!");
+	terminate_log_stack();
+	terminate_error_queue();
+	
 	return 0;
 }

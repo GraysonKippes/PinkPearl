@@ -50,10 +50,20 @@ void error_queue_flush(void) {
 	error_queue.tail_node_ptr = error_queue.head_node_ptr;
 }
 
+void terminate_error_queue(void) {
+	while (error_queue.head_node_ptr != NULL) {
+		error_queue_node_t *previous_node_ptr = error_queue.head_node_ptr;
+		error_queue.head_node_ptr = error_queue.head_node_ptr->next_node_ptr;
+		deallocate((void **)&previous_node_ptr);
+	}
+	error_queue.tail_node_ptr = error_queue.head_node_ptr;
+}
+
 char *error_code_str(const error_code_t error_code) {
 	switch (error_code) {
 		default: return "Unknown error.";
 		case ERROR_CODE_ALLOCATION_FAILED: return "Allocation failed.";
 		case ERROR_CODE_FILE_READ_FAILED: return "File read failed.";
+		case ERROR_CODE_MAX_OBJECTS_EXCEEDED: return "Max objects to allocate exceeded by specified number of objects.";
 	}
 }

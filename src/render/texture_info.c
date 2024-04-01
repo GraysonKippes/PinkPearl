@@ -44,13 +44,13 @@ texture_pack_t parse_fgt_file(const char *path) {
 	texture_pack.texture_create_infos = NULL;
 
 	if (path == NULL) {
-		log_message(ERROR, "Error loading texture pack file: filename is NULL.");
+		log_message(ERROR, "Filename is NULL.");
 		return texture_pack;
 	}
 
 	FILE *fgt_file = fopen(path, "rb");
 	if (fgt_file == NULL) {
-		logf_message(ERROR, "Error loading texture pack file: could not find file at \"%s\".", path);
+		logf_message(ERROR, "File not found at \"%s\".", path);
 		return texture_pack;
 	}
 
@@ -58,19 +58,19 @@ texture_pack_t parse_fgt_file(const char *path) {
 	char label[4];
 	fread(label, 1, 4, fgt_file);
 	if (strcmp(label, fgt_label) != 0) {
-		logf_message(ERROR, "Error reading texture file: invalid file format; found label \"%s\".", label);
+		logf_message(ERROR, "Invalid file format; found label \"%s\".", label);
 		goto end_read;
 	}
 
 	read_data(fgt_file, sizeof(uint32_t), 1, &texture_pack.num_textures);
 
 	if (texture_pack.num_textures == 0) {
-		log_message(ERROR, "Error reading texture file: number of textures specified as zero.");
+		log_message(ERROR, "Number of textures specified as zero.");
 		goto end_read;
 	}
 
 	if (!allocate((void **)&texture_pack.texture_create_infos, texture_pack.num_textures, sizeof(texture_create_info_t))) {
-		log_message(ERROR, "Error reading texture file: texture create info array allocation failed.");
+		log_message(ERROR, "Texture create info array allocation failed.");
 		goto end_read;
 	}
 
@@ -81,17 +81,17 @@ texture_pack_t parse_fgt_file(const char *path) {
 		texture_create_info_t *info_ptr = texture_pack.texture_create_infos + i;
 
 		if (!allocate((void **)&info_ptr->path, max_path_len, sizeof(char))) {
-			log_message(ERROR, "Error reading texture file: texture create info path allocation failed.");
+			log_message(ERROR, "Texture create info path allocation failed.");
 			goto end_read;
 		}
 
 		const int path_read_result = read_string(fgt_file, max_path_len, info_ptr->path);
 		if (path_read_result < 0) {
-			logf_message(ERROR, "Error reading texture file: texture create info path reading failed. (Error code: %i)", path_read_result);
+			logf_message(ERROR, "Texture create info path reading failed. (Error code: %i)", path_read_result);
 			goto end_read;
 		}
 		else if (path_read_result == 1) {
-			log_message(WARNING, "Warning reading texture file: texture create info path reached max length before finding null-terminator; the data is likely not formatted well.");
+			log_message(WARNING, "Texture create info path reached max length before finding null-terminator; the data is likely not formatted well.");
 		}
 
 		// Read texture type.
@@ -107,16 +107,16 @@ texture_pack_t parse_fgt_file(const char *path) {
 
 		// Check extents -- if any of them are zero, then there certainly was an error.
 		if (info_ptr->num_cells.width == 0) {
-			log_message(WARNING, "Warning reading texture file: texture create info number of cells widthwise is zero.");
+			log_message(WARNING, "Texture create info number of cells widthwise is zero.");
 		}
 		if (info_ptr->num_cells.length == 0) {
-			log_message(WARNING, "Warning reading texture file: texture create info number of cells lengthwise is zero.");
+			log_message(WARNING, "Texture create info number of cells lengthwise is zero.");
 		}
 		if (info_ptr->cell_extent.width == 0) {
-			log_message(WARNING, "Warning reading texture file: texture create info cell extent width is zero.");
+			log_message(WARNING, "Texture create info cell extent width is zero.");
 		}
 		if (info_ptr->cell_extent.length == 0) {
-			log_message(WARNING, "Warning reading texture file: texture create info cell extent length is zero.");
+			log_message(WARNING, "Texture create info cell extent length is zero.");
 		}
 		
 		// Calculate texture extent.
@@ -128,7 +128,7 @@ texture_pack_t parse_fgt_file(const char *path) {
 		if (info_ptr->num_animations > 0) {
 
 			if (!allocate((void **)&info_ptr->animations, info_ptr->num_animations, sizeof(animation_create_info_t))) {
-				logf_message(ERROR, "Error reading texture file: failed to allocate array of animation create infos in texture %u.", i);
+				logf_message(ERROR, "Failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}
 
