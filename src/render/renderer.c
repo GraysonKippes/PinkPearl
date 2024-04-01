@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include "config.h"
+#include "log/log_stack.h"
 #include "log/logging.h"
 #include "util/time.h"
 
@@ -22,6 +23,8 @@
 
 void init_renderer(void) {
 
+	log_stack_push("Renderer");
+
 	create_vulkan_objects();
 	create_vulkan_render_objects();
 	load_premade_models();
@@ -35,12 +38,16 @@ void init_renderer(void) {
 		reset_render_position(&render_object_positions[i], zero_vector3F);
 		render_object_texture_states[i] = missing_texture_state();
 	}
+	
+	log_stack_pop();
 }
 
 void terminate_renderer(void) {
+	log_stack_push("Renderer");
 	destroy_vulkan_render_objects();
 	destroy_vulkan_objects();
 	free_premade_models();
+	log_stack_pop();
 }
 
 void render_frame(float tick_delta_time) {
@@ -66,6 +73,7 @@ void settle_render_positions(void) {
 
 void upload_model(uint32_t slot, model_t model, const char *const texture_name) {
 
+	log_stack_push("Renderer");
 	if (slot >= num_render_object_slots) {
 		logf_message(ERROR, "Error uploading model: render object slot (%u) exceeds total number of render object slots (%u).", slot, num_render_object_slots);
 		return;
@@ -77,4 +85,6 @@ void upload_model(uint32_t slot, model_t model, const char *const texture_name) 
 	destroy_string(&texture_id);
 	swap_render_object_texture_state(slot, texture_state);
 	upload_draw_data(get_global_area_render_state());
+	
+	log_stack_pop();
 }

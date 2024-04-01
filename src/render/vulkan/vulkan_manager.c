@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "debug.h"
+#include "log/log_stack.h"
 #include "log/logging.h"
 #include "glfw/glfw_manager.h"
 #include "render/render_config.h"
@@ -187,6 +188,7 @@ static void create_global_draw_data_buffer(void) {
 
 void create_vulkan_objects(void) {
 
+	log_stack_push("Vulkan");
 	log_message(INFO, "Initializing Vulkan...");
 
 	vulkan_instance = create_vulkan_instance();
@@ -238,10 +240,13 @@ void create_vulkan_objects(void) {
 	}
 
 	create_sampler(physical_device, device, &sampler_default);
+	
+	log_stack_pop();
 }
 
 void destroy_vulkan_objects(void) {
 
+	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Destroying Vulkan objects...");
 
 	vkDestroySampler(device, sampler_default, NULL);
@@ -265,4 +270,6 @@ void destroy_vulkan_objects(void) {
 	vkDestroySurfaceKHR(vulkan_instance.handle, surface, NULL);
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
+	
+	log_stack_pop();
 }

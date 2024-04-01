@@ -2,8 +2,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
+#include "log/log_stack.h"
 #include "log/logging.h"
 #include "game/area/room.h"
 #include "render/render_config.h"
@@ -22,22 +22,28 @@ static void transfer_model_data(void);
 
 void create_vulkan_render_objects(void) {
 
+	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Creating Vulkan render objects...");
 
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
 	init_compute_area_mesh(device);
+	
+	log_stack_pop();
 }
 
 void destroy_vulkan_render_objects(void) {
 
 	vkDeviceWaitIdle(device);
 
+	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Destroying Vulkan render objects...");
 
 	terminate_compute_room_texture();
 	terminate_compute_matrices();
 	destroy_textures();
+	
+	log_stack_pop();
 }
 
 // Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.
