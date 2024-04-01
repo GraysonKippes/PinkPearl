@@ -31,9 +31,11 @@ void log_message(log_level_t level, const char *message) {
 		return;
 	}
 
+	pthread_mutex_lock(&log_stack_mutex);
 	fprintf(LOG_OUT, "%s", log_format(level));
 	fprintf(LOG_OUT, "[%s] (%s) %s", severity_labels[level], log_stack_get_string().buffer, message);
 	fprintf(LOG_OUT, "%s\n", log_deformat());
+	pthread_mutex_unlock(&log_stack_mutex);
 }
 
 void logf_message(log_level_t level, const char *format, ...) {
@@ -42,6 +44,7 @@ void logf_message(log_level_t level, const char *format, ...) {
 		return;
 	}
 
+	pthread_mutex_lock(&log_stack_mutex);
 	fprintf(LOG_OUT, "%s", log_format(level));
 	fprintf(LOG_OUT, "[%s] (%s) ", severity_labels[level], log_stack_get_string().buffer);
 
@@ -51,6 +54,7 @@ void logf_message(log_level_t level, const char *format, ...) {
 	va_end(args);
 
 	fprintf(LOG_OUT, "%s\n", log_deformat());
+	pthread_mutex_unlock(&log_stack_mutex);
 }
 
 #ifdef WIN32_FORMATTING

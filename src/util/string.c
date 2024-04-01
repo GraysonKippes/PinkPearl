@@ -149,6 +149,7 @@ bool string_concatenate_pstring(string_t *const dest_ptr, const char *const src_
 		dest_ptr->buffer[dest_index] = src_pstring[i];
 	}
 	dest_ptr->length = new_length;
+	dest_ptr->buffer[dest_ptr->length] = '\0';
 	
 	return true;
 }
