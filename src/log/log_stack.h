@@ -9,7 +9,7 @@ extern pthread_mutex_t log_stack_mutex;
 
 void init_log_stack(void);
 void log_stack_push(const char *const pstring);
-const string_t log_stack_get_string(void);
+string_t log_stack_get_string(void);
 void log_stack_pop(void);
 void terminate_log_stack(void);
 

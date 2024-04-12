@@ -13,7 +13,11 @@ typedef struct entity_record_t {
 } entity_record_t;
 
 void init_entity_registry(void);
-bool register_entity_record(const entity_record_t entity_record);
+void terminate_entity_registry(void);
+
+// Searches for an existing entity record using its entity ID.
+// Returns true if the entity record was found, which is stored in the pointer.
+// Returns false if the entity record was not found, or if an error occurred.
 bool find_entity_record(const string_t entity_id, entity_record_t *const entity_record_ptr);
 
 #endif	// ENTITY_REGISTRY_H

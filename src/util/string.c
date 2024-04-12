@@ -14,13 +14,11 @@ string_t make_null_string(void) {
 }
 
 string_t new_string_empty(const size_t capacity) {
-	
 	string_t string = make_null_string();
 	if (!allocate((void **)&string.buffer, capacity, sizeof(char))) {
 		return string;
 	}
 	string.capacity = capacity;
-	
 	return string;
 }
 
@@ -41,7 +39,6 @@ string_t new_string(const size_t capacity, const char *const initial_data) {
 }
 
 bool destroy_string(string_t *const string_ptr) {
-	
 	if (string_ptr == NULL) {
 		return false;
 	}
@@ -58,7 +55,6 @@ bool is_string_null(const string_t string) {
 }
 
 bool string_compare(const string_t a, const string_t b) {
-	
 	if (is_string_null(a) || is_string_null(b)) {
 		return false;
 	}
@@ -71,7 +67,6 @@ bool string_compare(const string_t a, const string_t b) {
 }
 
 size_t string_reverse_search_char(const string_t string, const char c) {
-	
 	if (is_string_null(string)) {
 		return 0;
 	}
@@ -86,7 +81,6 @@ size_t string_reverse_search_char(const string_t string, const char c) {
 }
 
 bool string_concatenate_char(string_t *const string_ptr, const char c) {
-	
 	if (string_ptr == NULL) {
 		return false;
 	}
@@ -106,7 +100,6 @@ bool string_concatenate_char(string_t *const string_ptr, const char c) {
 }
 
 bool string_concatenate_string(string_t *const dest_ptr, const string_t src) {
-	
 	if (dest_ptr == NULL) {
 		return false;
 	}
@@ -128,7 +121,6 @@ bool string_concatenate_string(string_t *const dest_ptr, const string_t src) {
 }
 
 bool string_concatenate_pstring(string_t *const dest_ptr, const char *const src_pstring) {
-	
 	if (dest_ptr == NULL || src_pstring == NULL) {
 		return false;
 	}
@@ -155,7 +147,6 @@ bool string_concatenate_pstring(string_t *const dest_ptr, const char *const src_
 }
 
 bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_chars) {
-	
 	if (string_ptr == NULL) {
 		return false;
 	}
@@ -190,7 +181,6 @@ static size_t exponentiate(const size_t base, const size_t exponent) {
 }
 
 size_t string_hash(const string_t string, const size_t limit) {
-	
 	if (is_string_null(string)) {
 		return 0;
 	}

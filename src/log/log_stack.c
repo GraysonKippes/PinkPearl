@@ -36,7 +36,7 @@ void log_stack_push(const char *const pstring) {
 	pthread_mutex_unlock(&log_stack_mutex);
 }
 
-const string_t log_stack_get_string(void) {
+string_t log_stack_get_string(void) {
 	return log_stack.string;
 }
 

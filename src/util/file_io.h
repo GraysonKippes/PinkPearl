@@ -15,6 +15,8 @@ bool read_data(FILE *restrict stream, const size_t num_bytes_per_object, const s
 // returns -1 if `stream` is NULL, or -2 if `str` is NULL.
 int read_string(FILE *restrict stream, const size_t max_str_len, char *str);
 
-string_t read_string2(FILE *restrict stream, const size_t max_string_length);
+string_t read_string2(FILE *restrict stream, const size_t max_string_capacity);
+
+void file_next_block(FILE *restrict stream);
 
 #endif	// FILE_IO_H
