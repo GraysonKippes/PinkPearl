@@ -10,4 +10,4 @@ void terminate_compute_area_mesh(void);
 
 void compute_area_mesh(const area_t area);
 
-#endif	//COMPUTE_AREA_MESH_H
+#endif	// COMPUTE_AREA_MESH_H

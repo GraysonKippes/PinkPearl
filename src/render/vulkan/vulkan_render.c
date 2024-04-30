@@ -14,9 +14,9 @@
 #include "texture_manager.h"
 #include "vertex_input.h"
 #include "vulkan_manager.h"
+#include "compute/compute_area_mesh.h"
 #include "compute/compute_matrices.h"
 #include "compute/compute_room_texture.h"
-#include "compute/compute_area_mesh.h"
 
 static void transfer_model_data(void);
 
@@ -39,8 +39,9 @@ void destroy_vulkan_render_objects(void) {
 	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Destroying Vulkan render objects...");
 
-	terminate_compute_room_texture();
+	terminate_compute_area_mesh();
 	terminate_compute_matrices();
+	terminate_compute_room_texture();
 	destroy_textures();
 	
 	log_stack_pop();

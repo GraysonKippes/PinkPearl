@@ -265,11 +265,13 @@ void destroy_vulkan_objects(void) {
 	destroy_buffer_partition(&global_staging_buffer_partition);
 	destroy_buffer_partition(&global_uniform_buffer_partition);
 	destroy_buffer_partition(&global_storage_buffer_partition);
+	destroy_buffer_partition(&global_draw_data_buffer_partition);
 
 	vkDestroyDevice(device, NULL);
 	vkDestroySurfaceKHR(vulkan_instance.handle, surface, NULL);
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	
+	log_message(VERBOSE, "Done destroying Vulkan objects.");
 	log_stack_pop();
 }

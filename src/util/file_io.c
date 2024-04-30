@@ -68,7 +68,7 @@ string_t read_string2(FILE *restrict stream, const size_t max_string_capacity) {
 		return make_null_string();
 	}
 	
-	// Second pass: read characters from file into string.
+	// Second pass: read characters from file into string buffer.
 	string_t string = new_string_empty(string_capacity);
 	size_t counter = 0;
 	ch = fgetc(stream);

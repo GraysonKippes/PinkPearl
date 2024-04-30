@@ -6,6 +6,7 @@ include/
 lib/
 lib_src/
 notes/
+resources/
 
 # Misc files
 *.bak
