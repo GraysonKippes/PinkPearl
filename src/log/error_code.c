@@ -65,5 +65,6 @@ char *error_code_str(const error_code_t error_code) {
 		case ERROR_CODE_ALLOCATION_FAILED: return "Allocation failed.";
 		case ERROR_CODE_FILE_READ_FAILED: return "File read failed.";
 		case ERROR_CODE_MAX_OBJECTS_EXCEEDED: return "Max objects to allocate exceeded by specified number of objects.";
+		case ERROR_CODE_UNLOADING_UNUSED_RESOURCE: return "Attempting to unload an unused/unallocated resource.";
 	}
 }

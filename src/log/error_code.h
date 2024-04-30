@@ -6,7 +6,8 @@
 typedef enum error_code_t {
 	ERROR_CODE_ALLOCATION_FAILED,
 	ERROR_CODE_FILE_READ_FAILED,
-	ERROR_CODE_MAX_OBJECTS_EXCEEDED
+	ERROR_CODE_MAX_OBJECTS_EXCEEDED,
+	ERROR_CODE_UNLOADING_UNUSED_RESOURCE
 } error_code_t;
 
 char *error_code_str(const error_code_t error_code);

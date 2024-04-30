@@ -6,77 +6,48 @@
 #include "util/bit.h"
 
 const uint32_t max_num_entities = MAX_NUM_ENTITIES;
-
 static entity_t entities[MAX_NUM_ENTITIES];
+static uint8_t entity_slot_enable_flags[MAX_NUM_ENTITIES];
 
 const entity_handle_t entity_handle_invalid = UINT32_MAX;
 
-// Bitfield flags indicating which entity slots are loaded/occupied.
-// One indicates that the corresponding entity slot is being used, zero indicates that it is not being used.
-static uint64_t loaded_entity_slots = 0;
-
-// Returns true if the bit at the corresponding position in the loaded entity slot flags is one;
-// 	returns false otherwise.
-static bool is_entity_slot_used(uint64_t slot) {
-	return slot < max_num_entities && is_bit_on(loaded_entity_slots, slot);
-}
-
-// Returns true if the bit at the corresponding position in the loaded entity slot flags is zero;
-// 	returns false otherwise.
-static bool is_entity_slot_unused(uint64_t slot) {
-	return slot < max_num_entities && is_bit_off(loaded_entity_slots, slot);
-}
-
-static void set_entity_slot_used(uint64_t slot) {
-	loaded_entity_slots |= (1LL << slot);
-}
-
-static void set_entity_slot_unused(uint64_t slot) {
-	loaded_entity_slots &= ~(1LL << slot);
-}
-
 void init_entity_manager(void) {
-	
-	loaded_entity_slots = 0;
-
 	for (uint32_t i = 0; i < max_num_entities; ++i) {
 		entities[i] = new_entity();
+		entity_slot_enable_flags[i] = 0;
 	}
 }
 
 entity_handle_t load_entity(void) {
-	
-	// If all the bits in the bitfield are one, then there are no open entity slots left.
-	// In this case, return maximum possible numeric value for the handle to indicate this error.
-	if (loaded_entity_slots == UINT64_MAX) {
-		return entity_handle_invalid;
-	}
-
+	// Loop through all the entity slots and find the first one available.
 	for (uint64_t i = 0; validate_entity_handle(i); ++i) {
-		if (is_entity_slot_unused(i)) {
-			set_entity_slot_used(i);
+		if (!entity_slot_enable_flags[i]) {
+			entity_slot_enable_flags[i] = 1;
 			return i;
 		}
 	}
 	return entity_handle_invalid;
 }
 
-void unload_entity(entity_handle_t handle) {
-	
-	if (validate_entity_handle(handle)) {
-		if (is_entity_slot_unused(handle)) {
-			logf_message(WARNING, "Unloading already unused entity slot (%u).", handle);
-		}
-		set_entity_slot_unused(handle);
+void unload_entity(const entity_handle_t handle) {
+	if (!validate_entity_handle(handle)) {
+		
+		return;
 	}
-}
-
-bool validate_entity_handle(entity_handle_t handle) {
-	return handle < max_num_entities && handle < 64;
-}
-
-int get_entity_ptr(entity_handle_t handle, entity_t **entity_pptr) {
 	
+	if (entity_slot_enable_flags[handle] == 0) {
+		logf_message(WARNING, "Unloading already unused entity slot (%u).", handle);
+		return;
+	}
+	
+	entity_slot_enable_flags[handle] = 0;
+}
+
+bool validate_entity_handle(const entity_handle_t handle) {
+	return handle < max_num_entities;
+}
+
+int get_entity_ptr(const entity_handle_t handle, entity_t **const entity_pptr) {
 	if (entity_pptr == NULL) {
 		return 1;
 	}
@@ -88,19 +59,13 @@ int get_entity_ptr(entity_handle_t handle, entity_t **entity_pptr) {
 	*entity_pptr = entities + handle;
 
 	// If the entity slot is unused, then still return the entity there, but return -1 as a warning.
-	return is_entity_slot_used(handle) ? 0 : -1;
+	return entity_slot_enable_flags[handle] ? 0 : -1;
 }
 
 void tick_entities(void) {
-	
-	// If none of the entity slots are currently used, then just skip the entire loop.
-	if (loaded_entity_slots == 0) {
-		return;
-	}
-
-	for (uint32_t i = 0; validate_entity_handle(i); ++i) {
-		if (is_entity_slot_used(i)) {
-			tick_entity(entities + i);
+	for (uint32_t i = 0; i < max_num_entities; ++i) {
+		if (entity_slot_enable_flags[i]) {
+			tick_entity(&entities[i]);
 		}
 	}
 }
