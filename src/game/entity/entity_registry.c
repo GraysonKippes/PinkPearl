@@ -10,7 +10,7 @@
 
 #define FGE_PATH (RESOURCE_PATH "data/test.fge")
 
-#define NUM_ENTITY_RECORDS 1
+#define NUM_ENTITY_RECORDS 2
 static const size_t num_entity_records = NUM_ENTITY_RECORDS;
 static entity_record_t entity_records[NUM_ENTITY_RECORDS];
 
