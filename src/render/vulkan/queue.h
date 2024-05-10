@@ -9,11 +9,8 @@
 // 	and the the queue families will be passed to the object creation.
 // Otherwise, the sharing mode will be set to exclusive, and no queue families will be passed to the object creation.
 typedef struct queue_family_set_t {
-	
 	uint32_t num_queue_families;
-
 	uint32_t *queue_families;
-
 } queue_family_set_t;
 
 // Empty queue family set, pass this into vulkan resource creation functions to specify that the resource will not be shared.

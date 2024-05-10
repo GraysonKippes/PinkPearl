@@ -8,27 +8,25 @@
 #include "command_buffer.h"
 #include "queue.h"
 #include "vertex_input.h"
+#include "vulkan_manager.h"
 
-frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout) {
+static frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout) {
 
-	frame_t frame = { 0 };
+	frame_t frame = {
+		.command_buffer = VK_NULL_HANDLE,
+		.descriptor_set = VK_NULL_HANDLE,
+		.semaphore_image_available = VK_NULL_HANDLE,
+		.semaphore_present_ready = (binary_semaphore_t){ 0 },
+		.semaphore_render_finished = (timeline_semaphore_t){ 0 },
+		.fence_frame_ready = VK_NULL_HANDLE,
+		.semaphore_buffers_ready = (timeline_semaphore_t){ 0 },
+		.vertex_buffer = VK_NULL_HANDLE,
+		.index_buffer = VK_NULL_HANDLE
+	};
 
 	const VkSemaphoreCreateInfo semaphore_create_info = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 		.pNext = NULL,
-		.flags = 0
-	};
-
-	const VkSemaphoreTypeCreateInfo timeline_semaphore_type_create_info = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-		.pNext = NULL,
-		.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
-		.initialValue = 0
-	};
-
-	const VkSemaphoreCreateInfo timeline_semaphore_create_info = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-		.pNext = &timeline_semaphore_type_create_info,
 		.flags = 0
 	};
 
@@ -52,8 +50,6 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 
 	vkCreateFence(device, &fence_create_info, NULL, &frame.fence_frame_ready);
 
-	frame.model_update_flags = 0;
-
 	allocate_command_buffers(device, command_pool, 1, &frame.command_buffer);
 
 	VkDescriptorSetAllocateInfo allocate_info;
@@ -65,40 +61,50 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 
 	VkResult result = vkAllocateDescriptorSets(device, &allocate_info, &frame.descriptor_set);
 	if (result != VK_SUCCESS) {
-		logf_message(ERROR, "Descriptor set allocation failed. (Error code: %i)", result);
+		logf_message(ERROR, "Descriptor set allocation failed (error code: %i).", result);
 	}
 
-	queue_family_set_t queue_family_set = {
-		.num_queue_families = 2,
-		.queue_families = (uint32_t[2]){
-			*physical_device.queue_family_indices.graphics_family_ptr,
-			*physical_device.queue_family_indices.transfer_family_ptr,
-		}
+	uint32_t queue_family_indices[2] = {
+		*physical_device.queue_family_indices.graphics_family_ptr,
+		*physical_device.queue_family_indices.transfer_family_ptr
 	};
 
-	frame.vertex_buffer = create_buffer(physical_device.handle, device, vertex_buffer_size, 
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		queue_family_set);
-
-	frame.index_buffer = create_buffer(physical_device.handle, device, index_buffer_size, 
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		queue_family_set);
+	const VkBufferCreateInfo vertex_buffer_create_info = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.size = vertex_buffer_size,
+		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_CONCURRENT,
+		.queueFamilyIndexCount = 2,
+		.pQueueFamilyIndices = (uint32_t *)queue_family_indices
+	};
+	
+	const VkBufferCreateInfo index_buffer_create_info = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.size = index_buffer_size,
+		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_CONCURRENT,
+		.queueFamilyIndexCount = 2,
+		.pQueueFamilyIndices = (uint32_t *)queue_family_indices
+	};
+	
+	vkCreateBuffer(device, &vertex_buffer_create_info, NULL, &frame.vertex_buffer);
+	vkCreateBuffer(device, &index_buffer_create_info, NULL, &frame.index_buffer);
 
 	return frame;
 }
 
-void destroy_frame(VkDevice device, frame_t frame) {
-
+static void destroy_frame(VkDevice device, frame_t frame) {
 	vkDestroySemaphore(device, frame.semaphore_image_available, NULL);
 	destroy_binary_semaphore(&frame.semaphore_present_ready);
 	destroy_timeline_semaphore(&frame.semaphore_render_finished);
 	destroy_timeline_semaphore(&frame.semaphore_buffers_ready);
 	vkDestroyFence(device, frame.fence_frame_ready, NULL);
-
-	destroy_buffer(&frame.vertex_buffer);
-	destroy_buffer(&frame.index_buffer);
+	vkDestroyBuffer(device, frame.vertex_buffer, NULL);
+	vkDestroyBuffer(device, frame.index_buffer, NULL);
 }
 
 frame_array_t create_frame_array(const frame_array_create_info_t frame_array_create_info) {
@@ -106,10 +112,11 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 	static const uint32_t max_num_frames = 3;
 
 	frame_array_t frame_array = { 
+		.current_frame = 0,
 		.num_frames = 0,
 		.frames = NULL,
 		.buffer_memory = VK_NULL_HANDLE,
-		.device = VK_NULL_HANDLE
+		.device = frame_array_create_info.device
 	};
 
 	if (frame_array_create_info.num_frames == 0) {
@@ -122,29 +129,69 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 		frame_array.num_frames = frame_array_create_info.num_frames;
 	}
 
-	if (!allocate((void **)frame_array.frames, frame_array.num_frames, sizeof(frame_t))) {
+	if (!allocate((void **)&frame_array.frames, frame_array.num_frames, sizeof(frame_t))) {
 		log_message(ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
 		return (frame_array_t){ 0 };
 	}
 
 	static const VkDeviceSize vertex_buffer_size = 5120 + 81920;
 	static const VkDeviceSize index_buffer_size = 768 + 12288;
+	
+	memory_range_t vertex_buffer_memory_ranges[3];
+	memory_range_t index_buffer_memory_ranges[3];
+	VkDeviceSize total_vertex_memory_size = 0;
+	VkDeviceSize total_index_memory_size = 0;
 
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		frame_array.frames[i] = create_frame(frame_array_create_info.physical_device, frame_array_create_info.device, 
+			frame_array_create_info.command_pool, frame_array_create_info.descriptor_pool, frame_array_create_info.descriptor_set_layout);
 		
-		const VkSemaphoreCreateInfo semaphore_create_info = {
-			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-			.pNext = NULL,
-			.flags = 0
-		};
-
-		const VkFenceCreateInfo fence_create_info = {
-			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-			.pNext = NULL,
-			.flags = VK_FENCE_CREATE_SIGNALED_BIT
-		};
-
+		VkMemoryRequirements vertex_buffer_memory_requirements;
+		VkMemoryRequirements index_buffer_memory_requirements;
+		vkGetBufferMemoryRequirements(frame_array.device, frame_array.frames[i].vertex_buffer, &vertex_buffer_memory_requirements);
+		vkGetBufferMemoryRequirements(frame_array.device, frame_array.frames[i].index_buffer, &index_buffer_memory_requirements);
+		
+		vertex_buffer_memory_ranges[i].offset = total_vertex_memory_size;
+		vertex_buffer_memory_ranges[i].size = vertex_buffer_memory_requirements.size;
+		index_buffer_memory_ranges[i].offset = total_index_memory_size;
+		index_buffer_memory_ranges[i].size = index_buffer_memory_requirements.size;
+		
+		total_vertex_memory_size += vertex_buffer_memory_requirements.size;
+		total_index_memory_size += index_buffer_memory_requirements.size;
+	}
+	
+	VkMemoryAllocateInfo allocate_info = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.pNext = NULL,
+		.allocationSize = total_vertex_memory_size + total_index_memory_size,
+		.memoryTypeIndex = memory_type_set.graphics_resources
+	};
+	
+	vkAllocateMemory(frame_array.device, &allocate_info, NULL, &frame_array.buffer_memory);
+	
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		vkBindBufferMemory(frame_array.device, frame_array.frames[i].vertex_buffer, frame_array.buffer_memory, vertex_buffer_memory_ranges[i].offset);
+		vkBindBufferMemory(frame_array.device, frame_array.frames[i].index_buffer, frame_array.buffer_memory, total_vertex_memory_size + index_buffer_memory_ranges[i].offset);
 	}
 
 	return frame_array;
+}
+
+bool destroy_frame_array(frame_array_t *const frame_array_ptr) {
+	if (frame_array_ptr == NULL) {
+		return false;
+	}
+	
+	for (uint32_t i = 0; i < frame_array_ptr->num_frames; ++i) {
+		destroy_frame(frame_array_ptr->device, frame_array_ptr->frames[i]);
+	}
+	deallocate((void **)&frame_array_ptr->frames);
+	frame_array_ptr->num_frames = 0;
+	frame_array_ptr->current_frame = 0;
+	
+	vkFreeMemory(frame_array_ptr->device, frame_array_ptr->buffer_memory, NULL);
+	frame_array_ptr->buffer_memory = VK_NULL_HANDLE;
+	frame_array_ptr->device = VK_NULL_HANDLE;
+	
+	return true;
 }

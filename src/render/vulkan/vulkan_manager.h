@@ -18,10 +18,6 @@
 #include "physical_device.h"
 #include "swapchain.h"
 
-// This file contains all the vulkan objects and functions to create them and destroy them.
-
-
-
 /* -- Core State -- */
 
 extern VkSurfaceKHR surface;
@@ -58,14 +54,7 @@ extern buffer_partition_t global_storage_buffer_partition;
 
 extern buffer_partition_t global_draw_data_buffer_partition;
 
-
-
-extern frame_t frames[NUM_FRAMES_IN_FLIGHT];
-extern size_t current_frame;
-
-#define FRAME (frames[current_frame])
-
-
+extern frame_array_t frame_array;
 
 // Creates all Vulkan objects needed for the rendering system.
 void create_vulkan_objects(void);

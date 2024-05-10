@@ -61,18 +61,10 @@ VkCommandPool render_command_pool;
 VkCommandPool transfer_command_pool;
 VkCommandPool compute_command_pool;
 
-
-
 /* -- Render Objects -- */
 
 static VkClearValue clear_color;
-
-frame_t frames[NUM_FRAMES_IN_FLIGHT];
-size_t current_frame = 0;
-
-#define FRAME (frames[current_frame])
-
-
+frame_array_t frame_array = { 0 };
 
 /* -- Global buffers -- */
 
@@ -80,8 +72,6 @@ buffer_partition_t global_staging_buffer_partition;
 buffer_partition_t global_uniform_buffer_partition;
 buffer_partition_t global_storage_buffer_partition;
 buffer_partition_t global_draw_data_buffer_partition;
-
-
 
 /* -- Function Definitions -- */
 
@@ -113,7 +103,6 @@ static void create_global_staging_buffer(void) {
 			5120,	// Render object mesh data--vertices
 			768,	// Render object mesh data--indices
 			262144	// Loaded image data
-
 		}
 	};
 	
@@ -230,14 +219,17 @@ void create_vulkan_objects(void) {
 
 	destroy_shader_module(&vertex_shader_module);
 	destroy_shader_module(&fragment_shader_module);
-
-	log_message(VERBOSE, "Creating frame objects...");
-
-	for (size_t i = 0; i < num_frames_in_flight; ++i) {
-		frames[i] = create_frame(physical_device, device, 
-				render_command_pool, 
-				graphics_pipeline.descriptor_pool, graphics_pipeline.descriptor_set_layout);
-	}
+	
+	const frame_array_create_info_t frame_array_create_info = {
+		.num_frames = 2,
+		.physical_device = physical_device,
+		.device = device,
+		.command_pool = render_command_pool,
+		.descriptor_pool = graphics_pipeline.descriptor_pool,
+		.descriptor_set_layout = graphics_pipeline.descriptor_set_layout
+	};
+	
+	frame_array = create_frame_array(frame_array_create_info);
 
 	create_sampler(physical_device, device, &sampler_default);
 	
@@ -249,11 +241,9 @@ void destroy_vulkan_objects(void) {
 	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Destroying Vulkan objects...");
 
-	vkDestroySampler(device, sampler_default, NULL);
+	destroy_frame_array(&frame_array);
 
-	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
-		destroy_frame(device, frames[i]);
-	}
+	vkDestroySampler(device, sampler_default, NULL);
 
 	destroy_graphics_pipeline(device, graphics_pipeline);
 	destroy_swapchain(device, swapchain);

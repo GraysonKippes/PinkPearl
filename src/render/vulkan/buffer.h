@@ -14,19 +14,17 @@
 
 
 typedef struct buffer_t {
-	
 	VkBuffer handle;
 	VkDeviceMemory memory;
 	VkDeviceSize size;
-
 	VkDevice device;
-
 } buffer_t;
 
 // Always creates a GPU-side buffer. Use `stage_buffer_data` to upload data a buffer returned by this function.
 buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDeviceSize size, VkBufferUsageFlags buffer_usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set);
 void destroy_buffer(buffer_t *buffer_ptr);
 
+// TODO - get rid of this.
 typedef struct staging_buffer_t {
 
 	VkBuffer handle;
@@ -47,11 +45,6 @@ typedef enum buffer_type_t {
 	BUFFER_TYPE_STORAGE,
 	BUFFER_TYPE_DRAW_DATA
 } buffer_type_t;
-
-typedef struct memory_range_t {
-	VkDeviceSize offset;
-	VkDeviceSize size;
-} memory_range_t;
 
 typedef struct buffer_partition_create_info_t {
 

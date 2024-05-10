@@ -5,6 +5,11 @@
 
 #include <vulkan/vulkan.h>
 
+typedef struct memory_range_t {
+	VkDeviceSize offset;
+	VkDeviceSize size;
+} memory_range_t;
+
 typedef uint32_t memory_type_index_t;
 
 // The memory type set provides a useful abstraction on the array of memory types available on the physical device.

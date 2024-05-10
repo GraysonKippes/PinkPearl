@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan.h>
 
-
+/* -- BINARY SEMAPHORE -- */
 
 typedef struct binary_semaphore_t {
 	VkSemaphore semaphore;
@@ -19,7 +19,7 @@ bool destroy_binary_semaphore(binary_semaphore_t *const binary_semaphore_ptr);
 VkSemaphoreSubmitInfo make_binary_semaphore_wait_submit_info(const binary_semaphore_t binary_semaphore, const VkPipelineStageFlags2 stage_mask);
 VkSemaphoreSubmitInfo make_binary_semaphore_signal_submit_info(const binary_semaphore_t binary_semaphore, const VkPipelineStageFlags2 stage_mask);
 
-
+/* -- TIMELINE SEMAPHORE -- */
 
 typedef struct timeline_semaphore_t {
 
@@ -37,6 +37,5 @@ VkSemaphoreSubmitInfo make_timeline_semaphore_wait_submit_info(const timeline_se
 VkSemaphoreSubmitInfo make_timeline_semaphore_signal_submit_info(const timeline_semaphore_t timeline_semaphore, const VkPipelineStageFlags2 stage_mask);
 
 void timeline_to_binary_semaphore_signal(const VkQueue queue, const timeline_semaphore_t timeline_semaphore, const binary_semaphore_t binary_semaphore);
-
 
 #endif	// SYNCHRONIZATION_H

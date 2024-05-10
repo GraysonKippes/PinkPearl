@@ -1,6 +1,8 @@
 #ifndef FRAME_H
 #define FRAME_H
 
+#include <stdbool.h>
+
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
@@ -13,14 +15,13 @@
 
 typedef struct frame_t {
 
-	// Buffer to upload drawing commands for this frame to.
 	VkCommandBuffer command_buffer;
-
 	VkDescriptorSet descriptor_set;
 
 	/* -- Synchronization -- */
 
 	// Signaled when the image for this frame is available.
+	// TODO - use binary_semaphore_t struct.
 	VkSemaphore semaphore_image_available;
 
 	// Signaled when this frame is done being rendered and can be displayed to the surface.
@@ -36,42 +37,16 @@ typedef struct frame_t {
 	// 	OR when the request is being currently fulfilled.
 	timeline_semaphore_t semaphore_buffers_ready;
 
-	// Each bit indicates if a slot in the model buffer needs to be updated.
-	uint64_t model_update_flags;
-
 	/* -- Buffers -- */
 
-	// This is the model buffer for the entire scene.
-	// It is (currently) divided into three partitions: the room partition and the entity partition.
-	//
-	// The room partition has enough space to store the models of two rooms simultaneously.
-	// When the player moves to another room, the new room's model is loaded into the slot not currently being used in the room partition,
-	// and a flag is set indicating that the current room's model is now stored in the other slot.
-	// This allows for two rooms to be rendered at once in the room transition, and it also effectively caches the model for the previous room.
-	// If the player goes back into the old room, then no model has to loaded, as the data already exists in the buffer.
-	//
-	// The entity partition has enough space to store 64 standard rects.
-	// In the future, an additional partition may be added for larger models.
-	// Render handles are used to index into this partition.
-	buffer_t vertex_buffer;
-
-	buffer_t index_buffer;
+	VkBuffer vertex_buffer;
+	VkBuffer index_buffer;
 
 } frame_t;
 
-frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout);
-void destroy_frame(VkDevice device, frame_t frame);
-
-typedef struct frame_array_create_info_t {
-
-	VkPhysicalDevice physical_device;
-	VkDevice device;
-	uint32_t num_frames;
-
-} frame_array_create_info_t;
-
 typedef struct frame_array_t {
 
+	uint32_t current_frame;
 	uint32_t num_frames;
 	frame_t *frames;
 
@@ -79,5 +54,18 @@ typedef struct frame_array_t {
 	VkDevice device;
 
 } frame_array_t;
+
+typedef struct frame_array_create_info_t {
+	uint32_t num_frames;
+	physical_device_t physical_device;
+	VkDevice device;
+	VkCommandPool command_pool;
+	VkDescriptorPool descriptor_pool;
+	VkDescriptorSetLayout descriptor_set_layout;
+} frame_array_create_info_t;
+
+frame_array_t create_frame_array(const frame_array_create_info_t frame_array_create_info);
+
+bool destroy_frame_array(frame_array_t *const frame_array_ptr);
 
 #endif	// FRAME_H

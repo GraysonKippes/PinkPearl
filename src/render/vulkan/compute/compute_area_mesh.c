@@ -157,17 +157,17 @@ void compute_area_mesh(const area_t area) {
 	VkSemaphoreSubmitInfo semaphore_signal_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
 	VkSubmitInfo2 submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
 	
-	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
 
 		begin_command_buffer(transfer_command_buffers[i], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frames[i].vertex_buffer.handle, 1, &vertex_buffer_copy);
-		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frames[i].index_buffer.handle, 1, &index_buffer_copy);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &vertex_buffer_copy);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frame_array.frames[i].index_buffer, 1, &index_buffer_copy);
 		vkEndCommandBuffer(transfer_command_buffers[i]);
 
 		command_buffer_submit_infos[i] = make_command_buffer_submit_info(transfer_command_buffers[i]);
-		semaphore_wait_submit_infos[i] = make_timeline_semaphore_wait_submit_info(frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
-		semaphore_signal_submit_infos[i] = make_timeline_semaphore_signal_submit_info(frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
-		frames[i].semaphore_buffers_ready.wait_counter += 1;
+		semaphore_wait_submit_infos[i] = make_timeline_semaphore_wait_submit_info(frame_array.frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		semaphore_signal_submit_infos[i] = make_timeline_semaphore_signal_submit_info(frame_array.frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		frame_array.frames[i].semaphore_buffers_ready.wait_counter += 1;
 
 		submit_infos[i] = (VkSubmitInfo2){
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
@@ -180,5 +180,5 @@ void compute_area_mesh(const area_t area) {
 			.pSignalSemaphoreInfos = &semaphore_signal_submit_infos[i]
 		};
 	}
-	vkQueueSubmit2(transfer_queue, num_frames_in_flight, submit_infos, VK_NULL_HANDLE);
+	vkQueueSubmit2(transfer_queue, frame_array.num_frames, submit_infos, VK_NULL_HANDLE);
 }
