@@ -22,7 +22,7 @@ typedef struct frame_t {
 
 	// Signaled when the image for this frame is available.
 	// TODO - use binary_semaphore_t struct.
-	VkSemaphore semaphore_image_available;
+	binary_semaphore_t semaphore_image_available;
 
 	// Signaled when this frame is done being rendered and can be displayed to the surface.
 	binary_semaphore_t semaphore_present_ready;

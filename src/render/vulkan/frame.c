@@ -15,19 +15,13 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 	frame_t frame = {
 		.command_buffer = VK_NULL_HANDLE,
 		.descriptor_set = VK_NULL_HANDLE,
-		.semaphore_image_available = VK_NULL_HANDLE,
+		.semaphore_image_available = (binary_semaphore_t){ 0 },
 		.semaphore_present_ready = (binary_semaphore_t){ 0 },
 		.semaphore_render_finished = (timeline_semaphore_t){ 0 },
 		.fence_frame_ready = VK_NULL_HANDLE,
 		.semaphore_buffers_ready = (timeline_semaphore_t){ 0 },
 		.vertex_buffer = VK_NULL_HANDLE,
 		.index_buffer = VK_NULL_HANDLE
-	};
-
-	const VkSemaphoreCreateInfo semaphore_create_info = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0
 	};
 
 	const VkFenceCreateInfo fence_create_info = {
@@ -41,9 +35,8 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 	//const VkDeviceSize index_buffer_size = (num_render_object_slots * num_indices_per_rect) * sizeof(index_t);
 	const VkDeviceSize vertex_buffer_size = (num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float)) + 81920;
 	const VkDeviceSize index_buffer_size = 768 + 12288;
-
-	vkCreateSemaphore(device, &semaphore_create_info, NULL, &frame.semaphore_image_available);
 	
+	frame.semaphore_image_available = create_binary_semaphore(device);
 	frame.semaphore_present_ready = create_binary_semaphore(device);
 	frame.semaphore_render_finished = create_timeline_semaphore(device);
 	frame.semaphore_buffers_ready = create_timeline_semaphore(device);
@@ -98,7 +91,7 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 }
 
 static void destroy_frame(VkDevice device, frame_t frame) {
-	vkDestroySemaphore(device, frame.semaphore_image_available, NULL);
+	destroy_binary_semaphore(&frame.semaphore_image_available);
 	destroy_binary_semaphore(&frame.semaphore_present_ready);
 	destroy_timeline_semaphore(&frame.semaphore_render_finished);
 	destroy_timeline_semaphore(&frame.semaphore_buffers_ready);

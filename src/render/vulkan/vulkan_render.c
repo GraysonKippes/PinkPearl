@@ -350,7 +350,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	vkResetCommandBuffer(frame_array.frames[frame_array.current_frame].command_buffer, 0);
 
 	uint32_t image_index = 0;
-	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, frame_array.frames[frame_array.current_frame].semaphore_image_available, VK_NULL_HANDLE, &image_index);
+	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore, VK_NULL_HANDLE, &image_index);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return;
 	}
@@ -483,7 +483,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 	wait_semaphore_submit_infos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
 	wait_semaphore_submit_infos[0].pNext = NULL;
-	wait_semaphore_submit_infos[0].semaphore = frame_array.frames[frame_array.current_frame].semaphore_image_available;
+	wait_semaphore_submit_infos[0].semaphore = frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore;
 	wait_semaphore_submit_infos[0].value = 0;
 	wait_semaphore_submit_infos[0].stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 	wait_semaphore_submit_infos[0].deviceIndex = 0;
