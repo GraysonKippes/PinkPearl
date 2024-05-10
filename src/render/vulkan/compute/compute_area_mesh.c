@@ -160,7 +160,7 @@ void compute_area_mesh(const area_t area) {
 	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
 
 		begin_command_buffer(transfer_command_buffers[i], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frames[i].model_buffer.handle, 1, &vertex_buffer_copy);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frames[i].vertex_buffer.handle, 1, &vertex_buffer_copy);
 		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frames[i].index_buffer.handle, 1, &index_buffer_copy);
 		vkEndCommandBuffer(transfer_command_buffers[i]);
 

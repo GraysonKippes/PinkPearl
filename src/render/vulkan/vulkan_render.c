@@ -155,7 +155,7 @@ static void transfer_model_data(void) {
 	for (uint32_t i = 0; i < num_frames_in_flight; ++i) {
 
 		vkBeginCommandBuffer(transfer_command_buffers[i], &begin_info);
-		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].model_buffer.handle, num_pending_models, vertex_copy_regions);
+		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].vertex_buffer.handle, num_pending_models, vertex_copy_regions);
 		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frames[i].index_buffer.handle, num_pending_models, index_copy_regions);
 		vkEndCommandBuffer(transfer_command_buffers[i]);
 
@@ -468,7 +468,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	vkCmdBindPipeline(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
 	vkCmdBindDescriptorSets(FRAME.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &FRAME.descriptor_set, 0, NULL);
 	const VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(FRAME.command_buffer, 0, 1, &FRAME.model_buffer.handle, offsets);
+	vkCmdBindVertexBuffers(FRAME.command_buffer, 0, 1, &FRAME.vertex_buffer.handle, offsets);
 	vkCmdBindIndexBuffer(FRAME.command_buffer, FRAME.index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
 	const uint32_t draw_data_offset = global_draw_data_buffer_partition.ranges[1].offset;
 	vkCmdDrawIndexedIndirectCount(FRAME.command_buffer, global_draw_data_buffer_partition.buffer, draw_data_offset, global_draw_data_buffer_partition.buffer, 0, 68, 28);

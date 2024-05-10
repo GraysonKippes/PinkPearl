@@ -53,9 +53,7 @@ typedef struct frame_t {
 	// The entity partition has enough space to store 64 standard rects.
 	// In the future, an additional partition may be added for larger models.
 	// Render handles are used to index into this partition.
-	//
-	// TODO - rename to vertex_buffer
-	buffer_t model_buffer;
+	buffer_t vertex_buffer;
 
 	buffer_t index_buffer;
 

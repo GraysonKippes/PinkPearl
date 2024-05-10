@@ -39,9 +39,9 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 	};
 
 	//const VkDeviceSize num_elements_per_rect = num_vertices_per_rect * vertex_input_element_stride;
-	//const VkDeviceSize model_buffer_size = (num_render_object_slots * num_elements_per_rect) * sizeof(float);
+	//const VkDeviceSize vertex_buffer_size = (num_render_object_slots * num_elements_per_rect) * sizeof(float);
 	//const VkDeviceSize index_buffer_size = (num_render_object_slots * num_indices_per_rect) * sizeof(index_t);
-	const VkDeviceSize model_buffer_size = (num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float)) + 81920;
+	const VkDeviceSize vertex_buffer_size = (num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float)) + 81920;
 	const VkDeviceSize index_buffer_size = 768 + 12288;
 
 	vkCreateSemaphore(device, &semaphore_create_info, NULL, &frame.semaphore_image_available);
@@ -76,7 +76,7 @@ frame_t create_frame(physical_device_t physical_device, VkDevice device, VkComma
 		}
 	};
 
-	frame.model_buffer = create_buffer(physical_device.handle, device, model_buffer_size, 
+	frame.vertex_buffer = create_buffer(physical_device.handle, device, vertex_buffer_size, 
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		queue_family_set);
@@ -97,7 +97,7 @@ void destroy_frame(VkDevice device, frame_t frame) {
 	destroy_timeline_semaphore(&frame.semaphore_buffers_ready);
 	vkDestroyFence(device, frame.fence_frame_ready, NULL);
 
-	destroy_buffer(&frame.model_buffer);
+	destroy_buffer(&frame.vertex_buffer);
 	destroy_buffer(&frame.index_buffer);
 }
 
