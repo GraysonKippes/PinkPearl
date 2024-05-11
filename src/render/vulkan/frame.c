@@ -30,11 +30,13 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT
 	};
 
-	//const VkDeviceSize num_elements_per_rect = num_vertices_per_rect * vertex_input_element_stride;
-	//const VkDeviceSize vertex_buffer_size = (num_render_object_slots * num_elements_per_rect) * sizeof(float);
-	//const VkDeviceSize index_buffer_size = (num_render_object_slots * num_indices_per_rect) * sizeof(index_t);
-	const VkDeviceSize vertex_buffer_size = (num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float)) + 81920;
-	const VkDeviceSize index_buffer_size = 768 + 12288;
+	const VkDeviceSize render_object_vertices_size = num_render_object_slots * 4 * vertex_input_element_stride * sizeof(float);
+	const VkDeviceSize area_mesh_vertices_size = num_room_layers * 32 * 32 * 4 * vertex_input_element_stride * sizeof(float);
+	const VkDeviceSize vertex_buffer_size = render_object_vertices_size + area_mesh_vertices_size;
+	
+	const VkDeviceSize render_object_indices_size = num_render_object_slots * 6 * sizeof(index_t);
+	const VkDeviceSize area_mesh_indices_size = num_room_layers * 32 * 32 * 6 * sizeof(index_t);
+	const VkDeviceSize index_buffer_size = render_object_indices_size + area_mesh_indices_size;
 	
 	frame.semaphore_image_available = create_binary_semaphore(device);
 	frame.semaphore_present_ready = create_binary_semaphore(device);
@@ -126,9 +128,6 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 		log_message(ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
 		return (frame_array_t){ 0 };
 	}
-
-	static const VkDeviceSize vertex_buffer_size = 5120 + 81920;
-	static const VkDeviceSize index_buffer_size = 768 + 12288;
 	
 	memory_range_t vertex_buffer_memory_ranges[3];
 	memory_range_t index_buffer_memory_ranges[3];

@@ -18,10 +18,7 @@ typedef struct frame_t {
 	VkCommandBuffer command_buffer;
 	VkDescriptorSet descriptor_set;
 
-	/* -- Synchronization -- */
-
 	// Signaled when the image for this frame is available.
-	// TODO - use binary_semaphore_t struct.
 	binary_semaphore_t semaphore_image_available;
 
 	// Signaled when this frame is done being rendered and can be displayed to the surface.
@@ -36,8 +33,6 @@ typedef struct frame_t {
 	// 	this can be either when a request is put in to update the buffer data, 
 	// 	OR when the request is being currently fulfilled.
 	timeline_semaphore_t semaphore_buffers_ready;
-
-	/* -- Buffers -- */
 
 	VkBuffer vertex_buffer;
 	VkBuffer index_buffer;
