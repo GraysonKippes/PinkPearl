@@ -53,6 +53,7 @@ mat4 make_translerp_matrix(render_position_t position, float delta_time) {
 	mat4 translation_matrix = mat4(1.0);
 	translation_matrix[3].xyz = lerp_position;
 	translation_matrix[3].y *= -1.0;
+	
 	return translation_matrix;
 }
 
