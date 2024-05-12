@@ -133,7 +133,6 @@ texture_pack_t parse_fgt_file(const char *path) {
 			}
 
 			for (uint32_t j = 0; j < info_ptr->num_animations; ++j) {
-				info_ptr->animations[j].cell_extent = info_ptr->cell_extent;
 				read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].start_cell);
 				read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].num_frames);
 				read_data(fgt_file, sizeof(uint32_t), 1, &info_ptr->animations[j].frames_per_second);
@@ -150,7 +149,6 @@ texture_pack_t parse_fgt_file(const char *path) {
 				goto end_read;
 			}
 
-			info_ptr->animations[0].cell_extent = info_ptr->cell_extent;
 			info_ptr->animations[0].start_cell = 0;
 			info_ptr->animations[0].num_frames = 1;
 			info_ptr->animations[0].frames_per_second = 0;

@@ -20,25 +20,16 @@
 #include "vulkan_manager.h"
 #include "compute/compute_room_texture.h"
 
-
-
-/* Texture manager
- *
- * Todo:
- *  - vectorize image upload to GPU
- *  - make room texture caches into image arrays instead of separate images
-*/
-
-
-
 #define TEXTURE_PATH (RESOURCE_PATH "assets/textures/")
 
 #define NUM_RESERVED_TEXTURES 2
+#define NUM_ROOM_TEXTURES 4
 #define NUM_LOADED_TEXTURES 3
-#define NUM_TEXTURES NUM_RESERVED_TEXTURES + NUM_LOADED_TEXTURES
+#define NUM_TEXTURES (NUM_RESERVED_TEXTURES + NUM_ROOM_TEXTURES + NUM_LOADED_TEXTURES)
 
 static const uint32_t num_reserved_textures = NUM_RESERVED_TEXTURES;
-const uint32_t num_loaded_textures = NUM_LOADED_TEXTURES;
+static const uint32_t num_room_textures = NUM_ROOM_TEXTURES;
+static const uint32_t num_loaded_textures = NUM_LOADED_TEXTURES;
 const uint32_t num_textures = NUM_TEXTURES;
 
 static texture_t textures[NUM_TEXTURES];
@@ -66,7 +57,6 @@ static const texture_create_info_t missing_texture_create_info = {
 	.num_animations = 1,
 	.animations = (animation_create_info_t[1]){
 		{
-			.cell_extent = { 16, 16 },
 			.start_cell = 0,
 			.num_frames = 1,
 			.frames_per_second = 0
@@ -94,7 +84,7 @@ static void register_loaded_texture(const texture_handle_t texture_handle, const
 			texture_records[hash_index] = texture_record;
 		}
 		else {
-			hash_index++;
+			hash_index += 1;
 			hash_index %= (size_t)num_loaded_textures;
 		}
 	}
@@ -119,8 +109,12 @@ void load_textures(const texture_pack_t texture_pack) {
 	}
 
 	textures[0] = load_texture(missing_texture_create_info);
-	textures[1] = init_room_texture();
+	textures[1] = init_room_texture(ONE_TO_THREE);
+	textures[2] = init_room_texture(TWO_TO_THREE);
+	textures[3] = init_room_texture(THREE_TO_THREE);
+	textures[4] = init_room_texture(FOUR_TO_THREE);
 
+	// Nullify texture records FIRST, hash-collision-resolution relies on records being null to begin with.
 	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
 		texture_records[i].texture_id = make_null_string();
 		texture_records[i].texture_handle = missing_texture_handle;
@@ -129,7 +123,7 @@ void load_textures(const texture_pack_t texture_pack) {
 	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
 		
 		// Offset for room textures and missing texture placeholder.
-		const texture_handle_t texture_handle = num_reserved_textures + i;
+		const texture_handle_t texture_handle = num_reserved_textures + num_room_textures + i;
 		const texture_create_info_t texture_create_info = texture_pack.texture_create_infos[i];
 		
 		textures[texture_handle] = load_texture(texture_create_info);
@@ -140,13 +134,11 @@ void load_textures(const texture_pack_t texture_pack) {
 }
 
 void create_room_texture(const room_t room, const uint32_t cache_slot, const texture_handle_t tilemap_texture_handle) {
-	compute_room_texture(room, cache_slot, textures[tilemap_texture_handle], &textures[room_texture_handle]);
+	compute_room_texture(room, cache_slot, textures[tilemap_texture_handle], &textures[room_texture_handle + (uint32_t)room.size]);
 }
 
 void destroy_textures(void) {
-
 	log_message(VERBOSE, "Destroying loaded textures...");
-
 	for (uint32_t i = 0; i < NUM_TEXTURES; ++i) {
 		destroy_texture(textures + i);
 	}
@@ -157,17 +149,14 @@ texture_t get_room_texture(const room_size_t room_size) {
 }
 
 texture_t get_loaded_texture(const texture_handle_t texture_handle) {
-	
 	if (texture_handle >= num_textures) {
 		logf_message(ERROR, "Error getting loaded texture: texture handle (%u) is not less than number of loaded textures (%u).", texture_handle, num_textures);
 		return textures[missing_texture_handle];
 	}
-
 	return textures[texture_handle];
 }
 
 texture_handle_t find_loaded_texture_handle(const string_t texture_id) {
-
 	if (is_string_null(texture_id)) {
 		log_message(ERROR, "Error finding loaded texture: given texture ID is NULL.");
 		return missing_texture_handle;
@@ -190,46 +179,21 @@ texture_state_t missing_texture_state(void) {
 
 	texture_state_t texture_state = { 0 };
 	texture_state.handle = missing_texture_handle;
-	texture_state.num_animation_cycles = 1;
-	if (!allocate((void **)&texture_state.animation_cycles, texture_state.num_animation_cycles, sizeof(texture_animation_cycle_t))) {
-		log_message(ERROR, "Error making missing texture state: failed to allocate animation cycle pointer-array.");
-		return (texture_state_t){ 0 };
-	}
-	texture_state.animation_cycles[0].num_frames = 1;
-	texture_state.animation_cycles[0].frames_per_second = 0;
+	texture_state.num_animations = 1;
 	texture_state.current_frame = 0;
-	texture_state.current_animation_cycle = 0;
+	texture_state.current_animation = 0;
 	texture_state.last_frame_time_ms = 0;
 
 	return texture_state;
 }
 
 texture_state_t make_new_texture_state(const texture_handle_t texture_handle) {
-
-	texture_state_t texture_state = { 0 };
-	texture_state.handle = texture_handle;
-
-	const texture_t texture = get_loaded_texture(texture_state.handle);
-
-	texture_state.num_animation_cycles = texture.num_images;
-	if (texture_state.num_animation_cycles == 0) {
-		log_message(ERROR, "Error making new texture state: number of animation cycles is zero.");
-		return texture_state;
-	}
-
-	if (!allocate((void **)&texture_state.animation_cycles, texture_state.num_animation_cycles, sizeof(texture_animation_cycle_t))) {
-		log_message(ERROR, "Error making new texture state: failed to allocate animation cycle pointer-array.");
-		return texture_state;
-	}
-
-	for (uint32_t i = 0; i < texture_state.num_animation_cycles; ++i) {
-		texture_state.animation_cycles[i].num_frames = texture.images[i].image_array_length;
-		texture_state.animation_cycles[i].frames_per_second = texture.images[i].frames_per_second;
-	}
-
-	texture_state.current_animation_cycle = 0;
-	texture_state.current_frame = 0;
-	texture_state.last_frame_time_ms = 0;
-
-	return texture_state;
+	const texture_t texture = get_loaded_texture(texture_handle);
+	return (texture_state_t){
+		.handle = texture_handle,
+		.num_animations = texture.num_animations,
+		.current_animation = 0,
+		.current_frame = 0,
+		.last_frame_time_ms = 0
+	};
 }

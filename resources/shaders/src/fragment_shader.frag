@@ -68,14 +68,14 @@ void main() {
 	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.image_index));
 	out_color = texture(texture_samplers[draw_info.render_object_slot], texture_coordinates) * vec4(in_color, 1.0);
 	
-	// Apply lighting
+	/* Apply lighting
 	out_color.rgb *= (lighting_data.ambient_lighting.color * lighting_data.ambient_lighting.intensity);
 	vec3 point_light_color = vec3(1.0);
 	for (uint i = 0; i < lighting_data.num_point_lights; ++i) {
 		const point_light_t point_light = lighting_data.point_lights[i];
 		point_light_color *= (point_light.color * point_light.intensity * calculate_attenuation(point_light.position, texel_position, 0.07, 0.14));
 	}
-	out_color.rgb *= point_light_color;
+	out_color.rgb *= point_light_color; */
 	
 	// Light level granularity
 	const float light_level = 32.0;

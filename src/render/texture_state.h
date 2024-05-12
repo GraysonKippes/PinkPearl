@@ -15,10 +15,8 @@ typedef struct texture_state_t {
 
 	texture_handle_t handle;
 
-	uint32_t num_animation_cycles; // Guaranteed to be at least 1.
-	texture_animation_cycle_t *animation_cycles;
-
-	uint32_t current_animation_cycle;
+	uint32_t num_animations;
+	uint32_t current_animation;
 	uint32_t current_frame;
 	uint64_t last_frame_time_ms;
 

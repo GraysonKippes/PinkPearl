@@ -50,7 +50,7 @@ void start_game(void) {
 		player_entity_ptr->hitbox = player_hitbox;
 		player_entity_ptr->render_handle = load_render_object();
 		upload_model(player_entity_ptr->render_handle, get_premade_model(0), "entity/pearl");
-		render_object_texture_states[player_entity_ptr->render_handle].current_animation_cycle = 3;
+		render_object_texture_states[player_entity_ptr->render_handle].current_animation = 3;
 	}
 }
 
@@ -111,7 +111,7 @@ void tick_game(void) {
 	player_entity_ptr->transform.velocity = vector3D_scalar_multiply(player_entity_ptr->transform.velocity, speed);
 
 	tick_entities();
-	if (animation_cycle != render_object_texture_states[player_entity_ptr->render_handle].current_animation_cycle) {
+	if (animation_cycle != render_object_texture_states[player_entity_ptr->render_handle].current_animation) {
 		texture_state_set_animation_cycle(&render_object_texture_states[player_entity_ptr->render_handle], animation_cycle);
 	}
 

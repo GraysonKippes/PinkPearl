@@ -241,6 +241,9 @@ void upload_draw_data(const area_render_state_t area_render_state) {
 			continue;
 		}
 		
+		const texture_state_t texture_state = render_object_texture_states[i];
+		const texture_t texture = get_loaded_texture(texture_state.handle);
+		
 		draw_infos[draw_count++] = (draw_info_t){
 			.index_count = 6,
 			.instance_count = 1,
@@ -248,7 +251,7 @@ void upload_draw_data(const area_render_state_t area_render_state) {
 			.vertex_offset = (int32_t)(i * num_vertices_per_rect),
 			.first_instance = 0,
 			.render_object_slot = i,
-			.image_index = render_object_texture_states[i].current_frame
+			.image_index = texture.animations[texture_state.current_animation].start_cell + texture_state.current_frame
 		};
 	}
 	
@@ -388,26 +391,24 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	VkDescriptorImageInfo texture_infos[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_SIZES];
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+		texture_t texture;
 		if (is_render_object_slot_enabled(i)) {
 			const texture_state_t texture_state = render_object_texture_states[i];
-			const texture_t texture = get_loaded_texture(texture_state.handle);
-			texture_infos[i].sampler = sampler_default;
-			texture_infos[i].imageView = texture.images[texture_state.current_animation_cycle].vk_image_view;
-			texture_infos[i].imageLayout = texture.layout;
+			texture = get_loaded_texture(texture_state.handle);
 		}
 		else {
-			const texture_t missing_texture = get_loaded_texture(missing_texture_handle);
-			texture_infos[i].sampler = sampler_default;
-			texture_infos[i].imageView = missing_texture.images[0].vk_image_view;
-			texture_infos[i].imageLayout = missing_texture.layout;
+			texture = get_loaded_texture(missing_texture_handle);
 		}
+		texture_infos[i].sampler = sampler_default;
+		texture_infos[i].imageView = texture.image.vk_image_view;
+		texture_infos[i].imageLayout = texture.layout;
 	}
 	
 	for (uint32_t i = 0; i < num_room_sizes; ++i) {
-		const texture_t room_texture = get_loaded_texture(room_texture_handle);
+		const texture_t room_texture = get_loaded_texture(room_texture_handle + i);
 		const uint32_t index = num_render_object_slots + i;
 		texture_infos[index].sampler = sampler_default;
-		texture_infos[index].imageView = room_texture.images[i].vk_image_view;
+		texture_infos[index].imageView = room_texture.image.vk_image_view;
 		texture_infos[index].imageLayout = room_texture.layout;
 	}
 
@@ -433,43 +434,43 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	descriptor_writes[3].pTexelBufferView = NULL;
 
 	vkUpdateDescriptorSets(device, 4, descriptor_writes, 0, NULL);
-
+	
 	upload_lighting_data();
 
-
-	VkCommandBufferBeginInfo begin_info = { 0 };
-	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_info.pNext = NULL;
-	begin_info.flags = 0;
-	begin_info.pInheritanceInfo = NULL;
-
+	const VkCommandBufferBeginInfo begin_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.pInheritanceInfo = NULL
+	};
 	vkBeginCommandBuffer(frame_array.frames[frame_array.current_frame].command_buffer, &begin_info);
 
 	static const VkClearValue clear_value = { { { 0 } } };
-
-	VkRenderPassBeginInfo render_pass_info = { 0 };
-	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	render_pass_info.pNext = NULL;
-	render_pass_info.renderPass = graphics_pipeline.render_pass;
-	render_pass_info.framebuffer = swapchain.framebuffers[image_index];
-	render_pass_info.renderArea.offset.x = 0;
-	render_pass_info.renderArea.offset.y = 0;
-	render_pass_info.renderArea.extent = swapchain.extent;
-	render_pass_info.clearValueCount = 1;
-	render_pass_info.pClearValues = &clear_value;
-
+	const VkRenderPassBeginInfo render_pass_info = {
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+		.pNext = NULL,
+		.renderPass = graphics_pipeline.render_pass,
+		.framebuffer = swapchain.framebuffers[image_index],
+		.renderArea.offset.x = 0,
+		.renderArea.offset.y = 0,
+		.renderArea.extent = swapchain.extent,
+		.clearValueCount = 1,
+		.pClearValues = &clear_value
+	};
 	vkCmdBeginRenderPass(frame_array.frames[frame_array.current_frame].command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+	
 	vkCmdBindPipeline(frame_array.frames[frame_array.current_frame].command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
 	vkCmdBindDescriptorSets(frame_array.frames[frame_array.current_frame].command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &frame_array.frames[frame_array.current_frame].descriptor_set, 0, NULL);
+	
 	const VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].command_buffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
 	vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].command_buffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
+	
 	const uint32_t draw_data_offset = global_draw_data_buffer_partition.ranges[1].offset;
 	vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].command_buffer, global_draw_data_buffer_partition.buffer, draw_data_offset, global_draw_data_buffer_partition.buffer, 0, 68, 28);
+	
 	vkCmdEndRenderPass(frame_array.frames[frame_array.current_frame].command_buffer);
 	vkEndCommandBuffer(frame_array.frames[frame_array.current_frame].command_buffer);
-
-
 
 	const VkCommandBufferSubmitInfo command_buffer_submit_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
