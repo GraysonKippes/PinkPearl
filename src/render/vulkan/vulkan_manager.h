@@ -1,6 +1,8 @@
 #ifndef VULKAN_MANAGER_H
 #define VULKAN_MANAGER_H
 
+#include <stdint.h>
+
 #include <vulkan/vulkan.h>
 
 #include "game/area/room.h"
@@ -17,6 +19,8 @@
 #include "memory.h"
 #include "physical_device.h"
 #include "swapchain.h"
+
+typedef int32_t quad_id_t;
 
 /* -- Core State -- */
 

@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "debug.h"
+#include "DataStuff/Stack.h"
 #include "log/log_stack.h"
 #include "log/logging.h"
 #include "glfw/glfw_manager.h"
@@ -72,6 +73,10 @@ buffer_partition_t global_staging_buffer_partition;
 buffer_partition_t global_uniform_buffer_partition;
 buffer_partition_t global_storage_buffer_partition;
 buffer_partition_t global_draw_data_buffer_partition;
+
+/* -- Quad ID -- */
+
+Stack quad_id_stack;
 
 /* -- Function Definitions -- */
 
@@ -219,6 +224,8 @@ void create_vulkan_objects(void) {
 
 	destroy_shader_module(&vertex_shader_module);
 	destroy_shader_module(&fragment_shader_module);
+
+	create_sampler(physical_device, device, &sampler_default);
 	
 	const frame_array_create_info_t frame_array_create_info = {
 		.num_frames = 2,
@@ -228,10 +235,12 @@ void create_vulkan_objects(void) {
 		.descriptor_pool = graphics_pipeline.descriptor_pool,
 		.descriptor_set_layout = graphics_pipeline.descriptor_set_layout
 	};
-	
 	frame_array = create_frame_array(frame_array_create_info);
-
-	create_sampler(physical_device, device, &sampler_default);
+	
+	quad_id_stack = newStack(num_render_object_slots, sizeof(quad_id_t));
+	for (quad_id_t quad_id = 0; quad_id < (quad_id_t)num_render_object_slots; ++quad_id) {
+		stackPush(&quad_id_stack, &quad_id);
+	}
 	
 	log_stack_pop();
 }
@@ -240,6 +249,8 @@ void destroy_vulkan_objects(void) {
 
 	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Destroying Vulkan objects...");
+
+	deleteStack(&quad_id_stack);
 
 	destroy_frame_array(&frame_array);
 

@@ -10,8 +10,10 @@ set(APP_NAME "\"Pink Pearl\"")
 set(RESOURCE_PATH "\"../resources/\"")
 configure_file(src/config.h.in config.h)
 
-#target_compile_options(PinkPearl PRIVATE /TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address)
-target_compile_options(PinkPearl PRIVATE -std=c17 -lpthread -g -Wpedantic -Wall -Wextra
+set(COMPILE_OPTIONS_MSVC, "/TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address")
+
+set(COMPILE_OPTIONS_GCC, 
+	"-std=c17 -lpthread -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
 	-Werror=implicit-function-declaration 
 	-Werror=implicit-int
@@ -20,16 +22,17 @@ target_compile_options(PinkPearl PRIVATE -std=c17 -lpthread -g -Wpedantic -Wall 
 	-Werror=incompatible-pointer-types
 	-Werror=int-conversion
 	-Werror=format 
-	-Wno-switch
+	-Wno-switch"
 )
+
+target_compile_options(PinkPearl PRIVATE ${COMPILE_OPTIONS_GCC})
 
 find_package(Vulkan REQUIRED)
 
-target_link_libraries(PinkPearl PRIVATE 
-	Vulkan::Vulkan 
-	#"C:/msys64/mingw64/lib/libportaudio.a" 
+target_link_libraries(PinkPearl PRIVATE Vulkan::Vulkan 
 	"${PROJECT_SOURCE_DIR}/lib/libportaudio.dll" 
 	"${PROJECT_SOURCE_DIR}/lib/libglfw3.a"
+	"${PROJECT_SOURCE_DIR}/lib/libDataStuff.a"
 )
 
 target_include_directories(PinkPearl PRIVATE
