@@ -20,8 +20,6 @@
 #include "physical_device.h"
 #include "swapchain.h"
 
-typedef int32_t quad_id_t;
-
 /* -- Core State -- */
 
 extern VkSurfaceKHR surface;

@@ -16,6 +16,8 @@
 
 // This file holds all functionality for drawing the scene with the Vulkan API.
 
+typedef int32_t quad_id_t;
+
 void create_vulkan_render_objects(void);
 void destroy_vulkan_render_objects(void);
 void stage_model_data(const uint32_t slot, model_t model);

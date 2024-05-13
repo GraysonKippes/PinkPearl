@@ -7,7 +7,6 @@
 #include <vulkan/vulkan.h>
 
 #include "debug.h"
-#include "DataStuff/Stack.h"
 #include "log/log_stack.h"
 #include "log/logging.h"
 #include "glfw/glfw_manager.h"
@@ -44,11 +43,6 @@ swapchain_t swapchain = { 0 };
 graphics_pipeline_t graphics_pipeline = { 0 };
 VkSampler sampler_default = VK_NULL_HANDLE;
 
-/* -- Compute -- */
-
-// TODO - get this out of here.
-compute_pipeline_t compute_pipeline_matrices;
-
 /* -- Queues -- */
 
 VkQueue graphics_queue;
@@ -73,10 +67,6 @@ buffer_partition_t global_staging_buffer_partition;
 buffer_partition_t global_uniform_buffer_partition;
 buffer_partition_t global_storage_buffer_partition;
 buffer_partition_t global_draw_data_buffer_partition;
-
-/* -- Quad ID -- */
-
-Stack quad_id_stack;
 
 /* -- Function Definitions -- */
 
@@ -237,11 +227,6 @@ void create_vulkan_objects(void) {
 	};
 	frame_array = create_frame_array(frame_array_create_info);
 	
-	quad_id_stack = newStack(num_render_object_slots, sizeof(quad_id_t));
-	for (quad_id_t quad_id = 0; quad_id < (quad_id_t)num_render_object_slots; ++quad_id) {
-		stackPush(&quad_id_stack, &quad_id);
-	}
-	
 	log_stack_pop();
 }
 
@@ -249,8 +234,6 @@ void destroy_vulkan_objects(void) {
 
 	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Destroying Vulkan objects...");
-
-	deleteStack(&quad_id_stack);
 
 	destroy_frame_array(&frame_array);
 

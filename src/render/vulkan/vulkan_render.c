@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <DataStuff/CmpFunc.h>
+#include <DataStuff/BinarySearchTree.h>
+#include <DataStuff/Stack.h>
+
 #include "log/log_stack.h"
 #include "log/logging.h"
 #include "game/area/room.h"
@@ -18,6 +22,9 @@
 #include "compute/compute_matrices.h"
 #include "compute/compute_room_texture.h"
 
+BinarySearchTree active_quad_ids;
+Stack inactive_quad_ids;
+
 static void transfer_model_data(const uint32_t slot);
 
 void create_vulkan_render_objects(void) {
@@ -28,6 +35,13 @@ void create_vulkan_render_objects(void) {
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
 	init_compute_area_mesh(device);
+	
+	// Initialize data structures for managing quad IDs.
+	active_quad_ids = newBinarySearchTree(sizeof(quad_id_t), cmpFuncInt);
+	inactive_quad_ids = newStack(num_render_object_slots, sizeof(quad_id_t));
+	for (quad_id_t quad_id = 0; quad_id < (quad_id_t)num_render_object_slots; ++quad_id) {
+		stackPush(&inactive_quad_ids, &quad_id);
+	}
 	
 	log_stack_pop();
 }
@@ -43,6 +57,9 @@ void destroy_vulkan_render_objects(void) {
 	terminate_compute_matrices();
 	terminate_compute_room_texture();
 	destroy_textures();
+	
+	deleteBinarySearchTree(&active_quad_ids);
+	deleteStack(&inactive_quad_ids);
 	
 	log_stack_pop();
 }
