@@ -15,7 +15,7 @@ set(COMPILE_OPTIONS_MSVC, "/TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsa
 set(COMPILE_OPTIONS_GCC, 
 	"-std=c17 -lpthread -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
-	-Werror=implicit-function-declaration 
+	-Werror-implicit-function-declaration 
 	-Werror=implicit-int
 	-Werror=sign-compare
 	-Werror=stringop-overread
@@ -66,6 +66,7 @@ target_sources(PinkPearl PRIVATE
 	src/log/error_code.c
 	src/log/log_stack.c
 	src/log/logging.c
+	src/math/vector4F.c
 	src/render/area_render_state.c
 	src/render/model.c
 	src/render/render_config.c
