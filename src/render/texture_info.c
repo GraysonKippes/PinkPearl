@@ -16,7 +16,6 @@ bool is_animation_set_empty(texture_create_info_t animation_set) {
 }
 
 void destroy_texture_pack(texture_pack_t *texture_pack_ptr) {
-
 	if (texture_pack_ptr == NULL) {
 		return;
 	}
@@ -35,7 +34,6 @@ void destroy_texture_pack(texture_pack_t *texture_pack_ptr) {
 }
 
 texture_pack_t parse_fgt_file(const char *path) {
-
 	log_stack_push("LoadTexturePack");
 	logf_message(VERBOSE, "Loading texture pack from \"%s\"...", path);
 

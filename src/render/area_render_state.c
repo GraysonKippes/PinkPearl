@@ -4,161 +4,160 @@
 #include "util/allocate.h"
 #include "util/time.h"
 
-#include "math/lerp.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/vulkan_render.h"
-#include "vulkan/compute/compute_area_mesh.h"
+#include "vulkan/math/lerp.h"
 
-static area_render_state_t area_render_state = { 0 };
-
-area_render_state_t get_global_area_render_state(void) {
-	return area_render_state;
-}
-
-void area_render_state_reset(const area_t area, const room_t initial_room) {
-	
+void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const room_t initialRoom) {
 	log_message(VERBOSE, "Resetting area render state...");
 	
-	destroy_texture_state(&area_render_state.tilemap_texture_state);
-	string_t tilemap_texture_id = new_string(64, "tilemap/dungeon4");
-	area_render_state.tilemap_texture_state = make_new_texture_state(find_loaded_texture_handle(tilemap_texture_id));
-	destroy_string(&tilemap_texture_id);
-	compute_area_mesh(area);
+	if (pAreaRenderState == NULL) {
+		return;
+	}
+	
+	string_t tilemapTextureID = new_string(64, "tilemap/dungeon4");
+	pAreaRenderState->tilemapTextureState = newTextureState(tilemapTextureID);
+	destroy_string(&tilemapTextureID);
+	//compute_area_mesh(area);
 	
 	// TODO - use reallocate function when it is implemented.
-	deallocate((void **)&area_render_state.room_ids_to_cache_slots);
-	area_render_state.num_room_ids = area.num_rooms;
+	deallocate((void **)&pAreaRenderState->roomIDsToPositions);
+	pAreaRenderState->numRoomIDs = area.num_rooms;
 	
-	if (!allocate((void **)&area_render_state.room_ids_to_cache_slots, area_render_state.num_room_ids, sizeof(uint32_t))) {
+	if (!allocate((void **)&pAreaRenderState->roomIDsToCacheSlots, pAreaRenderState->numRoomIDs, sizeof(uint32_t))) {
 		log_message(ERROR, "Error resetting area render state: failed to allocate room IDs to cache slots pointer-array.");
 		return;
 	}
 	
-	if (!allocate((void **)&area_render_state.room_ids_to_room_positions, area_render_state.num_room_ids, sizeof(offset_t))) {
+	if (!allocate((void **)&pAreaRenderState->roomIDsToPositions, pAreaRenderState->numRoomIDs, sizeof(offset_t))) {
 		log_message(ERROR, "Error resetting area render state: failed to allocate room IDs to room positions pointer array.");
-		deallocate((void **)&area_render_state.room_ids_to_cache_slots);
+		deallocate((void **)&pAreaRenderState->roomIDsToCacheSlots);
 		return;
 	}
 	
-	for (uint32_t i = 0; i < area_render_state.num_room_ids; ++i) {
-		area_render_state.room_ids_to_cache_slots[i] = UINT32_MAX;
+	for (uint32_t i = 0; i < pAreaRenderState->numRoomIDs; ++i) {
+		pAreaRenderState->roomIDsToCacheSlots[i] = UINT32_MAX;
 	}
 	
-	for (uint32_t i = 0; i < area_render_state.num_room_ids; ++i) {
-		area_render_state.room_ids_to_room_positions[i] = area.rooms[i].position;
+	for (uint32_t i = 0; i < pAreaRenderState->numRoomIDs; ++i) {
+		pAreaRenderState->roomIDsToPositions[i] = area.rooms[i].position;
 	}
 	
 	for (uint32_t i = 0; i < num_room_texture_cache_slots; ++i) {
-		area_render_state.cache_slots_to_room_ids[i] = UINT32_MAX;
+		pAreaRenderState->cacheSlotsToRoomIDs[i] = UINT32_MAX;
 	}
 	
+	pAreaRenderState->roomIDsToCacheSlots[initialRoom.id] = 0;
+	pAreaRenderState->roomIDsToPositions[initialRoom.id] = initialRoom.position;
+	pAreaRenderState->cacheSlotsToRoomIDs[0] = (uint32_t)initialRoom.id;
 	
-	area_render_state.room_ids_to_cache_slots[initial_room.id] = 0;
-	area_render_state.room_ids_to_room_positions[initial_room.id] = initial_room.position;
-	area_render_state.cache_slots_to_room_ids[0] = (uint32_t)initial_room.id;
+	pAreaRenderState->areaExtent = area.extent;
+	pAreaRenderState->roomSize = area.room_size;
 	
-	area_render_state.area_extent = area.extent;
-	area_render_state.room_size = area.room_size;
+	pAreaRenderState->currentCacheSlot = 0;
+	pAreaRenderState->nextCacheSlot = 0;
 	
-	area_render_state.current_cache_slot = 0;
-	area_render_state.next_cache_slot = 0;
-	
-	upload_draw_data(area_render_state);
-	create_room_texture(initial_room, area_render_state.current_cache_slot, area_render_state.tilemap_texture_state.handle);
+	//upload_draw_data(*pAreaRenderState);
+	create_room_texture(initialRoom, pAreaRenderState->currentCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
 	
 	log_message(VERBOSE, "Done resetting area render state.");
 }
 
-bool area_render_state_is_scrolling(void) {
-	return area_render_state.current_cache_slot != area_render_state.next_cache_slot;
+bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState) {
+	return areaRenderState.currentCacheSlot != areaRenderState.nextCacheSlot;
 }
 
-bool area_render_state_next_room(const room_t next_room) {
+bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const room_t nextRoom) {
 	
-	const uint32_t room_id = (uint32_t)next_room.id;
+	const uint32_t roomID = (uint32_t)nextRoom.id;
 	
-	if (room_id >= area_render_state.num_room_ids) {
-		logf_message(ERROR, "Error setting area render state next room: given room ID (%u) is not less than number of room IDs (%u).", room_id, area_render_state.num_room_ids);
+	if (roomID >= pAreaRenderState->numRoomIDs) {
+		logf_message(ERROR, "Error setting area render state next room: given room ID (%u) is not less than number of room IDs (%u).", roomID, pAreaRenderState->numRoomIDs);
 		return false;
 	}
 	
-	uint32_t next_cache_slot = 0;
+	uint32_t nextCacheSlot = 0;
 	
 	// Check if the next room is already loaded.
-	bool room_already_loaded = false;
+	bool roomAlreadyLoaded = false;
 	for (uint32_t i = 0; i < num_room_texture_cache_slots; ++i) {
-		if (area_render_state.cache_slots_to_room_ids[i] == room_id) {
-			room_already_loaded = true;
-			next_cache_slot = i;
+		if (pAreaRenderState->cacheSlotsToRoomIDs[i] == roomID) {
+			roomAlreadyLoaded = true;
+			nextCacheSlot = i;
 			break;
 		}
 	}
 	
 	// If the room is not already loaded, find the first cache slot not being used.
-	if (!room_already_loaded) {
+	if (!roomAlreadyLoaded) {
 		for (uint32_t i = 0; i < num_room_texture_cache_slots; ++i) {
-			if (i != area_render_state.current_cache_slot) {
-				next_cache_slot = i;
+			if (i != pAreaRenderState->currentCacheSlot) {
+				nextCacheSlot = i;
 			}
 		}
 	}
 	
-	area_render_state.next_cache_slot = next_cache_slot;
-	area_render_state.scroll_start_time_ms = get_time_ms();
+	pAreaRenderState->nextCacheSlot = nextCacheSlot;
+	pAreaRenderState->scrollStartTimeMS = getTimeMS();
 	
-	area_render_state.room_ids_to_cache_slots[room_id] = area_render_state.next_cache_slot;
-	area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot] = room_id;
+	pAreaRenderState->roomIDsToCacheSlots[roomID] = pAreaRenderState->nextCacheSlot;
+	pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->nextCacheSlot] = roomID;
 	
 	// Update Vulkan engine.
-	upload_draw_data(area_render_state);
-	if (!room_already_loaded) {
-		create_room_texture(next_room, area_render_state.next_cache_slot, area_render_state.tilemap_texture_state.handle);
+	// TODO - move all functionality to render layer.
+	//upload_draw_data(*pAreaRenderState);
+	if (!roomAlreadyLoaded) {
+		create_room_texture(nextRoom, pAreaRenderState->nextCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
 	}
 	
-	return !room_already_loaded;
+	return !roomAlreadyLoaded;
 }
 
-vector3F_t area_render_state_camera_position(void) {
+vector4F_t areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState) {
+	if (pAreaRenderState == NULL) {
+		return vector4F_zero;
+	}
 	
-	const extent_t room_extent = room_size_to_extent(area_render_state.room_size);
-	
-	const uint32_t current_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.current_cache_slot];
-	const offset_t current_room_position = area_render_state.room_ids_to_room_positions[current_room_id];
-	const vector3F_t start = {
-		.x = room_extent.width * current_room_position.x,
-		.y = room_extent.length * current_room_position.y,
-		.z = 0.0F
+	const extent_t roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
+	const uint32_t currentRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->currentCacheSlot];
+	const offset_t currentRoomPosition = pAreaRenderState->roomIDsToPositions[currentRoomID];
+	const vector4F_t start = {
+		.x = roomExtent.width * currentRoomPosition.x,
+		.y = roomExtent.length * currentRoomPosition.y,
+		.z = 0.0F,
+		.w = 1.0F
 	};
 	
 	// If the area render state is not in scrolling state, just return the starting camera position.
-	if (!area_render_state_is_scrolling()) {
+	if (!areaRenderStateIsScrolling(*pAreaRenderState)) {
 		return start;
 	}
 	
-	const uint32_t next_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot];
-	const offset_t next_room_position = area_render_state.room_ids_to_room_positions[next_room_id];
-	const vector3F_t end = {
-		.x = room_extent.width * next_room_position.x,
-		.y = room_extent.length * next_room_position.y,
-		.z = 0.0F
+	const uint32_t nextRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->nextCacheSlot];
+	const offset_t nextRoomPosition = pAreaRenderState->roomIDsToPositions[nextRoomID];
+	const vector4F_t end = {
+		.x = roomExtent.width * nextRoomPosition.x,
+		.y = roomExtent.length * nextRoomPosition.y,
+		.z = 0.0F,
+		.w = 1.0F
 	};
 	
-	static const uint64_t time_limit_ms = 1024;
-	const uint64_t current_time_ms = get_time_ms();
+	static const uint64_t timeLimitMS = 1024;
+	const uint64_t currentTimeMS = getTimeMS();
 	
-	if (current_time_ms - area_render_state.scroll_start_time_ms >= time_limit_ms) {
-		area_render_state.current_cache_slot = area_render_state.next_cache_slot;
+	if (currentTimeMS - pAreaRenderState->scrollStartTimeMS >= timeLimitMS) {
+		pAreaRenderState->currentCacheSlot = pAreaRenderState->nextCacheSlot;
 		return end;
 	}
 	
-	const double delta_time = (double)(current_time_ms - area_render_state.scroll_start_time_ms) / (double)(time_limit_ms);
-	return vector3F_lerp(start, end, delta_time);
+	const double deltaTime = (double)(currentTimeMS - pAreaRenderState->scrollStartTimeMS) / (double)(timeLimitMS);
+	return vector4F_lerp(start, end, deltaTime);
 }
 
-projection_bounds_t area_render_state_projection_bounds(void) {
-	const extent_t room_extent = room_size_to_extent(area_render_state.room_size);
-	const float top = -((float)room_extent.length / 2.0F);
-	const float left = -((float)room_extent.width / 2.0F);
+projection_bounds_t areaRenderStateGetProjectionBounds(const AreaRenderState areaRenderState) {
+	const extent_t roomExtent = room_size_to_extent(areaRenderState.roomSize);
+	const float top = -((float)roomExtent.length / 2.0F);
+	const float left = -((float)roomExtent.width / 2.0F);
 	const float bottom = -top;
 	const float right = -left;
 	return (projection_bounds_t){

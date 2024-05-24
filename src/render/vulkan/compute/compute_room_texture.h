@@ -12,8 +12,8 @@ void terminate_compute_room_texture(void);
 
 // Returns a texture to store the generated texture-images for rooms in an area.
 // No image is loaded from resources into this texture.
-texture_t init_room_texture(const room_size_t room_size);
+Texture createRoomTexture(const room_size_t roomSize);
 
-void compute_room_texture(const room_t room, const uint32_t cache_slot, const texture_t tilemap_texture, texture_t *const room_texture_ptr);
+void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Texture tilemapTexture, Texture *const pRoomTexture);
 
 #endif	// COMPUTE_ROOM_TEXTURE_H

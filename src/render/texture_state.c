@@ -8,68 +8,75 @@
 #include "vulkan/texture.h"
 #include "vulkan/texture_manager.h"
 
-bool destroy_texture_state(texture_state_t *texture_state_ptr) {
-	if (texture_state_ptr == NULL) {
-		return false;
-	}
-
-	texture_state_ptr->handle = 0;
-	texture_state_ptr->num_animations = 0;
-	texture_state_ptr->current_animation = 0;
-	texture_state_ptr->current_frame = 0;
-	texture_state_ptr->last_frame_time_ms = 0;
-
-	return true;
+TextureState nullTextureState(void) {
+	return (TextureState){
+		.textureHandle = missing_texture_handle,
+		.numAnimations = 0,
+		.currentAnimation = 0,
+		.numFrames = 0,
+		.currentFPS = 0,
+		.currentFrame = 0,
+		.lastFrameTimeMS = 0
+	};
 }
 
-bool texture_state_set_animation_cycle(texture_state_t *const texture_state_ptr, const uint32_t next_animation) {
-	if (texture_state_ptr == NULL) {
-		return false;
-	}
-
-	if (next_animation >= texture_state_ptr->num_animations) {
-		return false;
-	}
-
-	texture_state_ptr->current_animation = next_animation;
-	texture_state_ptr->current_frame = 0;
-	texture_state_ptr->last_frame_time_ms = get_time_ms();
-
-	return true;
-}
-
-int texture_state_animate(texture_state_t *const texture_state_ptr) {
-	if (texture_state_ptr == NULL) {
-		return 0;
-	}
-
-	if (texture_state_ptr->current_animation >= texture_state_ptr->num_animations) {
-		logf_message(WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", texture_state_ptr->current_animation, texture_state_ptr->num_animations);
-		texture_state_ptr->current_animation = 0;
-		return 0;
-	}
-
-	if (texture_state_ptr->last_frame_time_ms == 0) {
-		texture_state_ptr->last_frame_time_ms = get_time_ms();
-		return 1;
+TextureState newTextureState(const string_t textureID) {
+	
+	TextureState textureState = nullTextureState();
+	
+	if (is_string_null(textureID)) {
+		log_message(ERROR, "Error finding loaded texture: given texture ID is NULL.");
+		return textureState;
 	}
 	
-	const texture_t texture = get_loaded_texture(texture_state_ptr->handle);
-	const texture_animation_t animation = texture.animations[texture_state_ptr->current_animation];
-	const uint64_t current_time_ms = get_time_ms();
+	textureState.textureHandle = findTexture(textureID);
+	if (!validateTextureHandle(textureState.textureHandle)) {
+		textureState.textureHandle = missing_texture_handle;
+		return textureState;
+	}
+	
+	Texture texture = getTexture(textureState.textureHandle);
+	textureState.numAnimations = texture.numAnimations;
+	textureState.numFrames = texture.animations[textureState.currentAnimation].numFrames;
+	textureState.currentFPS = texture.animations[textureState.currentAnimation].framesPerSecond;
+	textureState.lastFrameTimeMS = getTimeMS();
+	
+	return textureState;
+}
 
+bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned int nextAnimation) {
+	if (pTextureState == NULL) {
+		return false;
+	} else if (nextAnimation >= pTextureState->numAnimations) {
+		logf_message(WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", pTextureState->currentAnimation, pTextureState->numAnimations);
+		return false;
+	}
+
+	pTextureState->currentAnimation = nextAnimation;
+	pTextureState->currentFrame = 0;
+	pTextureState->lastFrameTimeMS = getTimeMS();
+
+	return true;
+}
+
+int textureStateAnimate(TextureState *const pTextureState) {
+	if (pTextureState == NULL) {
+		return 0;
+	}
+	
 	// Calculate the time difference between last frame change for this texture and current time, in seconds.
-	const uint64_t delta_time_ms = current_time_ms - texture_state_ptr->last_frame_time_ms;
-	const double delta_time_s = (double)delta_time_ms / 1000.0;
+	const unsigned long long int currentTimeMS = getTimeMS();
+	const unsigned long long int deltaTimeMS = currentTimeMS - pTextureState->lastFrameTimeMS;
+	const double deltaTimeS = (double)deltaTimeMS / 1000.0;
 
 	// Time in seconds * frames per second = number of frames to increment the frame counter by.
-	const uint32_t frames = (uint32_t)(delta_time_s * (double)animation.frames_per_second);
+	const unsigned int frames = (unsigned int)(deltaTimeS * (double)pTextureState->currentFPS);
 
 	// Update the current frame and last frame time of this texture.
 	if (frames > 0) {
-		texture_state_ptr->current_frame += frames;
-		texture_state_ptr->current_frame %= animation.num_frames;
-		texture_state_ptr->last_frame_time_ms = current_time_ms;
+		pTextureState->currentFrame += frames;
+		pTextureState->currentFrame %= pTextureState->numFrames;
+		pTextureState->lastFrameTimeMS = currentTimeMS;
 		return 2;
 	}
 

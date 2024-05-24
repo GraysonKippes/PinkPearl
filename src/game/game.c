@@ -37,7 +37,7 @@ static entity_handle_t player_entity_handle;
 void start_game(void) {
 
 	current_area = parse_fga_file("test");
-	area_render_state_reset(current_area, current_area.rooms[current_room_index]);
+	areaRenderStateReset(&globalAreaRenderState, current_area, current_area.rooms[current_room_index]);
 
 	player_entity_handle = load_entity();
 	if (!validate_entity_handle(player_entity_handle)) {
@@ -48,9 +48,9 @@ void start_game(void) {
 	int result = get_entity_ptr(player_entity_handle, &player_entity_ptr);
 	if (player_entity_ptr != NULL || result == 0) {
 		player_entity_ptr->hitbox = player_hitbox;
-		player_entity_ptr->render_handle = load_render_object();
-		upload_model(player_entity_ptr->render_handle, get_premade_model(0), "entity/pearl");
-		render_object_texture_states[player_entity_ptr->render_handle].current_animation = 3;
+		//player_entity_ptr->render_handle = load_render_object();
+		//upload_model(player_entity_ptr->render_handle, get_premade_model(0), "entity/pearl");
+		//render_object_texture_states[player_entity_ptr->render_handle].current_animation = 3;
 	}
 }
 
@@ -62,11 +62,11 @@ void tick_game(void) {
 	const bool move_right_pressed = is_input_pressed_or_held(GLFW_KEY_D);	// RIGHT
 
 	if (game_state_bitfield & (uint32_t)GAME_STATE_SCROLLING) {
-		if (!area_render_state_is_scrolling()) {
+		if (!areaRenderStateIsScrolling(globalAreaRenderState)) {
 			game_state_bitfield &= ~((uint32_t)GAME_STATE_SCROLLING);
 		}
 		else {
-			settle_render_positions();
+			//settle_render_positions();
 			return;
 		}
 	}
@@ -80,7 +80,7 @@ void tick_game(void) {
 	static uint32_t animation_cycle = 4;
 	static const double max_speed = 0.24;	// Tiles / s
 	static const double acceleration_constant = 1.8; // Tiles / s^2
-	const double accelerated_speed = (get_time_ms() - player_entity_ptr->transform.last_stationary_time) * 0.001 * acceleration_constant;
+	const double accelerated_speed = (getTimeMS() - player_entity_ptr->transform.last_stationary_time) * 0.001 * acceleration_constant;
 	const double speed = fmin(accelerated_speed, max_speed);
 
 	player_entity_ptr->transform.velocity.x = 0.0;
@@ -111,9 +111,9 @@ void tick_game(void) {
 	player_entity_ptr->transform.velocity = vector3D_scalar_multiply(player_entity_ptr->transform.velocity, speed);
 
 	tick_entities();
-	if (animation_cycle != render_object_texture_states[player_entity_ptr->render_handle].current_animation) {
-		texture_state_set_animation_cycle(&render_object_texture_states[player_entity_ptr->render_handle], animation_cycle);
-	}
+	//if (animation_cycle != render_object_texture_states[player_entity_ptr->render_handle].current_animation) {
+	//	texture_state_set_animation_cycle(&render_object_texture_states[player_entity_ptr->render_handle], animation_cycle);
+	//}
 
 	const direction_t travel_direction = test_room_travel(player_entity_ptr->transform.position, current_area, current_room_index);
 	if ((int)travel_direction > 0) {
@@ -128,7 +128,7 @@ void tick_game(void) {
 		if (result && next_room_ptr != NULL) {
 			current_room_index = area_get_room_index(current_area, next_room_position);
 			game_state_bitfield |= (uint32_t)GAME_STATE_SCROLLING;
-			area_render_state_next_room(*next_room_ptr);
+			areaRenderStateSetNextRoom(&globalAreaRenderState, *next_room_ptr);
 		}
 	}
 }

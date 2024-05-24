@@ -46,7 +46,7 @@ static void make_image_path(const char *const info_path, char *const image_path)
 }
 
 // Loaded textures are required to have animation create infos all with the same extent.
-texture_t load_texture(const texture_create_info_t texture_create_info) {
+Texture loadTexture(const texture_create_info_t texture_create_info) {
 
 	// TODO - modify this to use semaphores between image transitions and data transfer operations.
 
@@ -77,7 +77,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 		}
 	} */
 
-	texture_t texture = create_texture(texture_create_info);
+	Texture texture = create_texture(texture_create_info);
 
 	// Create semaphores.
 	VkSemaphore semaphore_transition_finished = VK_NULL_HANDLE;
@@ -129,7 +129,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = texture.image.vk_image,
+			.image = texture.image.vkImage,
 			.subresourceRange = image_subresource_range
 		};
 
@@ -165,7 +165,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 	allocate_command_buffers(device, transfer_command_pool, 1, &transfer_command_buffer);
 	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT); {
 		
-		const uint32_t num_copy_regions = texture.num_image_array_layers;
+		const uint32_t num_copy_regions = texture.numImageArrayLayers;
 		VkBufferImageCopy2 *copy_regions = NULL;
 		if (!allocate((void **)&copy_regions, num_copy_regions, sizeof(VkBufferImageCopy2))) {
 			log_message(ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
@@ -211,7 +211,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 			.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
 			.pNext = NULL,
 			.srcBuffer = global_staging_buffer_partition.buffer,
-			.dstImage = texture.image.vk_image,
+			.dstImage = texture.image.vkImage,
 			.dstImageLayout = texture.layout,
 			.regionCount = num_copy_regions,
 			.pRegions = copy_regions
@@ -254,7 +254,7 @@ texture_t load_texture(const texture_create_info_t texture_create_info) {
 			.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = texture.image.vk_image,
+			.image = texture.image.vkImage,
 			.subresourceRange = image_subresource_range,
 		};
 

@@ -2,9 +2,9 @@
 #define ROOM_H
 
 #include "game/entity/entity_spawner.h"
-#include "game/math/hitbox.h"
-#include "util/extent.h"
-#include "util/offset.h"
+#include "math/extent.h"
+#include "math/hitbox.h"
+#include "math/offset.h"
 
 #include "tile.h"
 

@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "util/extent.h"
+#include "math/extent.h"
 
 #include "memory.h"
 #include "physical_device.h"
@@ -29,12 +29,12 @@ typedef struct image_create_info_t {
 
 typedef struct image_t {
 
-	uint32_t num_array_layers;
+	uint32_t numArrayLayers;
 	VkFormat format;
 	VkImageLayout layout;
 
-	VkImage vk_image;
-	VkImageView vk_image_view;
+	VkImage vkImage;
+	VkImageView vkImageView;
 
 	VkDevice device;
 	VkDeviceMemory memory;

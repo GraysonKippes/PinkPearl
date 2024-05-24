@@ -3,6 +3,8 @@
 #include <stddef.h>
 
 #include "game/game.h"
+#include "render/render_object.h"
+#include "render/vulkan/math/render_vector.h"
 
 #define SQUARE(x) (x * x)
 
@@ -16,7 +18,6 @@ entity_t new_entity(void) {
 }
 
 void tick_entity(entity_t *entity_ptr) {
-
 	if (entity_ptr == NULL) {
 		return;
 	}
@@ -46,15 +47,16 @@ void tick_entity(entity_t *entity_ptr) {
 
 	entity_ptr->transform.position = new_position;
 
-	const render_handle_t render_handle = entity_ptr->render_handle;
+	// Update render object.
+	const int render_handle = entity_ptr->render_handle;
 	if (!validate_render_handle(render_handle)) {
 		return;
 	}
-
-	render_object_positions[render_handle].position.x = (float)entity_ptr->transform.position.x;
-	render_object_positions[render_handle].position.y = (float)entity_ptr->transform.position.y;
-	render_object_positions[render_handle].position.z = (float)entity_ptr->transform.position.z;
-	render_object_positions[render_handle].previous_position.x = (float)old_position.x;
-	render_object_positions[render_handle].previous_position.y = (float)old_position.y;
-	render_object_positions[render_handle].previous_position.z = (float)old_position.z;
+	const vector4F_t render_position = {
+		.x = (float)entity_ptr->transform.position.x,
+		.y = (float)entity_ptr->transform.position.y,
+		.z = (float)entity_ptr->transform.position.z,
+		.w = 1.0F
+	};
+	render_vector_set(&getRenderObjTransform(render_handle)->translation, render_position);
 }

@@ -7,7 +7,7 @@
 #include "render/render_config.h"
 #include "util/allocate.h"
 #include "util/byte.h"
-#include "util/offset.h"
+#include "math/offset.h"
 
 #include "../command_buffer.h"
 #include "../compute_pipeline.h"

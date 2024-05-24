@@ -18,8 +18,7 @@ static const VkImageSubresourceLayers image_subresource_layers_default = {
 image_t create_image(const image_create_info_t image_create_info) {
 	
 	image_t image = { 0 };
-
-	image.num_array_layers = image_create_info.num_image_array_layers;
+	image.numArrayLayers = image_create_info.num_image_array_layers;
 	image.format = image_create_info.format;
 	image.layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	image.device = image_create_info.device;
@@ -34,7 +33,7 @@ image_t create_image(const image_create_info_t image_create_info) {
 		.extent.height = image_create_info.image_dimensions.length,
 		.extent.depth = 1,
 		.mipLevels = 1,
-		.arrayLayers = image.num_array_layers,
+		.arrayLayers = image.numArrayLayers,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = VK_IMAGE_TILING_OPTIMAL,
 		.usage = image_create_info.usage,
@@ -50,10 +49,10 @@ image_t create_image(const image_create_info_t image_create_info) {
 		vk_image_create_info.pQueueFamilyIndices = image_create_info.queue_family_set.queue_families;
 	}
 	
-	vkCreateImage(image.device, &vk_image_create_info, NULL, &image.vk_image);
+	vkCreateImage(image.device, &vk_image_create_info, NULL, &image.vkImage);
 
 	VkMemoryRequirements memory_requirements;
-	vkGetImageMemoryRequirements(image.device, image.vk_image, &memory_requirements);
+	vkGetImageMemoryRequirements(image.device, image.vkImage, &memory_requirements);
 
 	const VkMemoryAllocateInfo allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -67,7 +66,7 @@ image_t create_image(const image_create_info_t image_create_info) {
 	const VkBindImageMemoryInfo image_bind_info = {
 		.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
 		.pNext = NULL,
-		.image = image.vk_image,
+		.image = image.vkImage,
 		.memory = image.memory,
 		.memoryOffset = 0
 	};
@@ -78,7 +77,7 @@ image_t create_image(const image_create_info_t image_create_info) {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
-		.image = image.vk_image,
+		.image = image.vkImage,
 		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 		.format = image.format,
 		.components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -88,7 +87,7 @@ image_t create_image(const image_create_info_t image_create_info) {
 		.subresourceRange = image_subresource_range_default
 	};
 
-	vkCreateImageView(image.device, &image_view_create_info, NULL, &image.vk_image_view);
+	vkCreateImageView(image.device, &image_view_create_info, NULL, &image.vkImageView);
 
 	return image;
 }
@@ -99,16 +98,16 @@ bool destroy_image(image_t *const image_ptr) {
 		return false;
 	}
 	
-	vkDestroyImage(image_ptr->device, image_ptr->vk_image, NULL);
-	image_ptr->vk_image = VK_NULL_HANDLE;
+	vkDestroyImage(image_ptr->device, image_ptr->vkImage, NULL);
+	image_ptr->vkImage = VK_NULL_HANDLE;
 	
-	vkDestroyImageView(image_ptr->device, image_ptr->vk_image_view, NULL);
-	image_ptr->vk_image_view = VK_NULL_HANDLE;
+	vkDestroyImageView(image_ptr->device, image_ptr->vkImageView, NULL);
+	image_ptr->vkImageView = VK_NULL_HANDLE;
 	
 	vkFreeMemory(image_ptr->device, image_ptr->memory, NULL);
 	image_ptr->memory = VK_NULL_HANDLE;
 	
-	image_ptr->num_array_layers = 0;
+	image_ptr->numArrayLayers = 0;
 	image_ptr->format = VK_FORMAT_UNDEFINED;
 	image_ptr->layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	image_ptr->device = VK_NULL_HANDLE;

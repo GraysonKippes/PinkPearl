@@ -5,6 +5,7 @@
 
 #include <DataStuff/CmpFunc.h>
 #include <DataStuff/BinarySearchTree.h>
+#include <DataStuff/LinkedList.h>
 #include <DataStuff/Stack.h>
 
 #include "log/log_stack.h"
@@ -18,186 +19,10 @@
 #include "texture_manager.h"
 #include "vertex_input.h"
 #include "vulkan_manager.h"
-#include "compute/compute_area_mesh.h"
 #include "compute/compute_matrices.h"
 #include "compute/compute_room_texture.h"
 
-BinarySearchTree active_quad_ids;
-Stack inactive_quad_ids;
-
-static void transfer_model_data(const uint32_t slot);
-
-void create_vulkan_render_objects(void) {
-
-	log_stack_push("Vulkan");
-	log_message(VERBOSE, "Creating Vulkan render objects...");
-
-	init_compute_matrices(device);
-	init_compute_room_texture(device);
-	init_compute_area_mesh(device);
-	
-	// Initialize data structures for managing quad IDs.
-	active_quad_ids = newBinarySearchTree(sizeof(quad_id_t), cmpFuncInt);
-	inactive_quad_ids = newStack(num_render_object_slots, sizeof(quad_id_t));
-	for (quad_id_t quad_id = 0; quad_id < (quad_id_t)num_render_object_slots; ++quad_id) {
-		stackPush(&inactive_quad_ids, &quad_id);
-	}
-	
-	log_stack_pop();
-}
-
-void destroy_vulkan_render_objects(void) {
-
-	vkDeviceWaitIdle(device);
-
-	log_stack_push("Vulkan");
-	log_message(VERBOSE, "Destroying Vulkan render objects...");
-
-	terminate_compute_area_mesh();
-	terminate_compute_matrices();
-	terminate_compute_room_texture();
-	destroy_textures();
-	
-	deleteBinarySearchTree(&active_quad_ids);
-	deleteStack(&inactive_quad_ids);
-	
-	log_stack_pop();
-}
-
-// Copy the model data to the appropriate staging buffers, and signal the render engine to transfer that data to the buffers on the GPU.
-void stage_model_data(const uint32_t slot, model_t model) {
-
-	// Vertex Data
-
-	// Model size is standard rect model size (4 vertices * 5 sp-floats per vertex * 4 bytes per sp-float = 80 bytes)
-	VkDeviceSize model_size = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	VkDeviceSize model_offset = slot * model_size;
-
-	byte_t *const mapped_memory_vertices = buffer_partition_map_memory(global_staging_buffer_partition, 0);
-	memcpy((mapped_memory_vertices + model_offset), model.vertices, model_size);
-	buffer_partition_unmap_memory(global_staging_buffer_partition);
-
-	// Index Data
-
-	VkDeviceSize indices_size = num_indices_per_rect * sizeof(index_t);
-	VkDeviceSize indices_offset = slot * indices_size;
-
-	index_t rect_indices[6] = {
-		0, 1, 2,
-		2, 3, 0
-	};
-
-	for (uint32_t i = 0; i < num_indices_per_rect; ++i) {
-		rect_indices[i] += slot * num_vertices_per_rect;
-	}
-
-	byte_t *const mapped_memory_indices = buffer_partition_map_memory(global_staging_buffer_partition, 1);
-	memcpy((mapped_memory_indices + indices_offset), rect_indices, indices_size);
-	buffer_partition_unmap_memory(global_staging_buffer_partition);
-	transfer_model_data(slot);
-}
-
-static void transfer_model_data(const uint32_t slot) {
-
-	// TODO - use deletion queue to delete command buffers after execution, instead of reusing same command buffers.
-
-	static VkCommandBuffer transfer_command_buffers[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
-
-	VkSemaphore wait_semaphores[NUM_FRAMES_IN_FLIGHT];
-	uint64_t wait_semaphore_values[NUM_FRAMES_IN_FLIGHT];
-
-	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		wait_semaphores[i] = frame_array.frames[i].semaphore_buffers_ready.semaphore;
-		wait_semaphore_values[i] = frame_array.frames[i].semaphore_buffers_ready.wait_counter;
-	}
-
-	const VkSemaphoreWaitInfo semaphore_wait_info = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.semaphoreCount = frame_array.num_frames,
-		.pSemaphores = wait_semaphores,
-		.pValues = wait_semaphore_values
-	};
-
-	vkWaitSemaphores(device, &semaphore_wait_info, UINT64_MAX);
-	vkFreeCommandBuffers(device, transfer_command_pool, frame_array.num_frames, transfer_command_buffers);
-	allocate_command_buffers(device, transfer_command_pool, frame_array.num_frames, transfer_command_buffers);
-
-	const VkCommandBufferBeginInfo begin_info = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.pNext = NULL,
-		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-		.pInheritanceInfo = NULL
-	};
-
-	VkBufferCopy vertex_copy_regions[NUM_RENDER_OBJECT_SLOTS] = { { 0 } };
-	VkBufferCopy index_copy_regions[NUM_RENDER_OBJECT_SLOTS] = { { 0 } };
-
-	// The number of models needing to be updated.
-	uint32_t num_pending_models = 0;
-
-	const VkDeviceSize copy_size_vertices = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	const VkDeviceSize copy_size_indices = num_indices_per_rect * sizeof(index_t);
-	const VkDeviceSize indices_base_offset = global_staging_buffer_partition.ranges[1].offset;
-
-	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-
-		if (i != slot) {
-			continue;
-		}
-
-		vertex_copy_regions[num_pending_models].srcOffset = i * copy_size_vertices;
-		vertex_copy_regions[num_pending_models].dstOffset = i * copy_size_vertices;
-		vertex_copy_regions[num_pending_models].size = copy_size_vertices;
-
-		index_copy_regions[num_pending_models].srcOffset = indices_base_offset + i * copy_size_indices;
-		index_copy_regions[num_pending_models].dstOffset = i * copy_size_indices;
-		index_copy_regions[num_pending_models].size = copy_size_indices;
-
-		num_pending_models += 1;
-	}
-
-	VkCommandBufferSubmitInfo command_buffer_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
-	VkSemaphoreSubmitInfo semaphore_wait_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
-	VkSemaphoreSubmitInfo semaphore_signal_submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
-	VkSubmitInfo2 submit_infos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
-
-	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-
-		vkBeginCommandBuffer(transfer_command_buffers[i], &begin_info);
-		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, num_pending_models, vertex_copy_regions);
-		vkCmdCopyBuffer(transfer_command_buffers[i], global_staging_buffer_partition.buffer, frame_array.frames[i].index_buffer, num_pending_models, index_copy_regions);
-		vkEndCommandBuffer(transfer_command_buffers[i]);
-
-		command_buffer_submit_infos[i] = make_command_buffer_submit_info(transfer_command_buffers[i]);
-		semaphore_wait_submit_infos[i] = make_timeline_semaphore_wait_submit_info(frame_array.frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
-		semaphore_signal_submit_infos[i] = make_timeline_semaphore_signal_submit_info(frame_array.frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
-		frame_array.frames[i].semaphore_buffers_ready.wait_counter += 1;
-
-		submit_infos[i] = (VkSubmitInfo2){
-			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-			.pNext = NULL,
-			.waitSemaphoreInfoCount = 1,
-			.pWaitSemaphoreInfos = &semaphore_wait_submit_infos[i],
-			.commandBufferInfoCount = 1,
-			.pCommandBufferInfos = &command_buffer_submit_infos[i],
-			.signalSemaphoreInfoCount = 1,
-			.pSignalSemaphoreInfos = &semaphore_signal_submit_infos[i]
-		};
-	}
-	vkQueueSubmit2(transfer_queue, frame_array.num_frames, submit_infos, VK_NULL_HANDLE);
-}
-
-void upload_draw_data(const area_render_state_t area_render_state) {
-	
-	// Needs to be called in the following situations:
-	// 	Texture is animated.
-	// 	New render object is created/used.
-	//	Any render object is destroyed/released.
-	//	Area render enters/exits scroll state.
-	
-	typedef struct draw_info_t {
+typedef struct draw_data_t {
 		// Indirect draw info
 		uint32_t index_count;
 		uint32_t instance_count;
@@ -205,107 +30,241 @@ void upload_draw_data(const area_render_state_t area_render_state) {
 		int32_t vertex_offset;
 		uint32_t first_instance;
 		// Additional draw info
-		uint32_t render_object_slot;
+		int32_t quadID;
 		uint32_t image_index;
-	} draw_info_t;
+	} draw_data_t;
+
+typedef struct DrawInfo {
+	int quadID;
+	uint32_t drawDataIndex;	// The index in array of draw datas.
+} DrawInfo;
+
+BinarySearchTree activeQuadIDs;
+Stack inactiveQuadIDs;
+
+static int cmpFuncDrawInfo(const void *const a_ptr, const void *const b_ptr) {
+	if (a_ptr == NULL || b_ptr == NULL) {
+		return -2;
+	}
+	
+	const DrawInfo drawInfo_a = *(DrawInfo *)a_ptr;
+	const DrawInfo drawInfo_b = *(DrawInfo *)b_ptr;
+	if (drawInfo_a.quadID < drawInfo_b.quadID) {
+		return -1;
+	}
+	else if (drawInfo_a.quadID > drawInfo_b.quadID) {
+		return 1;
+	}
+	return 0;
+}
+
+static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions);
+static void rebuildDrawData(void);
+
+void create_vulkan_render_objects(void) {
+	log_stack_push("Vulkan");
+	log_message(VERBOSE, "Creating Vulkan render objects...");
+
+	init_compute_matrices(device);
+	init_compute_room_texture(device);
+	
+	// Initialize data structures for managing quad IDs.
+	activeQuadIDs = newBinarySearchTree(sizeof(DrawInfo), cmpFuncDrawInfo);
+	inactiveQuadIDs = newStack(num_render_object_slots, sizeof(int));
+	for (int quadID = 0; quadID < (int)num_render_object_slots; ++quadID) {
+		stackPush(&inactiveQuadIDs, &quadID);
+	}
+	
+	log_stack_pop();
+}
+
+void destroy_vulkan_render_objects(void) {
+	log_stack_push("Vulkan");
+	log_message(VERBOSE, "Destroying Vulkan render objects...");
+	
+	vkDeviceWaitIdle(device);
+
+	terminate_compute_matrices();
+	terminate_compute_room_texture();
+	destroy_textures();
+	
+	deleteBinarySearchTree(&activeQuadIDs);
+	deleteStack(&inactiveQuadIDs);
+	
+	log_stack_pop();
+}
+
+int loadQuad(const DimensionsF quadDimensions) {
+	int quadID = -1;
+	if (stackIsEmpty(inactiveQuadIDs)) {
+		return quadID;
+	}
+	
+	// Retrieve first quad ID and push draw info.
+	stackPop(&inactiveQuadIDs, &quadID);
+	const DrawInfo drawInfo = {
+		.quadID = quadID,
+		.drawDataIndex = 0
+	};
+	bstInsert(&activeQuadIDs, &drawInfo);
+	
+	uploadQuadMesh(quadID, quadDimensions);
+	rebuildDrawData();
+	
+	return quadID;
+}
+
+void unloadQuad(const int quadID) {
+	if (!bstRemove(&activeQuadIDs, &quadID)) {
+		return;
+	}
+	stackPush(&inactiveQuadIDs, &quadID);
+	rebuildDrawData();
+}
+
+bool validateQuadID(const int quadID) {
+	return quadID >= 0 && quadID < (int)num_render_object_slots;
+}
+
+static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
+	if (!validateQuadID(quadID)) {
+		return false;
+	}
+	
+	const float vertices[NUM_VERTICES_PER_QUAD * VERTEX_INPUT_ELEMENT_STRIDE] = {
+		// Positions									Texture			Color
+		quadDimensions.x1, quadDimensions.y2, 0.0F,		0.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// Top-left
+		quadDimensions.x2, quadDimensions.y2, 0.0F,		1.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// Top-right
+		quadDimensions.x2, quadDimensions.y1, 0.0F,		1.0F, 1.0F,		1.0F, 1.0F, 1.0F,	// Bottom-right
+		quadDimensions.x1, quadDimensions.y1, 0.0F,		0.0F, 1.0F,		1.0F, 1.0F, 1.0F	// Bottom-left
+	};
+	
+	const VkDeviceSize verticesSize = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
+	const VkDeviceSize verticesOffset = verticesSize * (VkDeviceSize)quadID;
+	
+	byte_t *const mappedMemoryVertices = buffer_partition_map_memory(global_staging_buffer_partition, 0);
+	memcpy(&mappedMemoryVertices[verticesOffset], vertices, verticesSize);
+	buffer_partition_unmap_memory(global_staging_buffer_partition);
+	
+	// Transfer vertex data to frame vertex buffers.
+	
+	static VkCommandBuffer cmdBufs[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
+	
+	VkSemaphore waitSemaphores[NUM_FRAMES_IN_FLIGHT];
+	uint64_t waitSemaphoreValues[NUM_FRAMES_IN_FLIGHT];
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		waitSemaphores[i] = frame_array.frames[i].semaphore_buffers_ready.semaphore;
+		waitSemaphoreValues[i] = frame_array.frames[i].semaphore_buffers_ready.wait_counter;
+	}
+	
+	const VkSemaphoreWaitInfo semaphoreWaitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.semaphoreCount = frame_array.num_frames,
+		.pSemaphores = waitSemaphores,
+		.pValues = waitSemaphoreValues
+	};
+	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
+	
+	vkFreeCommandBuffers(device, transfer_command_pool, frame_array.num_frames, cmdBufs);
+	allocate_command_buffers(device, transfer_command_pool, frame_array.num_frames, cmdBufs);
+	
+	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSemaphoreSubmitInfo semaphoreSignalSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	VkSubmitInfo2 submitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
+	
+	const VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = NULL,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+		.pInheritanceInfo = NULL
+	};
+	
+	const VkBufferCopy bufferCopy = {
+		.srcOffset = verticesOffset,
+		.dstOffset = verticesOffset,
+		.size = verticesSize
+	};
+	
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		vkBeginCommandBuffer(cmdBufs[i], &beginInfo);
+		vkCmdCopyBuffer(cmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
+		vkEndCommandBuffer(cmdBufs[i]);
+		
+		cmdBufSubmitInfos[i] = make_command_buffer_submit_info(cmdBufs[i]);
+		semaphoreWaitSubmitInfos[i] = make_timeline_semaphore_wait_submit_info(frame_array.frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		semaphoreSignalSubmitInfos[i] = make_timeline_semaphore_signal_submit_info(frame_array.frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		frame_array.frames[i].semaphore_buffers_ready.wait_counter += 1;
+
+		submitInfos[i] = (VkSubmitInfo2){
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			.pNext = NULL,
+			.waitSemaphoreInfoCount = 1,
+			.pWaitSemaphoreInfos = &semaphoreWaitSubmitInfos[i],
+			.commandBufferInfoCount = 1,
+			.pCommandBufferInfos = &cmdBufSubmitInfos[i],
+			.signalSemaphoreInfoCount = 1,
+			.pSignalSemaphoreInfos = &semaphoreSignalSubmitInfos[i]
+		};
+	}
+	vkQueueSubmit2(transfer_queue, frame_array.num_frames, submitInfos, VK_NULL_HANDLE);
+	
+	return true;
+}
+
+static void rebuildDrawData(void) {
+	
+	// Needs to be called in the following situations:
+	// 	Texture is animated.
+	// 	New render object is created/used.
+	//	Any render object is destroyed/released.
+	//	Area render enters/exits scroll state.
 	
 	uint32_t draw_count = 0;
-	const uint32_t max_draw_count = NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS;
-	draw_info_t draw_infos[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS];
+	//const uint32_t max_draw_count = NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS;
+	draw_data_t draw_datas[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS];
 	
-	for (uint32_t i = 0; i < max_draw_count; ++i) {
-		draw_infos[i] = (draw_info_t){
-			.index_count = 6,
+	LinkedList traversal = bstTraverseInOrder(activeQuadIDs);
+	if (!linkedListValidate(traversal)) {
+		logf_message(ERROR, "Error building draw data: failed to traverse active quad IDs.");
+		return;
+	}
+	
+	for (LinkedListNode *pNode = traversal.pHeadNode; pNode != NULL; pNode = pNode->pNextNode) {
+		DrawInfo *const pDrawInfo = (DrawInfo *)((BinarySearchTreeNode *)pNode->pObject)->pObject;
+		if (pDrawInfo == NULL) {
+			deleteLinkedList(&traversal);
+			return;
+		}
+		draw_datas[draw_count] = (draw_data_t){
+			.index_count = num_indices_per_rect,
 			.instance_count = 1,
 			.first_index = 0,
-			.vertex_offset = 0,
+			.vertex_offset = num_vertices_per_rect * pDrawInfo->quadID,
 			.first_instance = 0,
-			.render_object_slot = 0,
+			.quadID = pDrawInfo->quadID,
 			.image_index = 0
 		};
-	}
-
-	const uint32_t current_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.current_cache_slot];
-	const uint32_t next_room_id = area_render_state.cache_slots_to_room_ids[area_render_state.next_cache_slot];
-	
-	// Current room background
-	draw_infos[draw_count++] = (draw_info_t){
-		.index_count = 6,
-		.instance_count = 1,
-		.first_index = 0,
-		.vertex_offset = (int32_t)((num_render_object_slots + current_room_id) * num_vertices_per_rect),
-		.first_instance = 0,
-		.render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size,
-		.image_index = area_render_state.current_cache_slot * num_room_layers
-	};
-	
-	// Next room background
-	if (area_render_state_is_scrolling()) {
-		draw_infos[draw_count++] = (draw_info_t){
-			.index_count = 6,
-			.instance_count = 1,
-			.first_index = 0,
-			.vertex_offset = (int32_t)((num_render_object_slots + next_room_id) * num_vertices_per_rect),
-			.first_instance = 0,
-			.render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size,
-			.image_index = area_render_state.next_cache_slot * num_room_layers
-		};
+		pDrawInfo->drawDataIndex = draw_count;
+		draw_count += 1;
 	}
 	
-	// Render objects
-	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-		if (!is_render_object_slot_enabled(i)) {
-			continue;
-		}
-		
-		const texture_state_t texture_state = render_object_texture_states[i];
-		const texture_t texture = get_loaded_texture(texture_state.handle);
-		
-		draw_infos[draw_count++] = (draw_info_t){
-			.index_count = 6,
-			.instance_count = 1,
-			.first_index = 0,
-			.vertex_offset = (int32_t)(i * num_vertices_per_rect),
-			.first_instance = 0,
-			.render_object_slot = i,
-			.image_index = texture.animations[texture_state.current_animation].start_cell + texture_state.current_frame
-		};
-	}
-	
-	// Current room foreground
-	draw_infos[draw_count++] = (draw_info_t){
-		.index_count = 6,
-		.instance_count = 1,
-		.first_index = 0,
-		.vertex_offset = (int32_t)((num_render_object_slots + current_room_id) * num_vertices_per_rect),
-		.first_instance = 0,
-		.render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size,
-		.image_index = area_render_state.current_cache_slot * num_room_layers + 1
-	};
-	
-	// Next room foreground
-	if (area_render_state_is_scrolling()) {
-		draw_infos[draw_count++] = (draw_info_t){
-			.index_count = 6,
-			.instance_count = 1,
-			.first_index = 0,
-			.vertex_offset = (int32_t)((num_render_object_slots + next_room_id) * num_vertices_per_rect),
-			.first_instance = 0,
-			.render_object_slot = num_render_object_slots + (uint32_t)area_render_state.room_size,
-			.image_index = area_render_state.next_cache_slot * num_room_layers + 1
-		};
-	}
+	deleteLinkedList(&traversal);
 	
 	byte_t *draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
 	memcpy(draw_count_mapped_memory, &draw_count, sizeof(draw_count));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 	
 	byte_t *draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(draw_data_mapped_memory, draw_infos, max_draw_count * sizeof(draw_info_t));
+	memcpy(draw_data_mapped_memory, draw_datas, draw_count * sizeof(draw_data_t));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	
+	// TODO - signal need for upload.
 }
 
-static void upload_lighting_data(void) {
+static void uploadLightingData(void) {
 	
 	typedef struct ambient_light_t {
 		float red;
@@ -363,7 +322,7 @@ static void upload_lighting_data(void) {
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 }
 
-void draw_frame(const float tick_delta_time, const vector3F_t camera_position, const projection_bounds_t projection_bounds) {
+void drawFrame(const float deltaTime, const vector4F_t cameraPosition, const projection_bounds_t projectionBounds, const RenderTransform *const renderObjTransforms) {
 
 	vkWaitForFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready);
@@ -379,7 +338,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	}
 
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
-	compute_matrices(tick_delta_time, projection_bounds, camera_position, render_object_positions);
+	computeMatrices(deltaTime, projectionBounds, cameraPosition, renderObjTransforms);
 
 	VkWriteDescriptorSet descriptor_writes[4] = { { 0 } };
 
@@ -408,24 +367,24 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 	VkDescriptorImageInfo texture_infos[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_SIZES];
 
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-		texture_t texture;
-		if (is_render_object_slot_enabled(i)) {
-			const texture_state_t texture_state = render_object_texture_states[i];
+		Texture texture = getTexture(missing_texture_handle);
+		/*if (is_render_object_slot_enabled(i)) {
+			const TextureState texture_state = render_object_texture_states[i];
 			texture = get_loaded_texture(texture_state.handle);
 		}
 		else {
 			texture = get_loaded_texture(missing_texture_handle);
-		}
+		} */
 		texture_infos[i].sampler = sampler_default;
-		texture_infos[i].imageView = texture.image.vk_image_view;
+		texture_infos[i].imageView = texture.image.vkImageView;
 		texture_infos[i].imageLayout = texture.layout;
 	}
 	
 	for (uint32_t i = 0; i < num_room_sizes; ++i) {
-		const texture_t room_texture = get_loaded_texture(room_texture_handle + i);
+		const Texture room_texture = getTexture(1 + i);
 		const uint32_t index = num_render_object_slots + i;
 		texture_infos[index].sampler = sampler_default;
-		texture_infos[index].imageView = room_texture.image.vk_image_view;
+		texture_infos[index].imageView = room_texture.image.vkImageView;
 		texture_infos[index].imageLayout = room_texture.layout;
 	}
 
@@ -452,7 +411,7 @@ void draw_frame(const float tick_delta_time, const vector3F_t camera_position, c
 
 	vkUpdateDescriptorSets(device, 4, descriptor_writes, 0, NULL);
 	
-	upload_lighting_data();
+	uploadLightingData();
 
 	const VkCommandBufferBeginInfo begin_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,

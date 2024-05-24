@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "game/math/hitbox.h"
+#include "math/hitbox.h"
 #include "util/string.h"
 
 typedef struct entity_record_t {

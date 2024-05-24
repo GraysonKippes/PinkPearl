@@ -13,19 +13,18 @@
 
 #define SHADER_DIRECTORY (RESOURCE_PATH "shaders/")
 
-typedef struct shader_bytecode_t {
+typedef struct ShaderBytecode {
 	uint32_t bytecode_size;
 	byte_t *bytecode;
-} shader_bytecode_t;
+} ShaderBytecode;
 
 static const char *shader_directory = SHADER_DIRECTORY;
 static const uint32_t initial_buffer_size = 8192;
 
-static shader_bytecode_t read_shader_file(const char *const path) {
-
+static ShaderBytecode read_shader_file(const char *const path) {
 	logf_message(VERBOSE, "Reading shader file at \"%s\"...", path);
 	
-	shader_bytecode_t shader_bytecode = {
+	ShaderBytecode shader_bytecode = {
 		.bytecode_size = 0,
 		.bytecode = NULL
 	};
@@ -62,20 +61,18 @@ static shader_bytecode_t read_shader_file(const char *const path) {
 	return shader_bytecode;
 }
 
-static bool destroy_shader_bytecode(shader_bytecode_t *const shader_bytecode_ptr) {
-	
-	if (shader_bytecode_ptr == NULL) {
+static bool destroy_shader_bytecode(ShaderBytecode *const pShaderBytecode) {
+	if (pShaderBytecode == NULL) {
 		return false;
 	}
 	
-	deallocate((void **)&shader_bytecode_ptr->bytecode);
-	shader_bytecode_ptr->bytecode_size = 0;
+	deallocate((void **)&pShaderBytecode->bytecode);
+	pShaderBytecode->bytecode_size = 0;
 	
 	return true;
 }
 
 shader_module_t create_shader_module(VkDevice device, const char *const filename) {
-
 	logf_message(VERBOSE, "Loading shader \"%s\"...", filename);
 
 	shader_module_t shader_module = {
@@ -123,7 +120,7 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 		return shader_module;
 	}
 
-	const shader_bytecode_t shader_bytecode = read_shader_file(path);
+	ShaderBytecode shader_bytecode = read_shader_file(path);
 	if (shader_bytecode.bytecode == NULL) {
 		log_message(FATAL, "Fatal error creating shader module: shader file reading failed.");
 		return shader_module;

@@ -1,16 +1,7 @@
 #ifndef VULKAN_MANAGER_H
 #define VULKAN_MANAGER_H
 
-#include <stdint.h>
-
 #include <vulkan/vulkan.h>
-
-#include "game/area/room.h"
-#include "render/model.h"
-#include "render/projection.h"
-#include "render/render_config.h"
-#include "render/render_object.h"
-#include "util/byte.h"
 
 #include "buffer.h"
 #include "compute_pipeline.h"

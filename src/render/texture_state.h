@@ -2,33 +2,40 @@
 #define TEXTURE_STATE_H
 
 #include <stdbool.h>
-#include <stdint.h>
 
-typedef unsigned int texture_handle_t;
+#include "util/string.h"
 
-typedef struct texture_animation_cycle_t {
-	uint32_t num_frames;
-	uint32_t frames_per_second;
-} texture_animation_cycle_t;
+typedef struct TextureState {
 
-typedef struct texture_state_t {
+	// Handle to the texture with which this texture state is associated.
+	int textureHandle;
 
-	texture_handle_t handle;
+	// Number of animation cycles in the texture with which this texture state is associated.
+	unsigned int numAnimations;
+	// Index of currently selected animation cycle.
+	unsigned int currentAnimation;
+	
+	// Number of frames in currently selected animation cycle.
+	unsigned int numFrames;
+	// FPS (Frames-per-second) of the currently selected animation cycle.
+	unsigned int currentFPS;
+	// Current frame in currently selected animation cycle.
+	unsigned int currentFrame;
+	
+	// Time point in milliseconds of last frame update.
+	unsigned long long int lastFrameTimeMS;
 
-	uint32_t num_animations;
-	uint32_t current_animation;
-	uint32_t current_frame;
-	uint64_t last_frame_time_ms;
+} TextureState;
 
-} texture_state_t;
+TextureState nullTextureState(void);
 
-bool destroy_texture_state(texture_state_t *texture_state_ptr);
+TextureState newTextureState(const string_t textureID);
 
-bool texture_state_set_animation_cycle(texture_state_t *const texture_state_ptr, const uint32_t next_animation_cycle);
+bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned int nextAnimation);
 
-// Returns 0 if an error occurs.
-// Returns 1 if no error occurs and the texture state was not updated.
-// Returns 2 if no error occurs and the texture state was updated.
-int texture_state_animate(texture_state_t *const texture_state_ptr);
+// Returns 0 (false) if an error occurred.
+// Returns 1 (true) if function executed successfully with no frame update.
+// Returns 2 if function executed successfully with frame update.
+int textureStateAnimate(TextureState *const pTextureState);
 
 #endif // TEXTURE_STATE_H

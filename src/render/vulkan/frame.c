@@ -1,7 +1,6 @@
 #include "frame.h"
 
 #include "log/logging.h"
-#include "render/model.h"
 #include "render/render_config.h"
 #include "util/allocate.h"
 

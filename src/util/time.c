@@ -2,10 +2,8 @@
 
 #include <sys/timeb.h>
 
-uint64_t get_time_ms(void) {
-
+unsigned long long int getTimeMS(void) {
 	struct timeb time;
 	ftime(&time);
-
-	return (uint64_t)time.time * 1000LL + (uint64_t)time.millitm;
+	return (unsigned long long int)time.time * 1000LLU + (unsigned long long int)time.millitm;
 }

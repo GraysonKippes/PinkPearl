@@ -8,12 +8,19 @@
 
 layout(local_size_x = NUM_MODELS) in;
 
-struct render_position_t {
+// Keeps track of current and previous vectors for interpolation.
+struct RenderVector {
 	vec4 current;
 	vec4 previous;
 };
 
-struct projection_bounds_t {
+struct RenderTransform {
+	RenderVector translation;
+	RenderVector scaling;
+	RenderVector rotation;
+};
+
+struct ProjectionBounds {
 	float left;
 	float right;
 	float bottom;
@@ -23,10 +30,10 @@ struct projection_bounds_t {
 };
 
 layout(std140, binding = 0) readonly uniform uniform_data_t {
-	projection_bounds_t projection_bounds;
-	float delta_time;
-	vec3 camera_position;
-	render_position_t model_positions[NUM_MODELS];
+	ProjectionBounds projection_bounds;
+	float deltaTime;
+	vec4 camera_position;
+	RenderTransform transforms[NUM_MODELS];
 } uniform_data;
 
 layout(std140, binding = 1) writeonly buffer output_buffer {
@@ -35,23 +42,33 @@ layout(std140, binding = 1) writeonly buffer output_buffer {
 	mat4 model_matrices[NUM_MODELS];
 } output_data;
 
-mat4 make_translation_matrix(vec3 translation) {
+vec4 vec4Lerp(const RenderVector vector, const float deltaTime) {
+	return vec4(
+		mix(vector.previous.x, vector.current.x, deltaTime),
+		mix(vector.previous.y, vector.current.y, deltaTime),
+		mix(vector.previous.z, vector.current.z, deltaTime),
+		mix(vector.previous.w, vector.current.w, deltaTime)
+	);
+}
+
+mat4 makeTranslationMat4(const vec4 translation) {
 	mat4 translation_matrix = mat4(1.0);
-	translation_matrix[3].xyz = translation;
+	translation_matrix[3] = translation;
 	return translation_matrix;
 }
 
 // Makes and returns a "translerp" (portmanteau of "translate" and "lerp") matrix.
-mat4 make_translerp_matrix(render_position_t position, float delta_time) {
+mat4 make_translerp_matrix(RenderVector position, float deltaTime) {
 
-	vec3 lerp_position = vec3(
-		mix(position.previous.x, position.current.x, delta_time),
-		mix(position.previous.y, position.current.y, delta_time),
-		mix(position.previous.z, position.current.z, delta_time)
+	vec4 lerp_position = vec4(
+		mix(position.previous.x, position.current.x, deltaTime),
+		mix(position.previous.y, position.current.y, deltaTime),
+		mix(position.previous.z, position.current.z, deltaTime),
+		mix(position.previous.w, position.current.w, deltaTime)
 	);
 	
 	mat4 translation_matrix = mat4(1.0);
-	translation_matrix[3].xyz = lerp_position;
+	translation_matrix[3] = lerp_position;
 	translation_matrix[3].y *= -1.0;
 	
 	return translation_matrix;
@@ -59,7 +76,7 @@ mat4 make_translerp_matrix(render_position_t position, float delta_time) {
 
 // Makes and returns an orthographic projection matrix.
 // TODO - make this just take width, height, length, etc., instead of bounds.
-mat4 make_orthographic_projection_matrix(projection_bounds_t bounds) {
+mat4 make_orthographic_projection_matrix(ProjectionBounds bounds) {
 	
 	const float zoom_factor = 1.0;
 	
@@ -82,7 +99,7 @@ mat4 make_orthographic_projection_matrix(projection_bounds_t bounds) {
 
 void main() {
 	const uint model_slot = gl_LocalInvocationID.x;
-	output_data.camera_matrix = make_translation_matrix(uniform_data.camera_position);
+	output_data.camera_matrix = makeTranslationMat4(uniform_data.camera_position);
 	output_data.projection_matrix = make_orthographic_projection_matrix(uniform_data.projection_bounds);
-	output_data.model_matrices[model_slot] = make_translerp_matrix(uniform_data.model_positions[model_slot], uniform_data.delta_time);
+	output_data.model_matrices[model_slot] = makeTranslationMat4(vec4Lerp(uniform_data.transforms[model_slot].translation, uniform_data.deltaTime));
 }

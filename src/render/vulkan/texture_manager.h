@@ -1,28 +1,29 @@
 #ifndef TEXTURE_MANAGER_H
 #define TEXTURE_MANAGER_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "game/area/room.h"
 #include "render/texture_info.h"
-#include "render/texture_state.h"
 #include "util/string.h"
 
 #include "texture.h"
 
-extern const uint32_t num_textures;
-extern const texture_handle_t missing_texture_handle;
-extern const texture_handle_t room_texture_handle;
+extern const int num_textures;
+extern const int missing_texture_handle;
 
 void load_textures(const texture_pack_t texture_pack);
-void create_room_texture(const room_t room, const uint32_t cache_slot, const texture_handle_t tilemap_texture_handle);
+void create_room_texture(const room_t room, const uint32_t cacheSlot, const int tilemapTextureHandle);	// TODO - remove
 void destroy_textures(void);
 
-texture_t get_room_texture(const room_size_t room_size);
-texture_t get_loaded_texture(const texture_handle_t texture_handle);
-texture_handle_t find_loaded_texture_handle(const string_t texture_id);
+// Returns true if the texture handle is a valid texture handle, false otherwise.
+bool validateTextureHandle(const int textureHandle);
 
-texture_state_t missing_texture_state(void);
-texture_state_t make_new_texture_state(const texture_handle_t texture_handle);
+// Finds a texture with the given texture ID and returns a handle to it.
+int findTexture(const string_t textureID);
+
+// Gets a texture from the array of loaded texture directly from the texture handle.
+Texture getTexture(const int textureHandle);
 
 #endif	// TEXTURE_MANAGER_H

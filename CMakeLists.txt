@@ -12,20 +12,20 @@ configure_file(src/config.h.in config.h)
 
 set(COMPILE_OPTIONS_MSVC, "/TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address")
 
-set(COMPILE_OPTIONS_GCC, 
-	"-std=c17 -lpthread -g -Wpedantic -Wall -Wextra
+target_compile_options(PinkPearl PRIVATE -std=c17 -lpthread -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
-	-Werror-implicit-function-declaration 
+	-Werror=implicit-function-declaration 
 	-Werror=implicit-int
 	-Werror=sign-compare
 	-Werror=stringop-overread
 	-Werror=incompatible-pointer-types
 	-Werror=int-conversion
 	-Werror=format 
-	-Wno-switch"
+	-Werror=bool-compare 
+	-Werror=discarded-qualifiers 
+	-Werror=address 
+	-Wno-switch
 )
-
-target_compile_options(PinkPearl PRIVATE ${COMPILE_OPTIONS_GCC})
 
 find_package(Vulkan REQUIRED)
 
@@ -59,24 +59,21 @@ target_sources(PinkPearl PRIVATE
 	src/game/entity/entity_ai.c
 	src/game/entity/entity_manager.c
 	src/game/entity/entity_registry.c
-	src/game/math/hitbox.c
-	src/game/math/vector3D.c
 	src/glfw/glfw_manager.c
 	src/glfw/input_manager.c
 	src/log/error_code.c
 	src/log/log_stack.c
 	src/log/logging.c
-	src/math/vector4F.c
+	src/math/extent.c
+	src/math/hitbox.c
+	src/math/offset.c
+	src/math/vector3D.c
 	src/render/area_render_state.c
-	src/render/model.c
 	src/render/render_config.c
 	src/render/render_object.c
-	src/render/render_position.c
 	src/render/renderer.c
 	src/render/texture_info.c
 	src/render/texture_state.c
-	src/render/math/lerp.c
-	src/render/math/vector3F.c
 	src/render/stb/image_data.c
 	src/render/vulkan/buffer.c
 	src/render/vulkan/command_buffer.c
@@ -102,11 +99,12 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/compute/compute_area_mesh.c
 	src/render/vulkan/compute/compute_matrices.c
 	src/render/vulkan/compute/compute_room_texture.c
+	src/render/vulkan/math/lerp.c
+	src/render/vulkan/math/render_vector.c
+	src/render/vulkan/math/vector4F.c
 	src/util/allocate.c
 	src/util/bit.c
-	src/util/extent.c
 	src/util/file_io.c
-	src/util/offset.c
 	src/util/string.c
 	src/util/string_array.c
 	src/util/time.c

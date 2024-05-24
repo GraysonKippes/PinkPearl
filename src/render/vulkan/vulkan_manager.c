@@ -71,9 +71,7 @@ buffer_partition_t global_draw_data_buffer_partition;
 /* -- Function Definitions -- */
 
 static void create_window_surface(void) {
-
 	log_message(VERBOSE, "Creating window surface...");
-
 	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), NULL, &surface);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Window surface creation failed. (Error code: %i)", result);
@@ -83,7 +81,6 @@ static void create_window_surface(void) {
 }
 
 static void create_global_staging_buffer(void) {
-
 	log_message(VERBOSE, "Creating global staging buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
@@ -105,7 +102,6 @@ static void create_global_staging_buffer(void) {
 }
 
 static void create_global_uniform_buffer(void) {
-
 	log_message(VERBOSE, "Creating global uniform buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
@@ -128,7 +124,6 @@ static void create_global_uniform_buffer(void) {
 }
 
 static void create_global_storage_buffer(void) {
-
 	log_message(VERBOSE, "Creating global storage buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
@@ -150,7 +145,6 @@ static void create_global_storage_buffer(void) {
 }
 
 static void create_global_draw_data_buffer(void) {
-
 	log_message(VERBOSE, "Creating global draw data buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
@@ -171,7 +165,6 @@ static void create_global_draw_data_buffer(void) {
 }
 
 void create_vulkan_objects(void) {
-
 	log_stack_push("Vulkan");
 	log_message(INFO, "Initializing Vulkan...");
 
@@ -192,8 +185,6 @@ void create_vulkan_objects(void) {
 	create_global_uniform_buffer();
 	create_global_storage_buffer();
 	create_global_draw_data_buffer();
-
-	log_message(VERBOSE, "Retrieving device queues...");
 
 	vkGetDeviceQueue(device, *physical_device.queue_family_indices.graphics_family_ptr, 0, &graphics_queue);
 	vkGetDeviceQueue(device, *physical_device.queue_family_indices.present_family_ptr, 0, &present_queue);
@@ -231,7 +222,6 @@ void create_vulkan_objects(void) {
 }
 
 void destroy_vulkan_objects(void) {
-
 	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Destroying Vulkan objects...");
 

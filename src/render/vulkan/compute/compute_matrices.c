@@ -10,8 +10,6 @@
 #include "../descriptor.h"
 #include "../vulkan_manager.h"
 
-
-
 static const descriptor_binding_t compute_matrices_bindings[2] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
@@ -29,7 +27,6 @@ static VkDescriptorSet compute_matrices_descriptor_set = VK_NULL_HANDLE;
 VkSemaphore compute_matrices_semaphore = VK_NULL_HANDLE;
 static VkFence compute_matrices_fence = VK_NULL_HANDLE;
 
-
 // One camera matrix, one projection matrix, and one matrix for each render object slot.
 static const VkDeviceSize num_matrices = NUM_RENDER_OBJECT_SLOTS + 2;
 	
@@ -37,8 +34,6 @@ static const VkDeviceSize num_matrices = NUM_RENDER_OBJECT_SLOTS + 2;
 static const VkDeviceSize matrix_size = 16 * sizeof(float);
 
 const VkDeviceSize matrix_data_size = num_matrices * matrix_size;
-
-
 
 bool init_compute_matrices(const VkDevice vk_device) {
 
@@ -62,7 +57,6 @@ bool init_compute_matrices(const VkDevice vk_device) {
 	else if (descriptor_set_allocate_result > 0) {
 		logf_message(WARNING, "Warning initializing compute matrices pipeline: descriptor set allocation returned with warning (result code: %i).", descriptor_set_allocate_result);
 	}
-
 
 	const VkSemaphoreCreateInfo semaphore_create_info = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -106,7 +100,10 @@ void terminate_compute_matrices(void) {
 	destroy_compute_pipeline(&compute_matrices_pipeline);
 }
 
-void compute_matrices(const float delta_time, const projection_bounds_t projection_bounds, const vector3F_t camera_position, const render_position_t *const positions) {
+void computeMatrices(const float deltaTime, const projection_bounds_t projectionBounds, const vector4F_t cameraPosition, const RenderTransform *const transforms) {
+	if (transforms == NULL) {
+		return;
+	}
 
 	vkWaitForFences(compute_matrices_pipeline.device, 1, &compute_matrices_fence, VK_TRUE, UINT64_MAX);
 	vkResetFences(compute_matrices_pipeline.device, 1, &compute_matrices_fence);
@@ -116,17 +113,10 @@ void compute_matrices(const float delta_time, const projection_bounds_t projecti
 		log_message(ERROR, "Error computing matrices: uniform buffer memory mapping failed.");
 		return;
 	}
-
-	memcpy(mapped_memory, &projection_bounds, sizeof projection_bounds);
-	memcpy(mapped_memory + 32, &delta_time, sizeof delta_time);
-	memcpy(mapped_memory + 48, &camera_position, sizeof camera_position);
-
-	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-		static const VkDeviceSize starting_offset = 64;
-		memcpy(mapped_memory + starting_offset + (i * 32), &positions[i].position, sizeof(vector3F_t));
-		memcpy(mapped_memory + starting_offset + (i * 32) + 16, &positions[i].previous_position, sizeof(vector3F_t));
-	}
-
+	memcpy(mapped_memory, &projectionBounds, sizeof projectionBounds);
+	memcpy(mapped_memory + 32, &deltaTime, sizeof deltaTime);
+	memcpy(mapped_memory + 48, &cameraPosition, sizeof cameraPosition);
+	memcpy(mapped_memory + 64, transforms, num_render_object_slots * sizeof *transforms);
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 0);

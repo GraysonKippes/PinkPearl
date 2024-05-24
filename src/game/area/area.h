@@ -1,9 +1,9 @@
 #ifndef AREA_H
 #define AREA_H
 
-#include "game/math/vector3D.h"
-#include "util/extent.h"
-#include "util/offset.h"
+#include "math/extent.h"
+#include "math/offset.h"
+#include "math/vector3D.h"
 
 #include "area_extent.h"
 #include "room.h"

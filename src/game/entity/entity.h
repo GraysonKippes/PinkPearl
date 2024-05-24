@@ -4,14 +4,13 @@
 #include "entity_ai.h"
 #include "entity_transform.h"
 
-#include "game/math/hitbox.h"
-#include "render/render_object.h"
+#include "math/hitbox.h"
 
 typedef struct entity_t {
 	entity_transform_t transform;
 	rect_t hitbox;
 	entity_ai_t ai;
-	render_handle_t render_handle;
+	int render_handle;
 } entity_t;
 
 // Returns an entity with default values.

@@ -68,6 +68,11 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 	device_vk12_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 	device_vk12_features.pNext = &device_vk13_features;
 	device_vk12_features.drawIndirectCount = VK_TRUE;
+	device_vk12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	device_vk12_features.descriptorIndexing = VK_TRUE;
+	device_vk12_features.descriptorBindingPartiallyBound = VK_TRUE;
+	device_vk12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+	device_vk12_features.runtimeDescriptorArray = VK_TRUE;
 	device_vk12_features.scalarBlockLayout = VK_TRUE;
 	device_vk12_features.timelineSemaphore = VK_TRUE;
 	

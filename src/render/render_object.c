@@ -2,90 +2,83 @@
 
 #include <stddef.h>
 
+#include <DataStuff/Heap.h>
+
 #include "log/logging.h"
 #include "vulkan/vulkan_render.h"
+#include "vulkan/texture_manager.h"
 #include "util/bit.h"
 
 #include "area_render_state.h"
 
-const uint32_t render_handle_invalid = UINT32_MAX;
-const uint32_t render_handle_dangling = render_handle_invalid - 1;
+const int render_handle_invalid = -1;
+const int render_handle_dangling = -2;
 
-render_position_t render_object_positions[NUM_RENDER_OBJECT_SLOTS];
-texture_state_t render_object_texture_states[NUM_RENDER_OBJECT_SLOTS];
+Heap inactive_render_handles = { 0 };
 
-static uint64_t render_object_slot_enabled_flags = 0;
+int renderObjQuadIDs[NUM_RENDER_OBJECT_SLOTS];
+RenderTransform renderObjTransforms[NUM_RENDER_OBJECT_SLOTS];
+TextureState renderObjTextureStates[NUM_RENDER_OBJECT_SLOTS];
 
-render_handle_t load_render_object(void) {
-
-	if (render_object_slot_enabled_flags == UINT64_MAX) {
-		return render_handle_invalid;
-	}
-
-	for (uint32_t i = 0; i < num_render_object_slots && i < 64; ++i) {
-		if (is_bit_off(render_object_slot_enabled_flags, i)) {
-			enable_render_object_slot(i);
-			return (render_handle_t)i;
-		}
-	}
-	return render_handle_invalid;
-}
-
-void unload_render_object(render_handle_t *handle_ptr) {
-
-	if (handle_ptr == NULL) {
-		log_message(ERROR, "Error unloading render object: pointer to handle is NULL.");
-		return;
-	}
-
-	if (!validate_render_handle(*handle_ptr)) {
-		logf_message(ERROR, "Error unloading render object: handle is invalid (%u).", *handle_ptr);
-		return;
-	}
-
-	if (is_bit_off(render_object_slot_enabled_flags, *handle_ptr)) {
-		logf_message(WARNING, "Unloading already unused render object slot (%u).", *handle_ptr);
-	}
-
-	render_object_slot_enabled_flags = set_bit_off(render_object_slot_enabled_flags, *handle_ptr);
-	*handle_ptr = render_handle_dangling;
-	upload_draw_data(get_global_area_render_state());
-}
-
-bool is_render_object_slot_enabled(const uint32_t slot) {
-	if (validate_render_handle(slot)) {
-		return (render_object_slot_enabled_flags >> slot) & 1LL;
-	}
-	return false;
-}
-
-void enable_render_object_slot(const uint32_t slot) {
-	if (validate_render_handle(slot)) {
-		render_object_slot_enabled_flags |= (1LL << (uint64_t)slot);
-	}
-}
-
-bool validate_render_handle(render_handle_t handle) {
-	return handle < num_render_object_slots && handle < flags_bitwidth;
-}
-
-render_position_t *get_render_position_ptr(render_handle_t handle) {
-
-	if (handle >= num_render_object_slots) {
-		logf_message(ERROR, "Error getting render position pointer: render object handle (%u) exceeds total number of render object slots (%u).", handle, num_render_object_slots);
-		return NULL;
-	}
-
-	return render_object_positions + handle;
-}
-
-bool swap_render_object_texture_state(const render_handle_t render_handle, const texture_state_t texture_state) {
-
-	if (!validate_render_handle(render_handle)) {
+bool init_render_object_manager(void) {
+	inactive_render_handles = newHeap(num_render_object_slots, sizeof(int), cmpFuncInt);
+	if (!heapValidate(inactive_render_handles)) {
+		deleteHeap(&inactive_render_handles);
 		return false;
 	}
-
-	destroy_texture_state(&render_object_texture_states[render_handle]);
-	render_object_texture_states[render_handle] = texture_state;
+	for (int i = 0; i < (int)num_render_object_slots; ++i) {
+		heapPush(&inactive_render_handles, &i);
+	}
 	return true;
+}
+
+int loadRenderObject(const DimensionsF quadDimensions, const transform_t transform, const string_t textureID) {
+	int renderHandle = render_handle_invalid;
+	heapPop(&inactive_render_handles, &renderHandle);
+	
+	if (validate_render_handle(renderHandle)) {
+		const int quadID = loadQuad(quadDimensions);
+		if (!validateQuadID(quadID)) {
+			unloadRenderObject(&renderHandle);
+			return renderHandle;
+		}
+		renderObjQuadIDs[renderHandle] = quadID;
+		
+		render_vector_reset(&renderObjTransforms[renderHandle].translation, transform.translation);
+		render_vector_reset(&renderObjTransforms[renderHandle].scaling, transform.scaling);
+		render_vector_reset(&renderObjTransforms[renderHandle].rotation, transform.rotation);
+		
+		renderObjTextureStates[renderHandle] = newTextureState(textureID);
+	}
+	return renderHandle;
+}
+
+void unloadRenderObject(int *const pRenderHandle) {
+	if (pRenderHandle == NULL) {
+		return;
+	} else if (validate_render_handle(*pRenderHandle)) {
+		return;
+	}
+	heapPush(&inactive_render_handles, pRenderHandle);
+	*pRenderHandle = render_handle_dangling;
+}
+
+bool validate_render_handle(const int render_handle) {
+	return render_handle >= 0 && render_handle < (int)num_render_object_slots;
+}
+
+RenderTransform *getRenderObjTransform(const int renderHandle) {
+	if (!validate_render_handle(renderHandle)) {
+		logf_message(ERROR, "Error getting render object transform: render object handle (%u) is invalid.", renderHandle);
+		return NULL;
+	}
+	return &renderObjTransforms[renderHandle];
+}
+
+TextureState *getRenderObjTexState(const int renderHandle) {
+	if (!validate_render_handle(renderHandle)) {
+		logf_message(ERROR, "Error getting render object texture state: render object handle (%u) is invalid.", renderHandle);
+		return NULL;
+	}
+	return &renderObjTextureStates[renderHandle];
 }
