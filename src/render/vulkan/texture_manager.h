@@ -10,7 +10,7 @@
 
 #include "texture.h"
 
-extern const int num_textures;
+extern const int numTextures;
 extern const int missing_texture_handle;
 
 void load_textures(const texture_pack_t texture_pack);
@@ -21,7 +21,7 @@ void destroy_textures(void);
 bool validateTextureHandle(const int textureHandle);
 
 // Finds a texture with the given texture ID and returns a handle to it.
-int findTexture(const string_t textureID);
+int findTexture(const String textureID);
 
 // Gets a texture from the array of loaded texture directly from the texture handle.
 Texture getTexture(const int textureHandle);

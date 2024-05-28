@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef struct string_t {
+typedef struct String {
 	
 	// Number of characters in the string.
 	// Does not include the null-terminator.
@@ -17,25 +17,25 @@ typedef struct string_t {
 	// Character buffer containing the string's contents.
 	char *buffer;
 	
-} string_t;
+} String;
 
-string_t make_null_string(void);
-string_t new_string_empty(const size_t capacity);
-string_t new_string(const size_t capacity, const char *const initial_data);
-bool destroy_string(string_t *const string_ptr);
+String make_null_string(void);
+String new_string_empty(const size_t capacity);
+String new_string(const size_t capacity, const char *const initial_data);
+bool destroy_string(String *const string_ptr);
 
 // String analysis
-bool is_string_null(const string_t string);
-bool string_compare(const string_t a, const string_t b);
-size_t string_reverse_search_char(const string_t string, const char c);
+bool is_string_null(const String string);
+bool string_compare(const String a, const String b);
+size_t string_reverse_search_char(const String string, const char c);
 
 // String mutation
-bool string_concatenate_char(string_t *const string_ptr, const char c);
-bool string_concatenate_string(string_t *const dest_ptr, const string_t src);
-bool string_concatenate_pstring(string_t *const dest_ptr, const char *const src_pstring);
-bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_chars);
+bool string_concatenate_char(String *const string_ptr, const char c);
+bool string_concatenate_string(String *const dest_ptr, const String src);
+bool string_concatenate_pstring(String *const dest_ptr, const char *const src_pstring);
+bool string_remove_trailing_chars(String *const string_ptr, const size_t num_chars);
 
 // Miscellaneous
-size_t string_hash(const string_t string, const size_t limit);
+size_t string_hash(const String string, const size_t limit);
 
 #endif	// UTIL_STRING_H

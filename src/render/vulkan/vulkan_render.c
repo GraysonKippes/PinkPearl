@@ -22,33 +22,36 @@
 #include "compute/compute_matrices.h"
 #include "compute/compute_room_texture.h"
 
-typedef struct draw_data_t {
-		// Indirect draw info
-		uint32_t index_count;
-		uint32_t instance_count;
-		uint32_t first_index;
-		int32_t vertex_offset;
-		uint32_t first_instance;
-		// Additional draw info
-		int32_t quadID;
-		uint32_t image_index;
-	} draw_data_t;
+typedef struct DrawData {
+	// Indirect draw info
+	uint32_t index_count;
+	uint32_t instance_count;
+	uint32_t first_index;
+	int32_t vertex_offset;
+	uint32_t first_instance;
+	// Additional draw info
+	int32_t quadID;
+	uint32_t image_index;
+} DrawData;
 
 typedef struct DrawInfo {
 	int quadID;
 	uint32_t drawDataIndex;	// The index in array of draw datas.
 } DrawInfo;
 
+// Stores draw infos, including IDs for quads currently being rendered.
 BinarySearchTree activeQuadIDs;
+
+// Stores IDs for unused quads.
 Stack inactiveQuadIDs;
 
-static int cmpFuncDrawInfo(const void *const a_ptr, const void *const b_ptr) {
-	if (a_ptr == NULL || b_ptr == NULL) {
+static int cmpFuncDrawInfo(const void *const pA, const void *const pB) {
+	if (pA == NULL || pB == NULL) {
 		return -2;
 	}
 	
-	const DrawInfo drawInfo_a = *(DrawInfo *)a_ptr;
-	const DrawInfo drawInfo_b = *(DrawInfo *)b_ptr;
+	const DrawInfo drawInfo_a = *(DrawInfo *)pA;
+	const DrawInfo drawInfo_b = *(DrawInfo *)pB;
 	if (drawInfo_a.quadID < drawInfo_b.quadID) {
 		return -1;
 	}
@@ -60,6 +63,7 @@ static int cmpFuncDrawInfo(const void *const a_ptr, const void *const b_ptr) {
 
 static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions);
 static void rebuildDrawData(void);
+static void updateTextureDescriptor(const int quadID, const int textureHandle);
 
 void create_vulkan_render_objects(void) {
 	log_stack_push("Vulkan");
@@ -71,7 +75,7 @@ void create_vulkan_render_objects(void) {
 	// Initialize data structures for managing quad IDs.
 	activeQuadIDs = newBinarySearchTree(sizeof(DrawInfo), cmpFuncDrawInfo);
 	inactiveQuadIDs = newStack(num_render_object_slots, sizeof(int));
-	for (int quadID = 0; quadID < (int)num_render_object_slots; ++quadID) {
+	for (int quadID = (int)num_render_object_slots - 1; quadID >= 0; --quadID) {
 		stackPush(&inactiveQuadIDs, &quadID);
 	}
 	
@@ -94,7 +98,7 @@ void destroy_vulkan_render_objects(void) {
 	log_stack_pop();
 }
 
-int loadQuad(const DimensionsF quadDimensions) {
+int loadQuad(const DimensionsF quadDimensions, const int textureHandle) {
 	int quadID = -1;
 	if (stackIsEmpty(inactiveQuadIDs)) {
 		return quadID;
@@ -109,6 +113,7 @@ int loadQuad(const DimensionsF quadDimensions) {
 	bstInsert(&activeQuadIDs, &drawInfo);
 	
 	uploadQuadMesh(quadID, quadDimensions);
+	updateTextureDescriptor(quadID, textureHandle);
 	rebuildDrawData();
 	
 	return quadID;
@@ -214,17 +219,30 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 	return true;
 }
 
+static DrawData makeDrawData(const int quadID, const unsigned int imageIndex) {
+	return (DrawData){
+		.index_count = num_indices_per_rect,
+		.instance_count = 1,
+		.first_index = 0,
+		.vertex_offset = num_vertices_per_rect * quadID,
+		.first_instance = 0,
+		.quadID = quadID,
+		.image_index = imageIndex
+	};
+}
+
 static void rebuildDrawData(void) {
 	
-	// Needs to be called in the following situations:
-	// 	Texture is animated.
-	// 	New render object is created/used.
-	//	Any render object is destroyed/released.
-	//	Area render enters/exits scroll state.
+	/* Needs to be called in the following situations:
+	 * 	Texture is animated.
+	 * 	New render object is created/used.
+	 *	Any render object is destroyed/released.
+	 *	Area render enters/exits scroll state.
+	*/
 	
 	uint32_t draw_count = 0;
 	//const uint32_t max_draw_count = NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS;
-	draw_data_t draw_datas[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS];
+	DrawData draw_datas[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS];
 	
 	LinkedList traversal = bstTraverseInOrder(activeQuadIDs);
 	if (!linkedListValidate(traversal)) {
@@ -238,15 +256,7 @@ static void rebuildDrawData(void) {
 			deleteLinkedList(&traversal);
 			return;
 		}
-		draw_datas[draw_count] = (draw_data_t){
-			.index_count = num_indices_per_rect,
-			.instance_count = 1,
-			.first_index = 0,
-			.vertex_offset = num_vertices_per_rect * pDrawInfo->quadID,
-			.first_instance = 0,
-			.quadID = pDrawInfo->quadID,
-			.image_index = 0
-		};
+		draw_datas[draw_count] = makeDrawData(pDrawInfo->quadID, 0);
 		pDrawInfo->drawDataIndex = draw_count;
 		draw_count += 1;
 	}
@@ -258,10 +268,58 @@ static void rebuildDrawData(void) {
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 	
 	byte_t *draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(draw_data_mapped_memory, draw_datas, draw_count * sizeof(draw_data_t));
+	memcpy(draw_data_mapped_memory, draw_datas, draw_count * sizeof(DrawData));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+}
+
+static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 	
-	// TODO - signal need for upload.
+	const Texture texture = getTexture(textureHandle);
+	
+	const VkDescriptorImageInfo descriptorImageInfo = {
+		.sampler = imageSamplerDefault,
+		.imageView = texture.image.vkImageView,
+		.imageLayout = texture.layout
+	};
+	
+	const VkWriteDescriptorSet descriptorWrite = {
+		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+		.dstSet = frame_array.frames[frame_array.current_frame].descriptor_set,
+		.dstBinding = 2,
+		.dstArrayElement = (uint32_t)quadID,
+		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		.descriptorCount = 1,
+		.pBufferInfo = NULL,
+		.pImageInfo = &descriptorImageInfo,
+		.pTexelBufferView = NULL
+	};
+	
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, NULL);
+	}
+}
+
+void updateDrawData(const int quadID, const unsigned int imageIndex) {
+	
+	// Search for the draw info in the active quad IDs tree.
+	const DrawInfo searchDrawInfo = {
+		.quadID = quadID,
+		.drawDataIndex = 1
+	};
+	BinarySearchTreeNode *pSearchNode = NULL;
+	bstSearch(&activeQuadIDs, &searchDrawInfo, &pSearchNode);
+	if (pSearchNode == NULL) {
+		return;
+	} else if (pSearchNode->pObject == NULL) {
+		return;
+	}
+	
+	const DrawInfo drawInfo = *(DrawInfo *)pSearchNode->pObject;
+	const DrawData drawData = makeDrawData(drawInfo.quadID, imageIndex);
+	
+	byte_t *drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	memcpy(drawDataMappedMemory + drawInfo.drawDataIndex * sizeof(DrawData), &drawData, sizeof drawData);
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
 static void uploadLightingData(void) {
@@ -322,7 +380,7 @@ static void uploadLightingData(void) {
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 }
 
-void drawFrame(const float deltaTime, const vector4F_t cameraPosition, const projection_bounds_t projectionBounds, const RenderTransform *const renderObjTransforms) {
+void drawFrame(const float deltaTime, const Vector4F cameraPosition, const projection_bounds_t projectionBounds, const RenderTransform *const renderObjTransforms) {
 
 	vkWaitForFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready);
@@ -375,7 +433,7 @@ void drawFrame(const float deltaTime, const vector4F_t cameraPosition, const pro
 		else {
 			texture = get_loaded_texture(missing_texture_handle);
 		} */
-		texture_infos[i].sampler = sampler_default;
+		texture_infos[i].sampler = imageSamplerDefault;
 		texture_infos[i].imageView = texture.image.vkImageView;
 		texture_infos[i].imageLayout = texture.layout;
 	}
@@ -383,7 +441,7 @@ void drawFrame(const float deltaTime, const vector4F_t cameraPosition, const pro
 	for (uint32_t i = 0; i < num_room_sizes; ++i) {
 		const Texture room_texture = getTexture(1 + i);
 		const uint32_t index = num_render_object_slots + i;
-		texture_infos[index].sampler = sampler_default;
+		texture_infos[index].sampler = imageSamplerDefault;
 		texture_infos[index].imageView = room_texture.image.vkImageView;
 		texture_infos[index].imageLayout = room_texture.layout;
 	}

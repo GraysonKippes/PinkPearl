@@ -5,16 +5,16 @@
 
 #include "allocate.h"
 
-string_t make_null_string(void) {
-	return (string_t){
+String make_null_string(void) {
+	return (String){
 		.length = 0,
 		.capacity = 0,
 		.buffer = NULL
 	};
 }
 
-string_t new_string_empty(const size_t capacity) {
-	string_t string = make_null_string();
+String new_string_empty(const size_t capacity) {
+	String string = make_null_string();
 	if (!allocate((void **)&string.buffer, capacity, sizeof(char))) {
 		return string;
 	}
@@ -22,9 +22,9 @@ string_t new_string_empty(const size_t capacity) {
 	return string;
 }
 
-string_t new_string(const size_t capacity, const char *const initial_data) {
+String new_string(const size_t capacity, const char *const initial_data) {
 	
-	string_t string = new_string_empty(capacity);
+	String string = new_string_empty(capacity);
 	if (is_string_null(string)) {
 		return string;
 	}
@@ -38,7 +38,7 @@ string_t new_string(const size_t capacity, const char *const initial_data) {
 	return string;
 }
 
-bool destroy_string(string_t *const string_ptr) {
+bool destroy_string(String *const string_ptr) {
 	if (string_ptr == NULL) {
 		return false;
 	}
@@ -50,11 +50,11 @@ bool destroy_string(string_t *const string_ptr) {
 	return true;
 }
 
-bool is_string_null(const string_t string) {
+bool is_string_null(const String string) {
 	return string.capacity == 0 || string.buffer == NULL;
 }
 
-bool string_compare(const string_t a, const string_t b) {
+bool string_compare(const String a, const String b) {
 	if (is_string_null(a) || is_string_null(b)) {
 		return false;
 	}
@@ -66,7 +66,7 @@ bool string_compare(const string_t a, const string_t b) {
 	return strncmp(a.buffer, b.buffer, a.length) == 0;
 }
 
-size_t string_reverse_search_char(const string_t string, const char c) {
+size_t string_reverse_search_char(const String string, const char c) {
 	if (is_string_null(string)) {
 		return 0;
 	}
@@ -80,7 +80,7 @@ size_t string_reverse_search_char(const string_t string, const char c) {
 	return (size_t)ptr_difference;
 }
 
-bool string_concatenate_char(string_t *const string_ptr, const char c) {
+bool string_concatenate_char(String *const string_ptr, const char c) {
 	if (string_ptr == NULL) {
 		return false;
 	}
@@ -99,7 +99,7 @@ bool string_concatenate_char(string_t *const string_ptr, const char c) {
 	return true;
 }
 
-bool string_concatenate_string(string_t *const dest_ptr, const string_t src) {
+bool string_concatenate_string(String *const dest_ptr, const String src) {
 	if (dest_ptr == NULL) {
 		return false;
 	}
@@ -120,7 +120,7 @@ bool string_concatenate_string(string_t *const dest_ptr, const string_t src) {
 	return true;
 }
 
-bool string_concatenate_pstring(string_t *const dest_ptr, const char *const src_pstring) {
+bool string_concatenate_pstring(String *const dest_ptr, const char *const src_pstring) {
 	if (dest_ptr == NULL || src_pstring == NULL) {
 		return false;
 	}
@@ -146,7 +146,7 @@ bool string_concatenate_pstring(string_t *const dest_ptr, const char *const src_
 	return true;
 }
 
-bool string_remove_trailing_chars(string_t *const string_ptr, const size_t num_chars) {
+bool string_remove_trailing_chars(String *const string_ptr, const size_t num_chars) {
 	if (string_ptr == NULL) {
 		return false;
 	}
@@ -180,7 +180,7 @@ static size_t exponentiate(const size_t base, const size_t exponent) {
     }
 }
 
-size_t string_hash(const string_t string, const size_t limit) {
+size_t string_hash(const String string, const size_t limit) {
 	if (is_string_null(string)) {
 		return 0;
 	}

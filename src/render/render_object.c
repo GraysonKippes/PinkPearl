@@ -32,43 +32,45 @@ bool init_render_object_manager(void) {
 	return true;
 }
 
-int loadRenderObject(const DimensionsF quadDimensions, const transform_t transform, const string_t textureID) {
+int loadRenderObject(const DimensionsF quadDimensions, const Transform transform, const String textureID) {
 	int renderHandle = render_handle_invalid;
 	heapPop(&inactive_render_handles, &renderHandle);
-	
-	if (validate_render_handle(renderHandle)) {
-		const int quadID = loadQuad(quadDimensions);
-		if (!validateQuadID(quadID)) {
-			unloadRenderObject(&renderHandle);
-			return renderHandle;
-		}
-		renderObjQuadIDs[renderHandle] = quadID;
-		
-		render_vector_reset(&renderObjTransforms[renderHandle].translation, transform.translation);
-		render_vector_reset(&renderObjTransforms[renderHandle].scaling, transform.scaling);
-		render_vector_reset(&renderObjTransforms[renderHandle].rotation, transform.rotation);
-		
-		renderObjTextureStates[renderHandle] = newTextureState(textureID);
+	if (!validateRenderHandle(renderHandle)) {
+		return renderHandle;
 	}
+	
+	renderObjTextureStates[renderHandle] = newTextureState(textureID);
+	
+	const int quadID = loadQuad(quadDimensions, renderObjTextureStates[renderHandle].textureHandle);
+	if (!validateQuadID(quadID)) {
+		unloadRenderObject(&renderHandle);
+		return renderHandle;
+	}
+	renderObjQuadIDs[renderHandle] = quadID;
+	
+	render_vector_reset(&renderObjTransforms[renderHandle].translation, transform.translation);
+	render_vector_reset(&renderObjTransforms[renderHandle].scaling, transform.scaling);
+	render_vector_reset(&renderObjTransforms[renderHandle].rotation, transform.rotation);
+	
 	return renderHandle;
 }
 
 void unloadRenderObject(int *const pRenderHandle) {
 	if (pRenderHandle == NULL) {
 		return;
-	} else if (validate_render_handle(*pRenderHandle)) {
+	} else if (validateRenderHandle(*pRenderHandle)) {
 		return;
 	}
 	heapPush(&inactive_render_handles, pRenderHandle);
 	*pRenderHandle = render_handle_dangling;
 }
 
-bool validate_render_handle(const int render_handle) {
+bool validateRenderHandle(const int render_handle) {
 	return render_handle >= 0 && render_handle < (int)num_render_object_slots;
 }
 
 RenderTransform *getRenderObjTransform(const int renderHandle) {
-	if (!validate_render_handle(renderHandle)) {
+	if (!validateRenderHandle(renderHandle)) {
 		logf_message(ERROR, "Error getting render object transform: render object handle (%u) is invalid.", renderHandle);
 		return NULL;
 	}
@@ -76,7 +78,7 @@ RenderTransform *getRenderObjTransform(const int renderHandle) {
 }
 
 TextureState *getRenderObjTexState(const int renderHandle) {
-	if (!validate_render_handle(renderHandle)) {
+	if (!validateRenderHandle(renderHandle)) {
 		logf_message(ERROR, "Error getting render object texture state: render object handle (%u) is invalid.", renderHandle);
 		return NULL;
 	}

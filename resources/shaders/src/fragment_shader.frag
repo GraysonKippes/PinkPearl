@@ -5,7 +5,7 @@
 #define NUM_ROOM_TEXTURE_IMAGES 4
 #define NUM_IMAGES (NUM_RENDER_OBJECTS + NUM_ROOM_TEXTURE_IMAGES)
 
-struct draw_info_t {
+struct DrawData {
 	// Indirect draw info
 	uint index_count;
 	uint instance_count;
@@ -17,9 +17,9 @@ struct draw_info_t {
 	uint image_index;
 };
 
-layout(scalar, set = 0, binding = 0) readonly uniform draw_data_t {
-	draw_info_t draw_infos[68];
-} draw_data;
+layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
+	DrawData draw_infos[68];
+} uDrawData;
 
 layout(set = 0, binding = 2) uniform sampler2DArray[NUM_IMAGES] texture_samplers;
 
@@ -58,7 +58,7 @@ float calculate_attenuation(const vec3 src, const vec3 dst, const float coeffici
 
 void main() {
 
-	draw_info_t draw_info = draw_data.draw_infos[in_draw_index];
+	DrawData draw_info = uDrawData.draw_infos[in_draw_index];
 
 	// Texel position
 	vec3 texel_position = in_position;
@@ -77,9 +77,9 @@ void main() {
 	}
 	out_color.rgb *= point_light_color; */
 	
-	// Light level granularity
+	/* Light level granularity
 	const float light_level = 32.0;
 	out_color.r = round(out_color.r * light_level) / light_level;
 	out_color.g = round(out_color.g * light_level) / light_level;
-	out_color.b = round(out_color.b * light_level) / light_level;
+	out_color.b = round(out_color.b * light_level) / light_level; */
 }

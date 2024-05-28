@@ -11,8 +11,6 @@
 #include "physical_device.h"
 #include "queue.h"
 
-
-
 typedef struct buffer_t {
 	VkBuffer handle;
 	VkDeviceMemory memory;
@@ -36,8 +34,6 @@ typedef struct staging_buffer_t {
 	VkDevice device;
 
 } staging_buffer_t;
-
-
 
 typedef enum buffer_type_t {
 	BUFFER_TYPE_STAGING,
@@ -81,8 +77,8 @@ bool destroy_buffer_partition(buffer_partition_t *const buffer_partition_ptr);
 
 byte_t *buffer_partition_map_memory(const buffer_partition_t buffer_partition, const uint32_t partition_index);
 void buffer_partition_unmap_memory(const buffer_partition_t buffer_partition);
-VkDescriptorBufferInfo buffer_partition_descriptor_info(const buffer_partition_t buffer_partition, const uint32_t partition_index);
 
+VkDescriptorBufferInfo buffer_partition_descriptor_info(const buffer_partition_t buffer_partition, const uint32_t partition_index);
 
 VkDeviceMemory allocate_device_memory(const VkDevice device, const VkDeviceSize size, const memory_type_index_t memory_type_index);
 void bind_buffer_to_memory(buffer_t buffer, VkDeviceMemory memory, VkDeviceSize offset);

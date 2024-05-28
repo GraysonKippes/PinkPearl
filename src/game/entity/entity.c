@@ -49,10 +49,10 @@ void tick_entity(entity_t *entity_ptr) {
 
 	// Update render object.
 	const int render_handle = entity_ptr->render_handle;
-	if (!validate_render_handle(render_handle)) {
+	if (!validateRenderHandle(render_handle)) {
 		return;
 	}
-	const vector4F_t render_position = {
+	const Vector4F render_position = {
 		.x = (float)entity_ptr->transform.position.x,
 		.y = (float)entity_ptr->transform.position.y,
 		.z = (float)entity_ptr->transform.position.z,

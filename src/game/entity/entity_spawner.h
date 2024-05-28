@@ -18,7 +18,7 @@ typedef struct entity_spawner_t {
 	int max_num_entities;
 	
 	// String ID of the entity type to spawn.
-	string_t entity_record_id;
+	String entity_record_id;
 	
 } entity_spawner_t;
 

@@ -1,5 +1,7 @@
 #include "frame.h"
 
+#include <string.h>
+
 #include "log/logging.h"
 #include "render/render_config.h"
 #include "util/allocate.h"
@@ -29,13 +31,16 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT
 	};
 
-	const VkDeviceSize render_object_vertices_size = num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	const VkDeviceSize area_mesh_vertices_size = num_room_layers * 32 * 32 * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	const VkDeviceSize vertex_buffer_size = render_object_vertices_size + area_mesh_vertices_size;
+	//const VkDeviceSize render_object_vertices_size = num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
+	//const VkDeviceSize area_mesh_vertices_size = num_room_layers * 32 * 32 * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
+	//const VkDeviceSize vertex_buffer_size = render_object_vertices_size + area_mesh_vertices_size;
 	
-	const VkDeviceSize render_object_indices_size = num_render_object_slots * num_indices_per_rect * sizeof(index_t);
-	const VkDeviceSize area_mesh_indices_size = num_room_layers * 32 * 32 * num_indices_per_rect * sizeof(index_t);
-	const VkDeviceSize index_buffer_size = render_object_indices_size + area_mesh_indices_size;
+	//const VkDeviceSize render_object_indices_size = num_render_object_slots * num_indices_per_rect * sizeof(index_t);
+	//const VkDeviceSize area_mesh_indices_size = num_room_layers * 32 * 32 * num_indices_per_rect * sizeof(index_t);
+	//const VkDeviceSize index_buffer_size = render_object_indices_size + area_mesh_indices_size;
+	
+	const VkDeviceSize index_buffer_size = num_render_object_slots * num_indices_per_rect;
+	const VkDeviceSize vertex_buffer_size = num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	
 	frame.semaphore_image_available = create_binary_semaphore(device);
 	frame.semaphore_present_ready = create_binary_semaphore(device);
@@ -164,6 +169,53 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 		vkBindBufferMemory(frame_array.device, frame_array.frames[i].vertex_buffer, frame_array.buffer_memory, vertex_buffer_memory_ranges[i].offset);
 		vkBindBufferMemory(frame_array.device, frame_array.frames[i].index_buffer, frame_array.buffer_memory, total_vertex_memory_size + index_buffer_memory_ranges[i].offset);
 	}
+	
+	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
+	allocate_command_buffers(frame_array.device, frame_array_create_info.command_pool, 1, &cmdBuf);
+	begin_command_buffer(cmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT); {
+	
+		const uint16_t indices[6] = {
+			0, 1, 2,
+			2, 3, 0
+		};
+		
+		byte_t *mappedMemory = buffer_partition_map_memory(global_staging_buffer_partition, 0);
+		memcpy(mappedMemory, indices, 6 * sizeof(uint16_t));
+		buffer_partition_unmap_memory(global_staging_buffer_partition);
+	
+		const VkBufferCopy bufCpy = {
+			.srcOffset = 0,
+			.dstOffset = 0,
+			.size = 6 * sizeof(uint16_t)
+		};
+		
+		for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+			vkCmdCopyBuffer(cmdBuf, global_staging_buffer_partition.buffer, frame_array.frames[i].index_buffer, 1, &bufCpy);
+		}
+	
+	} vkEndCommandBuffer(cmdBuf);
+
+	const VkCommandBufferSubmitInfo cmdBufSubmitInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		.pNext = NULL,
+		.commandBuffer = cmdBuf,
+		.deviceMask = 0
+	};
+
+	const VkSubmitInfo2 submitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+		.pNext = NULL,
+		.flags = 0,
+		.waitSemaphoreInfoCount = 0,
+		.pWaitSemaphoreInfos = NULL,
+		.commandBufferInfoCount = 1,
+		.pCommandBufferInfos = &cmdBufSubmitInfo,
+		.signalSemaphoreInfoCount = 0,
+		.pSignalSemaphoreInfos = NULL
+	};
+	
+	vkQueueSubmit2(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphics_queue);
 
 	return frame_array;
 }

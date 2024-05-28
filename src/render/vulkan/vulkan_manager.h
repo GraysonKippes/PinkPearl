@@ -19,7 +19,7 @@ extern memory_type_set_t memory_type_set;
 extern VkDevice device;
 extern swapchain_t swapchain;
 extern graphics_pipeline_t graphics_pipeline;
-extern VkSampler sampler_default;
+extern VkSampler imageSamplerDefault;
 
 /* -- Queues -- */
 

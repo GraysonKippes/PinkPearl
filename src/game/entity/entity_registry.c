@@ -76,7 +76,7 @@ bool register_entity_record(const entity_record_t entity_record) {
 	return false;
 }
 
-bool find_entity_record(const string_t entity_id, entity_record_t *const entity_record_ptr) {
+bool find_entity_record(const String entity_id, entity_record_t *const entity_record_ptr) {
 	if (entity_record_ptr == NULL) {
 		return false;
 	}

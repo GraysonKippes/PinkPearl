@@ -41,7 +41,7 @@ memory_type_set_t memory_type_set = { 0 };
 VkDevice device = VK_NULL_HANDLE;
 swapchain_t swapchain = { 0 };
 graphics_pipeline_t graphics_pipeline = { 0 };
-VkSampler sampler_default = VK_NULL_HANDLE;
+VkSampler imageSamplerDefault = VK_NULL_HANDLE;
 
 /* -- Queues -- */
 
@@ -206,7 +206,7 @@ void create_vulkan_objects(void) {
 	destroy_shader_module(&vertex_shader_module);
 	destroy_shader_module(&fragment_shader_module);
 
-	create_sampler(physical_device, device, &sampler_default);
+	create_sampler(physical_device, device, &imageSamplerDefault);
 	
 	const frame_array_create_info_t frame_array_create_info = {
 		.num_frames = 2,
@@ -227,7 +227,7 @@ void destroy_vulkan_objects(void) {
 
 	destroy_frame_array(&frame_array);
 
-	vkDestroySampler(device, sampler_default, NULL);
+	vkDestroySampler(device, imageSamplerDefault, NULL);
 
 	destroy_graphics_pipeline(device, graphics_pipeline);
 	destroy_swapchain(device, swapchain);

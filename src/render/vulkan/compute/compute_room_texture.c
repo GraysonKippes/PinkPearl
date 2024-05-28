@@ -263,7 +263,7 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 1);
 	const VkDescriptorImageInfo tilemapTexture_info = make_descriptor_image_info(no_sampler, tilemapTexture.image.vkImageView, tilemapTexture.layout);
-	const VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(sampler_default, computeRoomTextureTransferImage.vkImageView, computeRoomTextureTransferImage.layout);
+	const VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(imageSamplerDefault, computeRoomTextureTransferImage.vkImageView, computeRoomTextureTransferImage.layout);
 	const VkDescriptorImageInfo storage_image_infos[2] = { tilemapTexture_info, room_texture_storage_info };
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };

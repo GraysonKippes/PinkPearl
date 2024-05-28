@@ -1,17 +1,25 @@
 #ifndef VECTOR4F_H
 #define VECTOR4F_H
 
-typedef struct vector4F_t {
+typedef struct Vector4F {
 	float x;
 	float y;
 	float z;
 	float w;
-} vector4F_t;
+} Vector4F;
 
-extern const vector4F_t vector4F_zero;
+extern const Vector4F vector4F_zero;
 
-vector4F_t vector4F_add(const vector4F_t a, const vector4F_t b);
+Vector4F vector4F_add(const Vector4F a, const Vector4F b);
 
-vector4F_t vector4F_lerp(const vector4F_t start, const vector4F_t end, const float delta);
+Vector4F vector4F_lerp(const Vector4F start, const Vector4F end, const float delta);
+
+typedef struct Transform {
+	Vector4F translation;
+	Vector4F scaling;
+	Vector4F rotation;
+} Transform;
+
+extern const Transform transformZero;
 
 #endif // VECTOR4F_H

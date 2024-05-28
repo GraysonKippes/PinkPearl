@@ -83,13 +83,14 @@ Texture loadTexture(const texture_create_info_t texture_create_info) {
 	VkSemaphore semaphore_transition_finished = VK_NULL_HANDLE;
 	VkSemaphore semaphore_transfer_finished = VK_NULL_HANDLE;
 
-	VkSemaphoreCreateInfo semaphore_create_info = { 0 };
-	semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphore_create_info.pNext = NULL;
-	semaphore_create_info.flags = 0;
+	const VkSemaphoreCreateInfo semaphoreCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0
+	};
 
-	vkCreateSemaphore(device, &semaphore_create_info, NULL, &semaphore_transition_finished);
-	vkCreateSemaphore(device, &semaphore_create_info, NULL, &semaphore_transfer_finished);
+	vkCreateSemaphore(device, &semaphoreCreateInfo, NULL, &semaphore_transition_finished);
+	vkCreateSemaphore(device, &semaphoreCreateInfo, NULL, &semaphore_transfer_finished);
 
 	// Create full path.
 	char path[TEXTURE_NAME_MAX_LENGTH];
@@ -144,7 +145,7 @@ Texture loadTexture(const texture_create_info_t texture_create_info) {
 	} vkEndCommandBuffer(transition_command_buffer);
 
 	{	// First submit
-		const VkSubmitInfo submit_info = {
+		const VkSubmitInfo submitInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.pNext = NULL,
 			.waitSemaphoreCount = 0,
@@ -155,7 +156,7 @@ Texture loadTexture(const texture_create_info_t texture_create_info) {
 			.signalSemaphoreCount = 1,
 			.pSignalSemaphores = &semaphore_transition_finished
 		};
-		vkQueueSubmit(graphics_queue, 1, &submit_info, NULL);
+		vkQueueSubmit(graphics_queue, 1, &submitInfo, NULL);
 	}
 
 	texture.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;

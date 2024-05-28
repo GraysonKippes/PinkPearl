@@ -29,7 +29,7 @@ typedef struct TextureState {
 
 TextureState nullTextureState(void);
 
-TextureState newTextureState(const string_t textureID);
+TextureState newTextureState(const String textureID);
 
 bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned int nextAnimation);
 

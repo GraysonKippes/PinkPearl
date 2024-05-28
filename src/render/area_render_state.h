@@ -47,7 +47,7 @@ bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState);
 // Returns true if a new room texture needs to be generated, false otherwise.
 bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const room_t nextRoom);
 
-vector4F_t areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState);
+Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState);
 
 projection_bounds_t areaRenderStateGetProjectionBounds(const AreaRenderState areaRenderState);
 

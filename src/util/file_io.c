@@ -41,7 +41,7 @@ int read_string(FILE *restrict stream, const size_t max_str_len, char *str) {
 	return 0;
 }
 
-string_t read_string2(FILE *restrict stream, const size_t max_string_capacity) {
+String read_string2(FILE *restrict stream, const size_t max_string_capacity) {
 	if (stream == NULL) {
 		return make_null_string();
 	}
@@ -69,7 +69,7 @@ string_t read_string2(FILE *restrict stream, const size_t max_string_capacity) {
 	}
 	
 	// Second pass: read characters from file into string buffer.
-	string_t string = new_string_empty(string_capacity);
+	String string = new_string_empty(string_capacity);
 	size_t counter = 0;
 	ch = fgetc(stream);
 	while (ch != '\0' && ch != EOF && counter < string_capacity) {

@@ -15,7 +15,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 		return;
 	}
 	
-	string_t tilemapTextureID = new_string(64, "tilemap/dungeon4");
+	String tilemapTextureID = new_string(64, "tilemap/dungeon4");
 	pAreaRenderState->tilemapTextureState = newTextureState(tilemapTextureID);
 	destroy_string(&tilemapTextureID);
 	//compute_area_mesh(area);
@@ -113,7 +113,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const r
 	return !roomAlreadyLoaded;
 }
 
-vector4F_t areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState) {
+Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState) {
 	if (pAreaRenderState == NULL) {
 		return vector4F_zero;
 	}
@@ -121,7 +121,7 @@ vector4F_t areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderSt
 	const extent_t roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
 	const uint32_t currentRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->currentCacheSlot];
 	const offset_t currentRoomPosition = pAreaRenderState->roomIDsToPositions[currentRoomID];
-	const vector4F_t start = {
+	const Vector4F start = {
 		.x = roomExtent.width * currentRoomPosition.x,
 		.y = roomExtent.length * currentRoomPosition.y,
 		.z = 0.0F,
@@ -135,7 +135,7 @@ vector4F_t areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderSt
 	
 	const uint32_t nextRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->nextCacheSlot];
 	const offset_t nextRoomPosition = pAreaRenderState->roomIDsToPositions[nextRoomID];
-	const vector4F_t end = {
+	const Vector4F end = {
 		.x = roomExtent.width * nextRoomPosition.x,
 		.y = roomExtent.length * nextRoomPosition.y,
 		.z = 0.0F,

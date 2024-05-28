@@ -44,17 +44,17 @@ void terminate_renderer(void) {
 }
 
 void render_frame(const float deltaTime) {
+	glfwPollEvents();
 	
-	const vector4F_t cameraPosition = areaRenderStateGetCameraPosition(&globalAreaRenderState);
-	const projection_bounds_t projectionBounds = areaRenderStateGetProjectionBounds(globalAreaRenderState);
-	
-	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-		if (textureStateAnimate(getRenderObjTexState((int)i)) == 2) {
-			// TODO - replace with update draw data
-			//upload_draw_data(globalAreaRenderState);
+	for (int i = 0; i < (int)num_render_object_slots; ++i) {
+		TextureState *pTextureState = getRenderObjTexState(i);
+		if (textureStateAnimate(pTextureState) == 2) {
+			updateDrawData(i, pTextureState->currentFrame);
 		}
 	}
+	
+	const Vector4F cameraPosition = areaRenderStateGetCameraPosition(&globalAreaRenderState);
+	const projection_bounds_t projectionBounds = areaRenderStateGetProjectionBounds(globalAreaRenderState);
 
-	glfwPollEvents();
 	drawFrame(deltaTime, cameraPosition, projectionBounds, getRenderObjTransform(0));
 }

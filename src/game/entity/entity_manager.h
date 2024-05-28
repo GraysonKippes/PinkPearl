@@ -8,9 +8,9 @@
 
 #define MAX_NUM_ENTITIES 64
 
-extern const uint32_t max_num_entities;
+extern const int max_num_entities;
 
-typedef uint32_t entity_handle_t;
+typedef int entity_handle_t;
 
 extern const entity_handle_t entity_handle_invalid;
 
@@ -25,7 +25,7 @@ void unload_entity(const entity_handle_t handle);
 
 // Returns true if the specified entity handle is a valid entity handle and can be used to safely retrieve entities;
 // 	returns false otherwise.
-bool validate_entity_handle(const entity_handle_t handle);
+bool validateEntityHandle(const int entityHandle);
 
 // Returns a pointer to the entity at the specified handle inside `entity_pptr`.
 // Returns:
@@ -33,9 +33,9 @@ bool validate_entity_handle(const entity_handle_t handle);
 //	1 if `entity_pptr` is `NULL`;
 //	2 if the entity handle is invalid according to `validate_entity_handle`; and
 //	-1 if the retrieval was successful but came from an unused entity slot.
-int get_entity_ptr(const entity_handle_t handle, entity_t **const entity_pptr);
+int getEntity(const entity_handle_t handle, entity_t **const ppEntity);
 
 // Ticks the game logic of each loaded entity. Unused entity slots are skipped.
-void tick_entities(void);
+void tickEntities(void);
 
 #endif	// ENTITY_MANAGER_H

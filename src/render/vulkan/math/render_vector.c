@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-void render_vector_set(RenderVector *const render_vector_ptr, const vector4F_t new_vector) {
+void render_vector_set(RenderVector *const render_vector_ptr, const Vector4F new_vector) {
 	if (render_vector_ptr == NULL) {
 		return;
 	}
@@ -10,7 +10,7 @@ void render_vector_set(RenderVector *const render_vector_ptr, const vector4F_t n
 	render_vector_ptr->current = new_vector;
 }
 
-void render_vector_reset(RenderVector *const render_vector_ptr, const vector4F_t new_vector) {
+void render_vector_reset(RenderVector *const render_vector_ptr, const Vector4F new_vector) {
 	if (render_vector_ptr == NULL) {
 		return;
 	}

@@ -15,12 +15,15 @@
 
 // This file holds all functionality for drawing the scene with the Vulkan API.
 
-int loadQuad(const DimensionsF quadDimensions);
+void create_vulkan_render_objects(void);
+void destroy_vulkan_render_objects(void);
+
+int loadQuad(const DimensionsF quadDimensions, const int textureHandle);
 void unloadQuad(const int quadID);
 bool validateQuadID(const int quadID);
 
-void create_vulkan_render_objects(void);
-void destroy_vulkan_render_objects(void);
-void drawFrame(const float deltaTime, const vector4F_t cameraPosition, const projection_bounds_t projectionBounds, const RenderTransform *const renderObjTransforms);
+void updateDrawData(const int quadID, const unsigned int imageIndex);
+
+void drawFrame(const float deltaTime, const Vector4F cameraPosition, const projection_bounds_t projectionBounds, const RenderTransform *const renderObjTransforms);
 
 #endif	// VULKAN_RENDER_H

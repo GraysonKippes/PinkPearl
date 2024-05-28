@@ -9,7 +9,7 @@
 static const char log_stack_delimiter = '/';
 
 typedef struct log_stack_t {
-	string_t string;
+	String string;
 	size_t height;	// Number of sub-strings in stack.
 } log_stack_t;
 
@@ -36,7 +36,7 @@ void log_stack_push(const char *const pstring) {
 	pthread_mutex_unlock(&log_stack_mutex);
 }
 
-string_t log_stack_get_string(void) {
+String log_stack_get_string(void) {
 	return log_stack.string;
 }
 

@@ -27,10 +27,10 @@
 #define NUM_LOADED_TEXTURES 3
 #define NUM_TEXTURES (NUM_RESERVED_TEXTURES + NUM_ROOM_TEXTURES + NUM_LOADED_TEXTURES)
 
-static const int num_reserved_textures = NUM_RESERVED_TEXTURES;
-static const int num_room_textures = NUM_ROOM_TEXTURES;
-static const int num_loaded_textures = NUM_LOADED_TEXTURES;
-const int num_textures = NUM_TEXTURES;
+static const int numReservedTextures = NUM_RESERVED_TEXTURES;
+static const int numRoomTextures = NUM_ROOM_TEXTURES;
+static const int numLoadedTextures = NUM_LOADED_TEXTURES;
+const int numTextures = NUM_TEXTURES;
 
 static Texture textures[NUM_TEXTURES];
 
@@ -39,7 +39,7 @@ const int missing_texture_handle = 0;
 // Record for a *loaded* texture.
 // Textures that are generated rather than loaded (e.g. room textures) do not have records.
 typedef struct TextureRecord {
-	string_t texture_id;
+	String texture_id;
 	int texture_handle;
 } TextureRecord;
 
@@ -65,7 +65,7 @@ static const texture_create_info_t missing_texture_create_info = {
 
 static void register_loaded_texture(const int texture_handle, const texture_create_info_t texture_create_info) {
 	
-	string_t texture_id = new_string(256, texture_create_info.path);
+	String texture_id = new_string(256, texture_create_info.path);
 	const size_t file_extension_delimiter_index = string_reverse_search_char(texture_id, '.');
 	if (file_extension_delimiter_index < texture_id.length) {
 		const size_t num_chars_to_remove = texture_id.length - file_extension_delimiter_index;
@@ -77,14 +77,14 @@ static void register_loaded_texture(const int texture_handle, const texture_crea
 		.texture_handle = texture_handle
 	};
 	
-	size_t hash_index = string_hash(texture_id, (size_t)num_loaded_textures);
-	for (size_t i = 0; i < (size_t)num_loaded_textures; ++i) {
+	size_t hash_index = string_hash(texture_id, (size_t)numLoadedTextures);
+	for (size_t i = 0; i < (size_t)numLoadedTextures; ++i) {
 		if (is_string_null(texture_records[hash_index].texture_id)) {
 			texture_records[hash_index] = texture_record;
 		}
 		else {
 			hash_index += 1;
-			hash_index %= (size_t)num_loaded_textures;
+			hash_index %= (size_t)numLoadedTextures;
 		}
 	}
 }
@@ -102,7 +102,7 @@ void load_textures(const texture_pack_t texture_pack) {
 	}
 	
 	// Nullify each texture first.
-	for (int i = 0; i < num_textures; ++i) {
+	for (int i = 0; i < numTextures; ++i) {
 		textures[i] = make_null_texture();
 	}
 
@@ -121,7 +121,7 @@ void load_textures(const texture_pack_t texture_pack) {
 	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
 		
 		// Offset for room textures and missing texture placeholder.
-		const int texture_handle = num_reserved_textures + num_room_textures + i;
+		const int texture_handle = numReservedTextures + numRoomTextures + i;
 		const texture_create_info_t texture_create_info = texture_pack.texture_create_infos[i];
 		
 		textures[texture_handle] = loadTexture(texture_create_info);
@@ -133,7 +133,7 @@ void load_textures(const texture_pack_t texture_pack) {
 
 // TODO - remove
 void create_room_texture(const room_t room, const uint32_t cacheSlot, const int tilemapTextureHandle) {
-	const int roomTextureHandle = num_reserved_textures + (int)room.size;
+	const int roomTextureHandle = numReservedTextures + (int)room.size;
 	compute_room_texture(room, cacheSlot, textures[tilemapTextureHandle], &textures[roomTextureHandle]);
 }
 
@@ -146,27 +146,27 @@ void destroy_textures(void) {
 
 // TODO - remove
 Texture get_room_texture(const room_size_t room_size) {
-	return textures[num_reserved_textures + (uint32_t)room_size];
+	return textures[numReservedTextures + (uint32_t)room_size];
 }
 
 bool validateTextureHandle(const int textureHandle) {
-	return textureHandle >= 0 && textureHandle < num_textures;
+	return textureHandle >= 0 && textureHandle < numTextures;
 }
 
-int findTexture(const string_t textureID) {
+int findTexture(const String textureID) {
 	if (is_string_null(textureID)) {
 		log_message(ERROR, "Error finding loaded texture: given texture ID is NULL.");
 		return missing_texture_handle;
 	}
 	
-	size_t hash_index = string_hash(textureID, (size_t)num_loaded_textures);
-	for (size_t i = 0; i < (size_t)num_loaded_textures; ++i) {
+	size_t hash_index = string_hash(textureID, (size_t)numLoadedTextures);
+	for (size_t i = 0; i < (size_t)numLoadedTextures; ++i) {
 		if (string_compare(textureID, texture_records[i].texture_id)) {
 			return texture_records[i].texture_handle;
 		}
 		else {
 			hash_index++;
-			hash_index %= num_loaded_textures;
+			hash_index %= numLoadedTextures;
 		}
 	}
 	return missing_texture_handle;
@@ -174,7 +174,7 @@ int findTexture(const string_t textureID) {
 
 Texture getTexture(const int textureHandle) {
 	if (!validateTextureHandle(textureHandle)) {
-		logf_message(ERROR, "Error getting loaded texture: texture handle (%u) is invalid.", textureHandle);
+		//logf_message(ERROR, "Error getting loaded texture: texture handle (%u) is invalid.", textureHandle);
 		return textures[missing_texture_handle];
 	}
 	return textures[textureHandle];
