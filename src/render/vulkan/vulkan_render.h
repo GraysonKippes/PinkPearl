@@ -15,8 +15,10 @@
 
 // This file holds all functionality for drawing the scene with the Vulkan API.
 
-void create_vulkan_render_objects(void);
-void destroy_vulkan_render_objects(void);
+void createVulkanRenderObjects(void);
+void destroyVulkanRenderObjects(void);
+
+void initTextureDescriptors(void);
 
 int loadQuad(const DimensionsF quadDimensions, const int textureHandle);
 void unloadQuad(const int quadID);

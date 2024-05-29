@@ -2,8 +2,6 @@
 #extension GL_EXT_scalar_block_layout : require
 
 #define NUM_RENDER_OBJECTS 64
-#define NUM_ROOM_TEXTURE_IMAGES 4
-#define NUM_IMAGES (NUM_RENDER_OBJECTS + NUM_ROOM_TEXTURE_IMAGES)
 
 struct DrawData {
 	// Indirect draw info
@@ -18,10 +16,10 @@ struct DrawData {
 };
 
 layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
-	DrawData draw_infos[68];
+	DrawData draw_infos[NUM_RENDER_OBJECTS];
 } uDrawData;
 
-layout(set = 0, binding = 2) uniform sampler2DArray[NUM_IMAGES] texture_samplers;
+layout(set = 0, binding = 2) uniform sampler2DArray[NUM_RENDER_OBJECTS] texture_samplers;
 
 struct ambient_light_t {
 	vec3 color;

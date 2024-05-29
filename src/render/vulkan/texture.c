@@ -70,7 +70,7 @@ static VkImage create_texture_image(const Texture texture, const texture_create_
 		.extent.height = texture_create_info.cell_extent.length,
 		.extent.depth = 1,
 		.mipLevels = 1,
-		.arrayLayers = texture_create_info.num_cells.width * texture_create_info.num_cells.length,
+		.arrayLayers = texture.numImageArrayLayers,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = VK_IMAGE_TILING_OPTIMAL,
 		.usage = texture_image_usage(texture_create_info.type),
@@ -155,6 +155,7 @@ static VkImageView create_texture_image_view(const Texture texture, const VkImag
 Texture create_texture(const texture_create_info_t texture_create_info) {
 
 	Texture texture = make_null_texture();
+	
 	texture.numAnimations = texture_create_info.num_animations;
 	texture.numImageArrayLayers = texture_create_info.num_cells.width * texture_create_info.num_cells.length;
 	texture.format = texture_image_format(texture_create_info.type);

@@ -30,14 +30,6 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 		.pNext = NULL,
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT
 	};
-
-	//const VkDeviceSize render_object_vertices_size = num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	//const VkDeviceSize area_mesh_vertices_size = num_room_layers * 32 * 32 * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	//const VkDeviceSize vertex_buffer_size = render_object_vertices_size + area_mesh_vertices_size;
-	
-	//const VkDeviceSize render_object_indices_size = num_render_object_slots * num_indices_per_rect * sizeof(index_t);
-	//const VkDeviceSize area_mesh_indices_size = num_room_layers * 32 * 32 * num_indices_per_rect * sizeof(index_t);
-	//const VkDeviceSize index_buffer_size = render_object_indices_size + area_mesh_indices_size;
 	
 	const VkDeviceSize index_buffer_size = num_render_object_slots * num_indices_per_rect;
 	const VkDeviceSize vertex_buffer_size = num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);

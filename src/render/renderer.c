@@ -26,19 +26,21 @@ void init_renderer(void) {
 	log_stack_push("Renderer");
 
 	create_vulkan_objects();
-	create_vulkan_render_objects();
+	createVulkanRenderObjects();
 	init_render_object_manager();
 
 	texture_pack_t texture_pack = parse_fgt_file(FGT_PATH);
 	load_textures(texture_pack);
 	destroy_texture_pack(&texture_pack);
 	
+	initTextureDescriptors();
+	
 	log_stack_pop();
 }
 
 void terminate_renderer(void) {
 	log_stack_push("Renderer");
-	destroy_vulkan_render_objects();
+	destroyVulkanRenderObjects();
 	destroy_vulkan_objects();
 	log_stack_pop();
 }

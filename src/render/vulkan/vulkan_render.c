@@ -65,7 +65,7 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions);
 static void rebuildDrawData(void);
 static void updateTextureDescriptor(const int quadID, const int textureHandle);
 
-void create_vulkan_render_objects(void) {
+void createVulkanRenderObjects(void) {
 	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Creating Vulkan render objects...");
 
@@ -82,7 +82,7 @@ void create_vulkan_render_objects(void) {
 	log_stack_pop();
 }
 
-void destroy_vulkan_render_objects(void) {
+void destroyVulkanRenderObjects(void) {
 	log_stack_push("Vulkan");
 	log_message(VERBOSE, "Destroying Vulkan render objects...");
 	
@@ -96,6 +96,36 @@ void destroy_vulkan_render_objects(void) {
 	deleteStack(&inactiveQuadIDs);
 	
 	log_stack_pop();
+}
+
+void initTextureDescriptors(void) {
+	
+	const Texture texture = getTexture(missing_texture_handle);
+	
+	VkDescriptorImageInfo descriptorImageInfos[NUM_RENDER_OBJECT_SLOTS];
+	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+		descriptorImageInfos[i] = (VkDescriptorImageInfo){
+			.sampler = imageSamplerDefault,
+			.imageView = texture.image.vkImageView,
+			.imageLayout = texture.layout
+		};
+	}
+	
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		const VkWriteDescriptorSet descriptorWrite = {
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame_array.frames[i].descriptor_set,
+			.dstBinding = 2,
+			.dstArrayElement = 0,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.descriptorCount = num_render_object_slots,
+			.pBufferInfo = NULL,
+			.pImageInfo = descriptorImageInfos,
+			.pTexelBufferView = NULL
+		};
+		
+		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, NULL);
+	}
 }
 
 int loadQuad(const DimensionsF quadDimensions, const int textureHandle) {
@@ -282,19 +312,19 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 		.imageLayout = texture.layout
 	};
 	
-	const VkWriteDescriptorSet descriptorWrite = {
-		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-		.dstSet = frame_array.frames[frame_array.current_frame].descriptor_set,
-		.dstBinding = 2,
-		.dstArrayElement = (uint32_t)quadID,
-		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		.descriptorCount = 1,
-		.pBufferInfo = NULL,
-		.pImageInfo = &descriptorImageInfo,
-		.pTexelBufferView = NULL
-	};
-	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		const VkWriteDescriptorSet descriptorWrite = {
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame_array.frames[i].descriptor_set,
+			.dstBinding = 2,
+			.dstArrayElement = (uint32_t)quadID,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.descriptorCount = 1,
+			.pBufferInfo = NULL,
+			.pImageInfo = &descriptorImageInfo,
+			.pTexelBufferView = NULL
+		};
+		
 		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, NULL);
 	}
 }
@@ -398,7 +428,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
 	computeMatrices(deltaTime, projectionBounds, cameraPosition, renderObjTransforms);
 
-	VkWriteDescriptorSet descriptor_writes[4] = { { 0 } };
+	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };
 
 	const VkDescriptorBufferInfo draw_data_buffer_info = buffer_partition_descriptor_info(global_draw_data_buffer_partition, 1);
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -422,52 +452,18 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	descriptor_writes[1].pImageInfo = NULL;
 	descriptor_writes[1].pTexelBufferView = NULL;
 
-	VkDescriptorImageInfo texture_infos[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_SIZES];
-
-	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
-		Texture texture = getTexture(missing_texture_handle);
-		/*if (is_render_object_slot_enabled(i)) {
-			const TextureState texture_state = render_object_texture_states[i];
-			texture = get_loaded_texture(texture_state.handle);
-		}
-		else {
-			texture = get_loaded_texture(missing_texture_handle);
-		} */
-		texture_infos[i].sampler = imageSamplerDefault;
-		texture_infos[i].imageView = texture.image.vkImageView;
-		texture_infos[i].imageLayout = texture.layout;
-	}
-	
-	for (uint32_t i = 0; i < num_room_sizes; ++i) {
-		const Texture room_texture = getTexture(1 + i);
-		const uint32_t index = num_render_object_slots + i;
-		texture_infos[index].sampler = imageSamplerDefault;
-		texture_infos[index].imageView = room_texture.image.vkImageView;
-		texture_infos[index].imageLayout = room_texture.layout;
-	}
-
+	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 3);
 	descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[2].dstSet = frame_array.frames[frame_array.current_frame].descriptor_set;
-	descriptor_writes[2].dstBinding = 2;
+	descriptor_writes[2].dstBinding = 3;
 	descriptor_writes[2].dstArrayElement = 0;
-	descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptor_writes[2].descriptorCount = num_render_object_slots + num_room_sizes;
-	descriptor_writes[2].pBufferInfo = NULL;
-	descriptor_writes[2].pImageInfo = texture_infos;
+	descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptor_writes[2].descriptorCount = 1;
+	descriptor_writes[2].pBufferInfo = &lighting_buffer_info;
+	descriptor_writes[2].pImageInfo = NULL;
 	descriptor_writes[2].pTexelBufferView = NULL;
 
-	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 3);
-	descriptor_writes[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[3].dstSet = frame_array.frames[frame_array.current_frame].descriptor_set;
-	descriptor_writes[3].dstBinding = 3;
-	descriptor_writes[3].dstArrayElement = 0;
-	descriptor_writes[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptor_writes[3].descriptorCount = 1;
-	descriptor_writes[3].pBufferInfo = &lighting_buffer_info;
-	descriptor_writes[3].pImageInfo = NULL;
-	descriptor_writes[3].pTexelBufferView = NULL;
-
-	vkUpdateDescriptorSets(device, 4, descriptor_writes, 0, NULL);
+	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, NULL);
 	
 	uploadLightingData();
 

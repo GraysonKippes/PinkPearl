@@ -66,17 +66,6 @@ Texture loadTexture(const texture_create_info_t texture_create_info) {
 		return make_null_texture();
 	}
 
-	/* NOT NEEDED ANYMORE
-	const extent_t first_cell_extent = texture_create_info.cell_extent;
-	for (uint32_t i = 1; i < texture_create_info.num_animations; ++i) {
-		const extent_t test_cell_extent = texture_create_info.animations[i].cell_extent;
-		if (!extent_equals(first_cell_extent, test_cell_extent)) {
-			logf_message(ERROR, "Error loading texture: animation %u cell extent (%u, %u) is different from first animation cell extent (%u, %u).",
-					i, test_cell_extent.width, test_cell_extent.length, first_cell_extent.width, first_cell_extent.length);
-			return make_null_texture();
-		}
-	} */
-
 	Texture texture = create_texture(texture_create_info);
 
 	// Create semaphores.
@@ -166,19 +155,18 @@ Texture loadTexture(const texture_create_info_t texture_create_info) {
 	allocate_command_buffers(device, transfer_command_pool, 1, &transfer_command_buffer);
 	begin_command_buffer(transfer_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT); {
 		
-		const uint32_t num_copy_regions = texture.numImageArrayLayers;
-		VkBufferImageCopy2 *copy_regions = NULL;
-		if (!allocate((void **)&copy_regions, num_copy_regions, sizeof(VkBufferImageCopy2))) {
+		const uint32_t numBufImgCopies = texture.numImageArrayLayers;
+		VkBufferImageCopy2 *bufImgCopies = NULL;
+		if (!allocate((void **)&bufImgCopies, numBufImgCopies, sizeof(VkBufferImageCopy2))) {
 			log_message(ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
 			// TODO - do proper cleanup here.
 			return texture;
 		}
 
 		const VkDeviceSize buffer_partition_offset = global_staging_buffer_partition.ranges[2].offset;
-		for (uint32_t i = 0; i < num_copy_regions; ++i) {
-
-			copy_regions[i].sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
-			copy_regions[i].pNext = NULL;
+		for (uint32_t i = 0; i < numBufImgCopies; ++i) {
+			bufImgCopies[i].sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
+			bufImgCopies[i].pNext = NULL;
 
 			const uint32_t cell_offset = i;
 			const uint32_t cell_offset_x = cell_offset % texture_create_info.num_cells.width;
@@ -190,22 +178,22 @@ Texture loadTexture(const texture_create_info_t texture_create_info) {
 
 			static const VkDeviceSize bytes_per_texel = 4;
 
-			copy_regions[i].bufferOffset = buffer_partition_offset + (VkDeviceSize)texel_offset * bytes_per_texel;
-			copy_regions[i].bufferRowLength = texture_create_info.atlas_extent.width;
-			copy_regions[i].bufferImageHeight = texture_create_info.atlas_extent.length;
+			bufImgCopies[i].bufferOffset = buffer_partition_offset + (VkDeviceSize)texel_offset * bytes_per_texel;
+			bufImgCopies[i].bufferRowLength = texture_create_info.atlas_extent.width;
+			bufImgCopies[i].bufferImageHeight = texture_create_info.atlas_extent.length;
 
-			copy_regions[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			copy_regions[i].imageSubresource.mipLevel = 0;
-			copy_regions[i].imageSubresource.baseArrayLayer = i;
-			copy_regions[i].imageSubresource.layerCount = 1;
+			bufImgCopies[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			bufImgCopies[i].imageSubresource.mipLevel = 0;
+			bufImgCopies[i].imageSubresource.baseArrayLayer = i;
+			bufImgCopies[i].imageSubresource.layerCount = 1;
 
-			copy_regions[i].imageOffset.x = 0;
-			copy_regions[i].imageOffset.y = 0;
-			copy_regions[i].imageOffset.z = 0;
+			bufImgCopies[i].imageOffset.x = 0;
+			bufImgCopies[i].imageOffset.y = 0;
+			bufImgCopies[i].imageOffset.z = 0;
 
-			copy_regions[i].imageExtent.width = texture_create_info.cell_extent.width;
-			copy_regions[i].imageExtent.height = texture_create_info.cell_extent.length;
-			copy_regions[i].imageExtent.depth = 1;
+			bufImgCopies[i].imageExtent.width = texture_create_info.cell_extent.width;
+			bufImgCopies[i].imageExtent.height = texture_create_info.cell_extent.length;
+			bufImgCopies[i].imageExtent.depth = 1;
 		}
 
 		const VkCopyBufferToImageInfo2 copy_info = {
@@ -214,13 +202,13 @@ Texture loadTexture(const texture_create_info_t texture_create_info) {
 			.srcBuffer = global_staging_buffer_partition.buffer,
 			.dstImage = texture.image.vkImage,
 			.dstImageLayout = texture.layout,
-			.regionCount = num_copy_regions,
-			.pRegions = copy_regions
+			.regionCount = numBufImgCopies,
+			.pRegions = bufImgCopies
 		};
 
 		vkCmdCopyBufferToImage2(transfer_command_buffer, &copy_info);
 
-		deallocate((void **)&copy_regions);
+		deallocate((void **)&bufImgCopies);
 	} vkEndCommandBuffer(transfer_command_buffer);
 
 	VkPipelineStageFlags transfer_stage_flags[1] = { VK_PIPELINE_STAGE_TRANSFER_BIT };

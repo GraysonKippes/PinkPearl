@@ -100,7 +100,7 @@ void load_textures(const texture_pack_t texture_pack) {
 		log_message(ERROR, "Error loading textures: array of texture create infos is NULL.");
 		return;
 	}
-	
+
 	// Nullify each texture first.
 	for (int i = 0; i < numTextures; ++i) {
 		textures[i] = make_null_texture();
