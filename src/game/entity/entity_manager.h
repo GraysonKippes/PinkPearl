@@ -6,6 +6,8 @@
 
 #include "entity.h"
 
+#include "util/string.h"
+
 #define MAX_NUM_ENTITIES 64
 
 extern const int max_num_entities;
@@ -22,6 +24,10 @@ entity_handle_t load_entity(void);
 
 // Frees the entity slot at the specified handle.
 void unload_entity(const entity_handle_t handle);
+
+// Loads an entity into the game world at the specified initial position and velocity.
+// Returns a handle to the entity if entity loading succeeding, or an invalid handle if it failed.
+int loadEntity(const String entityID, const vector3D_t initPosition, const vector3D_t initVelocity);
 
 // Returns true if the specified entity handle is a valid entity handle and can be used to safely retrieve entities;
 // 	returns false otherwise.

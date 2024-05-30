@@ -43,13 +43,13 @@ int read_string(FILE *restrict stream, const size_t max_str_len, char *str) {
 
 String read_string2(FILE *restrict stream, const size_t max_string_capacity) {
 	if (stream == NULL) {
-		return make_null_string();
+		return makeNullString();
 	}
 	
 	const long int current_position = ftell(stream);
 	if (current_position < 0) {
 		error_queue_push(ERROR, ERROR_CODE_FILE_READ_FAILED);
-		return make_null_string();
+		return makeNullString();
 	}
 	
 	// First pass: get total length of string in file.
@@ -65,11 +65,11 @@ String read_string2(FILE *restrict stream, const size_t max_string_capacity) {
 	const int seek_result = fseek(stream, current_position, SEEK_SET);
 	if (seek_result != 0) {
 		error_queue_push(ERROR, ERROR_CODE_FILE_READ_FAILED);
-		return make_null_string();
+		return makeNullString();
 	}
 	
 	// Second pass: read characters from file into string buffer.
-	String string = new_string_empty(string_capacity);
+	String string = newStringEmpty(string_capacity);
 	size_t counter = 0;
 	ch = fgetc(stream);
 	while (ch != '\0' && ch != EOF && counter < string_capacity) {

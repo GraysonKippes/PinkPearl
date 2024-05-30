@@ -2,6 +2,8 @@
 
 #include <math.h>
 
+const vector3D_t zeroVector3D = (vector3D_t){ 0.0, 0.0, 0.0 };
+
 vector3D_t vector3D_add(const vector3D_t a, const vector3D_t b) {
 	return (vector3D_t){
 		.x = a.x + b.x,

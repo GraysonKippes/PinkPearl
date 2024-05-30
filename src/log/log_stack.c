@@ -20,7 +20,7 @@ pthread_mutex_t log_stack_mutex;
 void init_log_stack(void) {
 	pthread_mutex_init(&log_stack_mutex, NULL);
 	log_stack = (log_stack_t){
-		.string = new_string_empty(64),
+		.string = newStringEmpty(64),
 		.height = 0
 	};
 	log_stack_push("PinkPearl");
@@ -29,9 +29,9 @@ void init_log_stack(void) {
 void log_stack_push(const char *const pstring) {
 	pthread_mutex_lock(&log_stack_mutex);
 	if (log_stack.height > 0) {
-		string_concatenate_char(&log_stack.string, log_stack_delimiter);
+		stringConcatChar(&log_stack.string, log_stack_delimiter);
 	}
-	string_concatenate_pstring(&log_stack.string, pstring);
+	stringConcatCStr(&log_stack.string, pstring);
 	log_stack.height += 1;
 	pthread_mutex_unlock(&log_stack_mutex);
 }
@@ -43,15 +43,15 @@ String log_stack_get_string(void) {
 void log_stack_pop(void) {
 	pthread_mutex_lock(&log_stack_mutex);
 	if (log_stack.height > 0) {
-		const size_t delimiter_position = string_reverse_search_char(log_stack.string, log_stack_delimiter);
-		string_remove_trailing_chars(&log_stack.string, log_stack.string.length - delimiter_position);
+		const size_t delimiter_position = stringReverseSearchChar(log_stack.string, log_stack_delimiter);
+		stringRemoveTrailingChars(&log_stack.string, log_stack.string.length - delimiter_position);
 		log_stack.height -= 1;
 	}
 	pthread_mutex_unlock(&log_stack_mutex);
 }
 
 void terminate_log_stack(void) {
-	destroy_string(&log_stack.string);
+	deleteString(&log_stack.string);
 	log_stack.height = 0;
 	pthread_mutex_destroy(&log_stack_mutex);
 }

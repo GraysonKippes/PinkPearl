@@ -12,7 +12,7 @@ entity_t new_entity(void) {
 	return (entity_t){
 		.transform = (entity_transform_t){ 0 },
 		.hitbox = (rect_t){ 0 },
-		.ai = entity_ai_null,
+		.ai = entityAINull,
 		.render_handle = render_handle_invalid
 	};
 }

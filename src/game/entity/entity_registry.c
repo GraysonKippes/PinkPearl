@@ -22,9 +22,9 @@ void init_entity_registry(void) {
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		entity_records[i] = (entity_record_t){
-			.entity_id = make_null_string(),
+			.entity_id = makeNullString(),
 			.entity_hitbox = (rect_t){ 0.0, 0.0, 0.0, 0.0 },
-			.entity_texture_id = make_null_string()
+			.entity_texture_id = makeNullString()
 		};
 	}
 	
@@ -53,8 +53,8 @@ void terminate_entity_registry(void) {
 	log_message(VERBOSE, "Terminating entity registry...");
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
-		destroy_string(&entity_records[i].entity_id);
-		destroy_string(&entity_records[i].entity_texture_id);
+		deleteString(&entity_records[i].entity_id);
+		deleteString(&entity_records[i].entity_texture_id);
 	}
 	
 	log_message(VERBOSE, "Done terminating entity registry.");
@@ -62,9 +62,11 @@ void terminate_entity_registry(void) {
 }
 
 bool register_entity_record(const entity_record_t entity_record) {
-	size_t hash_index = string_hash(entity_record.entity_id, num_entity_records);
+	logf_message(VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.buffer);
+	
+	size_t hash_index = stringHash(entity_record.entity_id, num_entity_records);
 	for (size_t i = 0; i < num_entity_records; ++i) {
-		if (is_string_null(entity_records[hash_index].entity_id)) {
+		if (stringIsNull(entity_records[hash_index].entity_id)) {
 			entity_records[hash_index] = entity_record;
 			return true;
 		}
@@ -81,9 +83,9 @@ bool find_entity_record(const String entity_id, entity_record_t *const entity_re
 		return false;
 	}
 	
-	size_t hash_index = string_hash(entity_id, num_entity_records);
+	size_t hash_index = stringHash(entity_id, num_entity_records);
 	for (size_t i = 0; i < num_entity_records; ++i) {
-		if (string_compare(entity_id, entity_records[i].entity_id)) {
+		if (stringCompare(entity_id, entity_records[i].entity_id)) {
 			*entity_record_ptr = entity_records[i];
 			return true;
 		}

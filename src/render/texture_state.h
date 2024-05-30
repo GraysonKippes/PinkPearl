@@ -15,6 +15,8 @@ typedef struct TextureState {
 	// Index of currently selected animation cycle.
 	unsigned int currentAnimation;
 	
+	// The cell that the current animation starts on.
+	unsigned int startCell;
 	// Number of frames in currently selected animation cycle.
 	unsigned int numFrames;
 	// FPS (Frames-per-second) of the currently selected animation cycle.

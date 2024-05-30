@@ -54,23 +54,7 @@ vec4 vec4Lerp(const RenderVector vector, const float deltaTime) {
 mat4 makeTranslationMat4(const vec4 translation) {
 	mat4 translation_matrix = mat4(1.0);
 	translation_matrix[3] = translation;
-	return translation_matrix;
-}
-
-// Makes and returns a "translerp" (portmanteau of "translate" and "lerp") matrix.
-mat4 make_translerp_matrix(RenderVector position, float deltaTime) {
-
-	vec4 lerp_position = vec4(
-		mix(position.previous.x, position.current.x, deltaTime),
-		mix(position.previous.y, position.current.y, deltaTime),
-		mix(position.previous.z, position.current.z, deltaTime),
-		mix(position.previous.w, position.current.w, deltaTime)
-	);
-	
-	mat4 translation_matrix = mat4(1.0);
-	translation_matrix[3] = lerp_position;
 	translation_matrix[3].y *= -1.0;
-	
 	return translation_matrix;
 }
 

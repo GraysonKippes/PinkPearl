@@ -18,6 +18,6 @@ void terminate_entity_registry(void);
 // Searches for an existing entity record using its entity ID.
 // Returns true if the entity record was found, which is stored in the pointer.
 // Returns false if the entity record was not found, or if an error occurred.
-bool find_entity_record(const String entity_id, entity_record_t *const entity_record_ptr);
+bool find_entity_record(const String entityID, entity_record_t *const pEntityRecord);
 
 #endif	// ENTITY_REGISTRY_H

@@ -19,23 +19,23 @@ typedef struct String {
 	
 } String;
 
-String make_null_string(void);
-String new_string_empty(const size_t capacity);
-String new_string(const size_t capacity, const char *const initial_data);
-bool destroy_string(String *const string_ptr);
+String makeNullString(void);
+String newStringEmpty(const size_t capacity);
+String newString(const size_t capacity, const char *const initData);
+bool deleteString(String *const pString);
 
 // String analysis
-bool is_string_null(const String string);
-bool string_compare(const String a, const String b);
-size_t string_reverse_search_char(const String string, const char c);
+bool stringIsNull(const String string);
+bool stringCompare(const String a, const String b);
+size_t stringReverseSearchChar(const String string, const char c);
 
 // String mutation
-bool string_concatenate_char(String *const string_ptr, const char c);
-bool string_concatenate_string(String *const dest_ptr, const String src);
-bool string_concatenate_pstring(String *const dest_ptr, const char *const src_pstring);
-bool string_remove_trailing_chars(String *const string_ptr, const size_t num_chars);
+bool stringConcatChar(String *const pString, const char c);
+bool stringConcatString(String *const pDst, const String src);
+bool stringConcatCStr(String *const pDst, const char *const pSrc);
+bool stringRemoveTrailingChars(String *const pString, const size_t numChars);
 
 // Miscellaneous
-size_t string_hash(const String string, const size_t limit);
+size_t stringHash(const String string, const size_t limit);
 
 #endif	// UTIL_STRING_H

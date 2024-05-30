@@ -5,7 +5,7 @@
 
 #include "allocate.h"
 
-String make_null_string(void) {
+String makeNullString(void) {
 	return (String){
 		.length = 0,
 		.capacity = 0,
@@ -13,8 +13,8 @@ String make_null_string(void) {
 	};
 }
 
-String new_string_empty(const size_t capacity) {
-	String string = make_null_string();
+String newStringEmpty(const size_t capacity) {
+	String string = makeNullString();
 	if (!allocate((void **)&string.buffer, capacity, sizeof(char))) {
 		return string;
 	}
@@ -22,10 +22,10 @@ String new_string_empty(const size_t capacity) {
 	return string;
 }
 
-String new_string(const size_t capacity, const char *const initial_data) {
+String newString(const size_t capacity, const char *const initial_data) {
 	
-	String string = new_string_empty(capacity);
-	if (is_string_null(string)) {
+	String string = newStringEmpty(capacity);
+	if (stringIsNull(string)) {
 		return string;
 	}
 	
@@ -38,24 +38,24 @@ String new_string(const size_t capacity, const char *const initial_data) {
 	return string;
 }
 
-bool destroy_string(String *const string_ptr) {
-	if (string_ptr == NULL) {
+bool deleteString(String *const pString) {
+	if (pString == NULL) {
 		return false;
 	}
 	
-	deallocate((void **)&string_ptr->buffer);
-	string_ptr->length = 0;
-	string_ptr->capacity = 0;
+	deallocate((void **)&pString->buffer);
+	pString->length = 0;
+	pString->capacity = 0;
 	
 	return true;
 }
 
-bool is_string_null(const String string) {
+bool stringIsNull(const String string) {
 	return string.capacity == 0 || string.buffer == NULL;
 }
 
-bool string_compare(const String a, const String b) {
-	if (is_string_null(a) || is_string_null(b)) {
+bool stringCompare(const String a, const String b) {
+	if (stringIsNull(a) || stringIsNull(b)) {
 		return false;
 	}
 	
@@ -66,8 +66,8 @@ bool string_compare(const String a, const String b) {
 	return strncmp(a.buffer, b.buffer, a.length) == 0;
 }
 
-size_t string_reverse_search_char(const String string, const char c) {
-	if (is_string_null(string)) {
+size_t stringReverseSearchChar(const String string, const char c) {
+	if (stringIsNull(string)) {
 		return 0;
 	}
 	
@@ -80,83 +80,83 @@ size_t string_reverse_search_char(const String string, const char c) {
 	return (size_t)ptr_difference;
 }
 
-bool string_concatenate_char(String *const string_ptr, const char c) {
-	if (string_ptr == NULL) {
+bool stringConcatChar(String *const pString, const char c) {
+	if (pString == NULL) {
 		return false;
 	}
 	
-	if (is_string_null(*string_ptr)) {
+	if (stringIsNull(*pString)) {
 		return false;
 	}
 	
-	if (string_ptr->length + 1 >= string_ptr->capacity) {
+	if (pString->length + 1 >= pString->capacity) {
 		// TODO - sanitize reallocation.
-		string_ptr->buffer = realloc(string_ptr->buffer, ++string_ptr->capacity * sizeof(char));
+		pString->buffer = realloc(pString->buffer, ++pString->capacity * sizeof(char));
 	}
-	string_ptr->buffer[string_ptr->length++] = c;
-	string_ptr->buffer[string_ptr->length] = '\0';
+	pString->buffer[pString->length++] = c;
+	pString->buffer[pString->length] = '\0';
 	
 	return true;
 }
 
-bool string_concatenate_string(String *const dest_ptr, const String src) {
-	if (dest_ptr == NULL) {
+bool stringConcatString(String *const pDst, const String src) {
+	if (pDst == NULL) {
 		return false;
 	}
 	
-	if (is_string_null(*dest_ptr) || is_string_null(src)) {
+	if (stringIsNull(*pDst) || stringIsNull(src)) {
 		return false;
 	}
 	
-	const size_t new_length = dest_ptr->length + src.length;
-	if (dest_ptr->capacity <= new_length) {
+	const size_t new_length = pDst->length + src.length;
+	if (pDst->capacity <= new_length) {
 		// Reallocate new_length + 1 bytes for the buffer, for the extra byte at the end.
-		dest_ptr->buffer = realloc(dest_ptr->buffer, (new_length + 1) * sizeof(char));
+		pDst->buffer = realloc(pDst->buffer, (new_length + 1) * sizeof(char));
 	}
 	
-	strncpy_s(&dest_ptr->buffer[dest_ptr->length], dest_ptr->length, src.buffer, src.length);
-	dest_ptr->length = new_length;
+	strncpy_s(&pDst->buffer[pDst->length], pDst->length, src.buffer, src.length);
+	pDst->length = new_length;
 	
 	return true;
 }
 
-bool string_concatenate_pstring(String *const dest_ptr, const char *const src_pstring) {
-	if (dest_ptr == NULL || src_pstring == NULL) {
+bool stringConcatCStr(String *const pDst, const char *const src_pstring) {
+	if (pDst == NULL || src_pstring == NULL) {
 		return false;
 	}
 	
-	if (is_string_null(*dest_ptr)) {
+	if (stringIsNull(*pDst)) {
 		return false;
 	}
 	
 	const size_t src_length = strlen(src_pstring);
-	const size_t new_length = dest_ptr->length + src_length;
-	if (dest_ptr->capacity <= new_length) {
+	const size_t new_length = pDst->length + src_length;
+	if (pDst->capacity <= new_length) {
 		// Reallocate new_length + 1 bytes for the buffer, for the extra byte at the end.
-		dest_ptr->buffer = realloc(dest_ptr->buffer, (new_length + 1) * sizeof(char));
+		pDst->buffer = realloc(pDst->buffer, (new_length + 1) * sizeof(char));
 	}
 	
 	for (size_t i = 0; i < src_length; ++i) {
-		const size_t dest_index = dest_ptr->length + i;
-		dest_ptr->buffer[dest_index] = src_pstring[i];
+		const size_t dest_index = pDst->length + i;
+		pDst->buffer[dest_index] = src_pstring[i];
 	}
-	dest_ptr->length = new_length;
-	dest_ptr->buffer[dest_ptr->length] = '\0';
+	pDst->length = new_length;
+	pDst->buffer[pDst->length] = '\0';
 	
 	return true;
 }
 
-bool string_remove_trailing_chars(String *const string_ptr, const size_t num_chars) {
-	if (string_ptr == NULL) {
+bool stringRemoveTrailingChars(String *const pString, const size_t num_chars) {
+	if (pString == NULL) {
 		return false;
 	}
 	
-	if (is_string_null(*string_ptr) || num_chars > string_ptr->length) {
+	if (stringIsNull(*pString) || num_chars > pString->length) {
 		return false;
 	}
 	
-	string_ptr->length -= num_chars;
-	string_ptr->buffer[string_ptr->length] = '\0';
+	pString->length -= num_chars;
+	pString->buffer[pString->length] = '\0';
 	return true;
 }
 
@@ -180,8 +180,8 @@ static size_t exponentiate(const size_t base, const size_t exponent) {
     }
 }
 
-size_t string_hash(const String string, const size_t limit) {
-	if (is_string_null(string)) {
+size_t stringHash(const String string, const size_t limit) {
+	if (stringIsNull(string)) {
 		return 0;
 	}
 	

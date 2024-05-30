@@ -65,11 +65,11 @@ static const texture_create_info_t missing_texture_create_info = {
 
 static void register_loaded_texture(const int texture_handle, const texture_create_info_t texture_create_info) {
 	
-	String texture_id = new_string(256, texture_create_info.path);
-	const size_t file_extension_delimiter_index = string_reverse_search_char(texture_id, '.');
+	String texture_id = newString(256, texture_create_info.path);
+	const size_t file_extension_delimiter_index = stringReverseSearchChar(texture_id, '.');
 	if (file_extension_delimiter_index < texture_id.length) {
 		const size_t num_chars_to_remove = texture_id.length - file_extension_delimiter_index;
-		string_remove_trailing_chars(&texture_id, num_chars_to_remove);
+		stringRemoveTrailingChars(&texture_id, num_chars_to_remove);
 	}
 	
 	const TextureRecord texture_record = {
@@ -77,9 +77,9 @@ static void register_loaded_texture(const int texture_handle, const texture_crea
 		.texture_handle = texture_handle
 	};
 	
-	size_t hash_index = string_hash(texture_id, (size_t)numLoadedTextures);
+	size_t hash_index = stringHash(texture_id, (size_t)numLoadedTextures);
 	for (size_t i = 0; i < (size_t)numLoadedTextures; ++i) {
-		if (is_string_null(texture_records[hash_index].texture_id)) {
+		if (stringIsNull(texture_records[hash_index].texture_id)) {
 			texture_records[hash_index] = texture_record;
 		}
 		else {
@@ -114,7 +114,7 @@ void load_textures(const texture_pack_t texture_pack) {
 
 	// Nullify texture records FIRST, hash-collision-resolution relies on records being null to begin with.
 	for (uint32_t i = 0; i < texture_pack.num_textures; ++i) {
-		texture_records[i].texture_id = make_null_string();
+		texture_records[i].texture_id = makeNullString();
 		texture_records[i].texture_handle = missing_texture_handle;
 	}
 
@@ -154,14 +154,14 @@ bool validateTextureHandle(const int textureHandle) {
 }
 
 int findTexture(const String textureID) {
-	if (is_string_null(textureID)) {
+	if (stringIsNull(textureID)) {
 		log_message(ERROR, "Error finding loaded texture: given texture ID is NULL.");
 		return missing_texture_handle;
 	}
 	
-	size_t hash_index = string_hash(textureID, (size_t)numLoadedTextures);
+	size_t hash_index = stringHash(textureID, (size_t)numLoadedTextures);
 	for (size_t i = 0; i < (size_t)numLoadedTextures; ++i) {
-		if (string_compare(textureID, texture_records[i].texture_id)) {
+		if (stringCompare(textureID, texture_records[i].texture_id)) {
 			return texture_records[i].texture_handle;
 		}
 		else {

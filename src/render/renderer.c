@@ -51,7 +51,8 @@ void render_frame(const float deltaTime) {
 	for (int i = 0; i < (int)num_render_object_slots; ++i) {
 		TextureState *pTextureState = getRenderObjTexState(i);
 		if (textureStateAnimate(pTextureState) == 2) {
-			updateDrawData(i, pTextureState->currentFrame);
+			const unsigned int imageIndex = pTextureState->startCell + pTextureState->currentFrame;
+			updateDrawData(i, imageIndex);
 		}
 	}
 	

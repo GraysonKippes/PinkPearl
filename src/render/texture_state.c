@@ -24,7 +24,7 @@ TextureState newTextureState(const String textureID) {
 	
 	TextureState textureState = nullTextureState();
 	
-	if (is_string_null(textureID)) {
+	if (stringIsNull(textureID)) {
 		log_message(ERROR, "Error finding loaded texture: given texture ID is NULL.");
 		return textureState;
 	}
@@ -37,6 +37,7 @@ TextureState newTextureState(const String textureID) {
 	
 	Texture texture = getTexture(textureState.textureHandle);
 	textureState.numAnimations = texture.numAnimations;
+	textureState.startCell = texture.animations[textureState.currentAnimation].startCell;
 	textureState.numFrames = texture.animations[textureState.currentAnimation].numFrames;
 	textureState.currentFPS = texture.animations[textureState.currentAnimation].framesPerSecond;
 	textureState.lastFrameTimeMS = getTimeMS();
@@ -52,7 +53,12 @@ bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned 
 		return false;
 	}
 
+	const TextureAnimation textureAnimation = getTexture(pTextureState->textureHandle).animations[nextAnimation];
+
 	pTextureState->currentAnimation = nextAnimation;
+	pTextureState->startCell = textureAnimation.startCell;
+	pTextureState->numFrames = textureAnimation.numFrames;
+	pTextureState->currentFPS = textureAnimation.framesPerSecond;
 	pTextureState->currentFrame = 0;
 	pTextureState->lastFrameTimeMS = getTimeMS();
 

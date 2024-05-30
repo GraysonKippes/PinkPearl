@@ -24,34 +24,19 @@ static game_state_bitfield_t game_state_bitfield = 0;
 area_t current_area = { 0 };
 static int current_room_index = 0;
 
-// TODO - remove
-static const rect_t player_hitbox = {
-	.x1 = -0.375,
-	.y1 = -0.5,
-	.x2 = 0.375,
-	.y2 = 0.5
-};
-
-static int player_entity_handle;
+static int playerEntityHandle;
 
 void start_game(void) {
 
 	current_area = parse_fga_file("test");
 	areaRenderStateReset(&globalAreaRenderState, current_area, current_area.rooms[current_room_index]);
 
-	player_entity_handle = load_entity();
-	if (!validateEntityHandle(player_entity_handle)) {
-		// TODO - error handling
+	String entityID = newString(64, "pearl");
+	playerEntityHandle = loadEntity(entityID, zeroVector3D, zeroVector3D);
+	if (!validateEntityHandle(playerEntityHandle)) {
+		logf_message(ERROR, "Failed to load entity \"%s\".", entityID.buffer);
 	}
-
-	entity_t *pPlayerEntity = NULL;
-	int result = getEntity(player_entity_handle, &pPlayerEntity);
-	if (pPlayerEntity != NULL || result == 0) {
-		String textureID = new_string(64, "entity/pearl");
-		pPlayerEntity->hitbox = player_hitbox;
-		pPlayerEntity->render_handle = loadRenderObject((DimensionsF){ -0.5F, 0.5F, 0.5F, -1.0F }, transformZero, textureID);
-		destroy_string(&textureID);
-	}
+	deleteString(&entityID);
 }
 
 void tick_game(void) {
@@ -72,12 +57,11 @@ void tick_game(void) {
 	}
 
 	entity_t *pPlayerEntity = NULL;
-	int result = getEntity(player_entity_handle, &pPlayerEntity);
+	int result = getEntity(playerEntityHandle, &pPlayerEntity);
 	if (pPlayerEntity == NULL || result != 0) {
 		return;
 	}
 
-	static uint32_t animation_cycle = 4;
 	static const double max_speed = 0.24;	// Tiles / s
 	static const double acceleration_constant = 1.8; // Tiles / s^2
 	const double accelerated_speed = (getTimeMS() - pPlayerEntity->transform.last_stationary_time) * 0.001 * acceleration_constant;
@@ -86,34 +70,37 @@ void tick_game(void) {
 	pPlayerEntity->transform.velocity.x = 0.0;
 	pPlayerEntity->transform.velocity.y = 0.0;
 	pPlayerEntity->transform.velocity.z = 0.0;
+	
+	unsigned int nextAnimation = getRenderObjTexState(pPlayerEntity->render_handle)->currentAnimation;
 
 	if (move_up_pressed && !move_down_pressed) {
 		pPlayerEntity->transform.velocity.y = 1.0;
-		animation_cycle = 1;
+		nextAnimation = 1;
 	}
 	
 	if (!move_up_pressed && move_down_pressed) {
 		pPlayerEntity->transform.velocity.y = -1.0;
-		animation_cycle = 5;
+		nextAnimation = 5;
 	}
 	
 	if (move_left_pressed && !move_right_pressed) {
 		pPlayerEntity->transform.velocity.x = -1.0;
-		animation_cycle = 7;
+		nextAnimation = 7;
 	}
 	
 	if (!move_left_pressed && move_right_pressed) {
 		pPlayerEntity->transform.velocity.x = 1.0;
-		animation_cycle = 3;
+		nextAnimation = 3;
 	}
 
 	pPlayerEntity->transform.velocity = vector3D_normalize(pPlayerEntity->transform.velocity);
 	pPlayerEntity->transform.velocity = vector3D_scalar_multiply(pPlayerEntity->transform.velocity, speed);
+	
+	if (nextAnimation != getRenderObjTexState(pPlayerEntity->render_handle)->currentAnimation) {
+		textureStateSetAnimation(getRenderObjTexState(pPlayerEntity->render_handle), nextAnimation);
+	}
 
 	tickEntities();
-	//if (animation_cycle != render_object_texture_states[pPlayerEntity->render_handle].current_animation) {
-	//	texture_state_set_animation_cycle(&render_object_texture_states[pPlayerEntity->render_handle], animation_cycle);
-	//}
 
 	const direction_t travel_direction = test_room_travel(pPlayerEntity->transform.position, current_area, current_room_index);
 	if ((int)travel_direction > 0) {

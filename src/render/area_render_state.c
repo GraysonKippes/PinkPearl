@@ -15,9 +15,9 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 		return;
 	}
 	
-	String tilemapTextureID = new_string(64, "tilemap/dungeon4");
+	String tilemapTextureID = newString(64, "tilemap/dungeon4");
 	pAreaRenderState->tilemapTextureState = newTextureState(tilemapTextureID);
-	destroy_string(&tilemapTextureID);
+	deleteString(&tilemapTextureID);
 	//compute_area_mesh(area);
 	
 	// TODO - use reallocate function when it is implemented.

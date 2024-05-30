@@ -10,6 +10,6 @@ typedef struct entity_ai_t {
 } entity_ai_t;
 
 // Entity AI that gives no behavior--AKA none of the behavior functions do anything.
-extern const entity_ai_t entity_ai_null;
+extern const entity_ai_t entityAINull;
 
 #endif	// ENTITY_AI_H

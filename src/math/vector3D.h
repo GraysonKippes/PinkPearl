@@ -7,6 +7,8 @@ typedef struct vector3D_t {
 	double z;	// Magnitude in the z direction.
 } vector3D_t;
 
+extern const vector3D_t zeroVector3D;
+
 // Returns the vector sum a + b.
 vector3D_t vector3D_add(const vector3D_t a, const vector3D_t b);
 

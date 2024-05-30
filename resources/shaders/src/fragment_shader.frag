@@ -11,7 +11,7 @@ struct DrawData {
 	int vertex_offset;
 	uint first_instance;
 	// Additional draw data
-	uint render_object_slot;
+	int render_object_slot;
 	uint image_index;
 };
 
