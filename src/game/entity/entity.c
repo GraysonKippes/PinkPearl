@@ -17,13 +17,13 @@ entity_t new_entity(void) {
 	};
 }
 
-void tick_entity(entity_t *entity_ptr) {
-	if (entity_ptr == NULL) {
+void tick_entity(entity_t *pEntity) {
+	if (pEntity == NULL) {
 		return;
 	}
 
-	const vector3D_t old_position = entity_ptr->transform.position;
-	const vector3D_t position_step = entity_ptr->transform.velocity;
+	const vector3D_t old_position = pEntity->transform.position;
+	const vector3D_t position_step = pEntity->transform.velocity;
 	vector3D_t new_position = vector3D_add(old_position, position_step);
 
 	// The square of the distance of the currently selected new position from the old position.
@@ -35,7 +35,7 @@ void tick_entity(entity_t *entity_ptr) {
 		
 		const rect_t wall = current_area.rooms[0].walls[i];
 
-		vector3D_t resolved_position = resolve_collision(old_position, new_position, entity_ptr->hitbox, wall);
+		vector3D_t resolved_position = resolve_collision(old_position, new_position, pEntity->hitbox, wall);
 		vector3D_t resolved_step = vector3D_subtract(resolved_position, old_position);
 		const double resolved_step_length_squared = SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z);
 
@@ -45,17 +45,17 @@ void tick_entity(entity_t *entity_ptr) {
 		}
 	}
 
-	entity_ptr->transform.position = new_position;
+	pEntity->transform.position = new_position;
 
 	// Update render object.
-	const int render_handle = entity_ptr->render_handle;
+	const int render_handle = pEntity->render_handle;
 	if (!validateRenderHandle(render_handle)) {
 		return;
 	}
 	const Vector4F render_position = {
-		.x = (float)entity_ptr->transform.position.x,
-		.y = (float)entity_ptr->transform.position.y,
-		.z = (float)entity_ptr->transform.position.z,
+		.x = (float)pEntity->transform.position.x,
+		.y = (float)pEntity->transform.position.y,
+		.z = (float)pEntity->transform.position.z,
 		.w = 1.0F
 	};
 	render_vector_set(&getRenderObjTransform(render_handle)->translation, render_position);

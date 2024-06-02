@@ -71,7 +71,8 @@ void tick_game(void) {
 	pPlayerEntity->transform.velocity.y = 0.0;
 	pPlayerEntity->transform.velocity.z = 0.0;
 	
-	unsigned int nextAnimation = getRenderObjTexState(pPlayerEntity->render_handle)->currentAnimation;
+	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->render_handle);
+	unsigned int nextAnimation = currentAnimation;
 
 	if (move_up_pressed && !move_down_pressed) {
 		pPlayerEntity->transform.velocity.y = 1.0;
@@ -96,8 +97,8 @@ void tick_game(void) {
 	pPlayerEntity->transform.velocity = vector3D_normalize(pPlayerEntity->transform.velocity);
 	pPlayerEntity->transform.velocity = vector3D_scalar_multiply(pPlayerEntity->transform.velocity, speed);
 	
-	if (nextAnimation != getRenderObjTexState(pPlayerEntity->render_handle)->currentAnimation) {
-		textureStateSetAnimation(getRenderObjTexState(pPlayerEntity->render_handle), nextAnimation);
+	if (nextAnimation != currentAnimation) {
+		renderObjectSetAnimation(pPlayerEntity->render_handle, nextAnimation);
 	}
 
 	tickEntities();

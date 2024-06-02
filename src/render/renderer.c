@@ -27,7 +27,7 @@ void init_renderer(void) {
 
 	create_vulkan_objects();
 	createVulkanRenderObjects();
-	init_render_object_manager();
+	initRenderObjectManager();
 
 	TexturePack texture_pack = parse_fgt_file(FGT_PATH);
 	initTextureManager(texture_pack);
@@ -42,6 +42,7 @@ void terminate_renderer(void) {
 	log_stack_push("Renderer");
 	destroyVulkanRenderObjects();
 	destroy_vulkan_objects();
+	terminateRenderObjectManager();
 	log_stack_pop();
 }
 

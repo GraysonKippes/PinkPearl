@@ -19,15 +19,24 @@
 
 extern const int renderHandleInvalid;
 
-bool init_render_object_manager(void);
+bool initRenderObjectManager(void);
+bool terminateRenderObjectManager(void);
 
 int loadRenderObject(const DimensionsF quadDimensions, const Transform transform, const String textureID);
 void unloadRenderObject(int *const pRenderHandle);
 
 // Returns true if the render handle is both below the number of render object slots, false otherwise.
-bool validateRenderHandle(int handle);
+bool validateRenderHandle(int renderHandle);
 
 RenderTransform *getRenderObjTransform(const int renderHandle);
 TextureState *getRenderObjTexState(const int renderHandle);
+
+// Returns the current animation of the render object's texture state which is referenced by the render handle.
+// Returns 0 if the render object could not be accessed.
+unsigned int renderObjectGetAnimation(const int renderHandle);
+
+// Sets the current animation of the render object's texture state which is referenced by the render handle.
+// Returns true if the animation was successfully updated, false otherwise.
+bool renderObjectSetAnimation(const int renderHandle, const unsigned int nextAnimation);
 
 #endif	// RENDER_OBJECT_H

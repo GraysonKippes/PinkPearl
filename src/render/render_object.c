@@ -13,27 +13,32 @@
 
 const int renderHandleInvalid = -1;
 
-static Heap inactive_render_handles = { 0 };
+static Heap inactiveRenderHandles = { 0 };
 
 int renderObjQuadIDs[NUM_RENDER_OBJECT_SLOTS];
 RenderTransform renderObjTransforms[NUM_RENDER_OBJECT_SLOTS];
 TextureState renderObjTextureStates[NUM_RENDER_OBJECT_SLOTS];
 
-bool init_render_object_manager(void) {
-	inactive_render_handles = newHeap(num_render_object_slots, sizeof(int), cmpFuncInt);
-	if (!heapValidate(inactive_render_handles)) {
-		deleteHeap(&inactive_render_handles);
+bool initRenderObjectManager(void) {
+	inactiveRenderHandles = newHeap(num_render_object_slots, sizeof(int), cmpFuncInt);
+	if (!heapValidate(inactiveRenderHandles)) {
+		deleteHeap(&inactiveRenderHandles);
 		return false;
 	}
 	for (int i = 0; i < (int)num_render_object_slots; ++i) {
-		heapPush(&inactive_render_handles, &i);
+		heapPush(&inactiveRenderHandles, &i);
 	}
+	return true;
+}
+
+bool terminateRenderObjectManager(void) {
+	deleteHeap(&inactiveRenderHandles);
 	return true;
 }
 
 int loadRenderObject(const DimensionsF quadDimensions, const Transform transform, const String textureID) {
 	int renderHandle = renderHandleInvalid;
-	heapPop(&inactive_render_handles, &renderHandle);
+	heapPop(&inactiveRenderHandles, &renderHandle);
 	if (!validateRenderHandle(renderHandle)) {
 		return renderHandle;
 	}
@@ -60,17 +65,17 @@ void unloadRenderObject(int *const pRenderHandle) {
 	} else if (validateRenderHandle(*pRenderHandle)) {
 		return;
 	}
-	heapPush(&inactive_render_handles, pRenderHandle);
+	heapPush(&inactiveRenderHandles, pRenderHandle);
 	*pRenderHandle = renderHandleInvalid;
 }
 
-bool validateRenderHandle(const int render_handle) {
-	return render_handle >= 0 && render_handle < (int)num_render_object_slots;
+bool validateRenderHandle(const int renderHandle) {
+	return renderHandle >= 0 && renderHandle < (int)num_render_object_slots;
 }
 
 RenderTransform *getRenderObjTransform(const int renderHandle) {
 	if (!validateRenderHandle(renderHandle)) {
-		logf_message(ERROR, "Error getting render object transform: render object handle (%u) is invalid.", renderHandle);
+		logf_message(ERROR, "Error getting render object transform: render object handle (%i) is invalid.", renderHandle);
 		return NULL;
 	}
 	return &renderObjTransforms[renderHandle];
@@ -78,8 +83,24 @@ RenderTransform *getRenderObjTransform(const int renderHandle) {
 
 TextureState *getRenderObjTexState(const int renderHandle) {
 	if (!validateRenderHandle(renderHandle)) {
-		logf_message(ERROR, "Error getting render object texture state: render object handle (%u) is invalid.", renderHandle);
+		logf_message(ERROR, "Error getting render object texture state: render object handle (%i) is invalid.", renderHandle);
 		return NULL;
 	}
 	return &renderObjTextureStates[renderHandle];
+}
+
+unsigned int renderObjectGetAnimation(const int renderHandle) {
+	if (!validateRenderHandle(renderHandle)) {
+		logf_message(ERROR, "Error accessing render object: render object handle (%i) is invalid.", renderHandle);
+		return 0;
+	}
+	return renderObjTextureStates[renderHandle].currentAnimation;
+}
+
+bool renderObjectSetAnimation(const int renderHandle, const unsigned int nextAnimation) {
+	if (!validateRenderHandle(renderHandle)) {
+		logf_message(ERROR, "Error accessing render object: render object handle (%i) is invalid.", renderHandle);
+		return false;
+	}
+	return textureStateSetAnimation(&renderObjTextureStates[renderHandle], nextAnimation);
 }

@@ -22,18 +22,6 @@ void init_entity_manager(void) {
 	}
 }
 
-entity_handle_t load_entity(void) {
-	// Loop through all the entity slots and find the first one available.
-	// TODO - replace with (priority?) queue
-	for (int i = 0; validateEntityHandle(i); ++i) {
-		if (!entity_slot_enable_flags[i]) {
-			entity_slot_enable_flags[i] = 1;
-			return i;
-		}
-	}
-	return entityHandleInvalid;
-}
-
 void unload_entity(const entity_handle_t handle) {
 	if (!validateEntityHandle(handle)) {
 		return;
