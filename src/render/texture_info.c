@@ -11,7 +11,7 @@
 #include "util/allocate.h"
 #include "util/file_io.h"
 
-void destroy_texture_pack(TexturePack *pTexturePack) {
+void deleteTexturePack(TexturePack *pTexturePack) {
 	if (pTexturePack == NULL) {
 		return;
 	}

@@ -59,7 +59,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	pAreaRenderState->roomSize = area.room_size;
 	
 	//upload_draw_data(*pAreaRenderState);
-	create_room_texture(initialRoom, pAreaRenderState->currentCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
+	//create_room_texture(initialRoom, pAreaRenderState->currentCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
 	
 	const extent_t roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
 	const DimensionsF roomQuadDimensions = {
@@ -124,7 +124,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const r
 	// TODO - move all functionality to render layer.
 	//upload_draw_data(*pAreaRenderState);
 	if (!roomAlreadyLoaded) {
-		create_room_texture(nextRoom, pAreaRenderState->nextCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
+		//create_room_texture(nextRoom, pAreaRenderState->nextCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
 	}
 	
 	return !roomAlreadyLoaded;

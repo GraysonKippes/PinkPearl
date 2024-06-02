@@ -40,16 +40,16 @@ typedef struct TextureCreateInfo {
 } TextureCreateInfo;
 
 // Contains an array of texture create infos.
-// If this is dynamically created, pass it to `destroy_texture_pack` when no longer in use.
+// If this is dynamically created, pass it to `deleteTexturePack` when no longer in use.
 typedef struct TexturePack {
-	uint32_t num_textures;
+	unsigned int num_textures;
 	TextureCreateInfo *texture_create_infos;
 } TexturePack;
 
 // TODO - add validateTextureCreateInfo
 
 // Use this to destroy a texture pack struct that has been dynamically allocated.
-void destroy_texture_pack(TexturePack *const pTexturePack);
+void deleteTexturePack(TexturePack *const pTexturePack);
 
 TexturePack parse_fgt_file(const char *filename);
 

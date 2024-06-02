@@ -28,12 +28,15 @@ void init_renderer(void) {
 	create_vulkan_objects();
 	createVulkanRenderObjects();
 	initRenderObjectManager();
-
-	TexturePack texture_pack = parse_fgt_file(FGT_PATH);
-	initTextureManager(texture_pack);
-	destroy_texture_pack(&texture_pack);
-	
+	initTextureManager();
 	initTextureDescriptors();
+
+	TexturePack texturePack = parse_fgt_file(FGT_PATH);
+	loadTexturePack(texturePack);
+	deleteTexturePack(&texturePack);
+	
+	
+	
 	
 	log_stack_pop();
 }
