@@ -47,9 +47,10 @@ Texture createRoomTexture(const room_size_t roomSize) {
 
 	// Room texture create info only needs the animation parameters.
 	// Each "animation" represents a separate texture for a distinct room.
-	texture_create_info_t room_texture_create_info = {
-		.path = "missing.png",
-		.type = TEXTURE_TYPE_NORMAL, // This parameter actually does matter.
+	TextureCreateInfo roomTextureCreateInfo = {
+		.textureID = makeNullString(),
+		.isLoaded = false,
+		.isTilemap = false,
 		.atlas_extent = (extent_t){ 0, 0 },
 		.num_cells = (extent_t){ num_room_texture_cache_slots, num_room_layers },
 		.cell_extent = room_size_to_extent(roomSize),
@@ -63,18 +64,18 @@ Texture createRoomTexture(const room_size_t roomSize) {
 		}
 	};
 
-	room_texture_create_info.cell_extent.width *= tile_texel_length;
-	room_texture_create_info.cell_extent.length *= tile_texel_length;
+	roomTextureCreateInfo.cell_extent.width *= tile_texel_length;
+	roomTextureCreateInfo.cell_extent.length *= tile_texel_length;
 
 	// Populate the room texture create info with cell extents for each room size.
-	for (uint32_t i = 0; i < room_texture_create_info.num_animations; ++i) {
-		room_texture_create_info.animations[i].start_cell = i;
-		room_texture_create_info.animations[i].num_frames = 1;
-		room_texture_create_info.animations[i].frames_per_second = 0;
+	for (uint32_t i = 0; i < roomTextureCreateInfo.num_animations; ++i) {
+		roomTextureCreateInfo.animations[i].start_cell = i;
+		roomTextureCreateInfo.animations[i].num_frames = 1;
+		roomTextureCreateInfo.animations[i].frames_per_second = 0;
 	}
 
-	Texture room_texture = create_texture(room_texture_create_info);
-	if (is_texture_null(room_texture)) {
+	Texture room_texture = createTexture(roomTextureCreateInfo);
+	if (textureIsNull(room_texture)) {
 		log_message(ERROR, "Error creating room texture: texture creation failed.");
 		return room_texture;
 	}

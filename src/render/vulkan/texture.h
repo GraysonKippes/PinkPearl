@@ -34,11 +34,11 @@ typedef struct Texture {
 	
 } Texture;
 
-Texture make_null_texture(void);
-bool is_texture_null(const Texture texture);
+Texture makeNullTexture(void);
+bool textureIsNull(const Texture texture);
 
 // Creates and returns a blank texture with undefined layout.
-Texture create_texture(const texture_create_info_t texture_create_info);
+Texture createTexture(const TextureCreateInfo texture_create_info);
 
 bool destroy_texture(Texture *const texture_ptr);
 

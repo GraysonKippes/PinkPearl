@@ -4,6 +4,7 @@
 #include "util/allocate.h"
 #include "util/time.h"
 
+#include "render_object.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/vulkan_render.h"
 #include "vulkan/math/lerp.h"
@@ -47,18 +48,34 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 		pAreaRenderState->cacheSlotsToRoomIDs[i] = UINT32_MAX;
 	}
 	
-	pAreaRenderState->roomIDsToCacheSlots[initialRoom.id] = 0;
+	pAreaRenderState->currentCacheSlot = 0;
+	pAreaRenderState->nextCacheSlot = 0;
+	
+	pAreaRenderState->roomIDsToCacheSlots[initialRoom.id] = pAreaRenderState->currentCacheSlot;
 	pAreaRenderState->roomIDsToPositions[initialRoom.id] = initialRoom.position;
-	pAreaRenderState->cacheSlotsToRoomIDs[0] = (uint32_t)initialRoom.id;
+	pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->currentCacheSlot] = (uint32_t)initialRoom.id;
 	
 	pAreaRenderState->areaExtent = area.extent;
 	pAreaRenderState->roomSize = area.room_size;
 	
-	pAreaRenderState->currentCacheSlot = 0;
-	pAreaRenderState->nextCacheSlot = 0;
-	
 	//upload_draw_data(*pAreaRenderState);
 	create_room_texture(initialRoom, pAreaRenderState->currentCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
+	
+	const extent_t roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
+	const DimensionsF roomQuadDimensions = {
+		.x1 = -0.5F * roomExtent.width,
+		.y1 = 0.5F * roomExtent.length,
+		.x2 = 0.5F * roomExtent.width,
+		.y2 = -0.5F * roomExtent.length
+	};
+	
+	const Transform roomQuadTransform = {
+		.translation = (Vector4F){ 0.0F, 0.0F, 0.0F, 1.0F },
+		.scaling = zeroVector4F,
+		.rotation = zeroVector4F
+	};
+	
+	//pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(roomQuadDimensions, roomQuadTransform, );
 	
 	log_message(VERBOSE, "Done resetting area render state.");
 }
@@ -115,7 +132,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const r
 
 Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState) {
 	if (pAreaRenderState == NULL) {
-		return vector4F_zero;
+		return zeroVector4F;
 	}
 	
 	const extent_t roomExtent = room_size_to_extent(pAreaRenderState->roomSize);

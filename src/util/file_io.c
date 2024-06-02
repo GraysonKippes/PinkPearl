@@ -41,7 +41,7 @@ int read_string(FILE *restrict stream, const size_t max_str_len, char *str) {
 	return 0;
 }
 
-String read_string2(FILE *restrict stream, const size_t max_string_capacity) {
+String readString(FILE *restrict stream, const size_t max_string_capacity) {
 	if (stream == NULL) {
 		return makeNullString();
 	}

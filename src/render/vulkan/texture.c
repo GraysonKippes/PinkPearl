@@ -11,7 +11,7 @@
 #include "command_buffer.h"
 #include "vulkan_manager.h"
 
-Texture make_null_texture(void) {
+Texture makeNullTexture(void) {
 	return (Texture){
 		.numAnimations = 0,
 		.animations = NULL,
@@ -24,7 +24,7 @@ Texture make_null_texture(void) {
 	};
 }
 
-bool is_texture_null(const Texture texture) {
+bool textureIsNull(const Texture texture) {
 	return texture.numImageArrayLayers == 0
 		|| texture.image.vkImage == VK_NULL_HANDLE
 		|| texture.image.vkImageView == VK_NULL_HANDLE
@@ -32,26 +32,24 @@ bool is_texture_null(const Texture texture) {
 		|| texture.device == VK_NULL_HANDLE;
 }
 
-static VkFormat texture_image_format(const TextureType textureType) {
-	switch (textureType) {
-		case TEXTURE_TYPE_NORMAL: return VK_FORMAT_R8G8B8A8_SRGB;
-		case TEXTURE_TYPE_TILEMAP: return VK_FORMAT_R8G8B8A8_UINT;
+static VkFormat texture_image_format(const TextureCreateInfo textureCreateInfo) {
+	if (textureCreateInfo.isTilemap) {
+		return VK_FORMAT_R8G8B8A8_UINT;
 	}
-	return VK_FORMAT_UNDEFINED;
+	return VK_FORMAT_R8G8B8A8_SRGB;
 }
 
-static VkImageUsageFlags texture_image_usage(const TextureType textureType) {
-	switch (textureType) {
-		case TEXTURE_TYPE_NORMAL: return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		case TEXTURE_TYPE_TILEMAP: return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+static VkImageUsageFlags getTextureImageUsage(const TextureCreateInfo textureCreateInfo) {
+	if (textureCreateInfo.isTilemap) {
+		return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 	}
 	return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 }
 
-static VkImage create_texture_image(const Texture texture, const texture_create_info_t texture_create_info) {
+static VkImage create_texture_image(const Texture texture, const TextureCreateInfo textureCreateInfo) {
 
 	uint32_t queue_family_indices[2];
-	if (texture_create_info.type == TEXTURE_TYPE_TILEMAP) {
+	if (textureCreateInfo.isTilemap) {
 		queue_family_indices[0] = *physical_device.queue_family_indices.transfer_family_ptr;
 		queue_family_indices[1] = *physical_device.queue_family_indices.compute_family_ptr;
 	}
@@ -60,20 +58,20 @@ static VkImage create_texture_image(const Texture texture, const texture_create_
 		queue_family_indices[1] = *physical_device.queue_family_indices.transfer_family_ptr;
 	}
 
-	const VkImageCreateInfo image_create_info = {
+	const VkImageCreateInfo imageCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
 		.imageType = VK_IMAGE_TYPE_2D,
 		.format = texture.format,
-		.extent.width = texture_create_info.cell_extent.width,
-		.extent.height = texture_create_info.cell_extent.length,
+		.extent.width = textureCreateInfo.cell_extent.width,
+		.extent.height = textureCreateInfo.cell_extent.length,
 		.extent.depth = 1,
 		.mipLevels = 1,
 		.arrayLayers = texture.numImageArrayLayers,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.usage = texture_image_usage(texture_create_info.type),
+		.usage = getTextureImageUsage(textureCreateInfo),
 		.sharingMode = VK_SHARING_MODE_CONCURRENT,
 		.queueFamilyIndexCount = 2,
 		.pQueueFamilyIndices = queue_family_indices,
@@ -81,9 +79,9 @@ static VkImage create_texture_image(const Texture texture, const texture_create_
 	};
 
 	VkImage vkImage = VK_NULL_HANDLE;
-	const VkResult image_create_result = vkCreateImage(texture.device, &image_create_info, NULL, &vkImage);
-	if (image_create_result != VK_SUCCESS) {
-		logf_message(ERROR, "Error loading texture: image creation failed (error code: %i).", image_create_result);
+	const VkResult imageCreateResult = vkCreateImage(texture.device, &imageCreateInfo, NULL, &vkImage);
+	if (imageCreateResult != VK_SUCCESS) {
+		logf_message(ERROR, "Error loading texture: image creation failed (error code: %i).", imageCreateResult);
 	}
 	return vkImage;
 }
@@ -152,25 +150,25 @@ static VkImageView create_texture_image_view(const Texture texture, const VkImag
 	return vkImageView;
 }
 
-Texture create_texture(const texture_create_info_t texture_create_info) {
+Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
-	Texture texture = make_null_texture();
+	Texture texture = makeNullTexture();
 	
-	texture.numAnimations = texture_create_info.num_animations;
-	texture.numImageArrayLayers = texture_create_info.num_cells.width * texture_create_info.num_cells.length;
-	texture.format = texture_image_format(texture_create_info.type);
+	texture.numAnimations = textureCreateInfo.num_animations;
+	texture.numImageArrayLayers = textureCreateInfo.num_cells.width * textureCreateInfo.num_cells.length;
+	texture.format = texture_image_format(textureCreateInfo);
 	texture.layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	texture.memory = VK_NULL_HANDLE;
 	texture.device = device;	// TODO - pass vkDevice through argument list, not global state.
 
 	allocate((void **)&texture.animations, texture.numAnimations, sizeof(TextureAnimation));
 	for (uint32_t i = 0; i < texture.numAnimations; ++i) {
-		texture.animations[i].startCell = texture_create_info.animations[i].start_cell;
-		texture.animations[i].numFrames = texture_create_info.animations[i].num_frames;
-		texture.animations[i].framesPerSecond = texture_create_info.animations[i].frames_per_second;
+		texture.animations[i].startCell = textureCreateInfo.animations[i].start_cell;
+		texture.animations[i].numFrames = textureCreateInfo.animations[i].num_frames;
+		texture.animations[i].framesPerSecond = textureCreateInfo.animations[i].frames_per_second;
 	}
 
-	texture.image.vkImage = create_texture_image(texture, texture_create_info);
+	texture.image.vkImage = create_texture_image(texture, textureCreateInfo);
 
 	// Allocate memory for the texture image.
 	VkMemoryRequirements2 image_memory_requirements;
@@ -204,7 +202,7 @@ bool destroy_texture(Texture *const pTexture) {
 	vkDestroyImage(pTexture->device, pTexture->image.vkImage, NULL);
 	vkDestroyImageView(pTexture->device, pTexture->image.vkImageView, NULL);
 	vkFreeMemory(pTexture->device, pTexture->memory, NULL);
-	*pTexture = make_null_texture();
+	*pTexture = makeNullTexture();
 
 	return true;
 }

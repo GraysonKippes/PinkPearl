@@ -31,7 +31,7 @@ void log_stack_push(const char *const pstring) {
 	if (log_stack.height > 0) {
 		stringConcatChar(&log_stack.string, log_stack_delimiter);
 	}
-	stringConcatCStr(&log_stack.string, pstring);
+	stringConcatCString(&log_stack.string, pstring);
 	log_stack.height += 1;
 	pthread_mutex_unlock(&log_stack_mutex);
 }

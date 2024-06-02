@@ -14,13 +14,13 @@ extern const int max_num_entities;
 
 typedef int entity_handle_t;
 
-extern const entity_handle_t entity_handle_invalid;
+extern const entity_handle_t entityHandleInvalid;
 
 // Initializes the entity manager by setting all entity slots to default values using `new_entity`.
 void init_entity_manager(void);
 
 // Returns a handle to the first available entity slot.
-entity_handle_t load_entity(void);
+//entity_handle_t load_entity(void);
 
 // Frees the entity slot at the specified handle.
 void unload_entity(const entity_handle_t handle);

@@ -14,7 +14,7 @@
 static const size_t num_entity_records = NUM_ENTITY_RECORDS;
 static entity_record_t entity_records[NUM_ENTITY_RECORDS];
 
-bool register_entity_record(const entity_record_t entity_record);
+static bool register_entity_record(const entity_record_t entity_record);
 
 void init_entity_registry(void) {
 	log_stack_push("EntityRegistry");
@@ -35,10 +35,10 @@ void init_entity_registry(void) {
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		entity_record_t entity_record;
-		entity_record.entity_id = read_string2(fge_file, 32);
+		entity_record.entity_id = readString(fge_file, 32);
 		file_next_block(fge_file);
 		read_data(fge_file, 1, sizeof(rect_t), &entity_record.entity_hitbox);
-		entity_record.entity_texture_id = read_string2(fge_file, 32);
+		entity_record.entity_texture_id = readString(fge_file, 32);
 		file_next_block(fge_file);
 		register_entity_record(entity_record);
 	}
@@ -61,7 +61,7 @@ void terminate_entity_registry(void) {
 	log_stack_pop();
 }
 
-bool register_entity_record(const entity_record_t entity_record) {
+static bool register_entity_record(const entity_record_t entity_record) {
 	logf_message(VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.buffer);
 	
 	size_t hash_index = stringHash(entity_record.entity_id, num_entity_records);

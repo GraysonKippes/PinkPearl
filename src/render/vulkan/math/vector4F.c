@@ -2,7 +2,7 @@
 
 #include "lerp.h"
 
-const Vector4F vector4F_zero = { 0.0F, 0.0F, 0.0F, 1.0F };
+const Vector4F zeroVector4F = { 0.0F, 0.0F, 0.0F, 1.0F };
 
 Vector4F vector4F_add(const Vector4F a, const Vector4F b) {
 	return (Vector4F){
@@ -23,7 +23,7 @@ Vector4F vector4F_lerp(const Vector4F start, const Vector4F end, const float del
 }
 
 const Transform transformZero = {
-	.translation = vector4F_zero,
-	.scaling = vector4F_zero,
-	.rotation = vector4F_zero
+	.translation = zeroVector4F,
+	.scaling = zeroVector4F,
+	.rotation = zeroVector4F
 };

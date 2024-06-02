@@ -13,7 +13,7 @@ const int max_num_entities = MAX_NUM_ENTITIES;
 static entity_t entities[MAX_NUM_ENTITIES];
 static uint8_t entity_slot_enable_flags[MAX_NUM_ENTITIES];
 
-const int entity_handle_invalid = -1;
+const int entityHandleInvalid = -1;
 
 void init_entity_manager(void) {
 	for (int i = 0; i < max_num_entities; ++i) {
@@ -31,7 +31,7 @@ entity_handle_t load_entity(void) {
 			return i;
 		}
 	}
-	return entity_handle_invalid;
+	return entityHandleInvalid;
 }
 
 void unload_entity(const entity_handle_t handle) {
@@ -50,7 +50,7 @@ int loadEntity(const String entityID, const vector3D_t initPosition, const vecto
 		log_message(ERROR, "Error loading entity: string entityID is null.");
 	}
 	
-	int entityHandle = entity_handle_invalid;
+	int entityHandle = entityHandleInvalid;
 	for (int i = 0; validateEntityHandle(i); ++i) {
 		if (!entity_slot_enable_flags[i]) {
 			entity_slot_enable_flags[i] = 1;
@@ -59,26 +59,26 @@ int loadEntity(const String entityID, const vector3D_t initPosition, const vecto
 	}
 	if (!validateEntityHandle(entityHandle)) {
 		log_message(ERROR, "Error loading entity: failed to find available entity handle.");
-		return entity_handle_invalid;
+		return entityHandleInvalid;
 	}
 	
 	entity_record_t entityRecord = { 0 };
 	if (!find_entity_record(entityID, &entityRecord)) {
 		logf_message(ERROR, "Error loading entity: failed to find entity record with ID \"%s\".", entityID.buffer);
-		return entity_handle_invalid;
+		return entityHandleInvalid;
 	}
 	
 	const Transform transform = {
 		.translation = (Vector4F){ (float)initPosition.x, (float)initPosition.y, (float)initPosition.z, 1.0F },
-		.scaling = vector4F_zero,
-		.rotation = vector4F_zero
+		.scaling = zeroVector4F,
+		.rotation = zeroVector4F
 	};
 	
 	//										  /*   Temporary parameter for testing   */
 	const int renderHandle = loadRenderObject((DimensionsF){ -0.5F, 0.5F, 0.5F, -1.0F }, transform, entityRecord.entity_texture_id);
 	if (!validateEntityHandle(renderHandle)) {
 		log_message(ERROR, "Error loading entity: failed to load render object.");
-		return entity_handle_invalid;
+		return entityHandleInvalid;
 	}
 	
 	entities[entityHandle].transform = (entity_transform_t){

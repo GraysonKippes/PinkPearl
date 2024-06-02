@@ -10,7 +10,7 @@
 
 TextureState nullTextureState(void) {
 	return (TextureState){
-		.textureHandle = missing_texture_handle,
+		.textureHandle = textureHandleMissing,
 		.numAnimations = 0,
 		.currentAnimation = 0,
 		.numFrames = 0,
@@ -31,7 +31,7 @@ TextureState newTextureState(const String textureID) {
 	
 	textureState.textureHandle = findTexture(textureID);
 	if (!validateTextureHandle(textureState.textureHandle)) {
-		textureState.textureHandle = missing_texture_handle;
+		textureState.textureHandle = textureHandleMissing;
 		return textureState;
 	}
 	

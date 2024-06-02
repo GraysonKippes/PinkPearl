@@ -13,7 +13,7 @@ entity_t new_entity(void) {
 		.transform = (entity_transform_t){ 0 },
 		.hitbox = (rect_t){ 0 },
 		.ai = entityAINull,
-		.render_handle = render_handle_invalid
+		.render_handle = renderHandleInvalid
 	};
 }
 

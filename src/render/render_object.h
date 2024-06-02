@@ -17,8 +17,7 @@
 *	texture state
 */
 
-extern const int render_handle_invalid;
-extern const int render_handle_dangling;
+extern const int renderHandleInvalid;
 
 bool init_render_object_manager(void);
 
@@ -28,7 +27,7 @@ void unloadRenderObject(int *const pRenderHandle);
 // Returns true if the render handle is both below the number of render object slots, false otherwise.
 bool validateRenderHandle(int handle);
 
-RenderTransform *getRenderObjTransform(const int render_handle);
-TextureState *getRenderObjTexState(const int render_handle);
+RenderTransform *getRenderObjTransform(const int renderHandle);
+TextureState *getRenderObjTexState(const int renderHandle);
 
 #endif	// RENDER_OBJECT_H

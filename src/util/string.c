@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log/logging.h"
+
 #include "allocate.h"
 
 String makeNullString(void) {
@@ -13,29 +15,40 @@ String makeNullString(void) {
 	};
 }
 
-String newStringEmpty(const size_t capacity) {
+String newStringEmpty(const size_t initCapacity) {
+	const size_t capacity = initCapacity > 0 ? initCapacity : 16;
+	
 	String string = makeNullString();
 	if (!allocate((void **)&string.buffer, capacity, sizeof(char))) {
 		return string;
 	}
 	string.capacity = capacity;
+	
 	return string;
 }
 
-String newString(const size_t capacity, const char *const initial_data) {
+String newString(const size_t capacity, const char *const pInitData) {
 	
 	String string = newStringEmpty(capacity);
-	if (stringIsNull(string)) {
+	if (stringIsNull(string) || pInitData == NULL) {
 		return string;
 	}
 	
-	const size_t max_length = string.capacity - 1;
-	// Length of initial data NOT including null terminator.
-	const size_t initial_data_length = strlen(initial_data);
-	strncpy_s(string.buffer, max_length, initial_data, initial_data_length);
-	string.length = initial_data_length > max_length ? max_length : initial_data_length;
+	const size_t maxLen = string.capacity - 1;	// Maximum possible length of 
+	const size_t initLen = strlen(pInitData);	// Length of initial data NOT including null terminator.
+	
+	const errno_t copyResult = strncpy_s(string.buffer, string.capacity, pInitData, initLen);
+	if (copyResult != 0) {
+		logf_message(ERROR, "Error creating new string: string copy failed (\"%s\").", strerror(copyResult));
+	}
+	
+	string.length = initLen > maxLen ? maxLen : initLen;
 	
 	return string;
+}
+
+String deepCopyString(const String copy) {
+	return newString(copy.capacity, copy.buffer);
 }
 
 bool deleteString(String *const pString) {
@@ -120,7 +133,7 @@ bool stringConcatString(String *const pDst, const String src) {
 	return true;
 }
 
-bool stringConcatCStr(String *const pDst, const char *const src_pstring) {
+bool stringConcatCString(String *const pDst, const char *const src_pstring) {
 	if (pDst == NULL || src_pstring == NULL) {
 		return false;
 	}
@@ -189,6 +202,7 @@ size_t stringHash(const String string, const size_t limit) {
 		return 0;
 	}
 	
+	// Multiplicative string hashing.
 	static const size_t p = 32;
 	size_t sum = 0;
 	for (size_t i = 0; i < string.length; ++i) {

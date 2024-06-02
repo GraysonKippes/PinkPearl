@@ -8,6 +8,6 @@
 void create_image_staging_buffer(void);
 void destroy_image_staging_buffer(void);
 
-Texture loadTexture(const texture_create_info_t texture_create_info);
+Texture loadTexture(const TextureCreateInfo texture_create_info);
 
 #endif	// VK_TEXTURE_LOADER_H

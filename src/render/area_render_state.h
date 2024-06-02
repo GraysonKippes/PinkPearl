@@ -19,8 +19,11 @@ typedef struct AreaRenderState {
 	area_extent_t areaExtent;
 	room_size_t roomSize;
 	
+	int roomRenderObjHandles[NUM_ROOM_TEXTURE_CACHE_SLOTS];
+	
 	// TODO - change to just the handle. maybe?
 	TextureState tilemapTextureState;
+	
 	// When the camera is not scrolling, current cache slot equals next cache slot.
 	unsigned int currentCacheSlot;
 	unsigned int nextCacheSlot;

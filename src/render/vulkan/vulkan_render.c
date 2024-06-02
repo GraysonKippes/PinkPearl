@@ -90,7 +90,7 @@ void destroyVulkanRenderObjects(void) {
 
 	terminate_compute_matrices();
 	terminate_compute_room_texture();
-	destroy_textures();
+	terminateTextureManager();
 	
 	deleteBinarySearchTree(&activeQuadIDs);
 	deleteStack(&inactiveQuadIDs);
@@ -100,7 +100,7 @@ void destroyVulkanRenderObjects(void) {
 
 void initTextureDescriptors(void) {
 	
-	const Texture texture = getTexture(missing_texture_handle);
+	const Texture texture = getTexture(textureHandleMissing);
 	
 	VkDescriptorImageInfo descriptorImageInfos[NUM_RENDER_OBJECT_SLOTS];
 	for (uint32_t i = 0; i < num_render_object_slots; ++i) {

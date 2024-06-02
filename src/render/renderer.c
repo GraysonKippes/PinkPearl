@@ -29,8 +29,8 @@ void init_renderer(void) {
 	createVulkanRenderObjects();
 	init_render_object_manager();
 
-	texture_pack_t texture_pack = parse_fgt_file(FGT_PATH);
-	load_textures(texture_pack);
+	TexturePack texture_pack = parse_fgt_file(FGT_PATH);
+	initTextureManager(texture_pack);
 	destroy_texture_pack(&texture_pack);
 	
 	initTextureDescriptors();

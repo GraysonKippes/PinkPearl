@@ -11,10 +11,9 @@
 
 #include "area_render_state.h"
 
-const int render_handle_invalid = -1;
-const int render_handle_dangling = -2;
+const int renderHandleInvalid = -1;
 
-Heap inactive_render_handles = { 0 };
+static Heap inactive_render_handles = { 0 };
 
 int renderObjQuadIDs[NUM_RENDER_OBJECT_SLOTS];
 RenderTransform renderObjTransforms[NUM_RENDER_OBJECT_SLOTS];
@@ -33,7 +32,7 @@ bool init_render_object_manager(void) {
 }
 
 int loadRenderObject(const DimensionsF quadDimensions, const Transform transform, const String textureID) {
-	int renderHandle = render_handle_invalid;
+	int renderHandle = renderHandleInvalid;
 	heapPop(&inactive_render_handles, &renderHandle);
 	if (!validateRenderHandle(renderHandle)) {
 		return renderHandle;
@@ -62,7 +61,7 @@ void unloadRenderObject(int *const pRenderHandle) {
 		return;
 	}
 	heapPush(&inactive_render_handles, pRenderHandle);
-	*pRenderHandle = render_handle_dangling;
+	*pRenderHandle = renderHandleInvalid;
 }
 
 bool validateRenderHandle(const int render_handle) {

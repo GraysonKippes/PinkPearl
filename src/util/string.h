@@ -19,9 +19,19 @@ typedef struct String {
 	
 } String;
 
+// Returns an "empty" or unallocated string.
 String makeNullString(void);
+
+// Returns a new string with no contents.
 String newStringEmpty(const size_t capacity);
+
+// Returns a new string with the specified initial data.
 String newString(const size_t capacity, const char *const initData);
+
+// Returns a new string with the same data as the given string.
+String deepCopyString(const String copy);
+
+// Frees the memory held by the string.
 bool deleteString(String *const pString);
 
 // String analysis
@@ -32,7 +42,7 @@ size_t stringReverseSearchChar(const String string, const char c);
 // String mutation
 bool stringConcatChar(String *const pString, const char c);
 bool stringConcatString(String *const pDst, const String src);
-bool stringConcatCStr(String *const pDst, const char *const pSrc);
+bool stringConcatCString(String *const pDst, const char *const pSrc);
 bool stringRemoveTrailingChars(String *const pString, const size_t numChars);
 
 // Miscellaneous

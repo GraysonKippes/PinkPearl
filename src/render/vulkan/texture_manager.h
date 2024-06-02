@@ -11,11 +11,11 @@
 #include "texture.h"
 
 extern const int numTextures;
-extern const int missing_texture_handle;
+extern const int textureHandleMissing;
 
-void load_textures(const texture_pack_t texture_pack);
+void initTextureManager(const TexturePack texture_pack);
 void create_room_texture(const room_t room, const uint32_t cacheSlot, const int tilemapTextureHandle);	// TODO - remove
-void destroy_textures(void);
+void terminateTextureManager(void);
 
 // Returns true if the texture handle is a valid texture handle, false otherwise.
 bool validateTextureHandle(const int textureHandle);

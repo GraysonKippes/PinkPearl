@@ -8,7 +8,7 @@ typedef struct Vector4F {
 	float w;
 } Vector4F;
 
-extern const Vector4F vector4F_zero;
+extern const Vector4F zeroVector4F;
 
 Vector4F vector4F_add(const Vector4F a, const Vector4F b);
 
