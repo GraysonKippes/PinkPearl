@@ -12,6 +12,7 @@
 
 extern const int max_num_entities;
 
+[[deprecated]]
 typedef int entity_handle_t;
 
 extern const entity_handle_t entityHandleInvalid;

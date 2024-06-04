@@ -107,7 +107,7 @@ void initTextureDescriptors(void) {
 		descriptorImageInfos[i] = (VkDescriptorImageInfo){
 			.sampler = imageSamplerDefault,
 			.imageView = texture.image.vkImageView,
-			.imageLayout = texture.layout
+			.imageLayout = texture.image.usage.imageLayout
 		};
 	}
 	
@@ -309,7 +309,7 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 	const VkDescriptorImageInfo descriptorImageInfo = {
 		.sampler = imageSamplerDefault,
 		.imageView = texture.image.vkImageView,
-		.imageLayout = texture.layout
+		.imageLayout = texture.image.usage.imageLayout
 	};
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {

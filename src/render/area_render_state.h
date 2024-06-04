@@ -17,7 +17,7 @@
 typedef struct AreaRenderState {
 	
 	area_extent_t areaExtent;
-	room_size_t roomSize;
+	RoomSize roomSize;
 	
 	int roomRenderObjHandles[NUM_ROOM_TEXTURE_CACHE_SLOTS];
 	

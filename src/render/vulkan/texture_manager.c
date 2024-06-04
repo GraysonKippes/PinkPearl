@@ -68,12 +68,10 @@ void initTextureManager(void) {
 		.textureID = newString(256, "missing"),
 		.isLoaded = true,
 		.isTilemap = false,
-		.atlas_extent.width = 16,
-		.atlas_extent.length = 16,
-		.num_cells.width = 1,
-		.num_cells.length = 1,
-		.cell_extent.width = 16,
-		.cell_extent.length = 16,
+		.numCells.width = 1,
+		.numCells.length = 1,
+		.cellExtent.width = 16,
+		.cellExtent.length = 16,
 		.num_animations = 1,
 		.animations = (animation_create_info_t[1]){
 			{
@@ -83,7 +81,7 @@ void initTextureManager(void) {
 			}
 		}
 	};
-	initTexture(missingTextureCreateInfo);
+	textureManagerLoadTexture(missingTextureCreateInfo);
 	deleteString(&missingTextureCreateInfo.textureID);
 
 	textureManagerInitialized = true;
@@ -93,13 +91,13 @@ void initTextureManager(void) {
 void terminateTextureManager(void) {
 	log_message(VERBOSE, "Terminating texture manager....");
 	for (int i = 0; i < numTextures; ++i) {
-		destroy_texture(&textures[i]);
+		deleteTexture(&textures[i]);
 	}
 	textureManagerInitialized = false;
 	log_message(VERBOSE, "Done terminating texture manager.");
 }
 
-bool loadTexturePack(const TexturePack texturePack) {
+bool textureManagerLoadTexturePack(const TexturePack texturePack) {
 	log_message(VERBOSE, "Loading texture pack...");
 	
 	if (!textureManagerInitialized) {
@@ -123,14 +121,14 @@ bool loadTexturePack(const TexturePack texturePack) {
 	}
 	
 	for (unsigned int i = 0; i < texturePack.num_textures; ++i) {
-		initTexture(texturePack.texture_create_infos[i]);
+		textureManagerLoadTexture(texturePack.texture_create_infos[i]);
 	}
 	
 	log_message(VERBOSE, "Done loading texture pack.");
 	return true;
 }
 
-void initTexture(const TextureCreateInfo textureCreateInfo) {
+void textureManagerLoadTexture(const TextureCreateInfo textureCreateInfo) {
 	logf_message(VERBOSE, "Initializing texture \"%s\"...", textureCreateInfo.textureID.buffer);
 	
 	const int textureHandle = numTexturesLoaded++;
@@ -213,6 +211,7 @@ void create_room_texture(const room_t room, const uint32_t cacheSlot, const int 
 }
 
 // TODO - remove
-Texture get_room_texture(const room_size_t room_size) {
+[[deprecated("room texture feature is to be generalized and moved to texture management.")]]
+Texture get_room_texture(const RoomSize room_size) {
 	return textures[numReservedTextures + (uint32_t)room_size];
 }

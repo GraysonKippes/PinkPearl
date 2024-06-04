@@ -14,15 +14,7 @@
 #include "command_buffer.h"
 #include "vulkan_manager.h"
 
-
-
-#define TEXTURE_NAME_MAX_LENGTH 256
-
-static const size_t texture_name_max_length = TEXTURE_NAME_MAX_LENGTH;
-
 #define TEXTURE_PATH (RESOURCE_PATH "assets/textures/")
-
-
 
 static String textureIDToPath(const String textureID) {
 	
@@ -89,43 +81,36 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	memcpy(mapped_memory, base_image_data.data, base_image_size);
 	free_image_data(base_image_data);
 	buffer_partition_unmap_memory(global_staging_buffer_partition);
-
-	// Subresource range used in all image views and layout transitions.
-	static const VkImageSubresourceRange image_subresource_range = {
-		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseMipLevel = 0,
-		.levelCount = 1,
+			
+	// Subresource range used in all image views and layout transitions.	
+	static const TextureImageSubresourceRange imageSubresourceRange = {
+		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 		.baseArrayLayer = 0,
 		.layerCount = VK_REMAINING_ARRAY_LAYERS
 	};
 
 	// Command buffer for first image layout transition (undefined to transfer destination).
-	VkCommandBuffer transition_command_buffer = VK_NULL_HANDLE;
-	allocate_command_buffers(device, render_command_pool, 1, &transition_command_buffer);
-	begin_command_buffer(transition_command_buffer, 0); {
-	
-		const VkImageMemoryBarrier image_memory_barrier = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			.pNext = NULL,
-			.srcAccessMask = VK_ACCESS_NONE,
-			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = texture.image.vkImage,
-			.subresourceRange = image_subresource_range
+	VkCommandBuffer transitionCommandBuffer1 = VK_NULL_HANDLE;
+	allocate_command_buffers(device, render_command_pool, 1, &transitionCommandBuffer1);
+	begin_command_buffer(transitionCommandBuffer1, 0); {
+		
+		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(texture.image, imageSubresourceRange, imageUsageTransferDestination);
+		
+		const VkDependencyInfo dependencyInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.pNext = nullptr,
+			.dependencyFlags = 0,
+			.memoryBarrierCount = 0,
+			.pMemoryBarriers = nullptr,
+			.bufferMemoryBarrierCount = 0,
+			.pBufferMemoryBarriers = nullptr,
+			.imageMemoryBarrierCount = 1,
+			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
+		
+		vkCmdPipelineBarrier2(transitionCommandBuffer1, &dependencyInfo);
 
-		const VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		const VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-		vkCmdPipelineBarrier(transition_command_buffer, source_stage, destination_stage, 0,
-				0, NULL,
-				0, NULL,
-				1, &image_memory_barrier);
-
-	} vkEndCommandBuffer(transition_command_buffer);
+	} vkEndCommandBuffer(transitionCommandBuffer1);
 
 	{	// First submit
 		const VkSubmitInfo submitInfo = {
@@ -135,14 +120,14 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.pWaitSemaphores = NULL,
 			.pWaitDstStageMask = NULL,
 			.commandBufferCount = 1,
-			.pCommandBuffers = &transition_command_buffer,
+			.pCommandBuffers = &transitionCommandBuffer1,
 			.signalSemaphoreCount = 1,
 			.pSignalSemaphores = &semaphore_transition_finished
 		};
 		vkQueueSubmit(graphics_queue, 1, &submitInfo, NULL);
 	}
 
-	texture.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	texture.image.usage = imageUsageTransferDestination;
 
 	// Transfer image data to texture images.
 	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
@@ -162,19 +147,22 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			bufImgCopies[i].sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
 			bufImgCopies[i].pNext = NULL;
 
-			const uint32_t cell_offset = i;
-			const uint32_t cell_offset_x = cell_offset % textureCreateInfo.num_cells.width;
-			const uint32_t cell_offset_y = cell_offset / textureCreateInfo.num_cells.width;
+			const uint32_t atlasExtentWidth = textureCreateInfo.numCells.width * textureCreateInfo.cellExtent.width;
+			const uint32_t atlasExtentLength = textureCreateInfo.numCells.length * textureCreateInfo.cellExtent.length;
 
-			const uint32_t texel_offset_x = cell_offset_x * textureCreateInfo.cell_extent.width;
-			const uint32_t texel_offset_y = cell_offset_y * textureCreateInfo.cell_extent.length;
-			const uint32_t texel_offset = texel_offset_y * textureCreateInfo.atlas_extent.width + texel_offset_x;
+			const uint32_t cell_offset = i;
+			const uint32_t cell_offset_x = cell_offset % textureCreateInfo.numCells.width;
+			const uint32_t cell_offset_y = cell_offset / textureCreateInfo.numCells.width;
+
+			const uint32_t texel_offset_x = cell_offset_x * textureCreateInfo.cellExtent.width;
+			const uint32_t texel_offset_y = cell_offset_y * textureCreateInfo.cellExtent.length;
+			const uint32_t texel_offset = texel_offset_y * atlasExtentWidth + texel_offset_x;
 
 			static const VkDeviceSize bytes_per_texel = 4;
 
 			bufImgCopies[i].bufferOffset = buffer_partition_offset + (VkDeviceSize)texel_offset * bytes_per_texel;
-			bufImgCopies[i].bufferRowLength = textureCreateInfo.atlas_extent.width;
-			bufImgCopies[i].bufferImageHeight = textureCreateInfo.atlas_extent.length;
+			bufImgCopies[i].bufferRowLength = atlasExtentWidth;
+			bufImgCopies[i].bufferImageHeight = atlasExtentLength;
 
 			bufImgCopies[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			bufImgCopies[i].imageSubresource.mipLevel = 0;
@@ -185,8 +173,8 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			bufImgCopies[i].imageOffset.y = 0;
 			bufImgCopies[i].imageOffset.z = 0;
 
-			bufImgCopies[i].imageExtent.width = textureCreateInfo.cell_extent.width;
-			bufImgCopies[i].imageExtent.height = textureCreateInfo.cell_extent.length;
+			bufImgCopies[i].imageExtent.width = textureCreateInfo.cellExtent.width;
+			bufImgCopies[i].imageExtent.height = textureCreateInfo.cellExtent.length;
 			bufImgCopies[i].imageExtent.depth = 1;
 		}
 
@@ -195,7 +183,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.pNext = NULL,
 			.srcBuffer = global_staging_buffer_partition.buffer,
 			.dstImage = texture.image.vkImage,
-			.dstImageLayout = texture.layout,
+			.dstImageLayout = texture.image.usage.imageLayout,
 			.regionCount = numBufImgCopies,
 			.pRegions = bufImgCopies
 		};
@@ -208,7 +196,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	VkPipelineStageFlags transfer_stage_flags[1] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
 
 	{	// Second submit
-		const VkSubmitInfo submit_info = {
+		const VkSubmitInfo submitInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.pNext = NULL,
 			.waitSemaphoreCount = 1,
@@ -219,44 +207,38 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.signalSemaphoreCount = 1,
 			.pSignalSemaphores = &semaphore_transfer_finished
 		};
-
-		vkQueueSubmit(transfer_queue, 1, &submit_info, NULL);
+		vkQueueSubmit(transfer_queue, 1, &submitInfo, NULL);
 	}
 
 	// Command buffer for second image layout transition (transfer destination to sampled).
-	VkCommandBuffer transition_1_command_buffer = VK_NULL_HANDLE;
-	allocate_command_buffers(device, render_command_pool, 1, &transition_1_command_buffer);
-	begin_command_buffer(transition_1_command_buffer, 0); {
-		
-		VkImageMemoryBarrier image_memory_barrier = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			.pNext = NULL,
-			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-			.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = texture.image.vkImage,
-			.subresourceRange = image_subresource_range,
-		};
+	VkCommandBuffer transitionCommandBuffer2 = VK_NULL_HANDLE;
+	allocate_command_buffers(device, render_command_pool, 1, &transitionCommandBuffer2);
+	begin_command_buffer(transitionCommandBuffer2, 0); {
 
-		const VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-		// If this is a tilemap texture, transition it to the general layout instead 
-		// 	so that it can be read by the room texture compute shader.
+		TextureImageUsage imageUsage = imageUsageSampled;
 		if (textureCreateInfo.isTilemap) {
-			image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-			destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			imageUsage = imageUsageComputeRead;
 		}
 
-		vkCmdPipelineBarrier(transition_1_command_buffer, source_stage, destination_stage, 0,
-				0, NULL,
-				0, NULL,
-				1, &image_memory_barrier);
+		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(texture.image, imageSubresourceRange, imageUsage);
+		
+		const VkDependencyInfo dependencyInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.pNext = nullptr,
+			.dependencyFlags = 0,
+			.memoryBarrierCount = 0,
+			.pMemoryBarriers = nullptr,
+			.bufferMemoryBarrierCount = 0,
+			.pBufferMemoryBarriers = nullptr,
+			.imageMemoryBarrierCount = 1,
+			.pImageMemoryBarriers = &imageMemoryBarrier
+		};
+		
+		vkCmdPipelineBarrier2(transitionCommandBuffer2, &dependencyInfo);
+		
+		texture.image.usage = imageUsage;
 
-	} vkEndCommandBuffer(transition_1_command_buffer);
+	} vkEndCommandBuffer(transitionCommandBuffer2);
 
 	VkPipelineStageFlags transition_1_stage_flags[1] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
 
@@ -268,7 +250,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.pWaitSemaphores = &semaphore_transfer_finished,
 			.pWaitDstStageMask = transition_1_stage_flags,
 			.commandBufferCount = 1,
-			.pCommandBuffers = &transition_1_command_buffer,
+			.pCommandBuffers = &transitionCommandBuffer2,
 			.signalSemaphoreCount = 0,
 			.pSignalSemaphores = NULL
 		};
@@ -278,18 +260,12 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	vkQueueWaitIdle(graphics_queue);
 	vkQueueWaitIdle(transfer_queue);
 
-	vkFreeCommandBuffers(device, render_command_pool, 1, &transition_command_buffer);
-	vkFreeCommandBuffers(device, render_command_pool, 1, &transition_1_command_buffer);
+	vkFreeCommandBuffers(device, render_command_pool, 1, &transitionCommandBuffer1);
+	vkFreeCommandBuffers(device, render_command_pool, 1, &transitionCommandBuffer2);
 	vkFreeCommandBuffers(device, transfer_command_pool, 1, &transfer_command_buffer);
 
 	vkDestroySemaphore(device, semaphore_transition_finished, NULL);
 	vkDestroySemaphore(device, semaphore_transfer_finished, NULL);
-
-	if (textureCreateInfo.isTilemap) {
-		texture.layout = VK_IMAGE_LAYOUT_GENERAL;
-	} else {
-		texture.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	}
 
 	return texture;
 }

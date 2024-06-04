@@ -11,7 +11,7 @@
 #include "util/allocate.h"
 #include "util/file_io.h"
 
-void deleteTexturePack(TexturePack *pTexturePack) {
+void deleteTexturePack(TexturePack *const pTexturePack) {
 	if (pTexturePack == NULL) {
 		return;
 	}
@@ -86,30 +86,26 @@ TexturePack parse_fgt_file(const char *path) {
 		}
 
 		// Read number of cells in texture atlas.
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->num_cells.width);
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->num_cells.length);
+		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->numCells.width);
+		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->numCells.length);
 
 		// Read texture cell extent.
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->cell_extent.width);
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->cell_extent.length);
+		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->cellExtent.width);
+		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->cellExtent.length);
 
 		// Check extents -- if any of them are zero, then there certainly was an error.
-		if (pTextureInfo->num_cells.width == 0) {
+		if (pTextureInfo->numCells.width == 0) {
 			log_message(WARNING, "Texture create info number of cells widthwise is zero.");
 		}
-		if (pTextureInfo->num_cells.length == 0) {
+		if (pTextureInfo->numCells.length == 0) {
 			log_message(WARNING, "Texture create info number of cells lengthwise is zero.");
 		}
-		if (pTextureInfo->cell_extent.width == 0) {
+		if (pTextureInfo->cellExtent.width == 0) {
 			log_message(WARNING, "Texture create info cell extent width is zero.");
 		}
-		if (pTextureInfo->cell_extent.length == 0) {
+		if (pTextureInfo->cellExtent.length == 0) {
 			log_message(WARNING, "Texture create info cell extent length is zero.");
 		}
-		
-		// Calculate texture extent.
-		pTextureInfo->atlas_extent.width = pTextureInfo->num_cells.width * pTextureInfo->cell_extent.width;
-		pTextureInfo->atlas_extent.length = pTextureInfo->num_cells.length * pTextureInfo->cell_extent.length;
 
 		// Read animation create infos.
 		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->num_animations);

@@ -24,15 +24,11 @@ typedef struct TextureCreateInfo {
 	bool isLoaded;
 	bool isTilemap;
 
-	// Dimensions of the base texture atlas, in texels.
-	// TODO - remove this.
-	extent_t atlas_extent;
-
-	// Number of cells in the base texture atlas, in each dimension.
-	extent_t num_cells;
+	// Number of cells in the texture, in each dimension.
+	extent_t numCells;
 
 	// The dimensions of each cell, in texels.
-	extent_t cell_extent;
+	extent_t cellExtent;
 
 	uint32_t num_animations;
 	animation_create_info_t *animations;

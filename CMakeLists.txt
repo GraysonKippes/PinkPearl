@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
 project(PinkPearl VERSION 0.0)
@@ -12,7 +12,7 @@ configure_file(src/config.h.in config.h)
 
 set(COMPILE_OPTIONS_MSVC, "/TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address")
 
-target_compile_options(PinkPearl PRIVATE -std=c17 -lpthread -g -Wpedantic -Wall -Wextra
+target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
 	-Werror=implicit-function-declaration 
 	-Werror=implicit-int

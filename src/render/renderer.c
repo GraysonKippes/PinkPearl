@@ -32,10 +32,55 @@ void init_renderer(void) {
 	initTextureDescriptors();
 
 	TexturePack texturePack = parse_fgt_file(FGT_PATH);
-	loadTexturePack(texturePack);
+	textureManagerLoadTexturePack(texturePack);
 	deleteTexturePack(&texturePack);
 	
-	
+	for (int i = 0; i < (int)num_room_sizes; ++i) {
+		
+		TextureCreateInfo roomTextureCreateInfo = (TextureCreateInfo){
+			.textureID = makeNullString(),
+			.isLoaded = false,
+			.isTilemap = false,
+			.numCells.width = 1,
+			.numCells.length = 1,
+			.cellExtent.width = 16,
+			.cellExtent.length = 16,
+			.num_animations = 1,
+			.animations = (animation_create_info_t[1]){
+				{
+					.start_cell = 0,
+					.num_frames = 1,
+					.frames_per_second = 0
+				}
+			}
+		};
+		
+		switch((RoomSize)i) {
+			case ONE_TO_THREE:
+				roomTextureCreateInfo.textureID = newString(256, "roomXS");
+				roomTextureCreateInfo.cellExtent.width = 8 * tile_texel_length;
+				roomTextureCreateInfo.cellExtent.length = 5 * tile_texel_length;
+				break;
+			case TWO_TO_THREE:
+				roomTextureCreateInfo.textureID = newString(256, "roomS");
+				roomTextureCreateInfo.cellExtent.width = 16 * tile_texel_length;
+				roomTextureCreateInfo.cellExtent.length = 10 * tile_texel_length;
+				break;
+			case THREE_TO_THREE:
+				roomTextureCreateInfo.textureID = newString(256, "roomM");
+				roomTextureCreateInfo.cellExtent.width = 24 * tile_texel_length;
+				roomTextureCreateInfo.cellExtent.length = 15 * tile_texel_length;
+				break;
+			case FOUR_TO_THREE:
+				roomTextureCreateInfo.textureID = newString(256, "roomL");
+				roomTextureCreateInfo.cellExtent.width = 32 * tile_texel_length;
+				roomTextureCreateInfo.cellExtent.length = 20 * tile_texel_length;
+				break;
+		}
+		
+		textureManagerLoadTexture(roomTextureCreateInfo);
+		deleteString(&roomTextureCreateInfo.textureID);
+	}
 	
 	
 	log_stack_pop();

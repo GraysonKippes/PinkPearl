@@ -19,7 +19,6 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	String tilemapTextureID = newString(64, "tilemap/dungeon4");
 	pAreaRenderState->tilemapTextureState = newTextureState(tilemapTextureID);
 	deleteString(&tilemapTextureID);
-	//compute_area_mesh(area);
 	
 	// TODO - use reallocate function when it is implemented.
 	deallocate((void **)&pAreaRenderState->roomIDsToPositions);
@@ -58,7 +57,6 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	pAreaRenderState->areaExtent = area.extent;
 	pAreaRenderState->roomSize = area.room_size;
 	
-	//upload_draw_data(*pAreaRenderState);
 	//create_room_texture(initialRoom, pAreaRenderState->currentCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
 	
 	const extent_t roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
@@ -75,7 +73,10 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 		.rotation = zeroVector4F
 	};
 	
-	//pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(roomQuadDimensions, roomQuadTransform, );
+	// Testing
+	//String textureID = newString(64, "roomM");
+	//pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(roomQuadDimensions, roomQuadTransform, textureID);
+	//deleteString(&textureID);
 	
 	log_message(VERBOSE, "Done resetting area render state.");
 }

@@ -12,6 +12,7 @@
 #include "physical_device.h"
 #include "queue.h"
 
+[[deprecated("moving to unified texture-image functionality.")]]
 typedef struct image_create_info_t {
 	
 	uint32_t num_image_array_layers;
@@ -27,6 +28,7 @@ typedef struct image_create_info_t {
 	
 } image_create_info_t;
 
+[[deprecated("moving to unified texture-image functionality.")]]
 typedef struct image_t {
 
 	uint32_t numArrayLayers;
@@ -41,9 +43,13 @@ typedef struct image_t {
 
 } image_t;
 
+[[deprecated("moving to unified texture-image functionality.")]]
 image_t create_image(const image_create_info_t image_create_info);
+
+[[deprecated("moving to unified texture-image functionality.")]]
 bool destroy_image(image_t *const image_ptr);
 
+[[deprecated("moving to unified texture-image functionality.")]]
 void create_sampler(physical_device_t physical_device, VkDevice device, VkSampler *sampler_ptr);
 
 #endif	// IMAGE_H

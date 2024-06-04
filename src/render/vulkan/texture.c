@@ -11,12 +11,52 @@
 #include "command_buffer.h"
 #include "vulkan_manager.h"
 
+const TextureImageUsage imageUsageUndefined = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+	.memoryAccessMask = VK_ACCESS_2_NONE,
+	.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
+};
+
+const TextureImageUsage imageUsageTransferSource = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+	.memoryAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+	.imageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+};
+
+const TextureImageUsage imageUsageTransferDestination = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+	.memoryAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+	.imageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+};
+
+const TextureImageUsage imageUsageComputeRead = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+	.memoryAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+	.imageLayout = VK_IMAGE_LAYOUT_GENERAL
+};
+
+const TextureImageUsage imageUsageComputeWrite = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+	.memoryAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+	.imageLayout = VK_IMAGE_LAYOUT_GENERAL
+};
+
+const TextureImageUsage imageUsageSampled = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+	.memoryAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+};
+
 Texture makeNullTexture(void) {
 	return (Texture){
 		.numAnimations = 0,
 		.animations = NULL,
 		.numImageArrayLayers = 0,
-		.image = (TextureImage){ 0 },
+		.image = (TextureImage){ 
+			.vkImage = VK_NULL_HANDLE,
+			.vkImageView = VK_NULL_HANDLE,
+			.usage = imageUsageUndefined
+		},
 		.format = VK_FORMAT_UNDEFINED,
 		.layout = VK_IMAGE_LAYOUT_UNDEFINED,
 		.memory = VK_NULL_HANDLE,
@@ -32,7 +72,7 @@ bool textureIsNull(const Texture texture) {
 		|| texture.device == VK_NULL_HANDLE;
 }
 
-static VkFormat texture_image_format(const TextureCreateInfo textureCreateInfo) {
+static VkFormat getTextureImageFormat(const TextureCreateInfo textureCreateInfo) {
 	if (textureCreateInfo.isTilemap) {
 		return VK_FORMAT_R8G8B8A8_UINT;
 	}
@@ -46,7 +86,7 @@ static VkImageUsageFlags getTextureImageUsage(const TextureCreateInfo textureCre
 	return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 }
 
-static VkImage create_texture_image(const Texture texture, const TextureCreateInfo textureCreateInfo) {
+static VkImage createTextureImage(const Texture texture, const TextureCreateInfo textureCreateInfo) {
 
 	uint32_t queue_family_indices[2];
 	if (textureCreateInfo.isTilemap) {
@@ -64,8 +104,8 @@ static VkImage create_texture_image(const Texture texture, const TextureCreateIn
 		.flags = 0,
 		.imageType = VK_IMAGE_TYPE_2D,
 		.format = texture.format,
-		.extent.width = textureCreateInfo.cell_extent.width,
-		.extent.height = textureCreateInfo.cell_extent.length,
+		.extent.width = textureCreateInfo.cellExtent.width,
+		.extent.height = textureCreateInfo.cellExtent.length,
 		.extent.depth = 1,
 		.mipLevels = 1,
 		.arrayLayers = texture.numImageArrayLayers,
@@ -86,7 +126,7 @@ static VkImage create_texture_image(const Texture texture, const TextureCreateIn
 	return vkImage;
 }
 
-static void get_image_memory_requirements(const VkDevice device, const VkImage vkImage, VkMemoryRequirements2 *const memory_requirements) {
+static void getImageMemoryRequirements(const VkDevice device, const VkImage vkImage, VkMemoryRequirements2 *const memory_requirements) {
 
 	// Query memory requirements for this image.
 	VkImageMemoryRequirementsInfo2 image_memory_requirements_info = { 0 };
@@ -102,7 +142,7 @@ static void get_image_memory_requirements(const VkDevice device, const VkImage v
 	*memory_requirements = image_memory_requirements;
 }
 
-static void bind_image_memory(const Texture texture, const VkImage vkImage, VkDeviceSize offset) {
+static void bindImageMemory(const Texture texture, const VkImage vkImage, VkDeviceSize offset) {
 
 	// Bind the image to memory.
 	const VkBindImageMemoryInfo image_bind_info = {
@@ -116,7 +156,7 @@ static void bind_image_memory(const Texture texture, const VkImage vkImage, VkDe
 	vkBindImageMemory2(texture.device, 1, &image_bind_info);
 }
 
-static VkImageView create_texture_image_view(const Texture texture, const VkImage vkImage) {
+static VkImageView createTextureImageView(const Texture texture, const VkImage vkImage) {
 
 	// Subresource range used in all image views and layout transitions.
 	static const VkImageSubresourceRange image_subresource_range = {
@@ -153,13 +193,10 @@ static VkImageView create_texture_image_view(const Texture texture, const VkImag
 Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
 	Texture texture = makeNullTexture();
-	
 	texture.numAnimations = textureCreateInfo.num_animations;
-	texture.numImageArrayLayers = textureCreateInfo.num_cells.width * textureCreateInfo.num_cells.length;
-	texture.format = texture_image_format(textureCreateInfo);
-	texture.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-	texture.memory = VK_NULL_HANDLE;
-	texture.device = device;	// TODO - pass vkDevice through argument list, not global state.
+	texture.numImageArrayLayers = textureCreateInfo.numCells.width * textureCreateInfo.numCells.length;
+	texture.format = getTextureImageFormat(textureCreateInfo);
+	texture.device = device;	// TODO - pass vkDevice through parameters, not global state.
 
 	allocate((void **)&texture.animations, texture.numAnimations, sizeof(TextureAnimation));
 	for (uint32_t i = 0; i < texture.numAnimations; ++i) {
@@ -168,11 +205,11 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 		texture.animations[i].framesPerSecond = textureCreateInfo.animations[i].frames_per_second;
 	}
 
-	texture.image.vkImage = create_texture_image(texture, textureCreateInfo);
+	texture.image.vkImage = createTextureImage(texture, textureCreateInfo);
 
 	// Allocate memory for the texture image.
 	VkMemoryRequirements2 image_memory_requirements;
-	get_image_memory_requirements(texture.device, texture.image.vkImage, &image_memory_requirements);
+	getImageMemoryRequirements(texture.device, texture.image.vkImage, &image_memory_requirements);
 	const VkMemoryAllocateInfo allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.pNext = NULL,
@@ -183,18 +220,18 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	const VkResult memory_allocation_result = vkAllocateMemory(texture.device, &allocate_info, NULL, &texture.memory);
 	if (memory_allocation_result != VK_SUCCESS) {
 		logf_message(ERROR, "Error loading texture: failed to allocate memory (error code: %i).", memory_allocation_result);
-		destroy_texture(&texture);
+		deleteTexture(&texture);
 		return texture;
 	}
 
-	bind_image_memory(texture, texture.image.vkImage, 0);
-	texture.image.vkImageView = create_texture_image_view(texture, texture.image.vkImage);
+	bindImageMemory(texture, texture.image.vkImage, 0);
+	texture.image.vkImageView = createTextureImageView(texture, texture.image.vkImage);
 
 	return texture;
 }
 
-bool destroy_texture(Texture *const pTexture) {
-	if (pTexture == NULL) {
+bool deleteTexture(Texture *const pTexture) {
+	if (!pTexture) {
 		return false;
 	}
 	
@@ -205,4 +242,31 @@ bool destroy_texture(Texture *const pTexture) {
 	*pTexture = makeNullTexture();
 
 	return true;
+}
+
+VkImageSubresourceRange makeImageSubresourceRange(const TextureImageSubresourceRange subresourceRange) {
+	return (VkImageSubresourceRange){
+		.aspectMask = subresourceRange.imageAspectMask,
+		.baseMipLevel = 0,
+		.levelCount = 1,
+		.baseArrayLayer = subresourceRange.baseArrayLayer,
+		.layerCount = subresourceRange.layerCount
+	};
+}
+
+VkImageMemoryBarrier2 makeImageTransitionBarrier(const TextureImage image, const TextureImageSubresourceRange subresourceRange, const TextureImageUsage newUsage) {
+	return (VkImageMemoryBarrier2){
+		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+		.pNext = nullptr,
+		.srcStageMask = image.usage.pipelineStageMask,
+		.srcAccessMask = image.usage.memoryAccessMask,
+		.dstStageMask = newUsage.pipelineStageMask,
+		.dstAccessMask = newUsage.memoryAccessMask,
+		.oldLayout = image.usage.imageLayout,
+		.newLayout = newUsage.imageLayout,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.image = image.vkImage,
+		.subresourceRange = makeImageSubresourceRange(subresourceRange)
+	};
 }

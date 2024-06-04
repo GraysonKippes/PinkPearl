@@ -60,7 +60,7 @@ int loadRenderObject(const DimensionsF quadDimensions, const Transform transform
 }
 
 void unloadRenderObject(int *const pRenderHandle) {
-	if (pRenderHandle == NULL) {
+	if (!pRenderHandle) {
 		return;
 	} else if (validateRenderHandle(*pRenderHandle)) {
 		return;
