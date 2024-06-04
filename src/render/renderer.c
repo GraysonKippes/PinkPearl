@@ -31,7 +31,7 @@ void init_renderer(void) {
 	initTextureManager();
 	initTextureDescriptors();
 
-	TexturePack texturePack = parse_fgt_file(FGT_PATH);
+	TexturePack texturePack = readTexturePackFile(FGT_PATH);
 	textureManagerLoadTexturePack(texturePack);
 	deleteTexturePack(&texturePack);
 	
@@ -45,12 +45,12 @@ void init_renderer(void) {
 			.numCells.length = 1,
 			.cellExtent.width = 16,
 			.cellExtent.length = 16,
-			.num_animations = 1,
-			.animations = (animation_create_info_t[1]){
+			.numAnimations = 1,
+			.animations = (TextureAnimation[1]){
 				{
-					.start_cell = 0,
-					.num_frames = 1,
-					.frames_per_second = 0
+					.startCell = 0,
+					.numFrames = 1,
+					.framesPerSecond = 0
 				}
 			}
 		};

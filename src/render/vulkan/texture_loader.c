@@ -44,11 +44,11 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	logf_message(VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.buffer);
 
-	if (textureCreateInfo.num_animations == 0) {
+	if (textureCreateInfo.numAnimations == 0) {
 		log_message(ERROR, "Error loading texture: number of animation create infos is zero.");
 	}
 
-	if (textureCreateInfo.num_animations > 0 && textureCreateInfo.animations == NULL) {
+	if (textureCreateInfo.numAnimations > 0 && textureCreateInfo.animations == NULL) {
 		log_message(ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is NULL.");
 		return makeNullTexture();
 	}

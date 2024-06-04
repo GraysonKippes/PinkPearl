@@ -1,7 +1,7 @@
 #ifndef VK_TEXTURE_LOADER_H
 #define VK_TEXTURE_LOADER_H
 
-#include "render/texture_info.h"
+#include "render/texture_pack.h"
 
 #include "texture.h"
 

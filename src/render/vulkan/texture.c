@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "log/logging.h"
 #include "util/allocate.h"
@@ -58,7 +59,6 @@ Texture makeNullTexture(void) {
 			.usage = imageUsageUndefined
 		},
 		.format = VK_FORMAT_UNDEFINED,
-		.layout = VK_IMAGE_LAYOUT_UNDEFINED,
 		.memory = VK_NULL_HANDLE,
 		.device = VK_NULL_HANDLE
 	};
@@ -193,17 +193,13 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
 	Texture texture = makeNullTexture();
-	texture.numAnimations = textureCreateInfo.num_animations;
+	texture.numAnimations = textureCreateInfo.numAnimations;
 	texture.numImageArrayLayers = textureCreateInfo.numCells.width * textureCreateInfo.numCells.length;
 	texture.format = getTextureImageFormat(textureCreateInfo);
 	texture.device = device;	// TODO - pass vkDevice through parameters, not global state.
 
 	allocate((void **)&texture.animations, texture.numAnimations, sizeof(TextureAnimation));
-	for (uint32_t i = 0; i < texture.numAnimations; ++i) {
-		texture.animations[i].startCell = textureCreateInfo.animations[i].start_cell;
-		texture.animations[i].numFrames = textureCreateInfo.animations[i].num_frames;
-		texture.animations[i].framesPerSecond = textureCreateInfo.animations[i].frames_per_second;
-	}
+	memcpy_s(texture.animations, texture.numAnimations * sizeof(TextureAnimation), textureCreateInfo.animations, textureCreateInfo.numAnimations * sizeof(TextureAnimation));
 
 	texture.image.vkImage = createTextureImage(texture, textureCreateInfo);
 

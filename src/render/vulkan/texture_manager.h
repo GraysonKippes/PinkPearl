@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #include "game/area/room.h"
-#include "render/texture_info.h"
+#include "render/texture_pack.h"
 #include "util/string.h"
 
 #include "texture.h"

@@ -1,4 +1,4 @@
-#include "texture_info.h"
+#include "texture_pack.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -16,31 +16,31 @@ void deleteTexturePack(TexturePack *const pTexturePack) {
 		return;
 	}
 
-	for (uint32_t i = 0; i < pTexturePack->num_textures; ++i) {
-		deleteString(&pTexturePack->texture_create_infos[i].textureID);
-		deallocate((void **)&pTexturePack->texture_create_infos[i].animations);
+	for (uint32_t i = 0; i < pTexturePack->numTextures; ++i) {
+		deleteString(&pTexturePack->pTextureCreateInfos[i].textureID);
+		deallocate((void **)&pTexturePack->pTextureCreateInfos[i].animations);
 	}
 
-	free(pTexturePack->texture_create_infos);
-	pTexturePack->texture_create_infos = NULL;
+	free(pTexturePack->pTextureCreateInfos);
+	pTexturePack->pTextureCreateInfos = NULL;
 }
 
-TexturePack parse_fgt_file(const char *path) {
+TexturePack readTexturePackFile(const char *pPath) {
 	log_stack_push("LoadTexturePack");
-	logf_message(VERBOSE, "Loading texture pack from \"%s\"...", path);
+	logf_message(VERBOSE, "Loading texture pack from \"%s\"...", pPath);
 
 	TexturePack texturePack = { 0 };
-	texturePack.num_textures = 0;
-	texturePack.texture_create_infos = NULL;
+	texturePack.numTextures = 0;
+	texturePack.pTextureCreateInfos = NULL;
 
-	if (path == NULL) {
+	if (pPath == NULL) {
 		log_message(ERROR, "Filename is NULL.");
 		return texturePack;
 	}
 
-	FILE *fgt_file = fopen(path, "rb");
+	FILE *fgt_file = fopen(pPath, "rb");
 	if (fgt_file == NULL) {
-		logf_message(ERROR, "File not found at \"%s\".", path);
+		logf_message(ERROR, "File not found at \"%s\".", pPath);
 		return texturePack;
 	}
 
@@ -52,20 +52,20 @@ TexturePack parse_fgt_file(const char *path) {
 		goto end_read;
 	}
 
-	read_data(fgt_file, sizeof(uint32_t), 1, &texturePack.num_textures);
+	read_data(fgt_file, sizeof(uint32_t), 1, &texturePack.numTextures);
 
-	if (texturePack.num_textures == 0) {
+	if (texturePack.numTextures == 0) {
 		log_message(ERROR, "Number of textures specified as zero.");
 		goto end_read;
 	}
 
-	if (!allocate((void **)&texturePack.texture_create_infos, texturePack.num_textures, sizeof(TextureCreateInfo))) {
+	if (!allocate((void **)&texturePack.pTextureCreateInfos, texturePack.numTextures, sizeof(TextureCreateInfo))) {
 		log_message(ERROR, "Texture create info array allocation failed.");
 		goto end_read;
 	}
 
-	for (uint32_t i = 0; i < texturePack.num_textures; ++i) {
-		TextureCreateInfo *pTextureInfo = &texturePack.texture_create_infos[i];
+	for (uint32_t i = 0; i < texturePack.numTextures; ++i) {
+		TextureCreateInfo *pTextureInfo = &texturePack.pTextureCreateInfos[i];
 
 		// Read texture ID.
 		pTextureInfo->textureID = readString(fgt_file, 256);
@@ -108,18 +108,18 @@ TexturePack parse_fgt_file(const char *path) {
 		}
 
 		// Read animation create infos.
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->num_animations);
-		if (pTextureInfo->num_animations > 0) {
+		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->numAnimations);
+		if (pTextureInfo->numAnimations > 0) {
 
-			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->num_animations, sizeof(animation_create_info_t))) {
+			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->numAnimations, sizeof(TextureAnimation))) {
 				logf_message(ERROR, "Failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}
 
-			for (uint32_t j = 0; j < pTextureInfo->num_animations; ++j) {
-				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].start_cell);
-				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].num_frames);
-				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].frames_per_second);
+			for (uint32_t j = 0; j < pTextureInfo->numAnimations; ++j) {
+				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].startCell);
+				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].numFrames);
+				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].framesPerSecond);
 			}
 		}
 		else {
@@ -127,15 +127,15 @@ TexturePack parse_fgt_file(const char *path) {
 			// If there are no specified animations, then set the number of animations to one 
 			// 	and set the first (and only) animation to a default value.
 			// This eliminates the need for branching when querying animation cycles in a texture.
-			pTextureInfo->num_animations = 1;
-			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->num_animations, sizeof(animation_create_info_t))) {
+			pTextureInfo->numAnimations = 1;
+			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->numAnimations, sizeof(TextureAnimation))) {
 				logf_message(ERROR, "Error reading texture file: failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}
 
-			pTextureInfo->animations[0].start_cell = 0;
-			pTextureInfo->animations[0].num_frames = 1;
-			pTextureInfo->animations[0].frames_per_second = 0;
+			pTextureInfo->animations[0].startCell = 0;
+			pTextureInfo->animations[0].numFrames = 1;
+			pTextureInfo->animations[0].framesPerSecond = 0;
 		}
 	}
 

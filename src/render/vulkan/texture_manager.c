@@ -72,12 +72,12 @@ void initTextureManager(void) {
 		.numCells.length = 1,
 		.cellExtent.width = 16,
 		.cellExtent.length = 16,
-		.num_animations = 1,
-		.animations = (animation_create_info_t[1]){
+		.numAnimations = 1,
+		.animations = (TextureAnimation[1]){
 			{
-				.start_cell = 0,
-				.num_frames = 1,
-				.frames_per_second = 0
+				.startCell = 0,
+				.numFrames = 1,
+				.framesPerSecond = 0
 			}
 		}
 	};
@@ -104,24 +104,24 @@ bool textureManagerLoadTexturePack(const TexturePack texturePack) {
 		initTextureManager();
 	}
 	
-	if (texturePack.num_textures == 0) {
+	if (texturePack.numTextures == 0) {
 		log_message(WARNING, "Warning loading texture pack: loaded texture pack is empty.");
 		return false;
 	}
 
-	if (texturePack.texture_create_infos == NULL) {
+	if (texturePack.pTextureCreateInfos == NULL) {
 		log_message(ERROR, "Error loading texture pack: array of texture create infos is null.");
 		return false;
 	}
 	
 	const int textureSlotsRemaining = numTextures - numTexturesLoaded;
-	if (textureSlotsRemaining < (int)texturePack.num_textures) {
+	if (textureSlotsRemaining < (int)texturePack.numTextures) {
 		logf_message(ERROR, "Error loading texture pack: not enough available texture slots (%i) for texture pack.", textureSlotsRemaining);
 		return false;
 	}
 	
-	for (unsigned int i = 0; i < texturePack.num_textures; ++i) {
-		textureManagerLoadTexture(texturePack.texture_create_infos[i]);
+	for (unsigned int i = 0; i < texturePack.numTextures; ++i) {
+		textureManagerLoadTexture(texturePack.pTextureCreateInfos[i]);
 	}
 	
 	log_message(VERBOSE, "Done loading texture pack.");

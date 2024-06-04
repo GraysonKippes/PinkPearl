@@ -6,7 +6,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include "render/texture_info.h"
+#include "math/extent.h"
+#include "util/string.h"
 
 // Describes the usage of an image inside the GPU.
 typedef struct TextureImageUsage {
@@ -35,31 +36,41 @@ typedef struct TextureAnimation {
 
 typedef struct Texture {
 	
-	uint32_t numAnimations;
-	TextureAnimation *animations;
-	
 	uint32_t numImageArrayLayers;
 	TextureImage image;
 	VkFormat format;
 	
-	[[deprecated("moving image layout to image struct.")]]
-	VkImageLayout layout;
+	uint32_t numAnimations;
+	TextureAnimation *animations;
 	
 	VkDeviceMemory memory;
 	VkDevice device;
 	
 } Texture;
 
+typedef struct TextureCreateInfo {
+	
+	String textureID;
+	
+	bool isLoaded;
+	bool isTilemap;
+
+	// Number of cells in the texture, in each dimension.
+	extent_t numCells;
+
+	// The dimensions of each cell, in texels.
+	extent_t cellExtent;
+
+	uint32_t numAnimations;
+	TextureAnimation *animations;
+
+} TextureCreateInfo;
+
 extern const TextureImageUsage imageUsageUndefined;
-
 extern const TextureImageUsage imageUsageTransferSource;
-
 extern const TextureImageUsage imageUsageTransferDestination;
-
 extern const TextureImageUsage imageUsageComputeRead;
-
 extern const TextureImageUsage imageUsageComputeWrite;
-
 extern const TextureImageUsage imageUsageSampled;
 
 // Returns a null texture struct.
