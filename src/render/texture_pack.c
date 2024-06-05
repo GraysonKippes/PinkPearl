@@ -12,7 +12,7 @@
 #include "util/file_io.h"
 
 void deleteTexturePack(TexturePack *const pTexturePack) {
-	if (pTexturePack == NULL) {
+	if (pTexturePack == nullptr) {
 		return;
 	}
 
@@ -22,7 +22,7 @@ void deleteTexturePack(TexturePack *const pTexturePack) {
 	}
 
 	free(pTexturePack->pTextureCreateInfos);
-	pTexturePack->pTextureCreateInfos = NULL;
+	pTexturePack->pTextureCreateInfos = nullptr;
 }
 
 TexturePack readTexturePackFile(const char *pPath) {
@@ -31,28 +31,28 @@ TexturePack readTexturePackFile(const char *pPath) {
 
 	TexturePack texturePack = { 0 };
 	texturePack.numTextures = 0;
-	texturePack.pTextureCreateInfos = NULL;
+	texturePack.pTextureCreateInfos = nullptr;
 
-	if (pPath == NULL) {
-		log_message(ERROR, "Filename is NULL.");
+	if (pPath == nullptr) {
+		log_message(ERROR, "Filename is nullptr.");
 		return texturePack;
 	}
 
-	FILE *fgt_file = fopen(pPath, "rb");
-	if (fgt_file == NULL) {
+	FILE *pFile = fopen(pPath, "rb");
+	if (pFile == nullptr) {
 		logf_message(ERROR, "File not found at \"%s\".", pPath);
 		return texturePack;
 	}
 
 	static const char fgt_label[4] = "FGT";
 	char label[4];
-	fread(label, 1, 4, fgt_file);
+	fread(label, 1, 4, pFile);
 	if (strcmp(label, fgt_label) != 0) {
 		logf_message(ERROR, "Invalid file format; found label \"%s\".", label);
 		goto end_read;
 	}
 
-	read_data(fgt_file, sizeof(uint32_t), 1, &texturePack.numTextures);
+	read_data(pFile, sizeof(uint32_t), 1, &texturePack.numTextures);
 
 	if (texturePack.numTextures == 0) {
 		log_message(ERROR, "Number of textures specified as zero.");
@@ -68,7 +68,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 		TextureCreateInfo *pTextureInfo = &texturePack.pTextureCreateInfos[i];
 
 		// Read texture ID.
-		pTextureInfo->textureID = readString(fgt_file, 256);
+		pTextureInfo->textureID = readString(pFile, 256);
 		if (stringIsNull(pTextureInfo->textureID)) {
 			log_message(ERROR, "Error reading texture pack: failed to read texture ID.");
 			goto end_read;
@@ -76,7 +76,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 
 		// Read texture type.
 		uint32_t textureCreateInfoFlags = 0;
-		read_data(fgt_file, sizeof(uint32_t), 1, &textureCreateInfoFlags);
+		read_data(pFile, sizeof(uint32_t), 1, &textureCreateInfoFlags);
 		
 		if (textureCreateInfoFlags & 0x00000001) {
 			pTextureInfo->isLoaded = true;
@@ -86,12 +86,12 @@ TexturePack readTexturePackFile(const char *pPath) {
 		}
 
 		// Read number of cells in texture atlas.
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->numCells.width);
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->numCells.length);
+		read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->numCells.width);
+		read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->numCells.length);
 
 		// Read texture cell extent.
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->cellExtent.width);
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->cellExtent.length);
+		read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->cellExtent.width);
+		read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->cellExtent.length);
 
 		// Check extents -- if any of them are zero, then there certainly was an error.
 		if (pTextureInfo->numCells.width == 0) {
@@ -108,7 +108,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 		}
 
 		// Read animation create infos.
-		read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->numAnimations);
+		read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->numAnimations);
 		if (pTextureInfo->numAnimations > 0) {
 
 			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->numAnimations, sizeof(TextureAnimation))) {
@@ -117,9 +117,9 @@ TexturePack readTexturePackFile(const char *pPath) {
 			}
 
 			for (uint32_t j = 0; j < pTextureInfo->numAnimations; ++j) {
-				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].startCell);
-				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].numFrames);
-				read_data(fgt_file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].framesPerSecond);
+				read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->animations[j].startCell);
+				read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->animations[j].numFrames);
+				read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->animations[j].framesPerSecond);
 			}
 		}
 		else {
@@ -140,7 +140,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 	}
 
 end_read:
-	fclose(fgt_file);
+	fclose(pFile);
 	error_queue_flush();
 	log_stack_pop();
 	return texturePack;

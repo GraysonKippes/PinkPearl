@@ -18,7 +18,7 @@ static log_stack_t log_stack;
 pthread_mutex_t log_stack_mutex;
 
 void init_log_stack(void) {
-	pthread_mutex_init(&log_stack_mutex, NULL);
+	pthread_mutex_init(&log_stack_mutex, nullptr);
 	log_stack = (log_stack_t){
 		.string = newStringEmpty(64),
 		.height = 0

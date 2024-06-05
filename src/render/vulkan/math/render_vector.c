@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 void render_vector_set(RenderVector *const render_vector_ptr, const Vector4F new_vector) {
-	if (render_vector_ptr == NULL) {
+	if (render_vector_ptr == nullptr) {
 		return;
 	}
 	render_vector_ptr->previous = render_vector_ptr->current;
@@ -11,7 +11,7 @@ void render_vector_set(RenderVector *const render_vector_ptr, const Vector4F new
 }
 
 void render_vector_reset(RenderVector *const render_vector_ptr, const Vector4F new_vector) {
-	if (render_vector_ptr == NULL) {
+	if (render_vector_ptr == nullptr) {
 		return;
 	}
 	render_vector_ptr->current = new_vector;
@@ -19,7 +19,7 @@ void render_vector_reset(RenderVector *const render_vector_ptr, const Vector4F n
 }
 
 void render_vector_settle(RenderVector *const render_vector_ptr) {
-	if (render_vector_ptr == NULL) {
+	if (render_vector_ptr == nullptr) {
 		return;
 	}
 	render_vector_ptr->previous = render_vector_ptr->current;

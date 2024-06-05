@@ -56,9 +56,9 @@ void tick_game(void) {
 		}
 	}
 
-	entity_t *pPlayerEntity = NULL;
+	entity_t *pPlayerEntity = nullptr;
 	int result = getEntity(playerEntityHandle, &pPlayerEntity);
-	if (pPlayerEntity == NULL || result != 0) {
+	if (pPlayerEntity == nullptr || result != 0) {
 		return;
 	}
 
@@ -110,10 +110,10 @@ void tick_game(void) {
 		const offset_t room_offset = direction_offset(travel_direction);
 		const offset_t next_room_position = offset_add(current_room.position, room_offset);
 
-		const room_t *next_room_ptr = NULL;
+		const room_t *next_room_ptr = nullptr;
 		const bool result = area_get_room_ptr(current_area, next_room_position, &next_room_ptr);
 
-		if (result && next_room_ptr != NULL) {
+		if (result && next_room_ptr != nullptr) {
 			current_room_index = area_get_room_index(current_area, next_room_position);
 			game_state_bitfield |= (uint32_t)GAME_STATE_SCROLLING;
 			areaRenderStateSetNextRoom(&globalAreaRenderState, *next_room_ptr);

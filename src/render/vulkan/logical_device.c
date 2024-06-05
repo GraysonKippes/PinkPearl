@@ -61,7 +61,7 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 
 	VkPhysicalDeviceVulkan13Features device_vk13_features = { VK_FALSE };
 	device_vk13_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	device_vk13_features.pNext = NULL;
+	device_vk13_features.pNext = nullptr;
 	device_vk13_features.synchronization2 = VK_TRUE;
 
 	VkPhysicalDeviceVulkan12Features device_vk12_features = { VK_FALSE };
@@ -97,10 +97,10 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 		.queueCreateInfoCount = num_queue_create_infos,
 		.pQueueCreateInfos = queue_create_infos,
 		.enabledLayerCount = 0,
-		.ppEnabledLayerNames = NULL,
+		.ppEnabledLayerNames = nullptr,
 		.enabledExtensionCount = physical_device.extension_names.num_strings,
 		.ppEnabledExtensionNames = physical_device.extension_names.strings,
-		.pEnabledFeatures = NULL
+		.pEnabledFeatures = nullptr
 	};
 
 	// Compatibility
@@ -108,7 +108,7 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 		if (!check_device_validation_layer_support(physical_device.handle, vulkan_instance.layer_names)) {
 			log_message(ERROR, "Required validation layers not supported by device.");
 			create_info.enabledLayerCount = 0;
-			create_info.ppEnabledLayerNames = NULL;
+			create_info.ppEnabledLayerNames = nullptr;
 		}
 		else {
 			create_info.enabledLayerCount = vulkan_instance.layer_names.num_strings;
@@ -117,10 +117,10 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 	}
 	else {
 		create_info.enabledLayerCount = 0;
-		create_info.ppEnabledLayerNames = NULL;
+		create_info.ppEnabledLayerNames = nullptr;
 	}
 
-	VkResult result = vkCreateDevice(physical_device.handle, &create_info, NULL, device_ptr);
+	VkResult result = vkCreateDevice(physical_device.handle, &create_info, nullptr, device_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Logical device creation failed. (Error code: %i)", result);
 		exit(1); // TODO - better error handling

@@ -26,16 +26,16 @@ static ShaderBytecode read_shader_file(const char *const path) {
 	
 	ShaderBytecode shader_bytecode = {
 		.bytecode_size = 0,
-		.bytecode = NULL
+		.bytecode = nullptr
 	};
 	
-	if (path == NULL) {
+	if (path == nullptr) {
 		log_message(ERROR, "Error reading shader file: pointer to path string is null.");
 		return shader_bytecode;
 	}
 
 	FILE *file = fopen(path, "rb");
-	if (file == NULL) {
+	if (file == nullptr) {
 		log_message(ERROR, "Error reading shader file: could not open file.");
 		return shader_bytecode;
 	}
@@ -62,7 +62,7 @@ static ShaderBytecode read_shader_file(const char *const path) {
 }
 
 static bool destroy_shader_bytecode(ShaderBytecode *const pShaderBytecode) {
-	if (pShaderBytecode == NULL) {
+	if (pShaderBytecode == nullptr) {
 		return false;
 	}
 	
@@ -80,8 +80,8 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 		.device = VK_NULL_HANDLE
 	};
 
-	if (filename == NULL) {
-		log_message(ERROR, "Error creating shader module: pointer to filename is NULL.");
+	if (filename == nullptr) {
+		log_message(ERROR, "Error creating shader module: pointer to filename is nullptr.");
 		return shader_module;
 	}
 
@@ -121,20 +121,20 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 	}
 
 	ShaderBytecode shader_bytecode = read_shader_file(path);
-	if (shader_bytecode.bytecode == NULL) {
+	if (shader_bytecode.bytecode == nullptr) {
 		log_message(FATAL, "Fatal error creating shader module: shader file reading failed.");
 		return shader_module;
 	}
 
 	const VkShaderModuleCreateInfo create_info = {
 		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.codeSize = shader_bytecode.bytecode_size,
 		.pCode = (uint32_t *)shader_bytecode.bytecode
 	};
 
-	const VkResult result = vkCreateShaderModule(device, &create_info, NULL, &shader_module.module_handle);
+	const VkResult result = vkCreateShaderModule(device, &create_info, nullptr, &shader_module.module_handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Fatal error creating shader module: shader module creation failed (error code: %i).", result);
 		return shader_module;
@@ -147,11 +147,11 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 
 bool destroy_shader_module(shader_module_t *const shader_module_ptr) {
 	
-	if (shader_module_ptr == NULL) {
+	if (shader_module_ptr == nullptr) {
 		return false;
 	}
 	
-	vkDestroyShaderModule(shader_module_ptr->device, shader_module_ptr->module_handle, NULL);
+	vkDestroyShaderModule(shader_module_ptr->device, shader_module_ptr->module_handle, nullptr);
 	shader_module_ptr->module_handle = VK_NULL_HANDLE;
 	shader_module_ptr->device = VK_NULL_HANDLE;
 	

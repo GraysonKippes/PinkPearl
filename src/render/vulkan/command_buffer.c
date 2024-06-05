@@ -13,12 +13,12 @@ void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32
 
 	VkCommandPoolCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = flags;
 	create_info.queueFamilyIndex = queue_family_index;
 
 	// TODO - error handling
-	VkResult result = vkCreateCommandPool(device, &create_info, NULL, command_pool_ptr);
+	VkResult result = vkCreateCommandPool(device, &create_info, nullptr, command_pool_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Command pool creation failed. (Error code: %i)", result);
 	}
@@ -36,15 +36,14 @@ void allocate_command_buffers(VkDevice device, VkCommandPool command_pool, uint3
 	vkAllocateCommandBuffers(device, &allocate_info, command_buffers);
 }
 
-void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage) {
-
-	VkCommandBufferBeginInfo begin_info = { 0 };
-	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_info.pNext = NULL;
-	begin_info.flags = usage;
-	begin_info.pInheritanceInfo = NULL;
-	
-	vkBeginCommandBuffer(command_buffer, &begin_info);
+void cmdBufBegin(const VkCommandBuffer cmdBuf, const bool singleSubmit) {
+	const VkCommandBufferBeginInfo cmdBufBeginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = nullptr,
+		.flags = singleSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0,
+		.pInheritanceInfo = nullptr
+	};
+	vkBeginCommandBuffer(cmdBuf, &cmdBufBeginInfo);
 }
 
 void begin_render_pass(VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkExtent2D extent, VkClearValue *clear_value) {
@@ -65,7 +64,7 @@ void begin_render_pass(VkCommandBuffer command_buffer, VkRenderPass render_pass,
 VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer command_buffer) {
 	return (VkCommandBufferSubmitInfo){
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.commandBuffer = command_buffer,
 		.deviceMask = 0
 	};
@@ -75,15 +74,15 @@ void submit_command_buffers_async(VkQueue queue, uint32_t num_command_buffers, V
 
 	VkSubmitInfo submit_info = { 0 };
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit_info.pNext = NULL;
-	submit_info.pWaitDstStageMask = NULL;
+	submit_info.pNext = nullptr;
+	submit_info.pWaitDstStageMask = nullptr;
 	submit_info.commandBufferCount = num_command_buffers;
 	submit_info.pCommandBuffers = command_buffers;
 	submit_info.waitSemaphoreCount = 0;
-	submit_info.pWaitSemaphores = NULL;
+	submit_info.pWaitSemaphores = nullptr;
 	submit_info.signalSemaphoreCount = 0;
-	submit_info.pSignalSemaphores = NULL;
+	submit_info.pSignalSemaphores = nullptr;
 
-	vkQueueSubmit(queue, 1, &submit_info, NULL);
+	vkQueueSubmit(queue, 1, &submit_info, nullptr);
 	vkQueueWaitIdle(queue);
 }

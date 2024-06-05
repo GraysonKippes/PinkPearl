@@ -11,7 +11,7 @@ String makeNullString(void) {
 	return (String){
 		.length = 0,
 		.capacity = 0,
-		.buffer = NULL
+		.buffer = nullptr
 	};
 }
 
@@ -30,7 +30,7 @@ String newStringEmpty(const size_t initCapacity) {
 String newString(const size_t capacity, const char *const pInitData) {
 	
 	String string = newStringEmpty(capacity);
-	if (stringIsNull(string) || pInitData == NULL) {
+	if (stringIsNull(string) || pInitData == nullptr) {
 		return string;
 	}
 	
@@ -52,7 +52,7 @@ String deepCopyString(const String copy) {
 }
 
 bool deleteString(String *const pString) {
-	if (pString == NULL) {
+	if (pString == nullptr) {
 		return false;
 	}
 	
@@ -64,7 +64,7 @@ bool deleteString(String *const pString) {
 }
 
 bool stringIsNull(const String string) {
-	return string.capacity == 0 || string.buffer == NULL;
+	return string.capacity == 0 || string.buffer == nullptr;
 }
 
 bool stringCompare(const String a, const String b) {
@@ -85,7 +85,7 @@ size_t stringReverseSearchChar(const String string, const char c) {
 	}
 	
 	const char *reverse_search_result = strrchr(string.buffer, c);
-	if (reverse_search_result == NULL) {
+	if (reverse_search_result == nullptr) {
 		return string.length;
 	}
 	
@@ -94,7 +94,7 @@ size_t stringReverseSearchChar(const String string, const char c) {
 }
 
 bool stringConcatChar(String *const pString, const char c) {
-	if (pString == NULL) {
+	if (pString == nullptr) {
 		return false;
 	}
 	
@@ -113,7 +113,7 @@ bool stringConcatChar(String *const pString, const char c) {
 }
 
 bool stringConcatString(String *const pDst, const String src) {
-	if (pDst == NULL) {
+	if (pDst == nullptr) {
 		return false;
 	}
 	
@@ -134,7 +134,7 @@ bool stringConcatString(String *const pDst, const String src) {
 }
 
 bool stringConcatCString(String *const pDst, const char *const src_pstring) {
-	if (pDst == NULL || src_pstring == NULL) {
+	if (pDst == nullptr || src_pstring == nullptr) {
 		return false;
 	}
 	
@@ -160,7 +160,7 @@ bool stringConcatCString(String *const pDst, const char *const src_pstring) {
 }
 
 bool stringRemoveTrailingChars(String *const pString, const size_t num_chars) {
-	if (pString == NULL) {
+	if (pString == nullptr) {
 		return false;
 	}
 	

@@ -19,7 +19,7 @@ area_t parse_fga_file(const char *filename) {
 	area_t area = { 0 };
 
 	FILE *fga_file = fopen(FGA_FILE_DIRECTORY, "rb");
-	if (fga_file == NULL) {
+	if (fga_file == nullptr) {
 		log_message(ERROR, "Error reading area file: failed to open file.");
 		return area;
 	}
@@ -86,16 +86,16 @@ area_t parse_fga_file(const char *filename) {
 	}
 
 	area.rooms = calloc(area.num_rooms, sizeof(room_t));
-	if (area.rooms == NULL) {
+	if (area.rooms == nullptr) {
 		log_message(ERROR, "Error creating area: allocation of area.rooms failed.");
 		goto end_read;
 	}
 
 	area.positions_to_rooms = calloc(extent_area, sizeof(int));
-	if (area.positions_to_rooms == NULL) {
+	if (area.positions_to_rooms == nullptr) {
 		log_message(ERROR, "Error creating area: allocation of area.positions_to_rooms failed.");
 		free(area.rooms);
-		area.rooms = NULL;
+		area.rooms = nullptr;
 		goto end_read;
 	}
 
@@ -110,13 +110,13 @@ area_t parse_fga_file(const char *filename) {
 		area.rooms[i].size = area.room_size;
 		area.rooms[i].extent = area.room_extent;
 		area.rooms[i].num_entity_spawners = 0;
-		area.rooms[i].entity_spawners = NULL;
+		area.rooms[i].entity_spawners = nullptr;
 
 		const int result = read_room_data(fga_file, &area.rooms[i]);
 		if (result != 0) {
 			logf_message(ERROR, "Error creating area: error encountered while reading data for room %u (Error code = %u).", i, result);
 			free(area.rooms);
-			area.rooms = NULL;
+			area.rooms = nullptr;
 			goto end_read;
 		}
 
@@ -141,7 +141,7 @@ static int read_room_data(FILE *file, room_t *const room_ptr) {
 	}
 
 	room_ptr->tiles = calloc(num_tiles, sizeof(tile_t));
-	if (room_ptr->tiles == NULL) {
+	if (room_ptr->tiles == nullptr) {
 		log_message(ERROR, "Error reading area file: failed to allocate tile array.");
 		return -2;
 	}
@@ -154,7 +154,7 @@ static int read_room_data(FILE *file, room_t *const room_ptr) {
 
 		room_ptr->num_walls = num_walls;
 		room_ptr->walls = calloc(num_walls, sizeof(rect_t));
-		if (room_ptr->walls == NULL) {
+		if (room_ptr->walls == nullptr) {
 			log_message(ERROR, "Error reading area file: failed to allocate wall array.");
 			return -3;
 		}

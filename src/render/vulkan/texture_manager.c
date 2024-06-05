@@ -109,7 +109,7 @@ bool textureManagerLoadTexturePack(const TexturePack texturePack) {
 		return false;
 	}
 
-	if (texturePack.pTextureCreateInfos == NULL) {
+	if (texturePack.pTextureCreateInfos == nullptr) {
 		log_message(ERROR, "Error loading texture pack: array of texture create infos is null.");
 		return false;
 	}

@@ -5,17 +5,17 @@
 
 audio_queue_node_t *new_audio_queue_node(void) {
 	audio_queue_node_t *audio_queue_node_ptr = malloc(sizeof(audio_queue_node_t));
-	atomic_init(&audio_queue_node_ptr->next_node_ptr, NULL);
+	atomic_init(&audio_queue_node_ptr->next_node_ptr, nullptr);
 	return audio_queue_node_ptr;
 }
 
 bool destroy_audio_queue_node(audio_queue_node_t *const audio_queue_node_ptr) {
 
-	if (audio_queue_node_ptr == NULL) {
+	if (audio_queue_node_ptr == nullptr) {
 		return false;
 	}
 
-	atomic_store(&audio_queue_node_ptr->next_node_ptr, NULL);
+	atomic_store(&audio_queue_node_ptr->next_node_ptr, nullptr);
 
 	return true;
 }
@@ -34,20 +34,20 @@ audio_queue_t make_audio_queue(void) {
 
 bool destroy_audio_queue(audio_queue_t *const audio_queue_ptr) {
 	
-	if (audio_queue_ptr == NULL) {
+	if (audio_queue_ptr == nullptr) {
 		return false;
 	}
 	
 	audio_queue_node_t *node_ptr = audio_queue_ptr->head_node_ptr;
-	while (node_ptr != NULL) {
+	while (node_ptr != nullptr) {
 		audio_queue_node_t *temp_node_ptr = node_ptr;
 		node_ptr = (audio_queue_node_t *)atomic_load(&node_ptr->next_node_ptr);
 		destroy_audio_queue_node(temp_node_ptr);
 	}
 	
-	audio_queue_ptr->head_node_ptr = NULL;
-	atomic_init(&audio_queue_ptr->neck_node_ptr, NULL);
-	atomic_init(&audio_queue_ptr->tail_node_ptr, NULL);
+	audio_queue_ptr->head_node_ptr = nullptr;
+	atomic_init(&audio_queue_ptr->neck_node_ptr, nullptr);
+	atomic_init(&audio_queue_ptr->tail_node_ptr, nullptr);
 	atomic_init(&audio_queue_ptr->num_excess_nodes, 0);
 	
 	return true;

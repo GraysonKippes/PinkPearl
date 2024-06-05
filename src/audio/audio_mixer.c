@@ -30,7 +30,7 @@ void init_audio_mixer(void) {
 	audio_mixer_queue = make_audio_queue();
 	audio_mixer_set_music_track(load_audio_file("demo_dungeon.wav"));
 	
-	const int thread_create_result = pthread_create(&audio_mixer_thread, NULL, audio_mixer_main, NULL);
+	const int thread_create_result = pthread_create(&audio_mixer_thread, nullptr, audio_mixer_main, nullptr);
 	if (thread_create_result != 0) {
 		logf_message(ERROR, "Error initializing audio mixer: thread creation returned with code %i.", thread_create_result);
 	}
@@ -44,7 +44,7 @@ void terminate_audio_mixer(void) {
 	log_message(VERBOSE, "Terminating audio mixer...");
 	
 	atomic_store(&audio_mixer_running, false);
-	const int thread_join_result = pthread_join(audio_mixer_thread, NULL);
+	const int thread_join_result = pthread_join(audio_mixer_thread, nullptr);
 	if (thread_join_result != 0) {
 		logf_message(ERROR, "Error terminating audio mixer: thread joining returned with code %i.", thread_join_result);
 	}
@@ -66,7 +66,7 @@ static void *audio_mixer_main(void *arg) {
 	while (atomic_load(&audio_mixer_running)) {
 		audio_mixer_mix();
 	}
-	return NULL;
+	return nullptr;
 }
 
 static void audio_mixer_mix(void) {

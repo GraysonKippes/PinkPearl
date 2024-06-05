@@ -76,7 +76,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 
 	VkSwapchainCreateInfoKHR create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = 0;
 	create_info.surface = surface;
 	create_info.minImageCount = num_images;
@@ -95,7 +95,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 	else {
 		create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		create_info.queueFamilyIndexCount = 0;
-		create_info.pQueueFamilyIndices = NULL;
+		create_info.pQueueFamilyIndices = nullptr;
 	}
 
 	create_info.preTransform = physical_device.swapchain_support_details.capabilities.currentTransform;
@@ -104,7 +104,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 	create_info.clipped = VK_TRUE;
 	create_info.oldSwapchain = old_swapchain_handle;
 
-	VkResult swapchain_creation_result = vkCreateSwapchainKHR(device, &create_info, NULL, &swapchain.handle);
+	VkResult swapchain_creation_result = vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain.handle);
 	if (swapchain_creation_result != VK_SUCCESS) {
 		logf_message(FATAL, "Swapchain creation failed. (Error code: %i)", swapchain_creation_result);
 		exit(1);
@@ -114,7 +114,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 	
 	log_message(VERBOSE, "Retrieving images for swapchain...");
 
-	vkGetSwapchainImagesKHR(device, swapchain.handle, &num_images, NULL);
+	vkGetSwapchainImagesKHR(device, swapchain.handle, &num_images, nullptr);
 	swapchain.num_images = num_images;
 	swapchain.images = malloc(swapchain.num_images * sizeof(VkImage));
 	vkGetSwapchainImagesKHR(device, swapchain.handle, &num_images, swapchain.images);
@@ -128,7 +128,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 
 		VkImageViewCreateInfo image_view_create_info = {0};
 		image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		image_view_create_info.pNext = NULL;
+		image_view_create_info.pNext = nullptr;
 		image_view_create_info.flags = 0;
 		image_view_create_info.image = swapchain.images[i];
 		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -143,7 +143,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 		image_view_create_info.subresourceRange.baseArrayLayer = 0;
 		image_view_create_info.subresourceRange.layerCount = 1;
 
-		VkResult image_view_creation_result = vkCreateImageView(device, &image_view_create_info, NULL, (swapchain.image_views + i));
+		VkResult image_view_creation_result = vkCreateImageView(device, &image_view_create_info, nullptr, (swapchain.image_views + i));
 		if (image_view_creation_result != VK_SUCCESS) {
 			logf_message(FATAL, "Image view creation for swapchain failed. (Error code: %i)", image_view_creation_result);
 			exit(1);
@@ -162,7 +162,7 @@ void create_framebuffers(VkDevice device, VkRenderPass render_pass, swapchain_t 
 
 		VkFramebufferCreateInfo create_info = {0};
 		create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		create_info.pNext = NULL;
+		create_info.pNext = nullptr;
 		create_info.flags = 0;
 		create_info.renderPass = render_pass;
 		create_info.attachmentCount = 1;
@@ -171,7 +171,7 @@ void create_framebuffers(VkDevice device, VkRenderPass render_pass, swapchain_t 
 		create_info.height = swapchain_ptr->extent.height;
 		create_info.layers = 1;
 
-		VkResult result = vkCreateFramebuffer(device, &create_info, NULL, (swapchain_ptr->framebuffers + i));
+		VkResult result = vkCreateFramebuffer(device, &create_info, nullptr, (swapchain_ptr->framebuffers + i));
 		if (result != VK_SUCCESS) {
 			logf_message(FATAL, "Framebuffer creation for swapchain failed. (Error code: %i)", result);
 		}
@@ -181,11 +181,11 @@ void create_framebuffers(VkDevice device, VkRenderPass render_pass, swapchain_t 
 void destroy_swapchain(VkDevice device, swapchain_t swapchain) {
 
 	for (size_t i = 0; i < swapchain.num_images; ++i) {
-		vkDestroyImageView(device, swapchain.image_views[i], NULL);
-		vkDestroyFramebuffer(device, swapchain.framebuffers[i], NULL);
+		vkDestroyImageView(device, swapchain.image_views[i], nullptr);
+		vkDestroyFramebuffer(device, swapchain.framebuffers[i], nullptr);
 	}
 
-	vkDestroySwapchainKHR(device, swapchain.handle, NULL);
+	vkDestroySwapchainKHR(device, swapchain.handle, nullptr);
 
 	free(swapchain.images);
 	free(swapchain.image_views);

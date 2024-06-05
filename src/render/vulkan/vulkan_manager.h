@@ -23,15 +23,15 @@ extern VkSampler imageSamplerDefault;
 
 /* -- Queues -- */
 
-extern VkQueue graphics_queue;
+extern VkQueue queueGraphics;
 extern VkQueue present_queue;
 extern VkQueue transfer_queue;
 extern VkQueue compute_queue;
 
 /* -- Command Pools -- */
 
-extern VkCommandPool render_command_pool;
-extern VkCommandPool transfer_command_pool;
+extern VkCommandPool cmdPoolGraphics;
+extern VkCommandPool cmdPoolTransfer;
 extern VkCommandPool compute_command_pool;
 
 /* -- Global buffers -- */

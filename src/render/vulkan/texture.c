@@ -51,7 +51,7 @@ const TextureImageUsage imageUsageSampled = {
 Texture makeNullTexture(void) {
 	return (Texture){
 		.numAnimations = 0,
-		.animations = NULL,
+		.animations = nullptr,
 		.numImageArrayLayers = 0,
 		.image = (TextureImage){ 
 			.vkImage = VK_NULL_HANDLE,
@@ -100,7 +100,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 
 	const VkImageCreateInfo imageCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.imageType = VK_IMAGE_TYPE_2D,
 		.format = texture.format,
@@ -119,26 +119,28 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 	};
 
 	VkImage vkImage = VK_NULL_HANDLE;
-	const VkResult imageCreateResult = vkCreateImage(texture.device, &imageCreateInfo, NULL, &vkImage);
+	const VkResult imageCreateResult = vkCreateImage(texture.device, &imageCreateInfo, nullptr, &vkImage);
 	if (imageCreateResult != VK_SUCCESS) {
 		logf_message(ERROR, "Error loading texture: image creation failed (error code: %i).", imageCreateResult);
 	}
 	return vkImage;
 }
 
-static void getImageMemoryRequirements(const VkDevice device, const VkImage vkImage, VkMemoryRequirements2 *const memory_requirements) {
+static void getImageMemoryRequirements(const VkDevice vkDevice, const VkImage vkImage, VkMemoryRequirements2 *const memory_requirements) {
 
 	// Query memory requirements for this image.
-	VkImageMemoryRequirementsInfo2 image_memory_requirements_info = { 0 };
-	image_memory_requirements_info.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
-	image_memory_requirements_info.pNext = NULL;
-	image_memory_requirements_info.image = vkImage;
+	const VkImageMemoryRequirementsInfo2 image_memory_requirements_info = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+		.pNext = nullptr,
+		.image = vkImage
+	};
 
-	VkMemoryRequirements2 image_memory_requirements = { 0 };
-	image_memory_requirements.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-	image_memory_requirements.pNext = NULL;
+	VkMemoryRequirements2 image_memory_requirements = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+		.pNext = nullptr
+	};
 
-	vkGetImageMemoryRequirements2(device, &image_memory_requirements_info, &image_memory_requirements);
+	vkGetImageMemoryRequirements2(vkDevice, &image_memory_requirements_info, &image_memory_requirements);
 	*memory_requirements = image_memory_requirements;
 }
 
@@ -147,7 +149,7 @@ static void bindImageMemory(const Texture texture, const VkImage vkImage, VkDevi
 	// Bind the image to memory.
 	const VkBindImageMemoryInfo image_bind_info = {
 		.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.image = vkImage,
 		.memory = texture.memory,
 		.memoryOffset = offset
@@ -170,7 +172,7 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 	// Create image view.
 	const VkImageViewCreateInfo image_view_create_info = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.image = vkImage,
 		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
@@ -183,7 +185,7 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 	};
 
 	VkImageView vkImageView = VK_NULL_HANDLE;
-	const VkResult result = vkCreateImageView(texture.device, &image_view_create_info, NULL, &vkImageView);
+	const VkResult result = vkCreateImageView(texture.device, &image_view_create_info, nullptr, &vkImageView);
 	if (result != VK_SUCCESS) {
 		logf_message(ERROR, "Error loading texture: image view creation failed. (Error code: %i)", result);
 	}
@@ -208,12 +210,12 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	getImageMemoryRequirements(texture.device, texture.image.vkImage, &image_memory_requirements);
 	const VkMemoryAllocateInfo allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.allocationSize = image_memory_requirements.memoryRequirements.size,
 		.memoryTypeIndex = memory_type_set.graphics_resources
 	};
 
-	const VkResult memory_allocation_result = vkAllocateMemory(texture.device, &allocate_info, NULL, &texture.memory);
+	const VkResult memory_allocation_result = vkAllocateMemory(texture.device, &allocate_info, nullptr, &texture.memory);
 	if (memory_allocation_result != VK_SUCCESS) {
 		logf_message(ERROR, "Error loading texture: failed to allocate memory (error code: %i).", memory_allocation_result);
 		deleteTexture(&texture);
@@ -222,6 +224,43 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
 	bindImageMemory(texture, texture.image.vkImage, 0);
 	texture.image.vkImageView = createTextureImageView(texture, texture.image.vkImage);
+
+	/* Transition texture image layout to something usable. */
+
+	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
+	allocate_command_buffers(texture.device, cmdPoolGraphics, 1, &cmdBuf);
+	cmdBufBegin(cmdBuf, true); {
+		
+		TextureImageUsage imageUsage;
+		if (textureCreateInfo.isLoaded) {
+			imageUsage = imageUsageTransferDestination;
+		} else {
+			imageUsage = imageUsageSampled;
+		}
+		
+		const TextureImageSubresourceRange imageSubresourceRange = {
+			.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.baseArrayLayer = 0,
+			.arrayLayerCount = VK_REMAINING_ARRAY_LAYERS
+		};
+		
+		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(texture.image, imageSubresourceRange, imageUsage);
+		const VkDependencyInfo dependencyInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.pNext = nullptr,
+			.dependencyFlags = 0,
+			.memoryBarrierCount = 0,
+			.pMemoryBarriers = nullptr,
+			.bufferMemoryBarrierCount = 0,
+			.pBufferMemoryBarriers = nullptr,
+			.imageMemoryBarrierCount = 1,
+			.pImageMemoryBarriers = &imageMemoryBarrier
+		};
+		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
+		texture.image.usage = imageUsage;
+		
+	} vkEndCommandBuffer(cmdBuf);
+	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 
 	return texture;
 }
@@ -232,9 +271,9 @@ bool deleteTexture(Texture *const pTexture) {
 	}
 	
 	deallocate((void **)&pTexture->animations);
-	vkDestroyImage(pTexture->device, pTexture->image.vkImage, NULL);
-	vkDestroyImageView(pTexture->device, pTexture->image.vkImageView, NULL);
-	vkFreeMemory(pTexture->device, pTexture->memory, NULL);
+	vkDestroyImage(pTexture->device, pTexture->image.vkImage, nullptr);
+	vkDestroyImageView(pTexture->device, pTexture->image.vkImageView, nullptr);
+	vkFreeMemory(pTexture->device, pTexture->memory, nullptr);
 	*pTexture = makeNullTexture();
 
 	return true;
@@ -246,7 +285,7 @@ VkImageSubresourceRange makeImageSubresourceRange(const TextureImageSubresourceR
 		.baseMipLevel = 0,
 		.levelCount = 1,
 		.baseArrayLayer = subresourceRange.baseArrayLayer,
-		.layerCount = subresourceRange.layerCount
+		.layerCount = subresourceRange.arrayLayerCount
 	};
 }
 

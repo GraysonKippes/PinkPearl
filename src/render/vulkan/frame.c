@@ -27,7 +27,7 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 
 	const VkFenceCreateInfo fence_create_info = {
 		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT
 	};
 	
@@ -39,13 +39,13 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 	frame.semaphore_render_finished = create_timeline_semaphore(device);
 	frame.semaphore_buffers_ready = create_timeline_semaphore(device);
 
-	vkCreateFence(device, &fence_create_info, NULL, &frame.fence_frame_ready);
+	vkCreateFence(device, &fence_create_info, nullptr, &frame.fence_frame_ready);
 
 	allocate_command_buffers(device, command_pool, 1, &frame.command_buffer);
 
 	VkDescriptorSetAllocateInfo allocate_info;
 	allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocate_info.pNext = NULL;
+	allocate_info.pNext = nullptr;
 	allocate_info.descriptorPool = descriptor_pool;
 	allocate_info.descriptorSetCount = 1;
 	allocate_info.pSetLayouts = &descriptor_set_layout;
@@ -62,7 +62,7 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 
 	const VkBufferCreateInfo vertex_buffer_create_info = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.size = vertex_buffer_size,
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -73,7 +73,7 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 	
 	const VkBufferCreateInfo index_buffer_create_info = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.size = index_buffer_size,
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -82,8 +82,8 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 		.pQueueFamilyIndices = (uint32_t *)queue_family_indices
 	};
 	
-	vkCreateBuffer(device, &vertex_buffer_create_info, NULL, &frame.vertex_buffer);
-	vkCreateBuffer(device, &index_buffer_create_info, NULL, &frame.index_buffer);
+	vkCreateBuffer(device, &vertex_buffer_create_info, nullptr, &frame.vertex_buffer);
+	vkCreateBuffer(device, &index_buffer_create_info, nullptr, &frame.index_buffer);
 
 	return frame;
 }
@@ -93,9 +93,9 @@ static void destroy_frame(VkDevice device, frame_t frame) {
 	destroy_binary_semaphore(&frame.semaphore_present_ready);
 	destroy_timeline_semaphore(&frame.semaphore_render_finished);
 	destroy_timeline_semaphore(&frame.semaphore_buffers_ready);
-	vkDestroyFence(device, frame.fence_frame_ready, NULL);
-	vkDestroyBuffer(device, frame.vertex_buffer, NULL);
-	vkDestroyBuffer(device, frame.index_buffer, NULL);
+	vkDestroyFence(device, frame.fence_frame_ready, nullptr);
+	vkDestroyBuffer(device, frame.vertex_buffer, nullptr);
+	vkDestroyBuffer(device, frame.index_buffer, nullptr);
 }
 
 frame_array_t create_frame_array(const frame_array_create_info_t frame_array_create_info) {
@@ -105,7 +105,7 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 	frame_array_t frame_array = { 
 		.current_frame = 0,
 		.num_frames = 0,
-		.frames = NULL,
+		.frames = nullptr,
 		.buffer_memory = VK_NULL_HANDLE,
 		.device = frame_array_create_info.device
 	};
@@ -150,12 +150,12 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 	
 	VkMemoryAllocateInfo allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.allocationSize = total_vertex_memory_size + total_index_memory_size,
 		.memoryTypeIndex = memory_type_set.graphics_resources
 	};
 	
-	vkAllocateMemory(frame_array.device, &allocate_info, NULL, &frame_array.buffer_memory);
+	vkAllocateMemory(frame_array.device, &allocate_info, nullptr, &frame_array.buffer_memory);
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
 		vkBindBufferMemory(frame_array.device, frame_array.frames[i].vertex_buffer, frame_array.buffer_memory, vertex_buffer_memory_ranges[i].offset);
@@ -164,7 +164,7 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 	
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
 	allocate_command_buffers(frame_array.device, frame_array_create_info.command_pool, 1, &cmdBuf);
-	begin_command_buffer(cmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT); {
+	cmdBufBegin(cmdBuf, true); {
 	
 		const uint16_t indices[6] = {
 			0, 1, 2,
@@ -189,31 +189,31 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 
 	const VkCommandBufferSubmitInfo cmdBufSubmitInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.commandBuffer = cmdBuf,
 		.deviceMask = 0
 	};
 
 	const VkSubmitInfo2 submitInfo = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.waitSemaphoreInfoCount = 0,
-		.pWaitSemaphoreInfos = NULL,
+		.pWaitSemaphoreInfos = nullptr,
 		.commandBufferInfoCount = 1,
 		.pCommandBufferInfos = &cmdBufSubmitInfo,
 		.signalSemaphoreInfoCount = 0,
-		.pSignalSemaphoreInfos = NULL
+		.pSignalSemaphoreInfos = nullptr
 	};
 	
-	vkQueueSubmit2(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(graphics_queue);
+	vkQueueSubmit2(queueGraphics, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(queueGraphics);
 
 	return frame_array;
 }
 
 bool destroy_frame_array(frame_array_t *const frame_array_ptr) {
-	if (frame_array_ptr == NULL) {
+	if (frame_array_ptr == nullptr) {
 		return false;
 	}
 	
@@ -224,7 +224,7 @@ bool destroy_frame_array(frame_array_t *const frame_array_ptr) {
 	frame_array_ptr->num_frames = 0;
 	frame_array_ptr->current_frame = 0;
 	
-	vkFreeMemory(frame_array_ptr->device, frame_array_ptr->buffer_memory, NULL);
+	vkFreeMemory(frame_array_ptr->device, frame_array_ptr->buffer_memory, nullptr);
 	frame_array_ptr->buffer_memory = VK_NULL_HANDLE;
 	frame_array_ptr->device = VK_NULL_HANDLE;
 	

@@ -22,26 +22,26 @@ static error_queue_t error_queue;
 
 void error_queue_push(const log_level_t log_level, const error_code_t error_code) {
 	
-	error_queue_node_t *new_node_ptr = NULL;
+	error_queue_node_t *new_node_ptr = nullptr;
 	allocate((void **)&new_node_ptr, 1, sizeof(error_queue_node_t));
 	*new_node_ptr = (error_queue_node_t){
 		.log_level = log_level,
 		.error_code = error_code,
-		.next_node_ptr = NULL
+		.next_node_ptr = nullptr
 	};
 	
-	if (error_queue.head_node_ptr == NULL || error_queue.tail_node_ptr == NULL) {
+	if (error_queue.head_node_ptr == nullptr || error_queue.tail_node_ptr == nullptr) {
 		error_queue.head_node_ptr = new_node_ptr;
 		error_queue.tail_node_ptr = new_node_ptr;
 	}
-	else if (error_queue.tail_node_ptr != NULL) {
+	else if (error_queue.tail_node_ptr != nullptr) {
 		error_queue.tail_node_ptr->next_node_ptr = new_node_ptr;
 		error_queue.tail_node_ptr = new_node_ptr;
 	}
 }
 
 void error_queue_flush(void) {
-	while (error_queue.head_node_ptr != NULL) {
+	while (error_queue.head_node_ptr != nullptr) {
 		log_message(error_queue.head_node_ptr->log_level, error_code_str(error_queue.head_node_ptr->error_code));
 		error_queue_node_t *previous_node_ptr = error_queue.head_node_ptr;
 		error_queue.head_node_ptr = error_queue.head_node_ptr->next_node_ptr;
@@ -51,7 +51,7 @@ void error_queue_flush(void) {
 }
 
 void terminate_error_queue(void) {
-	while (error_queue.head_node_ptr != NULL) {
+	while (error_queue.head_node_ptr != nullptr) {
 		error_queue_node_t *previous_node_ptr = error_queue.head_node_ptr;
 		error_queue.head_node_ptr = error_queue.head_node_ptr->next_node_ptr;
 		deallocate((void **)&previous_node_ptr);

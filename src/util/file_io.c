@@ -6,7 +6,7 @@
 #include "log/logging.h"
 
 bool read_data(FILE *restrict stream, const size_t num_bytes_per_object, const size_t num_objects, void *restrict buffer) {
-	if (stream == NULL || buffer == NULL) {
+	if (stream == nullptr || buffer == nullptr) {
 		return false;
 	}
 
@@ -19,11 +19,11 @@ bool read_data(FILE *restrict stream, const size_t num_bytes_per_object, const s
 }
 
 int read_string(FILE *restrict stream, const size_t max_str_len, char *str) {
-	if (stream == NULL) {
+	if (stream == nullptr) {
 		return -1;
 	}
 
-	if (str == NULL) {
+	if (str == nullptr) {
 		return -2;
 	}
 
@@ -42,7 +42,7 @@ int read_string(FILE *restrict stream, const size_t max_str_len, char *str) {
 }
 
 String readString(FILE *restrict stream, const size_t max_string_capacity) {
-	if (stream == NULL) {
+	if (stream == nullptr) {
 		return makeNullString();
 	}
 	

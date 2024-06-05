@@ -23,7 +23,7 @@ static const char *validation_layers[NUM_VALIDATION_LAYERS] = {
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
 	PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-	if (func != NULL) {
+	if (func != nullptr) {
 		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
 	}
 	else {
@@ -33,7 +33,7 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) {
 	PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (func != NULL) {
+	if (func != nullptr) {
 		func(instance, debugMessenger, pAllocator);
 	}
 }
@@ -45,7 +45,7 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 	log_message(VERBOSE, "Checking validation layer support...");
 
 	uint32_t num_available_layers = 0;
-	vkEnumerateInstanceLayerProperties(&num_available_layers, NULL);
+	vkEnumerateInstanceLayerProperties(&num_available_layers, nullptr);
 
 	if (num_available_layers < num_required_layers)
 		return false;
@@ -78,7 +78,7 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 	}
 
 	free(available_layers);
-	available_layers = NULL;
+	available_layers = nullptr;
 
 	return true;
 }
@@ -91,7 +91,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 
 	VkApplicationInfo app_info = {0};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	app_info.pNext = NULL;
+	app_info.pNext = nullptr;
 	app_info.pApplicationName = APP_NAME;	// TODO - link to project config
 	app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
 	app_info.pEngineName = "No Engine";
@@ -109,7 +109,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 	if (debug_enabled) {
 
 		num_extensions = num_glfw_extensions + 1;	// Include space for the debug extension name.
-		extensions = calloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to NULL.
+		extensions = calloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to nullptr.
 
 		for (uint32_t i = 0; i < num_glfw_extensions; ++i) {
 			size_t glfw_extension_name_length = strlen(glfw_extensions[i]) + 1;	// +1 to include the null-terminator.
@@ -125,7 +125,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 	else {
 		
 		num_extensions = num_glfw_extensions;
-		extensions = calloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to NULL.
+		extensions = calloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to nullptr.
 
 		for (uint32_t i = 0; i < num_glfw_extensions; ++i) {
 			size_t glfw_extension_name_length = strlen(glfw_extensions[i]) + 1;	// +1 to include the null-terminator.
@@ -140,7 +140,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 
 	VkInstanceCreateInfo create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = 0;
 	create_info.pApplicationInfo = &app_info;
 	create_info.enabledExtensionCount = num_extensions;
@@ -163,13 +163,13 @@ vulkan_instance_t create_vulkan_instance(void) {
 	else {
 
 		create_info.enabledLayerCount = 0;
-		create_info.ppEnabledLayerNames = NULL;
+		create_info.ppEnabledLayerNames = nullptr;
 
 		vulkan_instance.layer_names.num_strings = 0;
-		vulkan_instance.layer_names.strings = NULL;
+		vulkan_instance.layer_names.strings = nullptr;
 	}
 
-	VkResult result = vkCreateInstance(&create_info, NULL, &vulkan_instance.handle);
+	VkResult result = vkCreateInstance(&create_info, nullptr, &vulkan_instance.handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
 		exit(1);
@@ -184,7 +184,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 }
 
 void destroy_vulkan_instance(vulkan_instance_t vulkan_instance) {
-	vkDestroyInstance(vulkan_instance.handle, NULL);
+	vkDestroyInstance(vulkan_instance.handle, nullptr);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
@@ -224,20 +224,20 @@ void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT 
 
 	VkDebugUtilsMessengerCreateInfoEXT create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = 0;
 	create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 	create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 	create_info.pfnUserCallback = debug_callback;
-	create_info.pUserData = NULL;
+	create_info.pUserData = nullptr;
 
-	if (CreateDebugUtilsMessengerEXT(vulkan_instance, &create_info, NULL, messenger_ptr) != VK_SUCCESS) {
+	if (CreateDebugUtilsMessengerEXT(vulkan_instance, &create_info, nullptr, messenger_ptr) != VK_SUCCESS) {
 		// TODO - error handling
 	}
 }
 
 void destroy_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT messenger) {
 	if (debug_enabled && messenger != VK_NULL_HANDLE) {
-		DestroyDebugUtilsMessengerEXT(vulkan_instance, messenger, NULL);
+		DestroyDebugUtilsMessengerEXT(vulkan_instance, messenger, nullptr);
 	}
 }

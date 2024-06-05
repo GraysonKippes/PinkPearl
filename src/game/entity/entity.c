@@ -18,7 +18,7 @@ entity_t new_entity(void) {
 }
 
 void tick_entity(entity_t *pEntity) {
-	if (pEntity == NULL) {
+	if (pEntity == nullptr) {
 		return;
 	}
 

@@ -60,13 +60,13 @@ static void create_render_pass(VkDevice device, VkFormat swapchain_format, VkRen
 	subpass.flags = 0;
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.inputAttachmentCount = 0;
-	subpass.pInputAttachments = NULL;
+	subpass.pInputAttachments = nullptr;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &color_attachment_ref;
-	subpass.pResolveAttachments = NULL;
-	subpass.pDepthStencilAttachment = NULL;
+	subpass.pResolveAttachments = nullptr;
+	subpass.pDepthStencilAttachment = nullptr;
 	subpass.preserveAttachmentCount = 0;
-	subpass.pPreserveAttachments = NULL;
+	subpass.pPreserveAttachments = nullptr;
 
 	VkSubpassDependency dependency = { 0 };
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -79,7 +79,7 @@ static void create_render_pass(VkDevice device, VkFormat swapchain_format, VkRen
 
 	VkRenderPassCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = 0;
 	create_info.attachmentCount = 1;
 	create_info.pAttachments = &color_attachment;
@@ -88,7 +88,7 @@ static void create_render_pass(VkDevice device, VkFormat swapchain_format, VkRen
 	create_info.dependencyCount = 1;
 	create_info.pDependencies = &dependency;
 
-	VkResult result = vkCreateRenderPass(device, &create_info, NULL, render_pass_ptr);
+	VkResult result = vkCreateRenderPass(device, &create_info, nullptr, render_pass_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Render pass creation failed. (Error code: %i)", result);
 	}
@@ -104,7 +104,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	VkPipelineShaderStageCreateInfo shader_stage_vertex_info = { 0 };
 	shader_stage_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shader_stage_vertex_info.pNext = NULL;
+	shader_stage_vertex_info.pNext = nullptr;
 	shader_stage_vertex_info.flags = 0;
 	shader_stage_vertex_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	shader_stage_vertex_info.module = vertex_shader;
@@ -112,7 +112,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	VkPipelineShaderStageCreateInfo shader_stage_fragment_info = { 0 };
 	shader_stage_fragment_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shader_stage_fragment_info.pNext = NULL;
+	shader_stage_fragment_info.pNext = nullptr;
 	shader_stage_fragment_info.flags = 0;
 	shader_stage_fragment_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	shader_stage_fragment_info.module = fragment_shader;
@@ -132,7 +132,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	VkPipelineVertexInputStateCreateInfo vertex_input_info = { 0 };
 	vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertex_input_info.pNext = NULL;
+	vertex_input_info.pNext = nullptr;
 	vertex_input_info.flags = 0;
 	vertex_input_info.vertexBindingDescriptionCount = 1;
 	vertex_input_info.pVertexBindingDescriptions = &binding_description;
@@ -151,7 +151,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	VkGraphicsPipelineCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = 0;
 	create_info.stageCount = 2;
 	create_info.pStages = shader_stages;
@@ -160,16 +160,16 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 	create_info.pViewportState = &viewport_state;
 	create_info.pRasterizationState = &rasterizer;
 	create_info.pMultisampleState = &multisampling;
-	create_info.pDepthStencilState = NULL;
+	create_info.pDepthStencilState = nullptr;
 	create_info.pColorBlendState = &color_blending;
-	create_info.pDynamicState = NULL;
+	create_info.pDynamicState = nullptr;
 	create_info.layout = pipeline.layout;
 	create_info.renderPass = pipeline.render_pass;
 	create_info.subpass = 0;
 	create_info.basePipelineHandle = VK_NULL_HANDLE;
 	create_info.basePipelineIndex= -1;
 
-	VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &pipeline.handle);
+	VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline.handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
 	}
@@ -179,19 +179,19 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 void destroy_graphics_pipeline(VkDevice device, graphics_pipeline_t pipeline) {
 
-	vkDestroyPipeline(device, pipeline.handle, NULL);
-	vkDestroyPipelineLayout(device, pipeline.layout, NULL);
-	vkDestroyRenderPass(device, pipeline.render_pass, NULL);
+	vkDestroyPipeline(device, pipeline.handle, nullptr);
+	vkDestroyPipelineLayout(device, pipeline.layout, nullptr);
+	vkDestroyRenderPass(device, pipeline.render_pass, nullptr);
 
-	vkDestroyDescriptorPool(device, pipeline.descriptor_pool, NULL);
-	vkDestroyDescriptorSetLayout(device, pipeline.descriptor_set_layout, NULL);
+	vkDestroyDescriptorPool(device, pipeline.descriptor_pool, nullptr);
+	vkDestroyDescriptorSetLayout(device, pipeline.descriptor_set_layout, nullptr);
 }
 
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
 
 	VkPipelineInputAssemblyStateCreateInfo input_assembly = { 0 };
 	input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	input_assembly.pNext = NULL;
+	input_assembly.pNext = nullptr;
 	input_assembly.flags = 0;
 	input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	input_assembly.primitiveRestartEnable = VK_FALSE;
@@ -203,7 +203,7 @@ static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *vi
 
 	VkPipelineViewportStateCreateInfo viewport_state = { 0 };
 	viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewport_state.pNext = NULL;
+	viewport_state.pNext = nullptr;
 	viewport_state.flags = 0;
 	viewport_state.viewportCount = 1;
 	viewport_state.pViewports = viewport_ptr;
@@ -217,7 +217,7 @@ static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
 
 	VkPipelineRasterizationStateCreateInfo rasterizer = { 0 };
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizer.pNext = NULL;
+	rasterizer.pNext = nullptr;
 	rasterizer.flags = 0;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
@@ -237,12 +237,12 @@ static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
 
 	VkPipelineMultisampleStateCreateInfo multisampling = { 0 };
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.pNext = NULL;
+	multisampling.pNext = nullptr;
 	multisampling.flags = 0;
 	multisampling.sampleShadingEnable = VK_FALSE;
 	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 	multisampling.minSampleShading = 1.0F;
-	multisampling.pSampleMask = NULL;
+	multisampling.pSampleMask = nullptr;
 	multisampling.alphaToCoverageEnable = VK_FALSE;
 	multisampling.alphaToOneEnable = VK_FALSE;
 
@@ -268,7 +268,7 @@ static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColor
 
 	VkPipelineColorBlendStateCreateInfo color_blending = { 0 };
 	color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	color_blending.pNext = NULL;
+	color_blending.pNext = nullptr;
 	color_blending.flags = 0;
 	color_blending.logicOpEnable = VK_FALSE;
 	color_blending.logicOp = VK_LOGIC_OP_COPY;
@@ -288,14 +288,14 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 
 	VkPipelineLayoutCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = 0;
 	create_info.setLayoutCount = 1;
 	create_info.pSetLayouts = &descriptor_set_layout;
 	create_info.pushConstantRangeCount = 0;
-	create_info.pPushConstantRanges = NULL;
+	create_info.pPushConstantRanges = nullptr;
 
-	VkResult result = vkCreatePipelineLayout(device, &create_info, NULL, pipeline_layout_ptr);
+	VkResult result = vkCreatePipelineLayout(device, &create_info, nullptr, pipeline_layout_ptr);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Graphics pipeline layout creation failed. (Error code: %i)", result);
 	}

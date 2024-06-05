@@ -85,7 +85,7 @@ bool validateEntityHandle(const int entityHandle) {
 }
 
 int getEntity(const entity_handle_t handle, entity_t **const ppEntity) {
-	if (ppEntity == NULL) {
+	if (ppEntity == nullptr) {
 		return 1;
 	} else if (!validateEntityHandle(handle)) {
 		return 2;

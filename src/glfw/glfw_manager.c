@@ -11,7 +11,7 @@
 static const int window_width_default = 960;
 static const int window_height_default = 600;
 
-static GLFWwindow *window = NULL;
+static GLFWwindow *window = nullptr;
 
 void glfw_error_callback(int code, const char *description);
 
@@ -34,7 +34,7 @@ void init_GLFW(void) {
 	const char *const application_name = APP_NAME;
 
 	if (debug_enabled) {
-		window = glfwCreateWindow(window_width_default, window_height_default, application_name, NULL, NULL);
+		window = glfwCreateWindow(window_width_default, window_height_default, application_name, nullptr, nullptr);
 	}
 	else {
 		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
@@ -43,10 +43,10 @@ void init_GLFW(void) {
 		glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 		glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
 		glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-		window = glfwCreateWindow(mode->width, mode->height, APP_NAME, monitor, NULL);
+		window = glfwCreateWindow(mode->width, mode->height, APP_NAME, monitor, nullptr);
 	}
 
-	if (window == NULL) {
+	if (window == nullptr) {
 		log_message(FATAL, "GLFW window creation failed.");
 	}
 	
@@ -59,7 +59,7 @@ void init_GLFW(void) {
 
 void terminate_GLFW(void) {
 	glfwDestroyWindow(window);
-	window = NULL;
+	window = nullptr;
 	glfwTerminate();
 }
 

@@ -29,7 +29,7 @@ void init_entity_registry(void) {
 	}
 	
 	FILE *fge_file = fopen(FGE_PATH, "rb");
-	if (fge_file == NULL) {
+	if (fge_file == nullptr) {
 		return;
 	}
 	
@@ -79,7 +79,7 @@ static bool register_entity_record(const entity_record_t entity_record) {
 }
 
 bool find_entity_record(const String entity_id, entity_record_t *const entity_record_ptr) {
-	if (entity_record_ptr == NULL) {
+	if (entity_record_ptr == nullptr) {
 		return false;
 	}
 	

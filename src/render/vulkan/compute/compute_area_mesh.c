@@ -42,14 +42,13 @@ void terminate_compute_area_mesh(void) {
 }
 
 void compute_area_mesh(const area_t area) {
-
 	log_message(VERBOSE, "Generating area mesh...");
 
 	const uint32_t dispatch_x = area.num_rooms;
 	const uint32_t dispatch_y = 1;
 	const uint32_t dispatch_z = 1;
 
-	offset_t *room_positions = NULL;
+	offset_t *room_positions = nullptr;
 	if (!allocate((void **)&room_positions, area.num_rooms, sizeof(offset_t))) {
 		log_message(ERROR, "Error computing area mesh: failed to allocate room position pointer-array.");
 		return;
@@ -66,7 +65,7 @@ void compute_area_mesh(const area_t area) {
 	
 	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.descriptorPool = compute_area_mesh_pipeline.descriptor_pool,
 		.descriptorSetCount = 1,
 		.pSetLayouts = &compute_area_mesh_pipeline.descriptor_set_layout
@@ -86,46 +85,46 @@ void compute_area_mesh(const area_t area) {
 	VkWriteDescriptorSet write_descriptor_sets[3] = { { 0 } };
 	
 	write_descriptor_sets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write_descriptor_sets[0].pNext = NULL;
+	write_descriptor_sets[0].pNext = nullptr;
 	write_descriptor_sets[0].dstSet = descriptor_set;
 	write_descriptor_sets[0].dstBinding = 0;
 	write_descriptor_sets[0].dstArrayElement = 0;
 	write_descriptor_sets[0].descriptorCount = 1;
 	write_descriptor_sets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	write_descriptor_sets[0].pImageInfo = NULL;
+	write_descriptor_sets[0].pImageInfo = nullptr;
 	write_descriptor_sets[0].pBufferInfo = &uniform_buffer_info;
-	write_descriptor_sets[0].pTexelBufferView = NULL;
+	write_descriptor_sets[0].pTexelBufferView = nullptr;
 
 	write_descriptor_sets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write_descriptor_sets[1].pNext = NULL;
+	write_descriptor_sets[1].pNext = nullptr;
 	write_descriptor_sets[1].dstSet = descriptor_set;
 	write_descriptor_sets[1].dstBinding = 1;
 	write_descriptor_sets[1].dstArrayElement = 0;
 	write_descriptor_sets[1].descriptorCount = 1;
 	write_descriptor_sets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	write_descriptor_sets[1].pImageInfo = NULL;
+	write_descriptor_sets[1].pImageInfo = nullptr;
 	write_descriptor_sets[1].pBufferInfo = &vertices_buffer_info;
-	write_descriptor_sets[1].pTexelBufferView = NULL;
+	write_descriptor_sets[1].pTexelBufferView = nullptr;
 
 	write_descriptor_sets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write_descriptor_sets[2].pNext = NULL;
+	write_descriptor_sets[2].pNext = nullptr;
 	write_descriptor_sets[2].dstSet = descriptor_set;
 	write_descriptor_sets[2].dstBinding = 2;
 	write_descriptor_sets[2].dstArrayElement = 0;
 	write_descriptor_sets[2].descriptorCount = 1;
 	write_descriptor_sets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	write_descriptor_sets[2].pImageInfo = NULL;
+	write_descriptor_sets[2].pImageInfo = nullptr;
 	write_descriptor_sets[2].pBufferInfo = &indices_buffer_info;
-	write_descriptor_sets[2].pTexelBufferView = NULL;
+	write_descriptor_sets[2].pTexelBufferView = nullptr;
 
-	vkUpdateDescriptorSets(compute_area_mesh_pipeline.device, 3, write_descriptor_sets, 0, NULL);
+	vkUpdateDescriptorSets(compute_area_mesh_pipeline.device, 3, write_descriptor_sets, 0, nullptr);
 
 	VkCommandBuffer compute_command_buffer = VK_NULL_HANDLE;
 	allocate_command_buffers(device, compute_command_pool, 1, &compute_command_buffer);
-	begin_command_buffer(compute_command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	cmdBufBegin(compute_command_buffer, true);
 
 	vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_area_mesh_pipeline.handle);
-	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_area_mesh_pipeline.layout, 0, 1, &descriptor_set, 0, NULL);
+	vkCmdBindDescriptorSets(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_area_mesh_pipeline.layout, 0, 1, &descriptor_set, 0, nullptr);
 	vkCmdDispatch(compute_command_buffer, dispatch_x, dispatch_y, dispatch_z);
 
 	vkEndCommandBuffer(compute_command_buffer);
@@ -136,7 +135,7 @@ void compute_area_mesh(const area_t area) {
 	log_message(VERBOSE, "Transfering area mesh to graphics buffers.");
 
 	VkCommandBuffer transfer_command_buffers[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
-	allocate_command_buffers(device, transfer_command_pool, num_frames_in_flight, transfer_command_buffers);
+	allocate_command_buffers(device, cmdPoolTransfer, num_frames_in_flight, transfer_command_buffers);
 
 	const VkBufferCopy vertex_buffer_copy = { 
 		.srcOffset = global_storage_buffer_partition.ranges[1].offset,
@@ -159,7 +158,7 @@ void compute_area_mesh(const area_t area) {
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
 
-		begin_command_buffer(transfer_command_buffers[i], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		cmdBufBegin(transfer_command_buffers[i], true);
 		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &vertex_buffer_copy);
 		vkCmdCopyBuffer(transfer_command_buffers[i], global_storage_buffer_partition.buffer, frame_array.frames[i].index_buffer, 1, &index_buffer_copy);
 		vkEndCommandBuffer(transfer_command_buffers[i]);
@@ -171,7 +170,7 @@ void compute_area_mesh(const area_t area) {
 
 		submit_infos[i] = (VkSubmitInfo2){
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-			.pNext = NULL,
+			.pNext = nullptr,
 			.waitSemaphoreInfoCount = 1,
 			.pWaitSemaphoreInfos = &semaphore_wait_submit_infos[i],
 			.commandBufferInfoCount = 1,

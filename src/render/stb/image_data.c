@@ -10,7 +10,7 @@ image_data_t load_image_data(const char *path, int num_channels) {
 	image_data_t image_data = { 0 };
 	image_data.data = stbi_load(path, (int *)&image_data.width, (int *)&image_data.height, (int *)&image_data.num_channels, num_channels);
 
-	if (image_data.data == NULL) {
+	if (image_data.data == nullptr) {
 		logf_message(ERROR, "Image failed to load. (Path: \"%s\")", path);
 	}
 
@@ -24,7 +24,7 @@ void free_image_data(image_data_t image_data) {
 GLFWimage load_glfw_image(const char *path) {
 	
 	GLFWimage image = { 0 };
-	stbi_load(path, &image.width, &image.height, NULL, 4);
+	stbi_load(path, &image.width, &image.height, nullptr, 4);
 
 	return image;
 }

@@ -12,7 +12,7 @@
 void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const room_t initialRoom) {
 	log_message(VERBOSE, "Resetting area render state...");
 	
-	if (pAreaRenderState == NULL) {
+	if (pAreaRenderState == nullptr) {
 		return;
 	}
 	
@@ -74,9 +74,9 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	};
 	
 	// Testing
-	//String textureID = newString(64, "roomM");
-	//pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(roomQuadDimensions, roomQuadTransform, textureID);
-	//deleteString(&textureID);
+	String textureID = newString(64, "roomM");
+	pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(roomQuadDimensions, roomQuadTransform, textureID);
+	deleteString(&textureID);
 	
 	log_message(VERBOSE, "Done resetting area render state.");
 }
@@ -132,7 +132,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const r
 }
 
 Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState) {
-	if (pAreaRenderState == NULL) {
+	if (pAreaRenderState == nullptr) {
 		return zeroVector4F;
 	}
 	

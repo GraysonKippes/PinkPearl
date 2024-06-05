@@ -45,15 +45,15 @@ VkSampler imageSamplerDefault = VK_NULL_HANDLE;
 
 /* -- Queues -- */
 
-VkQueue graphics_queue;
+VkQueue queueGraphics;
 VkQueue present_queue;
 VkQueue transfer_queue;
 VkQueue compute_queue;
 
 /* -- Command Pools -- */
 
-VkCommandPool render_command_pool;
-VkCommandPool transfer_command_pool;
+VkCommandPool cmdPoolGraphics;
+VkCommandPool cmdPoolTransfer;
 VkCommandPool compute_command_pool;
 
 /* -- Render Objects -- */
@@ -72,7 +72,7 @@ buffer_partition_t global_draw_data_buffer_partition;
 
 static void create_window_surface(void) {
 	log_message(VERBOSE, "Creating window surface...");
-	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), NULL, &surface);
+	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), nullptr, &surface);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Window surface creation failed. (Error code: %i)", result);
 		// TODO - do not use exit() here.
@@ -89,7 +89,7 @@ static void create_global_staging_buffer(void) {
 		.buffer_type = BUFFER_TYPE_STAGING,
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
-		.queue_family_indices = NULL,
+		.queue_family_indices = nullptr,
 		.num_partition_sizes = 3,
 		.partition_sizes = (VkDeviceSize[3]){
 			5120,	// Render object mesh data--vertices
@@ -110,7 +110,7 @@ static void create_global_uniform_buffer(void) {
 		.buffer_type = BUFFER_TYPE_UNIFORM,
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
-		.queue_family_indices = NULL,
+		.queue_family_indices = nullptr,
 		.num_partition_sizes = 4,
 		.partition_sizes = (VkDeviceSize[4]){
 			2096,	// Compute matrices
@@ -132,7 +132,7 @@ static void create_global_storage_buffer(void) {
 		.buffer_type = BUFFER_TYPE_STORAGE,
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
-		.queue_family_indices = NULL,
+		.queue_family_indices = nullptr,
 		.num_partition_sizes = 3,
 		.partition_sizes = (VkDeviceSize[3]){
 			4224,	// Compute matrices
@@ -153,7 +153,7 @@ static void create_global_draw_data_buffer(void) {
 		.buffer_type = BUFFER_TYPE_DRAW_DATA,
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
-		.queue_family_indices = NULL,
+		.queue_family_indices = nullptr,
 		.num_partition_sizes = 2,
 		.partition_sizes = (VkDeviceSize[2]){
 			4,			// Indirect draw count
@@ -186,13 +186,13 @@ void create_vulkan_objects(void) {
 	create_global_storage_buffer();
 	create_global_draw_data_buffer();
 
-	vkGetDeviceQueue(device, *physical_device.queue_family_indices.graphics_family_ptr, 0, &graphics_queue);
+	vkGetDeviceQueue(device, *physical_device.queue_family_indices.graphics_family_ptr, 0, &queueGraphics);
 	vkGetDeviceQueue(device, *physical_device.queue_family_indices.present_family_ptr, 0, &present_queue);
 	vkGetDeviceQueue(device, *physical_device.queue_family_indices.transfer_family_ptr, 0, &transfer_queue);
 	vkGetDeviceQueue(device, *physical_device.queue_family_indices.compute_family_ptr, 0, &compute_queue);
 
-	create_command_pool(device, default_command_pool_flags, *physical_device.queue_family_indices.graphics_family_ptr, &render_command_pool);
-	create_command_pool(device, transfer_command_pool_flags, *physical_device.queue_family_indices.transfer_family_ptr, &transfer_command_pool);
+	create_command_pool(device, default_command_pool_flags, *physical_device.queue_family_indices.graphics_family_ptr, &cmdPoolGraphics);
+	create_command_pool(device, transfer_command_pool_flags, *physical_device.queue_family_indices.transfer_family_ptr, &cmdPoolTransfer);
 	create_command_pool(device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, *physical_device.queue_family_indices.compute_family_ptr, &compute_command_pool);
 
 	clear_color = (VkClearValue){ { { 0.0F, 0.0F, 0.0F, 1.0F } } };
@@ -212,7 +212,7 @@ void create_vulkan_objects(void) {
 		.num_frames = 2,
 		.physical_device = physical_device,
 		.device = device,
-		.command_pool = render_command_pool,
+		.command_pool = cmdPoolGraphics,
 		.descriptor_pool = graphics_pipeline.descriptor_pool,
 		.descriptor_set_layout = graphics_pipeline.descriptor_set_layout
 	};
@@ -227,22 +227,22 @@ void destroy_vulkan_objects(void) {
 
 	destroy_frame_array(&frame_array);
 
-	vkDestroySampler(device, imageSamplerDefault, NULL);
+	vkDestroySampler(device, imageSamplerDefault, nullptr);
 
 	destroy_graphics_pipeline(device, graphics_pipeline);
 	destroy_swapchain(device, swapchain);
 
-	vkDestroyCommandPool(device, render_command_pool, NULL);
-	vkDestroyCommandPool(device, transfer_command_pool, NULL);
-	vkDestroyCommandPool(device, compute_command_pool, NULL);
+	vkDestroyCommandPool(device, cmdPoolGraphics, nullptr);
+	vkDestroyCommandPool(device, cmdPoolTransfer, nullptr);
+	vkDestroyCommandPool(device, compute_command_pool, nullptr);
 
 	destroy_buffer_partition(&global_staging_buffer_partition);
 	destroy_buffer_partition(&global_uniform_buffer_partition);
 	destroy_buffer_partition(&global_storage_buffer_partition);
 	destroy_buffer_partition(&global_draw_data_buffer_partition);
 
-	vkDestroyDevice(device, NULL);
-	vkDestroySurfaceKHR(vulkan_instance.handle, surface, NULL);
+	vkDestroyDevice(device, nullptr);
+	vkDestroySurfaceKHR(vulkan_instance.handle, surface, nullptr);
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	

@@ -34,7 +34,7 @@ bool validateEntityHandle(const int entityHandle);
 // Returns a pointer to the entity at the specified handle inside `entity_pptr`.
 // Returns:
 // 	0 if the retrieval was totally successful;
-//	1 if `entity_pptr` is `NULL`;
+//	1 if `entity_pptr` is `nullptr`;
 //	2 if the entity handle is invalid according to `validate_entity_handle`; and
 //	-1 if the retrieval was successful but came from an unused entity slot.
 int getEntity(const entity_handle_t handle, entity_t **const ppEntity);

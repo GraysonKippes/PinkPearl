@@ -76,7 +76,7 @@ bool validateRenderHandle(const int renderHandle) {
 RenderTransform *getRenderObjTransform(const int renderHandle) {
 	if (!validateRenderHandle(renderHandle)) {
 		logf_message(ERROR, "Error getting render object transform: render object handle (%i) is invalid.", renderHandle);
-		return NULL;
+		return nullptr;
 	}
 	return &renderObjTransforms[renderHandle];
 }
@@ -84,7 +84,7 @@ RenderTransform *getRenderObjTransform(const int renderHandle) {
 TextureState *getRenderObjTexState(const int renderHandle) {
 	if (!validateRenderHandle(renderHandle)) {
 		logf_message(ERROR, "Error getting render object texture state: render object handle (%i) is invalid.", renderHandle);
-		return NULL;
+		return nullptr;
 	}
 	return &renderObjTextureStates[renderHandle];
 }

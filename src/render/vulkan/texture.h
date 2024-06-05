@@ -25,7 +25,7 @@ typedef struct TextureImage {
 typedef struct TextureImageSubresourceRange {
 	VkImageAspectFlags imageAspectMask;
 	uint32_t baseArrayLayer;
-	uint32_t layerCount;
+	uint32_t arrayLayerCount;
 } TextureImageSubresourceRange;
 
 typedef struct TextureAnimation {

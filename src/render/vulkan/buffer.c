@@ -24,7 +24,7 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 
 	VkBufferCreateInfo buffer_create_info = { 0 };
 	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffer_create_info.pNext = NULL;
+	buffer_create_info.pNext = nullptr;
 	buffer_create_info.flags = 0;
 	buffer_create_info.size = buffer.size;
 	buffer_create_info.usage = buffer_usage;
@@ -32,7 +32,7 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 	if (is_queue_family_set_null(queue_family_set)) {
 		buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		buffer_create_info.queueFamilyIndexCount = 0;
-		buffer_create_info.pQueueFamilyIndices = NULL;
+		buffer_create_info.pQueueFamilyIndices = nullptr;
 	}
 	else {
 		buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -41,7 +41,7 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 	}
 	
 	// TODO - error handling
-	VkResult result = vkCreateBuffer(buffer.device, &buffer_create_info, NULL, &buffer.handle);
+	VkResult result = vkCreateBuffer(buffer.device, &buffer_create_info, nullptr, &buffer.handle);
 	if (result != VK_SUCCESS) {
 		logf_message(ERROR, "Buffer creation failed. (Error code: %i)", result);
 		return buffer;
@@ -52,14 +52,14 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 
 	VkMemoryAllocateInfo allocate_info = { 0 };
 	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.pNext = NULL;
+	allocate_info.pNext = nullptr;
 	allocate_info.allocationSize = memory_requirements.size;
 	if(!find_physical_device_memory_type(physical_device, memory_requirements.memoryTypeBits, memory_properties, &allocate_info.memoryTypeIndex)) {
 		// TODO - error handling
 	}
 
 	// TODO - error handling
-	vkAllocateMemory(buffer.device, &allocate_info, NULL, &buffer.memory);
+	vkAllocateMemory(buffer.device, &allocate_info, nullptr, &buffer.memory);
 	vkBindBufferMemory(buffer.device, buffer.handle, buffer.memory, 0);
 
 	return buffer;
@@ -67,12 +67,12 @@ buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDevi
 
 void destroy_buffer(buffer_t *buffer_ptr) {
 
-	if (buffer_ptr == NULL) {
+	if (buffer_ptr == nullptr) {
 		return;
 	}
 
-	vkDestroyBuffer(buffer_ptr->device, buffer_ptr->handle, NULL);
-	vkFreeMemory(buffer_ptr->device, buffer_ptr->memory, NULL);
+	vkDestroyBuffer(buffer_ptr->device, buffer_ptr->handle, nullptr);
+	vkFreeMemory(buffer_ptr->device, buffer_ptr->memory, nullptr);
 
 	buffer_ptr->handle = VK_NULL_HANDLE;
 	buffer_ptr->memory = VK_NULL_HANDLE;
@@ -95,12 +95,12 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 		.memory = VK_NULL_HANDLE,
 		.total_memory_size = 0,
 		.num_ranges = 0,
-		.ranges = NULL,
+		.ranges = nullptr,
 		.device = VK_NULL_HANDLE
 	};
 
-	if (buffer_partition_create_info.partition_sizes == NULL) {
-		log_message(ERROR, "Error creating buffer partition: memory ranges pointer-array is NULL.");
+	if (buffer_partition_create_info.partition_sizes == nullptr) {
+		log_message(ERROR, "Error creating buffer partition: memory ranges pointer-array is nullptr.");
 		return buffer_partition;
 	}
 
@@ -115,7 +115,7 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 
 	VkPhysicalDeviceProperties2 physical_device_properties = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.properties = { 0 }
 	};
 	
@@ -164,22 +164,22 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 
 	VkBufferCreateInfo buffer_create_info = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.size = buffer_partition.total_memory_size,
 		.usage = buffer_usage_flags,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = NULL
+		.pQueueFamilyIndices = nullptr
 	};
 
-	if (buffer_partition_create_info.num_queue_family_indices > 0 && buffer_partition_create_info.queue_family_indices != NULL) {
+	if (buffer_partition_create_info.num_queue_family_indices > 0 && buffer_partition_create_info.queue_family_indices != nullptr) {
 		buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
 		buffer_create_info.queueFamilyIndexCount = buffer_partition_create_info.num_queue_family_indices;
 		buffer_create_info.pQueueFamilyIndices = buffer_partition_create_info.queue_family_indices;
 	}
 
-	const VkResult buffer_create_result = vkCreateBuffer(buffer_partition.device, &buffer_create_info, NULL, &buffer_partition.buffer);
+	const VkResult buffer_create_result = vkCreateBuffer(buffer_partition.device, &buffer_create_info, nullptr, &buffer_partition.buffer);
 	if (buffer_create_result < 0) {
 		logf_message(ERROR, "Error creating buffer partition: buffer creation failed (result code: %i).", buffer_create_result);
 		destroy_buffer_partition(&buffer_partition);
@@ -191,13 +191,13 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 
 	const VkBufferMemoryRequirementsInfo2 memory_requirements_info = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.buffer = buffer_partition.buffer
 	};
 
 	VkMemoryRequirements2 memory_requirements = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.memoryRequirements = (VkMemoryRequirements){
 			.size = 0,
 			.alignment = 0,
@@ -225,12 +225,12 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 
 	const VkMemoryAllocateInfo memory_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.allocationSize = memory_requirements.memoryRequirements.size,
 		.memoryTypeIndex = memory_type_index
 	};
 
-	const VkResult memory_allocate_result = vkAllocateMemory(buffer_partition.device, &memory_allocate_info, NULL, &buffer_partition.memory);
+	const VkResult memory_allocate_result = vkAllocateMemory(buffer_partition.device, &memory_allocate_info, nullptr, &buffer_partition.memory);
 	if (memory_allocate_result < 0) {
 		logf_message(ERROR, "Error creating buffer partition: memory allocation failed (result code: %i).", memory_allocate_result);
 		destroy_buffer_partition(&buffer_partition);
@@ -242,7 +242,7 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 
 	const VkBindBufferMemoryInfo bind_buffer_memory_info = {
 		.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.buffer = buffer_partition.buffer,
 		.memory = buffer_partition.memory,
 		.memoryOffset = 0
@@ -263,18 +263,18 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 
 bool destroy_buffer_partition(buffer_partition_t *const buffer_partition_ptr) {
 
-	if (buffer_partition_ptr == NULL) {
+	if (buffer_partition_ptr == nullptr) {
 		return false;
 	}
 
-	vkDestroyBuffer(buffer_partition_ptr->device, buffer_partition_ptr->buffer, NULL);
+	vkDestroyBuffer(buffer_partition_ptr->device, buffer_partition_ptr->buffer, nullptr);
 	buffer_partition_ptr->buffer = VK_NULL_HANDLE;
 
-	vkFreeMemory(buffer_partition_ptr->device, buffer_partition_ptr->memory, NULL);
+	vkFreeMemory(buffer_partition_ptr->device, buffer_partition_ptr->memory, nullptr);
 	buffer_partition_ptr->memory = VK_NULL_HANDLE;
 
 	free(buffer_partition_ptr->ranges);
-	buffer_partition_ptr->ranges = NULL;
+	buffer_partition_ptr->ranges = nullptr;
 	buffer_partition_ptr->total_memory_size = 0;
 	buffer_partition_ptr->num_ranges = 0;
 
@@ -287,10 +287,10 @@ byte_t *buffer_partition_map_memory(const buffer_partition_t buffer_partition, c
 
 	if (partition_index >= buffer_partition.num_ranges) {
 		logf_message(ERROR, "Error mapping buffer partition memory: partition index (%u) is not less than number of partition ranges (%u).", partition_index, buffer_partition.num_ranges);
-		return NULL;
+		return nullptr;
 	}
 
-	byte_t *mapped_memory = NULL;
+	byte_t *mapped_memory = nullptr;
 	const VkResult map_memory_result = vkMapMemory(buffer_partition.device, buffer_partition.memory, 
 			buffer_partition.ranges[partition_index].offset,
 			buffer_partition.ranges[partition_index].size,
@@ -298,7 +298,7 @@ byte_t *buffer_partition_map_memory(const buffer_partition_t buffer_partition, c
 
 	if (map_memory_result < 0) {
 		logf_message(ERROR, "Error mapping buffer partition memory: memory mapping failed (result code: %i).", map_memory_result);
-		return NULL;
+		return nullptr;
 	}
 	else if (map_memory_result > 0) {
 		logf_message(WARNING, "Warning mapping buffer partition memory: memory mapping returned with warning (result code: %i).", map_memory_result);
@@ -333,13 +333,13 @@ VkDeviceMemory allocate_device_memory(const VkDevice device, const VkDeviceSize 
 	
 	const VkMemoryAllocateInfo allocate_info = { 
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.allocationSize = size,
 		.memoryTypeIndex = memory_type_index
 	};
 
 	VkDeviceMemory device_memory = VK_NULL_HANDLE;
-	vkAllocateMemory(device, &allocate_info, NULL, &device_memory);
+	vkAllocateMemory(device, &allocate_info, nullptr, &device_memory);
 	return device_memory;
 }
 

@@ -7,18 +7,18 @@
 
 bool area_get_room_ptr(const area_t area, const offset_t room_position, const room_t **room_pptr) {
 
-	if (room_pptr == NULL) {
-		log_message(ERROR, "Error getting room pointer: pointer to room pointer is NULL.");
+	if (room_pptr == nullptr) {
+		log_message(ERROR, "Error getting room pointer: pointer to room pointer is nullptr.");
 		return false;
 	}
 
-	if (area.rooms == NULL) {
-		log_message(ERROR, "Error getting room pointer: area.rooms is NULL.");
+	if (area.rooms == nullptr) {
+		log_message(ERROR, "Error getting room pointer: area.rooms is nullptr.");
 		return false;
 	}
 
-	if (area.positions_to_rooms == NULL) {
-		log_message(ERROR, "Error getting room pointer: area.positions_to_rooms is NULL.");
+	if (area.positions_to_rooms == nullptr) {
+		log_message(ERROR, "Error getting room pointer: area.positions_to_rooms is nullptr.");
 		return false;
 	}
 
@@ -52,8 +52,8 @@ bool area_get_room_ptr(const area_t area, const offset_t room_position, const ro
 
 int area_get_room_index(const area_t area, const offset_t room_position) {
 
-	if (area.positions_to_rooms == NULL) {
-		log_message(ERROR, "Error getting room index: area.positions_to_rooms is NULL.");
+	if (area.positions_to_rooms == nullptr) {
+		log_message(ERROR, "Error getting room index: area.positions_to_rooms is nullptr.");
 		return -2;
 	}
 

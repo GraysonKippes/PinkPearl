@@ -23,9 +23,9 @@ void list_physical_device_memories(VkPhysicalDevice physical_device);
 bool check_physical_device_extension_support(physical_device_t physical_device) {
 
 	uint32_t num_available_extensions = 0;
-	vkEnumerateDeviceExtensionProperties(physical_device.handle, NULL, &num_available_extensions, NULL);
+	vkEnumerateDeviceExtensionProperties(physical_device.handle, nullptr, &num_available_extensions, nullptr);
 	VkExtensionProperties *available_extensions = malloc(num_available_extensions * sizeof(VkExtensionProperties));
-	vkEnumerateDeviceExtensionProperties(physical_device.handle, NULL, &num_available_extensions, available_extensions);
+	vkEnumerateDeviceExtensionProperties(physical_device.handle, nullptr, &num_available_extensions, available_extensions);
 
 	for (size_t i = 0; i < physical_device.extension_names.num_strings; ++i) {
 		
@@ -56,7 +56,7 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 	}
 
 	uint32_t num_available_layers = 0;
-	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, NULL);
+	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, nullptr);
 
 	// If the number of available layers is less than the number of required layers, then logically not all layers can be supported;
 	// 	therefore, return false.
@@ -85,7 +85,7 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 	}
 
 	free(available_layers);
-	available_layers = NULL;
+	available_layers = nullptr;
 
 	return true;
 }
@@ -93,15 +93,15 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
 
 	uint32_t num_queue_families = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, NULL);
+	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
 	VkQueueFamilyProperties *queue_families = malloc(num_queue_families * sizeof(VkQueueFamilyProperties));
 	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_families);
 
 	queue_family_indices_t queue_family_indices;
-	queue_family_indices.graphics_family_ptr = NULL;
-	queue_family_indices.present_family_ptr = NULL;
-	queue_family_indices.transfer_family_ptr = NULL;
-	queue_family_indices.compute_family_ptr = NULL;
+	queue_family_indices.graphics_family_ptr = nullptr;
+	queue_family_indices.present_family_ptr = nullptr;
+	queue_family_indices.transfer_family_ptr = nullptr;
+	queue_family_indices.compute_family_ptr = nullptr;
 
 	log_message(VERBOSE, "Querying queue family indices...");
 
@@ -115,22 +115,22 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 		VkBool32 transfer_support = TEST_MASK(queue_family.queueFlags, VK_QUEUE_TRANSFER_BIT);
 		VkBool32 compute_support = TEST_MASK(queue_family.queueFlags, VK_QUEUE_COMPUTE_BIT);
 
-		if ((queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.graphics_family_ptr == NULL) {
+		if ((queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.graphics_family_ptr == nullptr) {
 			queue_family_indices.graphics_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.graphics_family_ptr = i;
 		}
 
-		if (present_support && queue_family_indices.present_family_ptr == NULL) {
+		if (present_support && queue_family_indices.present_family_ptr == nullptr) {
 			queue_family_indices.present_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.present_family_ptr = i;
 		}
 
-		if ((queue_family.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.transfer_family_ptr == NULL) {
+		if ((queue_family.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.transfer_family_ptr == nullptr) {
 			queue_family_indices.transfer_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.transfer_family_ptr = i;
 		}
 
-		if ((queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) && queue_family_indices.compute_family_ptr == NULL) {
+		if ((queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) && queue_family_indices.compute_family_ptr == nullptr) {
 			queue_family_indices.compute_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.compute_family_ptr = i;
 		}
@@ -140,10 +140,10 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 }
 
 bool is_queue_family_indices_complete(queue_family_indices_t queue_family_indices) {
-	return queue_family_indices.graphics_family_ptr != NULL 
-		&& queue_family_indices.present_family_ptr != NULL 
-		&& queue_family_indices.transfer_family_ptr != NULL
-		&& queue_family_indices.compute_family_ptr != NULL;
+	return queue_family_indices.graphics_family_ptr != nullptr 
+		&& queue_family_indices.present_family_ptr != nullptr 
+		&& queue_family_indices.transfer_family_ptr != nullptr
+		&& queue_family_indices.compute_family_ptr != nullptr;
 }
 
 // Allocates on the heap, make sure to free the surface format and present mode arrays eventually.
@@ -154,7 +154,7 @@ swapchain_support_details_t query_swapchain_support_details(VkPhysicalDevice phy
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &details.capabilities);
 
 	uint32_t num_formats = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &num_formats, NULL);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &num_formats, nullptr);
 	if (num_formats != 0) {
 		details.num_formats = num_formats;
 		details.formats = malloc(num_formats * sizeof(VkSurfaceFormatKHR));
@@ -162,7 +162,7 @@ swapchain_support_details_t query_swapchain_support_details(VkPhysicalDevice phy
 	}
 
 	uint32_t num_present_modes = 0;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &num_present_modes, NULL);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &num_present_modes, nullptr);
 	if (num_present_modes != 0) {
 		details.num_present_modes = num_present_modes;
 		details.present_modes = malloc(num_present_modes * sizeof(VkPresentModeKHR));
@@ -204,14 +204,14 @@ int rate_physical_device(physical_device_t physical_device) {
 physical_device_t make_new_physical_device(void) {
 	return (physical_device_t){
 		.handle = VK_NULL_HANDLE,
-		.queue_family_indices.graphics_family_ptr = NULL,
-		.queue_family_indices.present_family_ptr = NULL,
-		.queue_family_indices.transfer_family_ptr = NULL,
-		.queue_family_indices.compute_family_ptr = NULL,
-		.swapchain_support_details.formats = NULL,
-		.swapchain_support_details.present_modes = NULL,
+		.queue_family_indices.graphics_family_ptr = nullptr,
+		.queue_family_indices.present_family_ptr = nullptr,
+		.queue_family_indices.transfer_family_ptr = nullptr,
+		.queue_family_indices.compute_family_ptr = nullptr,
+		.swapchain_support_details.formats = nullptr,
+		.swapchain_support_details.present_modes = nullptr,
 		.extension_names.num_strings = 0,
-		.extension_names.strings = NULL
+		.extension_names.strings = nullptr
 	};
 }
 
@@ -220,7 +220,7 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 	log_message(VERBOSE, "Selecting physical device...");
 
 	uint32_t num_physical_devices = 0;
-	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, NULL);
+	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, nullptr);
 	if (num_physical_devices == 0) {
 		physical_device_t physical_device;
 		physical_device.handle = VK_NULL_HANDLE;
@@ -264,7 +264,7 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 
 	VkPhysicalDeviceMaintenance4Properties physical_device_maintenance = { 0 };
 	physical_device_maintenance.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES;
-	physical_device_maintenance.pNext = NULL;
+	physical_device_maintenance.pNext = nullptr;
 	physical_device_maintenance.maxBufferSize = 0;
 
 	VkPhysicalDeviceProperties2 physical_device_properties = { 0 };
@@ -292,7 +292,7 @@ bool find_physical_device_memory_type(VkPhysicalDevice physical_device, uint32_t
 	VkPhysicalDeviceMemoryProperties memory_properties;
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
 
-	if (type_ptr == NULL)
+	if (type_ptr == nullptr)
 		return false;
 
 	for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {

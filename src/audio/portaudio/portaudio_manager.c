@@ -15,7 +15,7 @@ static const int num_input_channels = 0;
 static const int num_output_channels = NUM_AUDIO_CHANNELS;
 static const int audio_sample_rate = 44100;
 
-static PaStream *audio_stream = NULL;
+static PaStream *audio_stream = nullptr;
 
 static int portaudio_stream_callback(const void *input_buffer, void *output_buffer, unsigned long int frame_count, const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags, void *user_data) {
 
@@ -51,7 +51,7 @@ void init_portaudio(void) {
 		return;
 	}
 	
-	const int stream_open_result = Pa_OpenDefaultStream(&audio_stream, num_input_channels, num_output_channels, paFloat32, audio_sample_rate, num_audio_frames_per_buffer, portaudio_stream_callback, NULL);
+	const int stream_open_result = Pa_OpenDefaultStream(&audio_stream, num_input_channels, num_output_channels, paFloat32, audio_sample_rate, num_audio_frames_per_buffer, portaudio_stream_callback, nullptr);
 	if (stream_open_result != paNoError) {
 		logf_message(ERROR, "Error initializing PortAudio: failed to open audio stream (result code: \"%s\").", Pa_GetErrorText(stream_open_result));
 		return;

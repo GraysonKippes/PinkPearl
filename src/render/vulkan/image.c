@@ -25,7 +25,7 @@ image_t create_image(const image_create_info_t image_create_info) {
 
 	VkImageCreateInfo vk_image_create_info = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.imageType = VK_IMAGE_TYPE_2D,
 		.format = image.format,
@@ -39,7 +39,7 @@ image_t create_image(const image_create_info_t image_create_info) {
 		.usage = image_create_info.usage,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = NULL,
+		.pQueueFamilyIndices = nullptr,
 		.initialLayout = image.layout
 	};
 
@@ -49,23 +49,23 @@ image_t create_image(const image_create_info_t image_create_info) {
 		vk_image_create_info.pQueueFamilyIndices = image_create_info.queue_family_set.queue_families;
 	}
 	
-	vkCreateImage(image.device, &vk_image_create_info, NULL, &image.vkImage);
+	vkCreateImage(image.device, &vk_image_create_info, nullptr, &image.vkImage);
 
 	VkMemoryRequirements memory_requirements;
 	vkGetImageMemoryRequirements(image.device, image.vkImage, &memory_requirements);
 
 	const VkMemoryAllocateInfo allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.allocationSize = memory_requirements.size,
 		.memoryTypeIndex = image_create_info.memory_type_index
 	};
 
-	vkAllocateMemory(image.device, &allocate_info, NULL, &image.memory);
+	vkAllocateMemory(image.device, &allocate_info, nullptr, &image.memory);
 
 	const VkBindImageMemoryInfo image_bind_info = {
 		.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.image = image.vkImage,
 		.memory = image.memory,
 		.memoryOffset = 0
@@ -75,7 +75,7 @@ image_t create_image(const image_create_info_t image_create_info) {
 
 	const VkImageViewCreateInfo image_view_create_info = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.image = image.vkImage,
 		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
@@ -87,24 +87,24 @@ image_t create_image(const image_create_info_t image_create_info) {
 		.subresourceRange = image_subresource_range_default
 	};
 
-	vkCreateImageView(image.device, &image_view_create_info, NULL, &image.vkImageView);
+	vkCreateImageView(image.device, &image_view_create_info, nullptr, &image.vkImageView);
 
 	return image;
 }
 
 bool destroy_image(image_t *const image_ptr) {
 	
-	if (image_ptr == NULL) {
+	if (image_ptr == nullptr) {
 		return false;
 	}
 	
-	vkDestroyImage(image_ptr->device, image_ptr->vkImage, NULL);
+	vkDestroyImage(image_ptr->device, image_ptr->vkImage, nullptr);
 	image_ptr->vkImage = VK_NULL_HANDLE;
 	
-	vkDestroyImageView(image_ptr->device, image_ptr->vkImageView, NULL);
+	vkDestroyImageView(image_ptr->device, image_ptr->vkImageView, nullptr);
 	image_ptr->vkImageView = VK_NULL_HANDLE;
 	
-	vkFreeMemory(image_ptr->device, image_ptr->memory, NULL);
+	vkFreeMemory(image_ptr->device, image_ptr->memory, nullptr);
 	image_ptr->memory = VK_NULL_HANDLE;
 	
 	image_ptr->numArrayLayers = 0;
@@ -122,7 +122,7 @@ void create_sampler(physical_device_t physical_device, VkDevice device, VkSample
 
 	VkSamplerCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = 0;
 	create_info.magFilter = filter;
 	create_info.minFilter = filter;
@@ -140,6 +140,6 @@ void create_sampler(physical_device_t physical_device, VkDevice device, VkSample
 	create_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	create_info.unnormalizedCoordinates = VK_FALSE;
 
-	vkCreateSampler(device, &create_info, NULL, sampler_ptr);
+	vkCreateSampler(device, &create_info, nullptr, sampler_ptr);
 }
 

@@ -10,14 +10,14 @@ void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_se
 
 	VkPipelineLayoutCreateInfo create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	create_info.pNext = NULL;
+	create_info.pNext = nullptr;
 	create_info.flags = 0;
 	create_info.setLayoutCount = 1;
 	create_info.pSetLayouts = &descriptor_set_layout;
 	create_info.pushConstantRangeCount = 0;
-	create_info.pPushConstantRanges = NULL;
+	create_info.pPushConstantRanges = nullptr;
 
-	vkCreatePipelineLayout(device, &create_info, NULL, pipeline_layout_ptr);
+	vkCreatePipelineLayout(device, &create_info, nullptr, pipeline_layout_ptr);
 }
 
 compute_pipeline_t create_compute_pipeline(const VkDevice device, const descriptor_layout_t descriptor_layout, const char *const compute_shader_name) {
@@ -33,7 +33,7 @@ compute_pipeline_t create_compute_pipeline(const VkDevice device, const descript
 
 	const VkComputePipelineCreateInfo create_info = {
 		.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.layout = compute_pipeline.layout,
 		.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -42,7 +42,7 @@ compute_pipeline_t create_compute_pipeline(const VkDevice device, const descript
 		.stage.pName = "main"
 	};
 
-	const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, NULL, &compute_pipeline.handle);
+	const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &compute_pipeline.handle);
 	if (result != VK_SUCCESS) {
 		logf_message(FATAL, "Compute pipeline creation failed (error code: %i).", result);
 	}
@@ -54,20 +54,20 @@ compute_pipeline_t create_compute_pipeline(const VkDevice device, const descript
 
 bool destroy_compute_pipeline(compute_pipeline_t *const compute_pipeline_ptr) {
 
-	if (compute_pipeline_ptr == NULL) {
+	if (compute_pipeline_ptr == nullptr) {
 		return false;
 	}
 
-	vkDestroyPipeline(compute_pipeline_ptr->device, compute_pipeline_ptr->handle, NULL);
+	vkDestroyPipeline(compute_pipeline_ptr->device, compute_pipeline_ptr->handle, nullptr);
 	compute_pipeline_ptr->handle = VK_NULL_HANDLE;
 
-	vkDestroyPipelineLayout(compute_pipeline_ptr->device, compute_pipeline_ptr->layout, NULL);
+	vkDestroyPipelineLayout(compute_pipeline_ptr->device, compute_pipeline_ptr->layout, nullptr);
 	compute_pipeline_ptr->layout = VK_NULL_HANDLE;
 
-	vkDestroyDescriptorPool(compute_pipeline_ptr->device, compute_pipeline_ptr->descriptor_pool, NULL);
+	vkDestroyDescriptorPool(compute_pipeline_ptr->device, compute_pipeline_ptr->descriptor_pool, nullptr);
 	compute_pipeline_ptr->descriptor_pool = VK_NULL_HANDLE;
 
-	vkDestroyDescriptorSetLayout(compute_pipeline_ptr->device, compute_pipeline_ptr->descriptor_set_layout, NULL);
+	vkDestroyDescriptorSetLayout(compute_pipeline_ptr->device, compute_pipeline_ptr->descriptor_set_layout, nullptr);
 	compute_pipeline_ptr->descriptor_set_layout = VK_NULL_HANDLE;
 
 	compute_pipeline_ptr->device = VK_NULL_HANDLE;

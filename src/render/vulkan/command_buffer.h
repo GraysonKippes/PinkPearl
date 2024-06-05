@@ -13,8 +13,7 @@ void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32
 
 void allocate_command_buffers(VkDevice device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers);
 
-[[deprecated("parameters are to be simplified")]]
-void begin_command_buffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage);
+void cmdBufBegin(const VkCommandBuffer cmdBuf, const bool singleSubmit);
 
 void begin_render_pass(VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkExtent2D extent, VkClearValue *clear_value);
 

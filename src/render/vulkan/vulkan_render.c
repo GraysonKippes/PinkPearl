@@ -46,7 +46,7 @@ BinarySearchTree activeQuadIDs;
 Stack inactiveQuadIDs;
 
 static int cmpFuncDrawInfo(const void *const pA, const void *const pB) {
-	if (pA == NULL || pB == NULL) {
+	if (pA == nullptr || pB == nullptr) {
 		return -2;
 	}
 	
@@ -119,12 +119,12 @@ void initTextureDescriptors(void) {
 			.dstArrayElement = 0,
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			.descriptorCount = num_render_object_slots,
-			.pBufferInfo = NULL,
+			.pBufferInfo = nullptr,
 			.pImageInfo = descriptorImageInfos,
-			.pTexelBufferView = NULL
+			.pTexelBufferView = nullptr
 		};
 		
-		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, NULL);
+		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 	}
 }
 
@@ -194,7 +194,7 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 	
 	const VkSemaphoreWaitInfo semaphoreWaitInfo = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.semaphoreCount = frame_array.num_frames,
 		.pSemaphores = waitSemaphores,
@@ -202,20 +202,13 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 	};
 	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
 	
-	vkFreeCommandBuffers(device, transfer_command_pool, frame_array.num_frames, cmdBufs);
-	allocate_command_buffers(device, transfer_command_pool, frame_array.num_frames, cmdBufs);
+	vkFreeCommandBuffers(device, cmdPoolTransfer, frame_array.num_frames, cmdBufs);
+	allocate_command_buffers(device, cmdPoolTransfer, frame_array.num_frames, cmdBufs);
 	
 	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
 	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
 	VkSemaphoreSubmitInfo semaphoreSignalSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
 	VkSubmitInfo2 submitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
-	
-	const VkCommandBufferBeginInfo beginInfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.pNext = NULL,
-		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-		.pInheritanceInfo = NULL
-	};
 	
 	const VkBufferCopy bufferCopy = {
 		.srcOffset = verticesOffset,
@@ -224,7 +217,7 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 	};
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		vkBeginCommandBuffer(cmdBufs[i], &beginInfo);
+		cmdBufBegin(cmdBufs[i], true);
 		vkCmdCopyBuffer(cmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
 		vkEndCommandBuffer(cmdBufs[i]);
 		
@@ -235,7 +228,7 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 
 		submitInfos[i] = (VkSubmitInfo2){
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-			.pNext = NULL,
+			.pNext = nullptr,
 			.waitSemaphoreInfoCount = 1,
 			.pWaitSemaphoreInfos = &semaphoreWaitSubmitInfos[i],
 			.commandBufferInfoCount = 1,
@@ -280,9 +273,9 @@ static void rebuildDrawData(void) {
 		return;
 	}
 	
-	for (LinkedListNode *pNode = traversal.pHeadNode; pNode != NULL; pNode = pNode->pNextNode) {
+	for (LinkedListNode *pNode = traversal.pHeadNode; pNode != nullptr; pNode = pNode->pNextNode) {
 		DrawInfo *const pDrawInfo = (DrawInfo *)((BinarySearchTreeNode *)pNode->pObject)->pObject;
-		if (pDrawInfo == NULL) {
+		if (pDrawInfo == nullptr) {
 			deleteLinkedList(&traversal);
 			return;
 		}
@@ -320,12 +313,12 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 			.dstArrayElement = (uint32_t)quadID,
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			.descriptorCount = 1,
-			.pBufferInfo = NULL,
+			.pBufferInfo = nullptr,
 			.pImageInfo = &descriptorImageInfo,
-			.pTexelBufferView = NULL
+			.pTexelBufferView = nullptr
 		};
 		
-		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, NULL);
+		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 	}
 }
 
@@ -336,11 +329,11 @@ void updateDrawData(const int quadID, const unsigned int imageIndex) {
 		.quadID = quadID,
 		.drawDataIndex = 1
 	};
-	BinarySearchTreeNode *pSearchNode = NULL;
+	BinarySearchTreeNode *pSearchNode = nullptr;
 	bstSearch(&activeQuadIDs, &searchDrawInfo, &pSearchNode);
-	if (pSearchNode == NULL) {
+	if (pSearchNode == nullptr) {
 		return;
-	} else if (pSearchNode->pObject == NULL) {
+	} else if (pSearchNode->pObject == nullptr) {
 		return;
 	}
 	
@@ -438,8 +431,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptor_writes[0].descriptorCount = 1;
 	descriptor_writes[0].pBufferInfo = &draw_data_buffer_info;
-	descriptor_writes[0].pImageInfo = NULL;
-	descriptor_writes[0].pTexelBufferView = NULL;
+	descriptor_writes[0].pImageInfo = nullptr;
+	descriptor_writes[0].pTexelBufferView = nullptr;
 
 	const VkDescriptorBufferInfo matrix_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
 	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -449,8 +442,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	descriptor_writes[1].descriptorCount = 1;
 	descriptor_writes[1].pBufferInfo = &matrix_buffer_info;
-	descriptor_writes[1].pImageInfo = NULL;
-	descriptor_writes[1].pTexelBufferView = NULL;
+	descriptor_writes[1].pImageInfo = nullptr;
+	descriptor_writes[1].pTexelBufferView = nullptr;
 
 	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 3);
 	descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -460,25 +453,19 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptor_writes[2].descriptorCount = 1;
 	descriptor_writes[2].pBufferInfo = &lighting_buffer_info;
-	descriptor_writes[2].pImageInfo = NULL;
-	descriptor_writes[2].pTexelBufferView = NULL;
+	descriptor_writes[2].pImageInfo = nullptr;
+	descriptor_writes[2].pTexelBufferView = nullptr;
 
-	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, NULL);
+	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, nullptr);
 	
 	uploadLightingData();
 
-	const VkCommandBufferBeginInfo begin_info = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.pInheritanceInfo = NULL
-	};
-	vkBeginCommandBuffer(frame_array.frames[frame_array.current_frame].command_buffer, &begin_info);
+	cmdBufBegin(frame_array.frames[frame_array.current_frame].command_buffer, false);
 
 	static const VkClearValue clear_value = { { { 0 } } };
 	const VkRenderPassBeginInfo render_pass_info = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.renderPass = graphics_pipeline.render_pass,
 		.framebuffer = swapchain.framebuffers[image_index],
 		.renderArea.offset.x = 0,
@@ -490,7 +477,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	vkCmdBeginRenderPass(frame_array.frames[frame_array.current_frame].command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 	
 	vkCmdBindPipeline(frame_array.frames[frame_array.current_frame].command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
-	vkCmdBindDescriptorSets(frame_array.frames[frame_array.current_frame].command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &frame_array.frames[frame_array.current_frame].descriptor_set, 0, NULL);
+	vkCmdBindDescriptorSets(frame_array.frames[frame_array.current_frame].command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &frame_array.frames[frame_array.current_frame].descriptor_set, 0, nullptr);
 	
 	const VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].command_buffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
@@ -504,7 +491,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 
 	const VkCommandBufferSubmitInfo command_buffer_submit_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.commandBuffer = frame_array.frames[frame_array.current_frame].command_buffer,
 		.deviceMask = 0
 	};
@@ -513,14 +500,14 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	wait_semaphore_submit_infos[1] = make_timeline_semaphore_wait_submit_info(frame_array.frames[frame_array.current_frame].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT);
 
 	wait_semaphore_submit_infos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	wait_semaphore_submit_infos[0].pNext = NULL;
+	wait_semaphore_submit_infos[0].pNext = nullptr;
 	wait_semaphore_submit_infos[0].semaphore = frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore;
 	wait_semaphore_submit_infos[0].value = 0;
 	wait_semaphore_submit_infos[0].stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 	wait_semaphore_submit_infos[0].deviceIndex = 0;
 
 	wait_semaphore_submit_infos[2].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	wait_semaphore_submit_infos[2].pNext = NULL;
+	wait_semaphore_submit_infos[2].pNext = nullptr;
 	wait_semaphore_submit_infos[2].semaphore = compute_matrices_semaphore;
 	wait_semaphore_submit_infos[2].value = 0;
 	wait_semaphore_submit_infos[2].stageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
@@ -532,7 +519,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 
 	const VkSubmitInfo2 submit_info = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.flags = 0,
 		.waitSemaphoreInfoCount = 3,
 		.pWaitSemaphoreInfos = wait_semaphore_submit_infos,
@@ -542,22 +529,22 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 		.pSignalSemaphoreInfos = signal_semaphore_submit_infos
 	};
 
-	vkQueueSubmit2(graphics_queue, 1, &submit_info, frame_array.frames[frame_array.current_frame].fence_frame_ready);
+	vkQueueSubmit2(queueGraphics, 1, &submit_info, frame_array.frames[frame_array.current_frame].fence_frame_ready);
 
 
 
 	const VkPresentInfoKHR present_info = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-		.pNext = NULL,
+		.pNext = nullptr,
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &frame_array.frames[frame_array.current_frame].semaphore_present_ready.semaphore,
 		.swapchainCount = 1,
 		.pSwapchains = &swapchain.handle,
 		.pImageIndices = &image_index,
-		.pResults = NULL
+		.pResults = nullptr
 	};
 
-	timeline_to_binary_semaphore_signal(graphics_queue, frame_array.frames[frame_array.current_frame].semaphore_render_finished, frame_array.frames[frame_array.current_frame].semaphore_present_ready);
+	timeline_to_binary_semaphore_signal(queueGraphics, frame_array.frames[frame_array.current_frame].semaphore_render_finished, frame_array.frames[frame_array.current_frame].semaphore_present_ready);
 	vkQueuePresentKHR(present_queue, &present_info);
 
 	frame_array.current_frame = (frame_array.current_frame + 1) % frame_array.num_frames;
