@@ -11,7 +11,7 @@ extern const VkCommandPoolCreateFlags transfer_command_pool_flags;
 
 void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr);
 
-void allocate_command_buffers(VkDevice device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers);
+void allocate_command_buffers(VkDevice vkDevice, VkCommandPool commandPool, uint32_t numBuffers, VkCommandBuffer *pCommandBuffers);
 
 void cmdBufBegin(const VkCommandBuffer cmdBuf, const bool singleSubmit);
 

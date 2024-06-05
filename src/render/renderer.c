@@ -42,7 +42,7 @@ void init_renderer(void) {
 			.isLoaded = false,
 			.isTilemap = false,
 			.numCells.width = 1,
-			.numCells.length = 1,
+			.numCells.length = num_room_layers,
 			.cellExtent.width = 16,
 			.cellExtent.length = 16,
 			.numAnimations = 1,

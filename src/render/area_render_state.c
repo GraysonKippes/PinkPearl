@@ -7,12 +7,13 @@
 #include "render_object.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/vulkan_render.h"
+#include "vulkan/compute/compute_room_texture.h"
 #include "vulkan/math/lerp.h"
 
 void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const room_t initialRoom) {
 	log_message(VERBOSE, "Resetting area render state...");
 	
-	if (pAreaRenderState == nullptr) {
+	if (!pAreaRenderState) {
 		return;
 	}
 	
@@ -77,6 +78,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	String textureID = newString(64, "roomM");
 	pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(roomQuadDimensions, roomQuadTransform, textureID);
 	deleteString(&textureID);
+	computeRoomTexture(initialRoom, pAreaRenderState->currentCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle, getRenderObjTexState(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot])->textureHandle);
 	
 	log_message(VERBOSE, "Done resetting area render state.");
 }

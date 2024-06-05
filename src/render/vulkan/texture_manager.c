@@ -22,8 +22,8 @@
 
 #define TEXTURE_PATH (RESOURCE_PATH "assets/textures/")
 
-#define NUM_RESERVED_TEXTURES 1
 #define NUM_TEXTURES 67
+#define NUM_RESERVED_TEXTURES 1
 
 typedef struct TextureRecord {
 	String textureID;
@@ -185,6 +185,13 @@ Texture getTexture(const int textureHandle) {
 	return textures[textureHandle];
 }
 
+Texture *getTextureP(const int textureHandle) {
+	if (!validateTextureHandle(textureHandle)) {
+		return &textures[textureHandleMissing];
+	}
+	return &textures[textureHandle];
+}
+
 static void registerTexture(const int textureHandle, const TextureCreateInfo textureCreateInfo) {
 	
 	const TextureRecord textureRecord = {
@@ -202,16 +209,4 @@ static void registerTexture(const int textureHandle, const TextureCreateInfo tex
 			hashIndex %= (size_t)numTextures;
 		}
 	}
-}
-
-// TODO - remove
-void create_room_texture(const room_t room, const uint32_t cacheSlot, const int tilemapTextureHandle) {
-	const int roomTextureHandle = numReservedTextures + (int)room.size;
-	compute_room_texture(room, cacheSlot, textures[tilemapTextureHandle], &textures[roomTextureHandle]);
-}
-
-// TODO - remove
-[[deprecated("room texture feature is to be generalized and moved to texture management.")]]
-Texture get_room_texture(const RoomSize room_size) {
-	return textures[numReservedTextures + (uint32_t)room_size];
 }

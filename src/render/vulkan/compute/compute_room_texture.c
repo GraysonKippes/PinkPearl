@@ -12,6 +12,7 @@
 #include "../compute_pipeline.h"
 #include "../descriptor.h"
 #include "../image.h"
+#include "../texture.h"
 #include "../texture_manager.h"
 #include "../vulkan_manager.h"
 
@@ -31,7 +32,11 @@ static const descriptor_layout_t compute_room_texture_layout = {
 static compute_pipeline_t compute_room_texture_pipeline;
 static image_t computeRoomTextureTransferImage;
 
+static Image transferImage;
+static VkDeviceMemory transferImageMemory;
+
 // Subresource range used in all image views and layout transitions.
+[[deprecated]]
 static const VkImageSubresourceRange image_subresource_range = {
 	.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	.baseMipLevel = 0,
@@ -40,7 +45,7 @@ static const VkImageSubresourceRange image_subresource_range = {
 	.layerCount = VK_REMAINING_ARRAY_LAYERS
 };
 
-static const TextureImageSubresourceRange imageSubresourceRange = {
+static const ImageSubresourceRange imageSubresourceRange = {
 	.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	.baseArrayLayer = 0,
 	.arrayLayerCount = VK_REMAINING_ARRAY_LAYERS
@@ -48,91 +53,107 @@ static const TextureImageSubresourceRange imageSubresourceRange = {
 
 
 
-static void createRoomTextureTransferImage(void) {
-	log_message(VERBOSE, "Creating room texture transfer image...");
-
+static void createTransferImage(const VkDevice vkDevice) {
+	log_message(VERBOSE, "Creating texture stitching transfer image...");
+	
+	transferImage = (Image){
+		.vkImage = VK_NULL_HANDLE,
+		.vkImageView = VK_NULL_HANDLE,
+		.vkFormat = VK_FORMAT_UNDEFINED,
+		.usage = imageUsageUndefined
+	};
+	
 	// Dimensions for the largest possible room texture, smaller textures use a subsection of this image.
-	const extent_t largest_room_extent = room_size_to_extent((RoomSize)(num_room_sizes - 1));
-	const extent_t image_dimensions = extent_scale(largest_room_extent, tile_texel_length);
-
-	const queue_family_set_t queue_family_set = {
+	const extent_t largestRoomExtent = room_size_to_extent((RoomSize)(num_room_sizes - 1));
+	const extent_t imageDimensions = extent_scale(largestRoomExtent, tile_texel_length);
+	
+	const queue_family_set_t queueFamilyIndexSet = {
 		.num_queue_families = 2,
 		.queue_families = (uint32_t[2]){
 			*physical_device.queue_family_indices.transfer_family_ptr,
 			*physical_device.queue_family_indices.compute_family_ptr,
 		}
 	};
-
-	const image_create_info_t computeRoomTextureTransferImageCreateInfo = {
-		.num_image_array_layers = num_room_layers,
-		.image_dimensions = image_dimensions,
-		.format = VK_FORMAT_R8G8B8A8_UINT,
-		.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-		.queue_family_set = queue_family_set,
-		.memory_type_index = memory_type_set.graphics_resources,
-		.physical_device = physical_device.handle,
-		.device = device
-	};
-
-	computeRoomTextureTransferImage = create_image(computeRoomTextureTransferImageCreateInfo);
-
-	// Initial transition room texture storage image to transfer destination layout.
-
-	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocate_command_buffers(device, cmdPoolGraphics, 1, &cmdBuf);
-	cmdBufBegin(cmdBuf, true); {
-
-		VkImageMemoryBarrier image_memory_barrier = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			.pNext = nullptr,
-			.srcAccessMask = VK_ACCESS_NONE,
-			.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			.newLayout = VK_IMAGE_LAYOUT_GENERAL,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = computeRoomTextureTransferImage.vkImage,
-			.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-			.subresourceRange.baseMipLevel = 0,
-			.subresourceRange.levelCount = 1,
-			.subresourceRange.baseArrayLayer = 0,
-			.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS
-		};
-
-		const VkPipelineStageFlags source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		const VkPipelineStageFlags destination_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-
-		vkCmdPipelineBarrier(cmdBuf, source_stage, destination_stage, 0,
-				0, nullptr,
-				0, nullptr,
-				1, &image_memory_barrier);
-
-	} vkEndCommandBuffer(cmdBuf);
-
-	const VkSubmitInfo submitInfo = {
-		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+	
+	// Create the image.
+	const VkImageCreateInfo imageCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.pNext = nullptr,
-		.waitSemaphoreCount = 0,
-		.pWaitSemaphores = nullptr,
-		.pWaitDstStageMask = nullptr,
-		.commandBufferCount = 1,
-		.pCommandBuffers = &cmdBuf,
-		.signalSemaphoreCount = 0,
-		.pSignalSemaphores = nullptr
+		.flags = 0,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = VK_FORMAT_R8G8B8A8_UINT,
+		.extent.width = imageDimensions.width,
+		.extent.height = imageDimensions.length,
+		.extent.depth = 1,
+		.mipLevels = 1,
+		.arrayLayers = num_room_layers,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.tiling = VK_IMAGE_TILING_OPTIMAL,
+		.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+		.sharingMode = VK_SHARING_MODE_CONCURRENT,
+		.queueFamilyIndexCount = queueFamilyIndexSet.num_queue_families,
+		.pQueueFamilyIndices = queueFamilyIndexSet.queue_families,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	};
-
-	vkQueueSubmit(queueGraphics, 1, &submitInfo, nullptr);
-	vkQueueWaitIdle(queueGraphics);
-
-	computeRoomTextureTransferImage.layout = VK_IMAGE_LAYOUT_GENERAL;
-
-	log_message(VERBOSE, "Done creating room texture transfer image.");
+	vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &transferImage.vkImage);
+	transferImage.vkFormat = VK_FORMAT_R8G8B8A8_UINT;
+	
+	// Allocate memory for the image and bind the image to it.
+	const VkMemoryRequirements2 imageMemoryRequirements = getImageMemoryRequirements(vkDevice, transferImage.vkImage);
+	const VkMemoryAllocateInfo allocateInfo = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.pNext = nullptr,
+		.allocationSize = imageMemoryRequirements.memoryRequirements.size,
+		.memoryTypeIndex = memory_type_set.graphics_resources
+	};
+	vkAllocateMemory(vkDevice, &allocateInfo, nullptr, &transferImageMemory);
+	bindImageMemory(vkDevice, transferImage.vkImage, transferImageMemory, 0);
+	
+	// Create the image view.
+	const VkImageViewCreateInfo imageViewCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.image = transferImage.vkImage,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+		.format = transferImage.vkFormat,
+		.components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.subresourceRange = makeImageSubresourceRange(imageSubresourceRange)
+	};
+	vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &transferImage.vkImageView);
+	
+	// Transition the image layout.
+	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
+	allocate_command_buffers(vkDevice, cmdPoolGraphics, 1, &cmdBuf);
+	cmdBufBegin(cmdBuf, true); {
+		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(transferImage, imageSubresourceRange, imageUsageComputeWrite);
+		const VkDependencyInfo dependencyInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.pNext = nullptr,
+			.dependencyFlags = 0,
+			.memoryBarrierCount = 0,
+			.pMemoryBarriers = nullptr,
+			.bufferMemoryBarrierCount = 0,
+			.pBufferMemoryBarriers = nullptr,
+			.imageMemoryBarrierCount = 1,
+			.pImageMemoryBarriers = &imageMemoryBarrier
+		};
+		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
+	} vkEndCommandBuffer(cmdBuf);
+	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
+	transferImage.usage = imageUsageComputeWrite;
+	
+	log_message(VERBOSE, "Done creating texture stitching transfer image.");
 }
 
-void init_compute_room_texture(const VkDevice vk_device) {
-	log_message(VERBOSE, "Initializing compute room texture...");
-	compute_room_texture_pipeline = create_compute_pipeline(vk_device, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
-	createRoomTextureTransferImage();
+void init_compute_room_texture(const VkDevice vkDevice) {
+	log_message(VERBOSE, "Initializing texture stitcher...");
+	compute_room_texture_pipeline = create_compute_pipeline(vkDevice, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
+	createTransferImage(vkDevice);
+	log_message(VERBOSE, "Done initializing texture stitcher.");
 }
 
 void terminate_compute_room_texture(void) {
@@ -140,10 +161,12 @@ void terminate_compute_room_texture(void) {
 	destroy_compute_pipeline(&compute_room_texture_pipeline);
 }
 
-void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Texture tilemapTexture, Texture *const pRoomTexture) {
+void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int tilemapTextureHandle, const int roomTextureHandle) {
 	log_message(VERBOSE, "Computing room texture...");
 	
-	if (pRoomTexture == nullptr) {
+	const Texture tilemapTexture = getTexture(tilemapTextureHandle);
+	Texture *const pRoomTexture = getTextureP(roomTextureHandle);
+	if (!pRoomTexture) {
 		return;
 	}
 
@@ -169,7 +192,7 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 1);
 	const VkDescriptorImageInfo tilemapTexture_info = make_descriptor_image_info(no_sampler, tilemapTexture.image.vkImageView, tilemapTexture.image.usage.imageLayout);
-	const VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(imageSamplerDefault, computeRoomTextureTransferImage.vkImageView, computeRoomTextureTransferImage.layout);
+	const VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(imageSamplerDefault, transferImage.vkImageView, transferImage.usage.imageLayout);
 	const VkDescriptorImageInfo storage_image_infos[2] = { tilemapTexture_info, room_texture_storage_info };
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
@@ -198,6 +221,7 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 
 	vkUpdateDescriptorSets(device, 2, write_descriptor_sets, 0, nullptr);
 
+	// Run compute shader to stitch texture.
 	VkCommandBuffer cmdBufCompute = VK_NULL_HANDLE;
 	allocate_command_buffers(device, compute_command_pool, 1, &cmdBufCompute);
 	cmdBufBegin(cmdBufCompute, true); {
@@ -208,6 +232,7 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 	submit_command_buffers_async(compute_queue, 1, &cmdBufCompute);
 	vkFreeCommandBuffers(device, compute_command_pool, 1, &cmdBufCompute);
 
+	[[deprecated]]
 	const VkImageSubresourceRange room_texture_image_subresource_range = {
 		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 		.baseMipLevel = 0,
@@ -223,7 +248,6 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
 	allocate_command_buffers(device, cmdPoolGraphics, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
-
 		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageTransferDestination);
 		const VkDependencyInfo dependencyInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -237,11 +261,10 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
 		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
-
 	} vkEndCommandBuffer(cmdBuf);
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
-	pRoomTexture->image.usage = imageUsageTransferDestination;
 	vkResetCommandBuffer(cmdBuf, 0);
+	pRoomTexture->image.usage = imageUsageTransferDestination;
 
 	/* Transfer compute result image to room texture image. */
 	
@@ -281,8 +304,8 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 		const VkCopyImageInfo2 copy_image_info = {
 			.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
 			.pNext = nullptr,
-			.srcImage = computeRoomTextureTransferImage.vkImage,
-			.srcImageLayout = computeRoomTextureTransferImage.layout,
+			.srcImage = transferImage.vkImage,
+			.srcImageLayout = transferImage.usage.imageLayout,
 			.dstImage = pRoomTexture->image.vkImage,
 			.dstImageLayout = pRoomTexture->image.usage.imageLayout,
 			.regionCount = 1,
@@ -298,9 +321,7 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 	/* Transition the room texture image layout back from transfer destination to shader read-only. */
 	
 	cmdBufBegin(cmdBuf, true); {
-
 		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageSampled);
-
 		const VkDependencyInfo dependencyInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.pNext = nullptr,
@@ -312,13 +333,11 @@ void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Tex
 			.imageMemoryBarrierCount = 1,
 			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
-
 		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
-
 	} vkEndCommandBuffer(cmdBuf);
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
-	pRoomTexture->image.usage = imageUsageSampled;
 	vkFreeCommandBuffers(device, cmdPoolGraphics, 1, &cmdBuf);
+	pRoomTexture->image.usage = imageUsageSampled;
 
 	log_message(VERBOSE, "Done computing room texture.");
 }

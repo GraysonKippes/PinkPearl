@@ -83,7 +83,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	buffer_partition_unmap_memory(global_staging_buffer_partition);
 			
 	// Subresource range used in all image views and layout transitions.	
-	static const TextureImageSubresourceRange imageSubresourceRange = {
+	static const ImageSubresourceRange imageSubresourceRange = {
 		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 		.baseArrayLayer = 0,
 		.arrayLayerCount = VK_REMAINING_ARRAY_LAYERS
@@ -175,13 +175,12 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	allocate_command_buffers(device, cmdPoolGraphics, 1, &transitionCommandBuffer2);
 	cmdBufBegin(transitionCommandBuffer2, true); {
 
-		TextureImageUsage imageUsage = imageUsageSampled;
+		ImageUsage imageUsage = imageUsageSampled;
 		if (textureCreateInfo.isTilemap) {
 			imageUsage = imageUsageComputeRead;
 		}
 
 		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(texture.image, imageSubresourceRange, imageUsage);
-		
 		const VkDependencyInfo dependencyInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.pNext = nullptr,
@@ -193,9 +192,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.imageMemoryBarrierCount = 1,
 			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
-		
 		vkCmdPipelineBarrier2(transitionCommandBuffer2, &dependencyInfo);
-		
 		texture.image.usage = imageUsage;
 
 	} vkEndCommandBuffer(transitionCommandBuffer2);

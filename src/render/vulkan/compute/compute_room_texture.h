@@ -7,9 +7,10 @@
 
 #include "../texture.h"
 
-void init_compute_room_texture(const VkDevice vk_device);
+void init_compute_room_texture(const VkDevice vkDevice);
+
 void terminate_compute_room_texture(void);
 
-void compute_room_texture(const room_t room, const uint32_t cacheSlot, const Texture tilemapTexture, Texture *const pRoomTexture);
+void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int tilemapTextureHandle, const int roomTextureHandle);
 
 #endif	// COMPUTE_ROOM_TEXTURE_H

@@ -31,10 +31,8 @@ void unloadRenderObject(int *const pRenderHandle);
 // Returns true if the render handle is both below the number of render object slots, false otherwise.
 bool validateRenderHandle(int renderHandle);
 
-[[deprecated("moving to more restricted access to render objects.")]]
 RenderTransform *getRenderObjTransform(const int renderHandle);
 
-[[deprecated("moving to more restricted access to render objects.")]]
 TextureState *getRenderObjTexState(const int renderHandle);
 
 // Returns the current animation of the render object's texture state which is referenced by the render handle.

@@ -28,10 +28,10 @@ bool validateTextureHandle(const int textureHandle);
 // Finds a texture with the given texture ID and returns a handle to it.
 int findTexture(const String textureID);
 
-// Gets a texture from the array of loaded texture directly from the texture handle.
+// Returns a texture from the array of loaded texture directly from the texture handle.
 Texture getTexture(const int textureHandle);
 
-[[deprecated("room texture feature is to be generalized and moved to texture management.")]]
-void create_room_texture(const room_t room, const uint32_t cacheSlot, const int tilemapTextureHandle);
+// Returns the pointer to a texture from the array of loaded texture directly from the texture handle.
+Texture *getTextureP(const int textureHandle);
 
 #endif	// TEXTURE_MANAGER_H
