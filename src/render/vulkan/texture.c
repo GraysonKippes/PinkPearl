@@ -277,6 +277,15 @@ void bindImageMemory(const VkDevice vkDevice, const VkImage vkImage, const VkDev
 	vkBindImageMemory2(vkDevice, 1, &bindInfo);
 }
 
+VkImageSubresourceLayers makeImageSubresourceLayers(const ImageSubresourceRange subresourceRange) {
+	return (VkImageSubresourceLayers){
+		.aspectMask = subresourceRange.imageAspectMask,
+		.mipLevel = 0,
+		.baseArrayLayer = subresourceRange.baseArrayLayer,
+		.layerCount = subresourceRange.arrayLayerCount
+	};
+}
+
 VkImageSubresourceRange makeImageSubresourceRange(const ImageSubresourceRange subresourceRange) {
 	return (VkImageSubresourceRange){
 		.aspectMask = subresourceRange.imageAspectMask,

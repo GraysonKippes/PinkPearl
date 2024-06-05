@@ -227,7 +227,10 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 	allocate_command_buffers(device, cmdPoolGraphics, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 		
-		const VkImageMemoryBarrier2 imageMemoryBarrier1 = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageTransferDestination);
+		const VkImageMemoryBarrier2 imageMemoryBarriers1[2] = {
+			[0] = makeImageTransitionBarrier(transferImage, imageSubresourceRange, imageUsageTransferSource),
+			[1] = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageTransferDestination)
+		};
 		const VkDependencyInfo dependencyInfo1 = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.pNext = nullptr,
@@ -236,10 +239,11 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 			.pMemoryBarriers = nullptr,
 			.bufferMemoryBarrierCount = 0,
 			.pBufferMemoryBarriers = nullptr,
-			.imageMemoryBarrierCount = 1,
-			.pImageMemoryBarriers = &imageMemoryBarrier1
+			.imageMemoryBarrierCount = 2,
+			.pImageMemoryBarriers = imageMemoryBarriers1
 		};
 		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo1);
+		transferImage.usage = imageUsageTransferSource;
 		pRoomTexture->image.usage = imageUsageTransferDestination;
 		
 		const VkImageSubresourceLayers source_image_subresource_layers = {
@@ -256,7 +260,7 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 			.layerCount = num_room_layers
 		};
 
-		const VkImageCopy2 image_copy_region = {
+		const VkImageCopy2 imageCopyRegion = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_COPY_2,
 			.pNext = nullptr,
 			.srcSubresource = source_image_subresource_layers,
@@ -270,7 +274,7 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 			}
 		};
 
-		const VkCopyImageInfo2 copy_image_info = {
+		const VkCopyImageInfo2 copyImageInfo = {
 			.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
 			.pNext = nullptr,
 			.srcImage = transferImage.vkImage,
@@ -278,12 +282,15 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 			.dstImage = pRoomTexture->image.vkImage,
 			.dstImageLayout = pRoomTexture->image.usage.imageLayout,
 			.regionCount = 1,
-			.pRegions = &image_copy_region
+			.pRegions = &imageCopyRegion
 		};
 
-		vkCmdCopyImage2(cmdBuf, &copy_image_info);
+		vkCmdCopyImage2(cmdBuf, &copyImageInfo);
 		
-		const VkImageMemoryBarrier2 imageMemoryBarrier2 = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageSampled);
+		const VkImageMemoryBarrier2 imageMemoryBarriers2[2] = {
+			[0] = makeImageTransitionBarrier(transferImage, imageSubresourceRange, imageUsageComputeWrite),
+			[1] = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageSampled)
+		};
 		const VkDependencyInfo dependencyInfo2 = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.pNext = nullptr,
@@ -292,10 +299,11 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 			.pMemoryBarriers = nullptr,
 			.bufferMemoryBarrierCount = 0,
 			.pBufferMemoryBarriers = nullptr,
-			.imageMemoryBarrierCount = 1,
-			.pImageMemoryBarriers = &imageMemoryBarrier2
+			.imageMemoryBarrierCount = 2,
+			.pImageMemoryBarriers = imageMemoryBarriers2
 		};
 		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo2);
+		transferImage.usage = imageUsageComputeWrite;
 		pRoomTexture->image.usage = imageUsageSampled;
 		
 	} vkEndCommandBuffer(cmdBuf);

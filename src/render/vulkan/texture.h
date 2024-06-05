@@ -95,6 +95,8 @@ VkMemoryRequirements2 getImageMemoryRequirements(const VkDevice vkDevice, const 
 
 void bindImageMemory(const VkDevice vkDevice, const VkImage vkImage, const VkDeviceMemory vkDeviceMemory, const VkDeviceSize offset);
 
+VkImageSubresourceLayers makeImageSubresourceLayers(const ImageSubresourceRange subresourceRange);
+
 VkImageSubresourceRange makeImageSubresourceRange(const ImageSubresourceRange subresourceRange);
 
 VkImageMemoryBarrier2 makeImageTransitionBarrier(const Image image, const ImageSubresourceRange subresourceRange, const ImageUsage newUsage);
