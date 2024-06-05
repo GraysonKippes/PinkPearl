@@ -26,7 +26,7 @@ static const descriptor_layout_t compute_area_mesh_layout = {
 	.bindings = (descriptor_binding_t *)compute_area_mesh_bindings
 };
 
-static compute_pipeline_t compute_area_mesh_pipeline;
+static ComputePipeline compute_area_mesh_pipeline;
 
 static const size_t max_area_extent_x = 32;
 static const size_t max_area_extent_y = 32;

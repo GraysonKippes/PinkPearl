@@ -20,7 +20,7 @@ static const descriptor_layout_t compute_matrices_layout = {
 	.bindings = (descriptor_binding_t *)compute_matrices_bindings
 };
 
-static compute_pipeline_t compute_matrices_pipeline;
+static ComputePipeline compute_matrices_pipeline;
 
 static VkCommandBuffer compute_matrices_command_buffer = VK_NULL_HANDLE;
 static VkDescriptorSet compute_matrices_descriptor_set = VK_NULL_HANDLE;

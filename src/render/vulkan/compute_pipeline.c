@@ -20,11 +20,11 @@ void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_se
 	vkCreatePipelineLayout(device, &create_info, nullptr, pipeline_layout_ptr);
 }
 
-compute_pipeline_t create_compute_pipeline(const VkDevice device, const descriptor_layout_t descriptor_layout, const char *const compute_shader_name) {
+ComputePipeline create_compute_pipeline(const VkDevice device, const descriptor_layout_t descriptor_layout, const char *const compute_shader_name) {
 	
 	shader_module_t compute_shader_module = create_shader_module(device, compute_shader_name);
 
-	compute_pipeline_t compute_pipeline = { 0 };
+	ComputePipeline compute_pipeline = { 0 };
 
 	create_descriptor_set_layout(device, descriptor_layout, &compute_pipeline.descriptor_set_layout);
 	create_pipeline_layout(device, compute_pipeline.descriptor_set_layout, &compute_pipeline.layout);
@@ -52,7 +52,7 @@ compute_pipeline_t create_compute_pipeline(const VkDevice device, const descript
 	return compute_pipeline;
 }
 
-bool destroy_compute_pipeline(compute_pipeline_t *const compute_pipeline_ptr) {
+bool destroy_compute_pipeline(ComputePipeline *const compute_pipeline_ptr) {
 
 	if (compute_pipeline_ptr == nullptr) {
 		return false;

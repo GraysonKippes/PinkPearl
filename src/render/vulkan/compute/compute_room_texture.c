@@ -29,22 +29,12 @@ static const descriptor_layout_t compute_room_texture_layout = {
 	.bindings = (descriptor_binding_t *)compute_room_texture_bindings
 };
 
-static compute_pipeline_t compute_room_texture_pipeline;
-static image_t computeRoomTextureTransferImage;
+static ComputePipeline compute_room_texture_pipeline;
 
 static Image transferImage;
 static VkDeviceMemory transferImageMemory;
 
 // Subresource range used in all image views and layout transitions.
-[[deprecated]]
-static const VkImageSubresourceRange image_subresource_range = {
-	.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-	.baseMipLevel = 0,
-	.levelCount = 1,
-	.baseArrayLayer = 0,
-	.layerCount = VK_REMAINING_ARRAY_LAYERS
-};
-
 static const ImageSubresourceRange imageSubresourceRange = {
 	.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	.baseArrayLayer = 0,
@@ -157,7 +147,6 @@ void init_compute_room_texture(const VkDevice vkDevice) {
 }
 
 void terminate_compute_room_texture(void) {
-	destroy_image(&computeRoomTextureTransferImage);
 	destroy_compute_pipeline(&compute_room_texture_pipeline);
 }
 
@@ -232,24 +221,14 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 	submit_command_buffers_async(compute_queue, 1, &cmdBufCompute);
 	vkFreeCommandBuffers(device, compute_command_pool, 1, &cmdBufCompute);
 
-	[[deprecated]]
-	const VkImageSubresourceRange room_texture_image_subresource_range = {
-		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = cacheSlot * num_room_layers,
-		.layerCount = num_room_layers
-	};
-
-	// TODO - make the transitions and transfer all go into one command buffer submitted to the graphics queue.
-
 	/* Transition the room texture image layout from shader read-only to transfer destination. */
 	
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
 	allocate_command_buffers(device, cmdPoolGraphics, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
-		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageTransferDestination);
-		const VkDependencyInfo dependencyInfo = {
+		
+		const VkImageMemoryBarrier2 imageMemoryBarrier1 = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageTransferDestination);
+		const VkDependencyInfo dependencyInfo1 = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.pNext = nullptr,
 			.dependencyFlags = 0,
@@ -258,21 +237,11 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 			.bufferMemoryBarrierCount = 0,
 			.pBufferMemoryBarriers = nullptr,
 			.imageMemoryBarrierCount = 1,
-			.pImageMemoryBarriers = &imageMemoryBarrier
+			.pImageMemoryBarriers = &imageMemoryBarrier1
 		};
-		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
-	} vkEndCommandBuffer(cmdBuf);
-	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
-	vkResetCommandBuffer(cmdBuf, 0);
-	pRoomTexture->image.usage = imageUsageTransferDestination;
-
-	/* Transfer compute result image to room texture image. */
-	
-	log_message(VERBOSE, "Transfering computed room image to room texture...");
-	VkCommandBuffer transfer_command_buffer = VK_NULL_HANDLE;
-	allocate_command_buffers(device, cmdPoolGraphics, 1, &transfer_command_buffer);
-	cmdBufBegin(transfer_command_buffer, true); {
-
+		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo1);
+		pRoomTexture->image.usage = imageUsageTransferDestination;
+		
 		const VkImageSubresourceLayers source_image_subresource_layers = {
 			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			.mipLevel = 0,
@@ -312,17 +281,10 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 			.pRegions = &image_copy_region
 		};
 
-		vkCmdCopyImage2(transfer_command_buffer, &copy_image_info);
-
-	} vkEndCommandBuffer(transfer_command_buffer);
-	submit_command_buffers_async(queueGraphics, 1, &transfer_command_buffer);
-	vkFreeCommandBuffers(device, cmdPoolGraphics, 1, &transfer_command_buffer);
-
-	/* Transition the room texture image layout back from transfer destination to shader read-only. */
-	
-	cmdBufBegin(cmdBuf, true); {
-		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageSampled);
-		const VkDependencyInfo dependencyInfo = {
+		vkCmdCopyImage2(cmdBuf, &copy_image_info);
+		
+		const VkImageMemoryBarrier2 imageMemoryBarrier2 = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageSampled);
+		const VkDependencyInfo dependencyInfo2 = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.pNext = nullptr,
 			.dependencyFlags = 0,
@@ -331,13 +293,14 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 			.bufferMemoryBarrierCount = 0,
 			.pBufferMemoryBarriers = nullptr,
 			.imageMemoryBarrierCount = 1,
-			.pImageMemoryBarriers = &imageMemoryBarrier
+			.pImageMemoryBarriers = &imageMemoryBarrier2
 		};
-		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
+		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo2);
+		pRoomTexture->image.usage = imageUsageSampled;
+		
 	} vkEndCommandBuffer(cmdBuf);
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 	vkFreeCommandBuffers(device, cmdPoolGraphics, 1, &cmdBuf);
-	pRoomTexture->image.usage = imageUsageSampled;
 
 	log_message(VERBOSE, "Done computing room texture.");
 }
