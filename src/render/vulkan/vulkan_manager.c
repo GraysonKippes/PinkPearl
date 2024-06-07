@@ -31,16 +31,20 @@
 #include "vertex_input.h"
 #include "vulkan_instance.h"
 
+/* -- Vulkan Module Configuration -- */
+
+const int vkConfMaxNumQuads = VK_CONF_MAX_NUM_QUADS;
+
 /* -- Vulkan Objects -- */
 
-static vulkan_instance_t vulkan_instance = { 0 };
+static vulkan_instance_t vulkan_instance = { };
 static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 VkSurfaceKHR surface = VK_NULL_HANDLE;
-physical_device_t physical_device = { 0 };
-memory_type_set_t memory_type_set = { 0 };
+physical_device_t physical_device = { };
+memory_type_set_t memory_type_set = { };
 VkDevice device = VK_NULL_HANDLE;
-swapchain_t swapchain = { 0 };
-graphics_pipeline_t graphics_pipeline = { 0 };
+swapchain_t swapchain = { };
+graphics_pipeline_t graphics_pipeline = { };
 VkSampler imageSamplerDefault = VK_NULL_HANDLE;
 
 /* -- Queues -- */
@@ -114,7 +118,7 @@ static void create_global_uniform_buffer(void) {
 		.num_partition_sizes = 4,
 		.partition_sizes = (VkDeviceSize[4]){
 			2096,	// Compute matrices
-			10240,	// Compute room texture
+			2560,	// Compute room texture
 			8200,	// Compute area mesh
 			1812	// Lighting data
 		}

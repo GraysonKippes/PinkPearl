@@ -18,11 +18,11 @@ typedef struct area_t {
 
 	// The extent of each room in this area in tiles.
 	RoomSize room_size;
-	extent_t room_extent;
+	Extent room_extent;
 
 	// The rooms in this area.
 	uint32_t num_rooms;
-	room_t *rooms;
+	Room *rooms;
 
 	// Maps positions in the rectangular map to actual rooms in this area.
 	// The length of this array should be equal to the area width times the area length.
@@ -30,7 +30,7 @@ typedef struct area_t {
 
 } area_t;
 
-bool area_get_room_ptr(const area_t area, const offset_t room_position, const room_t **room_pptr);
+bool area_get_room_ptr(const area_t area, const offset_t room_position, const Room **room_pptr);
 
 int area_get_room_index(const area_t area, const offset_t room_position);
 
@@ -44,7 +44,7 @@ typedef enum direction_t {
 } direction_t;
 
 // Returns the direction in which the player is leaving the room, or NONE if the player is not leaving the room.
-direction_t test_room_travel(const vector3D_t player_position, const area_t area, const int current_room_index);
+direction_t test_room_travel(const Vector3D player_position, const area_t area, const int current_room_index);
 
 offset_t direction_offset(const direction_t direction);
 

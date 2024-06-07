@@ -11,6 +11,14 @@
 #include "physical_device.h"
 #include "swapchain.h"
 
+#include "render/render_config.h"
+
+/* -- Vulkan Module Configuration -- */
+
+#define VK_CONF_MAX_NUM_QUADS (NUM_RENDER_OBJECT_SLOTS * MAX_NUM_RENDER_OBJECT_QUADS)
+
+extern const int vkConfMaxNumQuads;
+
 /* -- Core State -- */
 
 extern VkSurfaceKHR surface;

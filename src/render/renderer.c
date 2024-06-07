@@ -45,10 +45,15 @@ void init_renderer(void) {
 			.numCells.length = num_room_layers,
 			.cellExtent.width = 16,
 			.cellExtent.length = 16,
-			.numAnimations = 1,
-			.animations = (TextureAnimation[1]){
+			.numAnimations = 2,
+			.animations = (TextureAnimation[2]){
 				{
 					.startCell = 0,
+					.numFrames = 1,
+					.framesPerSecond = 0
+				},
+				{
+					.startCell = 1,
 					.numFrames = 1,
 					.framesPerSecond = 0
 				}
@@ -97,16 +102,12 @@ void terminate_renderer(void) {
 void render_frame(const float deltaTime) {
 	glfwPollEvents();
 	
-	for (int i = 0; i < (int)num_render_object_slots; ++i) {
-		TextureState *pTextureState = getRenderObjTexState(i);
-		if (textureStateAnimate(pTextureState) == 2) {
-			const unsigned int imageIndex = pTextureState->startCell + pTextureState->currentFrame;
-			updateDrawData(i, imageIndex);
-		}
+	for (int i = 0; i < (int)numRenderObjectSlots; ++i) {
+		renderObjectAnimate(i);
 	}
 	
 	const Vector4F cameraPosition = areaRenderStateGetCameraPosition(&globalAreaRenderState);
 	const projection_bounds_t projectionBounds = areaRenderStateGetProjectionBounds(globalAreaRenderState);
 
-	drawFrame(deltaTime, cameraPosition, projectionBounds, getRenderObjTransform(0));
+	drawFrame(deltaTime, cameraPosition, projectionBounds);
 }

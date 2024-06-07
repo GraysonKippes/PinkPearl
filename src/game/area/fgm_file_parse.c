@@ -6,13 +6,15 @@
 
 #include "config.h"
 #include "log/logging.h"
+#include "render/render_config.h"
 #include "util/file_io.h"
 
 #include "area_extent.h"
 
 #define FGA_FILE_DIRECTORY (RESOURCE_PATH "data/area2.fga")
 
-static int read_room_data(FILE *file, room_t *const room_ptr);
+static int readRoomData(FILE *file, Room *const pRoom);
+static void transposeTileData(const Extent extent, const Tile *const pTiles, uint16_t **ppTileIndices);
 
 area_t parse_fga_file(const char *filename) {
 
@@ -42,7 +44,7 @@ area_t parse_fga_file(const char *filename) {
 
 	const int area_width = area_extent_width(area.extent);
 	const int area_length = area_extent_length(area.extent);
-	const long int extent_area = area_width * area_length;
+	const long int extentArea = area_width * area_length;
 
 	if (area_width < 1) {
 		logf_message(ERROR, "Error creating area: the width of the area is not positive (%i).", area_width);
@@ -80,18 +82,18 @@ area_t parse_fga_file(const char *filename) {
 		goto end_read;
 	}
 
-	if ((int64_t)area.num_rooms > extent_area) {
-		logf_message(ERROR, "Error reading area fga_file: `area.num_rooms` (%u) is greater than `area.extent.width` times `area.extent.height` (%lu).", area.num_rooms, extent_area);
+	if ((int64_t)area.num_rooms > extentArea) {
+		logf_message(ERROR, "Error reading area fga_file: `area.num_rooms` (%u) is greater than `area.extent.width` times `area.extent.height` (%lu).", area.num_rooms, extentArea);
 		goto end_read;
 	}
 
-	area.rooms = calloc(area.num_rooms, sizeof(room_t));
+	area.rooms = calloc(area.num_rooms, sizeof(Room));
 	if (area.rooms == nullptr) {
 		log_message(ERROR, "Error creating area: allocation of area.rooms failed.");
 		goto end_read;
 	}
 
-	area.positions_to_rooms = calloc(extent_area, sizeof(int));
+	area.positions_to_rooms = calloc(extentArea, sizeof(int));
 	if (area.positions_to_rooms == nullptr) {
 		log_message(ERROR, "Error creating area: allocation of area.positions_to_rooms failed.");
 		free(area.rooms);
@@ -99,7 +101,7 @@ area_t parse_fga_file(const char *filename) {
 		goto end_read;
 	}
 
-	for (size_t i = 0; i < (size_t)extent_area; ++i) {
+	for (size_t i = 0; i < (size_t)extentArea; ++i) {
 		area.positions_to_rooms[i] = -1;
 	}
 
@@ -112,7 +114,7 @@ area_t parse_fga_file(const char *filename) {
 		area.rooms[i].num_entity_spawners = 0;
 		area.rooms[i].entity_spawners = nullptr;
 
-		const int result = read_room_data(fga_file, &area.rooms[i]);
+		const int result = readRoomData(fga_file, &area.rooms[i]);
 		if (result != 0) {
 			logf_message(ERROR, "Error creating area: error encountered while reading data for room %u (Error code = %u).", i, result);
 			free(area.rooms);
@@ -129,19 +131,24 @@ end_read:
 	return area;
 }
 
-static int read_room_data(FILE *file, room_t *const room_ptr) {
+static int readRoomData(FILE *file, Room *const pRoom) {
 	
 	// Must not close file.
 	
-	const uint64_t num_tiles = extent_area(room_ptr->extent);
+	const uint64_t num_tiles = extentArea(pRoom->extent);
 
-	if (!read_data(file, sizeof(offset_t), 1, &room_ptr->position)) {
+	if (!read_data(file, sizeof(offset_t), 1, &pRoom->position)) {
 		log_message(ERROR, "Error reading area file: failed to read room position.");
 		return -1;
 	}
-
-	room_ptr->tiles = calloc(num_tiles, sizeof(tile_t));
-	if (room_ptr->tiles == nullptr) {
+	
+	pRoom->ppTileIndices = calloc(num_room_layers, sizeof(uint16_t *));
+	for (uint32_t i = 0; i < num_room_layers; ++i) {
+		pRoom->ppTileIndices[i] = calloc(num_tiles, sizeof(uint16_t));
+	}
+	
+	Tile *pTiles = calloc(num_tiles, sizeof(Tile));
+	if (!pTiles) {
 		log_message(ERROR, "Error reading area file: failed to allocate tile array.");
 		return -2;
 	}
@@ -152,24 +159,38 @@ static int read_room_data(FILE *file, room_t *const room_ptr) {
 	fseek(file, 4, SEEK_CUR);
 	if (num_walls > 0) {
 
-		room_ptr->num_walls = num_walls;
-		room_ptr->walls = calloc(num_walls, sizeof(rect_t));
-		if (room_ptr->walls == nullptr) {
+		pRoom->num_walls = num_walls;
+		pRoom->walls = calloc(num_walls, sizeof(rect_t));
+		if (pRoom->walls == nullptr) {
 			log_message(ERROR, "Error reading area file: failed to allocate wall array.");
 			return -3;
 		}
 
-		if (!read_data(file, sizeof(rect_t), room_ptr->num_walls, room_ptr->walls)) {
+		if (!read_data(file, sizeof(rect_t), pRoom->num_walls, pRoom->walls)) {
 			log_message(ERROR, "Error reading area file: failed to read room wall data.");
 			return -4;
 		}
 	}
 
 	// Read tile information.
-	if (!read_data(file, sizeof(tile_t), num_tiles, room_ptr->tiles)) {
+	if (!read_data(file, sizeof(Tile), num_tiles, pTiles)) {
 		log_message(ERROR, "Error reading area file: failed to read room tile data.");
 		return -5;
 	}
+	transposeTileData(pRoom->extent, pTiles, pRoom->ppTileIndices);
 
 	return 0;
+}
+
+// Temporary function to transpose tile data into layer-by-layer arrays of tile indices.
+static void transposeTileData(const Extent extent, const Tile *const pTiles, uint16_t **ppTileIndices) {
+	if (!pTiles || !ppTileIndices) {
+		return;
+	}
+	
+	const uint64_t numTiles = extentArea(extent);
+	for (uint64_t i = 0; i < numTiles; ++i) {
+		ppTileIndices[0][i] = pTiles[i].background_tilemap_slot;
+		ppTileIndices[1][i] = pTiles[i].foreground_tilemap_slot;
+	}
 }

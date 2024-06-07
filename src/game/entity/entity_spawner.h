@@ -15,7 +15,7 @@ typedef struct entity_spawner_t {
 	
 	// Range of number of entities to spawn.
 	int min_num_entities;
-	int max_num_entities;
+	int maxNumEntities;
 	
 	// String ID of the entity type to spawn.
 	String entity_record_id;

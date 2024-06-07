@@ -1,7 +1,7 @@
 #version 460
 #extension GL_EXT_scalar_block_layout : require
 
-#define NUM_MODELS 64
+#define NUM_MODELS 256
 
 struct draw_info_t {
 	// Indirect draw info
@@ -16,7 +16,7 @@ struct draw_info_t {
 };
 
 layout(scalar, set = 0, binding = 0) readonly uniform draw_data_t {
-	draw_info_t draw_infos[68];
+	draw_info_t draw_infos[NUM_MODELS];
 } draw_data;
 
 layout(set = 0, binding = 1) readonly buffer matrix_buffer_t {

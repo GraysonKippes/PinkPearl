@@ -20,12 +20,19 @@ void destroyVulkanRenderObjects(void);
 
 void initTextureDescriptors(void);
 
-int loadQuad(const DimensionsF quadDimensions, const int textureHandle);
+int loadQuad(const DimensionsF quadDimensions, const TextureState quadTextureState);
 void unloadQuad(const int quadID);
 bool validateQuadID(const int quadID);
 
+// Quad transform mutators.
+bool setQuadTranslation(const int quadID, const Vector4F translation);
+bool setQuadScaling(const int quadID, const Vector4F scaling);
+bool setQuadRotation(const int quadID, const Vector4F rotation);
+
+TextureState *getQuadTextureState(const int quadID);
+
 void updateDrawData(const int quadID, const unsigned int imageIndex);
 
-void drawFrame(const float deltaTime, const Vector4F cameraPosition, const projection_bounds_t projectionBounds, const RenderTransform *const renderObjTransforms);
+void drawFrame(const float deltaTime, const Vector4F cameraPosition, const projection_bounds_t projectionBounds);
 
 #endif	// VULKAN_RENDER_H

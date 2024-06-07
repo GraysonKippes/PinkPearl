@@ -31,7 +31,7 @@ static ComputePipeline compute_area_mesh_pipeline;
 static const size_t max_area_extent_x = 32;
 static const size_t max_area_extent_y = 32;
 static const size_t max_num_rooms = max_area_extent_x * max_area_extent_y;
-static const VkDeviceSize compute_area_mesh_uniform_size = sizeof(extent_t) + max_num_rooms * sizeof(offset_t);
+static const VkDeviceSize compute_area_mesh_uniform_size = sizeof(Extent) + max_num_rooms * sizeof(offset_t);
 
 void init_compute_area_mesh(const VkDevice vk_device) {
 	compute_area_mesh_pipeline = create_compute_pipeline(vk_device, compute_area_mesh_layout, AREA_MESH_SHADER_NAME);
@@ -140,7 +140,7 @@ void compute_area_mesh(const area_t area) {
 	const VkBufferCopy vertex_buffer_copy = { 
 		.srcOffset = global_storage_buffer_partition.ranges[1].offset,
 		// TODO - use frame buffer partition when it is implemented.
-		.dstOffset = num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float),
+		.dstOffset = numRenderObjectSlots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float),
 		.size = global_storage_buffer_partition.ranges[1].size
 		
 	};

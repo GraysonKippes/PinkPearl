@@ -54,8 +54,8 @@ static void createTransferImage(const VkDevice vkDevice) {
 	};
 	
 	// Dimensions for the largest possible room texture, smaller textures use a subsection of this image.
-	const extent_t largestRoomExtent = room_size_to_extent((RoomSize)(num_room_sizes - 1));
-	const extent_t imageDimensions = extent_scale(largestRoomExtent, tile_texel_length);
+	const Extent largestRoomExtent = room_size_to_extent((RoomSize)(num_room_sizes - 1));
+	const Extent imageDimensions = extent_scale(largestRoomExtent, tile_texel_length);
 	
 	const queue_family_set_t queueFamilyIndexSet = {
 		.num_queue_families = 2,
@@ -150,19 +150,22 @@ void terminate_compute_room_texture(void) {
 	destroy_compute_pipeline(&compute_room_texture_pipeline);
 }
 
-void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int tilemapTextureHandle, const int roomTextureHandle) {
+void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint16_t **tileIndices) {
 	log_message(VERBOSE, "Computing room texture...");
 	
 	const Texture tilemapTexture = getTexture(tilemapTextureHandle);
-	Texture *const pRoomTexture = getTextureP(roomTextureHandle);
+	Texture *const pRoomTexture = getTextureP(destinationTextureHandle);
 	if (!pRoomTexture) {
 		return;
 	}
-
-	byte_t *mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 1);
-	const uint64_t num_tiles = extent_area(room.extent);
-	memcpy(mapped_memory, room.tiles, num_tiles * sizeof(tile_t));
-	buffer_partition_unmap_memory(global_uniform_buffer_partition);
+	
+	byte_t *mappedMemory = buffer_partition_map_memory(global_uniform_buffer_partition, 1); {
+		const uint32_t numTileIndices = extentArea(tileExtent);
+		const uint32_t layerSize = 640 * sizeof(uint16_t);
+		for (uint32_t i = 0; i < destinationRange.arrayLayerCount; ++i) {
+			memcpy(&mappedMemory[layerSize * i], tileIndices[i], layerSize);
+		}
+	} buffer_partition_unmap_memory(global_uniform_buffer_partition);
 
 	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -216,13 +219,12 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 	cmdBufBegin(cmdBufCompute, true); {
 		vkCmdBindPipeline(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, compute_room_texture_pipeline.handle);
 		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, compute_room_texture_pipeline.layout, 0, 1, &descriptor_set, 0, nullptr);
-		vkCmdDispatch(cmdBufCompute, room.extent.width, room.extent.length, 1);
+		vkCmdDispatch(cmdBufCompute, tileExtent.width, tileExtent.length, num_room_layers);
 	} vkEndCommandBuffer(cmdBufCompute);
 	submit_command_buffers_async(compute_queue, 1, &cmdBufCompute);
 	vkFreeCommandBuffers(device, compute_command_pool, 1, &cmdBufCompute);
-
-	/* Transition the room texture image layout from shader read-only to transfer destination. */
 	
+	// Perform the transfer to the target texture image.
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
 	allocate_command_buffers(device, cmdPoolGraphics, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
@@ -245,31 +247,23 @@ void computeRoomTexture(const room_t room, const uint32_t cacheSlot, const int t
 		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo1);
 		transferImage.usage = imageUsageTransferSource;
 		pRoomTexture->image.usage = imageUsageTransferDestination;
-		
-		const VkImageSubresourceLayers source_image_subresource_layers = {
-			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-			.mipLevel = 0,
+	
+		const ImageSubresourceRange sourceRange = {
+			.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			.baseArrayLayer = 0,
-			.layerCount = num_room_layers
-		};
-
-		const VkImageSubresourceLayers destination_image_subresource_layers = {
-			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-			.mipLevel = 0,
-			.baseArrayLayer = cacheSlot * num_room_layers,
-			.layerCount = num_room_layers
+			.arrayLayerCount = destinationRange.arrayLayerCount
 		};
 
 		const VkImageCopy2 imageCopyRegion = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_COPY_2,
 			.pNext = nullptr,
-			.srcSubresource = source_image_subresource_layers,
+			.srcSubresource = makeImageSubresourceLayers(sourceRange),
 			.srcOffset = (VkOffset3D){ 0, 0, 0 },
-			.dstSubresource = destination_image_subresource_layers,
+			.dstSubresource = makeImageSubresourceLayers(destinationRange),
 			.dstOffset = (VkOffset3D){ 0, 0, 0 },
 			.extent = (VkExtent3D){
-				.width = room.extent.width * tile_texel_length,
-				.height = room.extent.length * tile_texel_length,
+				.width = pRoomTexture->image.extent.width,
+				.height = pRoomTexture->image.extent.length,
 				.depth = 1
 			}
 		};

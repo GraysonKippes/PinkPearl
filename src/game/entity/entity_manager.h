@@ -10,22 +10,19 @@
 
 #define MAX_NUM_ENTITIES 64
 
-extern const int max_num_entities;
+extern const int maxNumEntities;
 
-[[deprecated]]
-typedef int entity_handle_t;
-
-extern const entity_handle_t entityHandleInvalid;
+extern const int entityHandleInvalid;
 
 // Initializes the entity manager by setting all entity slots to default values using `new_entity`.
 void init_entity_manager(void);
 
 // Frees the entity slot at the specified handle.
-void unload_entity(const entity_handle_t handle);
+void unload_entity(const int handle);
 
 // Loads an entity into the game world at the specified initial position and velocity.
 // Returns a handle to the entity if entity loading succeeding, or an invalid handle if it failed.
-int loadEntity(const String entityID, const vector3D_t initPosition, const vector3D_t initVelocity);
+int loadEntity(const String entityID, const Vector3D initPosition, const Vector3D initVelocity);
 
 // Returns true if the specified entity handle is a valid entity handle and can be used to safely retrieve entities;
 // 	returns false otherwise.
@@ -37,7 +34,7 @@ bool validateEntityHandle(const int entityHandle);
 //	1 if `entity_pptr` is `nullptr`;
 //	2 if the entity handle is invalid according to `validate_entity_handle`; and
 //	-1 if the retrieval was successful but came from an unused entity slot.
-int getEntity(const entity_handle_t handle, entity_t **const ppEntity);
+int getEntity(const int handle, entity_t **const ppEntity);
 
 // Ticks the game logic of each loaded entity. Unused entity slots are skipped.
 void tickEntities(void);

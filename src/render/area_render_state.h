@@ -40,14 +40,14 @@ typedef struct AreaRenderState {
 } AreaRenderState;
 
 // Resets the global area render state to reflect the given area.
-void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const room_t initialRoom);
+void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const Room initialRoom);
 
 // Returns true if the current cache slot and the next cache slot are equal, false otherwise.
 bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState);
 
 // Sets the next room to scroll to in the global area render state.
 // Returns true if a new room texture needs to be generated, false otherwise.
-bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const room_t nextRoom);
+bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const Room nextRoom);
 
 Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState);
 

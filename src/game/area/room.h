@@ -1,6 +1,8 @@
 #ifndef ROOM_H
 #define ROOM_H
 
+#include <stdint.h>
+
 #include "game/entity/entity_spawner.h"
 #include "math/extent.h"
 #include "math/hitbox.h"
@@ -20,14 +22,16 @@ typedef enum RoomSize {
 	FOUR_TO_THREE = 3	// 32 x 20	-- Large room size, used in some dungeons.
 } RoomSize;
 
-typedef struct room_t {
+typedef struct Room {
 
 	int id;
 	RoomSize size;
-	extent_t extent;
+	Extent extent;
 	offset_t position;
-
-	tile_t *tiles;
+	
+	// Contains the tile indices for each layer in this room.
+	// First order represents a layer, second order represents tile indices for that layer.
+	uint16_t **ppTileIndices;
 
 	unsigned int num_walls;
 	rect_t *walls;
@@ -35,10 +39,10 @@ typedef struct room_t {
 	unsigned int num_entity_spawners;
 	entity_spawner_t *entity_spawners;
 
-} room_t;
+} Room;
 
-extent_t room_size_to_extent(const RoomSize room_size);
+Extent room_size_to_extent(const RoomSize room_size);
 
-void destroy_room(room_t room);
+void deleteRoom(Room room);
 
 #endif	// ROOM_H

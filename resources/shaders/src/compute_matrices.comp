@@ -4,7 +4,7 @@
 // and creates translation matrices. Then each matrix is multiplied by the camera
 // and projection matrices, and push to an output buffer.
 
-#define NUM_MODELS 64
+#define NUM_MODELS 256
 
 layout(local_size_x = NUM_MODELS) in;
 

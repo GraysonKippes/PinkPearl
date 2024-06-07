@@ -3,9 +3,10 @@
 
 #include <stdint.h>
 
-typedef struct tile_t {
+[[deprecated]]
+typedef struct Tile {
 	uint32_t background_tilemap_slot;
 	uint32_t foreground_tilemap_slot;
-} tile_t;
+} Tile;
 
 #endif	// TILE_H

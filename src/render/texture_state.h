@@ -12,15 +12,19 @@ typedef struct TextureState {
 
 	// Number of animation cycles in the texture with which this texture state is associated.
 	unsigned int numAnimations;
+	
 	// Index of currently selected animation cycle.
 	unsigned int currentAnimation;
 	
 	// The cell that the current animation starts on.
 	unsigned int startCell;
+	
 	// Number of frames in currently selected animation cycle.
 	unsigned int numFrames;
+	
 	// FPS (Frames-per-second) of the currently selected animation cycle.
 	unsigned int currentFPS;
+	
 	// Current frame in currently selected animation cycle.
 	unsigned int currentFrame;
 	

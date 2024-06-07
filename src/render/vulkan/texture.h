@@ -17,10 +17,22 @@ typedef struct ImageUsage {
 } ImageUsage;
 
 typedef struct Image {
-	VkImage 	vkImage;		// Handle to the Vulkan image.
-	VkImageView vkImageView;	// Handle to the Vulkan image view.
-	VkFormat	vkFormat;		// Format of this image.
-	ImageUsage 	usage;			// Description of image usage.
+	
+	// Handle to the Vulkan image.
+	VkImage vkImage;
+
+	// Handle to the Vulkan image view.
+	VkImageView vkImageView;
+	
+	// Format of this image.
+	VkFormat vkFormat;	
+
+	// Description of image usage.
+	ImageUsage usage;
+	
+	// Size of the texture in texels.
+	Extent extent;
+	
 } Image;
 
 typedef struct ImageSubresourceRange {
@@ -61,10 +73,10 @@ typedef struct TextureCreateInfo {
 	bool isTilemap;	// True if the texture is to be used for stitching other textures.
 
 	// Number of cells in the texture, in each dimension.
-	extent_t numCells;
+	Extent numCells;
 
 	// The dimensions of each cell, in texels.
-	extent_t cellExtent;
+	Extent cellExtent;
 
 	uint32_t numAnimations;
 	TextureAnimation *animations;

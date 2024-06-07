@@ -4,8 +4,8 @@
 #include "math/vector3D.h"
 
 typedef struct entity_transform_t {
-	vector3D_t position;
-	vector3D_t velocity;
+	Vector3D position;
+	Vector3D velocity;
 	unsigned long long int last_stationary_time;
 } entity_transform_t;
 

@@ -116,7 +116,7 @@ void computeMatrices(const float deltaTime, const projection_bounds_t projection
 	memcpy(mapped_memory, &projectionBounds, sizeof projectionBounds);
 	memcpy(mapped_memory + 32, &deltaTime, sizeof deltaTime);
 	memcpy(mapped_memory + 48, &cameraPosition, sizeof cameraPosition);
-	memcpy(mapped_memory + 64, transforms, num_render_object_slots * sizeof *transforms);
+	memcpy(mapped_memory + 64, transforms, numRenderObjectSlots * sizeof *transforms);
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 0);

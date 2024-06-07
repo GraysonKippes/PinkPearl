@@ -12,6 +12,7 @@
 #include "log/logging.h"
 #include "game/area/room.h"
 #include "render/render_config.h"
+#include "render/texture_state.h"
 #include "util/time.h"
 
 #include "command_buffer.h"
@@ -23,7 +24,7 @@
 #include "compute/compute_room_texture.h"
 
 typedef struct DrawData {
-	// Indirect draw info
+	// Indirect draw command data
 	uint32_t index_count;
 	uint32_t instance_count;
 	uint32_t first_index;
@@ -37,6 +38,7 @@ typedef struct DrawData {
 typedef struct DrawInfo {
 	int quadID;
 	uint32_t drawDataIndex;	// The index in array of draw datas.
+	uint32_t imageIndex;
 } DrawInfo;
 
 // Stores draw infos, including IDs for quads currently being rendered.
@@ -44,6 +46,9 @@ BinarySearchTree activeQuadIDs;
 
 // Stores IDs for unused quads.
 Stack inactiveQuadIDs;
+
+RenderTransform quadTransforms[VK_CONF_MAX_NUM_QUADS];
+TextureState quadTextureStates[VK_CONF_MAX_NUM_QUADS];
 
 static int cmpFuncDrawInfo(const void *const pA, const void *const pB) {
 	if (pA == nullptr || pB == nullptr) {
@@ -74,8 +79,8 @@ void createVulkanRenderObjects(void) {
 	
 	// Initialize data structures for managing quad IDs.
 	activeQuadIDs = newBinarySearchTree(sizeof(DrawInfo), cmpFuncDrawInfo);
-	inactiveQuadIDs = newStack(num_render_object_slots, sizeof(int));
-	for (int quadID = (int)num_render_object_slots - 1; quadID >= 0; --quadID) {
+	inactiveQuadIDs = newStack(vkConfMaxNumQuads, sizeof(int));
+	for (int quadID = vkConfMaxNumQuads - 1; quadID >= 0; --quadID) {
 		stackPush(&inactiveQuadIDs, &quadID);
 	}
 	
@@ -102,8 +107,8 @@ void initTextureDescriptors(void) {
 	
 	const Texture texture = getTexture(textureHandleMissing);
 	
-	VkDescriptorImageInfo descriptorImageInfos[NUM_RENDER_OBJECT_SLOTS];
-	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+	VkDescriptorImageInfo descriptorImageInfos[VK_CONF_MAX_NUM_QUADS];
+	for (int i = 0; i < vkConfMaxNumQuads; ++i) {
 		descriptorImageInfos[i] = (VkDescriptorImageInfo){
 			.sampler = imageSamplerDefault,
 			.imageView = texture.image.vkImageView,
@@ -118,7 +123,7 @@ void initTextureDescriptors(void) {
 			.dstBinding = 2,
 			.dstArrayElement = 0,
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.descriptorCount = num_render_object_slots,
+			.descriptorCount = (uint32_t)vkConfMaxNumQuads,
 			.pBufferInfo = nullptr,
 			.pImageInfo = descriptorImageInfos,
 			.pTexelBufferView = nullptr
@@ -128,22 +133,26 @@ void initTextureDescriptors(void) {
 	}
 }
 
-int loadQuad(const DimensionsF quadDimensions, const int textureHandle) {
-	int quadID = -1;
+int loadQuad(const DimensionsF quadDimensions, const TextureState quadTextureState) {
 	if (stackIsEmpty(inactiveQuadIDs)) {
-		return quadID;
+		return -1;
 	}
 	
 	// Retrieve first quad ID and push draw info.
+	int quadID = -1;
 	stackPop(&inactiveQuadIDs, &quadID);
+	if (!validateQuadID(quadID)) {
+		return -1;
+	}
 	const DrawInfo drawInfo = {
 		.quadID = quadID,
 		.drawDataIndex = 0
 	};
 	bstInsert(&activeQuadIDs, &drawInfo);
 	
+	quadTextureStates[quadID] = quadTextureState;
 	uploadQuadMesh(quadID, quadDimensions);
-	updateTextureDescriptor(quadID, textureHandle);
+	updateTextureDescriptor(quadID, quadTextureState.textureHandle);
 	rebuildDrawData();
 	
 	return quadID;
@@ -158,7 +167,38 @@ void unloadQuad(const int quadID) {
 }
 
 bool validateQuadID(const int quadID) {
-	return quadID >= 0 && quadID < (int)num_render_object_slots;
+	return quadID >= 0 && quadID < vkConfMaxNumQuads;
+}
+
+bool setQuadTranslation(const int quadID, const Vector4F translation) {
+	if (!validateQuadID(quadID)) {
+		return false;
+	}
+	renderVectorSet(&quadTransforms[quadID].translation, translation);
+	return true;
+}
+
+bool setQuadScaling(const int quadID, const Vector4F scaling) {
+	if (!validateQuadID(quadID)) {
+		return false;
+	}
+	renderVectorSet(&quadTransforms[quadID].scaling, scaling);
+	return true;
+}
+
+bool setQuadRotation(const int quadID, const Vector4F rotation) {
+	if (!validateQuadID(quadID)) {
+		return false;
+	}
+	renderVectorSet(&quadTransforms[quadID].rotation, rotation);
+	return true;
+}
+
+TextureState *getQuadTextureState(const int quadID) {
+	if (!validateQuadID(quadID)) {
+		return nullptr;
+	}
+	return &quadTextureStates[quadID];
 }
 
 static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
@@ -263,9 +303,8 @@ static void rebuildDrawData(void) {
 	 *	Area render enters/exits scroll state.
 	*/
 	
-	uint32_t draw_count = 0;
-	//const uint32_t max_draw_count = NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS;
-	DrawData draw_datas[NUM_RENDER_OBJECT_SLOTS + NUM_ROOM_TEXTURE_CACHE_SLOTS * NUM_ROOM_LAYERS];
+	uint32_t drawCount = 0;
+	DrawData drawDatas[VK_CONF_MAX_NUM_QUADS];
 	
 	LinkedList traversal = bstTraverseInOrder(activeQuadIDs);
 	if (!linkedListValidate(traversal)) {
@@ -275,23 +314,24 @@ static void rebuildDrawData(void) {
 	
 	for (LinkedListNode *pNode = traversal.pHeadNode; pNode != nullptr; pNode = pNode->pNextNode) {
 		DrawInfo *const pDrawInfo = (DrawInfo *)((BinarySearchTreeNode *)pNode->pObject)->pObject;
-		if (pDrawInfo == nullptr) {
+		if (!pDrawInfo) {
 			deleteLinkedList(&traversal);
 			return;
 		}
-		draw_datas[draw_count] = makeDrawData(pDrawInfo->quadID, 0);
-		pDrawInfo->drawDataIndex = draw_count;
-		draw_count += 1;
+		drawDatas[drawCount] = makeDrawData(pDrawInfo->quadID, pDrawInfo->imageIndex);
+		pDrawInfo->drawDataIndex = drawCount;
+		drawCount += 1;
 	}
 	
 	deleteLinkedList(&traversal);
 	
+	// TODO - cut the partition crap and just do one mapped memory.
 	byte_t *draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
-	memcpy(draw_count_mapped_memory, &draw_count, sizeof(draw_count));
+	memcpy(draw_count_mapped_memory, &drawCount, sizeof(drawCount));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 	
 	byte_t *draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(draw_data_mapped_memory, draw_datas, draw_count * sizeof(DrawData));
+	memcpy(draw_data_mapped_memory, drawDatas, drawCount * sizeof(DrawData));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
@@ -317,7 +357,6 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 			.pImageInfo = &descriptorImageInfo,
 			.pTexelBufferView = nullptr
 		};
-		
 		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 	}
 }
@@ -326,22 +365,22 @@ void updateDrawData(const int quadID, const unsigned int imageIndex) {
 	
 	// Search for the draw info in the active quad IDs tree.
 	const DrawInfo searchDrawInfo = {
-		.quadID = quadID,
-		.drawDataIndex = 1
+		.quadID = quadID
 	};
 	BinarySearchTreeNode *pSearchNode = nullptr;
 	bstSearch(&activeQuadIDs, &searchDrawInfo, &pSearchNode);
-	if (pSearchNode == nullptr) {
+	if (!pSearchNode) {
 		return;
-	} else if (pSearchNode->pObject == nullptr) {
+	} else if (!pSearchNode->pObject) {
 		return;
 	}
 	
-	const DrawInfo drawInfo = *(DrawInfo *)pSearchNode->pObject;
-	const DrawData drawData = makeDrawData(drawInfo.quadID, imageIndex);
+	DrawInfo *const pDrawInfo = (DrawInfo *)pSearchNode->pObject;
+	pDrawInfo->imageIndex = imageIndex;
+	const DrawData drawData = makeDrawData(pDrawInfo->quadID, pDrawInfo->imageIndex);
 	
 	byte_t *drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(drawDataMappedMemory + drawInfo.drawDataIndex * sizeof(DrawData), &drawData, sizeof drawData);
+	memcpy(&drawDataMappedMemory[pDrawInfo->drawDataIndex * sizeof(DrawData)], &drawData, sizeof(DrawData));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
@@ -374,7 +413,7 @@ static void uploadLightingData(void) {
 	const uint32_t num_point_lights = 1;
 	point_light_t point_lights[NUM_RENDER_OBJECT_SLOTS];
 	
-	for (uint32_t i = 0; i < num_render_object_slots; ++i) {
+	for (uint32_t i = 0; i < numRenderObjectSlots; ++i) {
 		point_lights[i] = (point_light_t){
 			.pos_x = 0.0F,
 			.pos_y = 0.0F,
@@ -399,11 +438,11 @@ static void uploadLightingData(void) {
 	byte_t *lighting_data_mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 3);
 	memcpy(lighting_data_mapped_memory, &ambient_lighting, sizeof(ambient_lighting));
 	memcpy(&lighting_data_mapped_memory[16], &num_point_lights, sizeof(uint32_t));
-	memcpy(&lighting_data_mapped_memory[20], point_lights, num_render_object_slots * sizeof(point_light_t));
+	memcpy(&lighting_data_mapped_memory[20], point_lights, numRenderObjectSlots * sizeof(point_light_t));
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 }
 
-void drawFrame(const float deltaTime, const Vector4F cameraPosition, const projection_bounds_t projectionBounds, const RenderTransform *const renderObjTransforms) {
+void drawFrame(const float deltaTime, const Vector4F cameraPosition, const projection_bounds_t projectionBounds) {
 
 	vkWaitForFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready);
@@ -419,7 +458,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	}
 
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
-	computeMatrices(deltaTime, projectionBounds, cameraPosition, renderObjTransforms);
+	computeMatrices(deltaTime, projectionBounds, cameraPosition, quadTransforms);
 
 	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };
 

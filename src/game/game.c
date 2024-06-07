@@ -71,7 +71,7 @@ void tick_game(void) {
 	pPlayerEntity->transform.velocity.y = 0.0;
 	pPlayerEntity->transform.velocity.z = 0.0;
 	
-	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->render_handle);
+	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->render_handle, 0);
 	unsigned int nextAnimation = currentAnimation;
 
 	if (move_up_pressed && !move_down_pressed) {
@@ -98,7 +98,7 @@ void tick_game(void) {
 	pPlayerEntity->transform.velocity = vector3D_scalar_multiply(pPlayerEntity->transform.velocity, speed);
 	
 	if (nextAnimation != currentAnimation) {
-		renderObjectSetAnimation(pPlayerEntity->render_handle, nextAnimation);
+		renderObjectSetAnimation(pPlayerEntity->render_handle, 0, nextAnimation);
 	}
 
 	tickEntities();
@@ -106,11 +106,11 @@ void tick_game(void) {
 	const direction_t travel_direction = test_room_travel(pPlayerEntity->transform.position, current_area, current_room_index);
 	if ((int)travel_direction > 0) {
 
-		const room_t current_room = current_area.rooms[current_room_index];
+		const Room current_room = current_area.rooms[current_room_index];
 		const offset_t room_offset = direction_offset(travel_direction);
 		const offset_t next_room_position = offset_add(current_room.position, room_offset);
 
-		const room_t *next_room_ptr = nullptr;
+		const Room *next_room_ptr = nullptr;
 		const bool result = area_get_room_ptr(current_area, next_room_position, &next_room_ptr);
 
 		if (result && next_room_ptr != nullptr) {

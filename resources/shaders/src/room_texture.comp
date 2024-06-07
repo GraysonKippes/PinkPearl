@@ -1,67 +1,48 @@
 #version 460
 #extension GL_EXT_scalar_block_layout : require
+#extension GL_EXT_shader_16bit_storage : require
 
 // Generates the base texture for the room.
 // Takes the tilemap slot for each tile in the room and copies it to the appropriate spot in the final texture.
 // Tiles are split up across workgroups, as the number of tiles is variable.
 //	The x-dimension represents room width.
 //	The y-dimension represents room height.
+//	The z-dimension represents texture layer.
 //	gl_WorkGroupID = (0, 0) indicates the top-left corner.
 // Texels within each tilemap slot are split up across local groups, as the dimensions are fixed (16x16).
 
-#define MAX_SIZE_X 16	// Tile texture width
-#define MAX_SIZE_Y 16	// Tile texture height
-#define MAX_SIZE_Z 1
+#define TILE_TEXEL_LENGTH 16
 
-layout(local_size_x = MAX_SIZE_X) in;
-layout(local_size_y = MAX_SIZE_Y) in;
-layout(local_size_z = MAX_SIZE_Z) in;
+const int tileTexelLength = TILE_TEXEL_LENGTH;
 
-// TODO - make tilemap slots use 2D coordinates instead, each coordinate a single byte.
-struct tile_t {
-	uint background_tilemap_slot;
-	uint foreground_tilemap_slot;
-};
+layout(local_size_x = TILE_TEXEL_LENGTH) in;
+layout(local_size_y = TILE_TEXEL_LENGTH) in;
+layout(local_size_z = 1) in;
 
-layout(scalar, set = 0, binding = 0) uniform readonly tile_data_t {
+layout(scalar, set = 0, binding = 0) uniform readonly TileData {
 	// length = room width * room height
 	// use workgroup ID index into this array
-	tile_t tiles[640];
-} tile_data;
+	uint16_t tileIndices[2][640];
+} tileData;
 
-layout(set = 0, binding = 1, rgba8ui) uniform readonly uimage2DArray tilemap_texture;
+layout(set = 0, binding = 1, rgba8ui) uniform readonly uimage2DArray tilemapTexture;
 
 // Width should be room width * 16 in texels.
 // Height should be room height * 16 in texels.
-layout(set = 0, binding = 2, rgba8ui) uniform writeonly uimage2DArray room_texture;
-
-ivec2 tilemap_slot_coordinates(const ivec2 tilemap_size, const uint tilemap_slot) {
-	return ivec2(tilemap_slot % tilemap_size.x, tilemap_slot / tilemap_size.x);
-}
+layout(set = 0, binding = 2, rgba8ui) uniform writeonly uimage2DArray destinationTexture;
 
 void main() {
 
 	// Row-major computation order.
 
-	// The index of the tile whose texture is currently being generated.
-	const tile_t tile = tile_data.tiles[gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x];
-	const ivec2 tilemap_size = (imageSize(tilemap_texture) / 16).xy;
-	const uint num_tilemap_slots = tilemap_size.x * tilemap_size.y;
+	const int tileIndex = int(tileData.tileIndices[gl_WorkGroupID.z][gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x]);
+	const ivec3 tilemapTextureSize = imageSize(tilemapTexture);
+	const ivec3 tilemapTileSize = tilemapTextureSize / tileTexelLength;
+	const ivec3 tileCoordinates = ivec3(tileIndex % tilemapTileSize.x, tileIndex / tilemapTileSize.x, 0);
+	
+	const ivec3 inTexelCoordinates = tileCoordinates * tileTexelLength + ivec3(gl_LocalInvocationID.xy, 0);
+	const uvec4 texel = imageLoad(tilemapTexture, inTexelCoordinates);
 
-	uvec4 background_texel = uvec4(0);
-	uvec4 foreground_texel = uvec4(0);
-
-	if (tile.background_tilemap_slot < num_tilemap_slots) {
-		const ivec2 input_coordinates = tilemap_slot_coordinates(tilemap_size, tile.background_tilemap_slot) * 16 + ivec2(gl_LocalInvocationID.xy);
-		background_texel = imageLoad(tilemap_texture, ivec3(input_coordinates, 0));
-	}
-
-	if (tile.foreground_tilemap_slot < num_tilemap_slots) {
-		const ivec2 input_coordinates = tilemap_slot_coordinates(tilemap_size, tile.foreground_tilemap_slot) * 16 + ivec2(gl_LocalInvocationID.xy);
-		foreground_texel = imageLoad(tilemap_texture, ivec3(input_coordinates, 0));
-	}
-
-	const ivec2 output_coordinates = ivec2(gl_WorkGroupID.xy * 16 + gl_LocalInvocationID.xy);
-	imageStore(room_texture, ivec3(output_coordinates, 0), background_texel);
-	imageStore(room_texture, ivec3(output_coordinates, 1), foreground_texel);
+	const ivec3 outputCoordinates = ivec3(gl_WorkGroupID.xy * 16 + gl_LocalInvocationID.xy, gl_WorkGroupID.z);
+	imageStore(destinationTexture, outputCoordinates, texel);
 }

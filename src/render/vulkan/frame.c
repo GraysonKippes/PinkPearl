@@ -31,8 +31,8 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT
 	};
 	
-	const VkDeviceSize index_buffer_size = num_render_object_slots * num_indices_per_rect;
-	const VkDeviceSize vertex_buffer_size = num_render_object_slots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
+	const VkDeviceSize index_buffer_size = numRenderObjectSlots * num_indices_per_rect;
+	const VkDeviceSize vertex_buffer_size = numRenderObjectSlots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 	
 	frame.semaphore_image_available = create_binary_semaphore(device);
 	frame.semaphore_present_ready = create_binary_semaphore(device);

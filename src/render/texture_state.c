@@ -70,6 +70,10 @@ int textureStateAnimate(TextureState *const pTextureState) {
 		return 0;
 	}
 	
+	if (pTextureState->currentFPS == 0) {
+		return 1;
+	}
+	
 	// Calculate the time difference between last frame change for this texture and current time, in seconds.
 	const unsigned long long int currentTimeMS = getTimeMS();
 	const unsigned long long int deltaTimeMS = currentTimeMS - pTextureState->lastFrameTimeMS;

@@ -1,7 +1,7 @@
 #version 460
 #extension GL_EXT_scalar_block_layout : require
 
-#define NUM_RENDER_OBJECTS 64
+#define NUM_RENDER_OBJECTS 256
 
 struct DrawData {
 	// Indirect draw info

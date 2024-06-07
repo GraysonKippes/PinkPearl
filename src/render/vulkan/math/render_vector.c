@@ -2,25 +2,25 @@
 
 #include <stddef.h>
 
-void render_vector_set(RenderVector *const render_vector_ptr, const Vector4F new_vector) {
-	if (render_vector_ptr == nullptr) {
+void renderVectorSet(RenderVector *const pRenderVector, const Vector4F newVector) {
+	if (pRenderVector == nullptr) {
 		return;
 	}
-	render_vector_ptr->previous = render_vector_ptr->current;
-	render_vector_ptr->current = new_vector;
+	pRenderVector->previous = pRenderVector->current;
+	pRenderVector->current = newVector;
 }
 
-void render_vector_reset(RenderVector *const render_vector_ptr, const Vector4F new_vector) {
-	if (render_vector_ptr == nullptr) {
+void renderVectorReset(RenderVector *const pRenderVector, const Vector4F newVector) {
+	if (pRenderVector == nullptr) {
 		return;
 	}
-	render_vector_ptr->current = new_vector;
-	render_vector_ptr->previous = new_vector;
+	pRenderVector->current = newVector;
+	pRenderVector->previous = newVector;
 }
 
-void render_vector_settle(RenderVector *const render_vector_ptr) {
-	if (render_vector_ptr == nullptr) {
+void renderVectorSettle(RenderVector *const pRenderVector) {
+	if (pRenderVector == nullptr) {
 		return;
 	}
-	render_vector_ptr->previous = render_vector_ptr->current;
+	pRenderVector->previous = pRenderVector->current;
 }

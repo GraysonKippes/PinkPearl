@@ -10,7 +10,7 @@
 #include "vulkan/compute/compute_room_texture.h"
 #include "vulkan/math/lerp.h"
 
-void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const room_t initialRoom) {
+void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const Room initialRoom) {
 	log_message(VERBOSE, "Resetting area render state...");
 	
 	if (!pAreaRenderState) {
@@ -58,9 +58,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	pAreaRenderState->areaExtent = area.extent;
 	pAreaRenderState->roomSize = area.room_size;
 	
-	//create_room_texture(initialRoom, pAreaRenderState->currentCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
-	
-	const extent_t roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
+	const Extent roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
 	const DimensionsF roomQuadDimensions = {
 		.x1 = -0.5F * roomExtent.width,
 		.y1 = 0.5F * roomExtent.length,
@@ -68,17 +66,24 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 		.y2 = -0.5F * roomExtent.length
 	};
 	
-	const Transform roomQuadTransform = {
-		.translation = (Vector4F){ 0.0F, 0.0F, 0.0F, 1.0F },
-		.scaling = zeroVector4F,
-		.rotation = zeroVector4F
-	};
-	
 	// Testing
 	String textureID = newString(64, "roomM");
-	pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(roomQuadDimensions, roomQuadTransform, textureID);
+	const Vector3D roomLayerPositions[2] = {
+		{ 0.0, 0.0, 0.0 }, 
+		{ 0.0, 0.0, 15.0 }
+	};
+	pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(textureID, roomQuadDimensions, 2, roomLayerPositions);
 	deleteString(&textureID);
-	computeRoomTexture(initialRoom, pAreaRenderState->currentCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle, getRenderObjTexState(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot])->textureHandle);
+	
+	const int textureHandle = renderObjectGetTextureHandle(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot], 0);
+	const ImageSubresourceRange imageSubresourceRange = {
+		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.baseArrayLayer = pAreaRenderState->currentCacheSlot * num_room_layers,
+		.arrayLayerCount = num_room_layers
+	};
+	computeStitchTexture(pAreaRenderState->tilemapTextureState.textureHandle, textureHandle, imageSubresourceRange, initialRoom.extent, initialRoom.ppTileIndices);
+	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot], 0, 0);
+	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot], 1, 1);
 	
 	log_message(VERBOSE, "Done resetting area render state.");
 }
@@ -87,7 +92,7 @@ bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState) {
 	return areaRenderState.currentCacheSlot != areaRenderState.nextCacheSlot;
 }
 
-bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const room_t nextRoom) {
+bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const Room nextRoom) {
 	
 	const uint32_t roomID = (uint32_t)nextRoom.id;
 	
@@ -138,7 +143,7 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 		return zeroVector4F;
 	}
 	
-	const extent_t roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
+	const Extent roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
 	const uint32_t currentRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->currentCacheSlot];
 	const offset_t currentRoomPosition = pAreaRenderState->roomIDsToPositions[currentRoomID];
 	const Vector4F start = {
@@ -175,7 +180,7 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 }
 
 projection_bounds_t areaRenderStateGetProjectionBounds(const AreaRenderState areaRenderState) {
-	const extent_t roomExtent = room_size_to_extent(areaRenderState.roomSize);
+	const Extent roomExtent = room_size_to_extent(areaRenderState.roomSize);
 	const float top = -((float)roomExtent.length / 2.0F);
 	const float left = -((float)roomExtent.width / 2.0F);
 	const float bottom = -top;

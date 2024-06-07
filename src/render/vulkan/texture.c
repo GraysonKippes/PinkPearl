@@ -174,6 +174,7 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	memcpy_s(texture.animations, texture.numAnimations * sizeof(TextureAnimation), textureCreateInfo.animations, textureCreateInfo.numAnimations * sizeof(TextureAnimation));
 
 	texture.image.vkImage = createTextureImage(texture, textureCreateInfo);
+	texture.image.extent = textureCreateInfo.cellExtent;
 
 	// Allocate memory for the texture image.
 	const VkMemoryRequirements2 imageMemoryRequirements = getImageMemoryRequirements(texture.device, texture.image.vkImage);

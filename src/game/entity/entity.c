@@ -22,9 +22,9 @@ void tick_entity(entity_t *pEntity) {
 		return;
 	}
 
-	const vector3D_t old_position = pEntity->transform.position;
-	const vector3D_t position_step = pEntity->transform.velocity;
-	vector3D_t new_position = vector3D_add(old_position, position_step);
+	const Vector3D old_position = pEntity->transform.position;
+	const Vector3D position_step = pEntity->transform.velocity;
+	Vector3D new_position = vector3D_add(old_position, position_step);
 
 	// The square of the distance of the currently selected new position from the old position.
 	// This variable is used to track which resolved new position is the shortest from the entity.
@@ -35,8 +35,8 @@ void tick_entity(entity_t *pEntity) {
 		
 		const rect_t wall = current_area.rooms[0].walls[i];
 
-		vector3D_t resolved_position = resolve_collision(old_position, new_position, pEntity->hitbox, wall);
-		vector3D_t resolved_step = vector3D_subtract(resolved_position, old_position);
+		Vector3D resolved_position = resolve_collision(old_position, new_position, pEntity->hitbox, wall);
+		Vector3D resolved_step = vector3D_subtract(resolved_position, old_position);
 		const double resolved_step_length_squared = SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z);
 
 		if (resolved_step_length_squared < step_length_squared) {
@@ -48,15 +48,6 @@ void tick_entity(entity_t *pEntity) {
 	pEntity->transform.position = new_position;
 
 	// Update render object.
-	const int render_handle = pEntity->render_handle;
-	if (!validateRenderHandle(render_handle)) {
-		return;
-	}
-	const Vector4F render_position = {
-		.x = (float)pEntity->transform.position.x,
-		.y = (float)pEntity->transform.position.y,
-		.z = (float)pEntity->transform.position.z,
-		.w = 1.0F
-	};
-	render_vector_set(&getRenderObjTransform(render_handle)->translation, render_position);
+	const int renderHandle = pEntity->render_handle;
+	renderObjectSetPosition(renderHandle, 0, pEntity->transform.position);
 }

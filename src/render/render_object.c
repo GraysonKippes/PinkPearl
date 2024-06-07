@@ -7,25 +7,22 @@
 #include "log/logging.h"
 #include "vulkan/vulkan_render.h"
 #include "vulkan/texture_manager.h"
-#include "util/bit.h"
 
 #include "area_render_state.h"
 
 const int renderHandleInvalid = -1;
 
-static Heap inactiveRenderHandles = { 0 };
+static Heap inactiveRenderHandles = { };
 
-int renderObjQuadIDs[NUM_RENDER_OBJECT_SLOTS];
-RenderTransform renderObjTransforms[NUM_RENDER_OBJECT_SLOTS];
-TextureState renderObjTextureStates[NUM_RENDER_OBJECT_SLOTS];
+int renderObjQuadIDs[NUM_RENDER_OBJECT_SLOTS][MAX_NUM_RENDER_OBJECT_QUADS];
 
 bool initRenderObjectManager(void) {
-	inactiveRenderHandles = newHeap(num_render_object_slots, sizeof(int), cmpFuncInt);
+	inactiveRenderHandles = newHeap(numRenderObjectSlots, sizeof(int), cmpFuncInt);
 	if (!heapValidate(inactiveRenderHandles)) {
 		deleteHeap(&inactiveRenderHandles);
 		return false;
 	}
-	for (int i = 0; i < (int)num_render_object_slots; ++i) {
+	for (int i = 0; i < (int)numRenderObjectSlots; ++i) {
 		heapPush(&inactiveRenderHandles, &i);
 	}
 	return true;
@@ -36,25 +33,39 @@ bool terminateRenderObjectManager(void) {
 	return true;
 }
 
-int loadRenderObject(const DimensionsF quadDimensions, const Transform transform, const String textureID) {
+int loadRenderObject(const String textureID, const DimensionsF quadDimensions, const int numQuads, const Vector3D quadPositions[static numQuads]) {
+	if (numQuads <= 0 || numQuads > maxNumRenderObjectQuads) {
+		return renderHandleInvalid;
+	}
+	
 	int renderHandle = renderHandleInvalid;
 	heapPop(&inactiveRenderHandles, &renderHandle);
 	if (!validateRenderHandle(renderHandle)) {
-		return renderHandle;
+		return renderHandleInvalid;
 	}
 	
-	renderObjTextureStates[renderHandle] = newTextureState(textureID);
-	
-	const int quadID = loadQuad(quadDimensions, renderObjTextureStates[renderHandle].textureHandle);
-	if (!validateQuadID(quadID)) {
-		unloadRenderObject(&renderHandle);
-		return renderHandle;
+	const TextureState quadTextureState = newTextureState(textureID);
+	for (int i = 0; i < numQuads; ++i) {
+		const int quadID = loadQuad(quadDimensions, quadTextureState);
+		if (!validateQuadID(quadID)) {
+			unloadRenderObject(&renderHandle);
+			return renderHandleInvalid;
+		}
+		renderObjQuadIDs[renderHandle][i] = quadID;
+		
+		const Vector4F translation = {
+			.x = (float)quadPositions[i].x,
+			.y = (float)quadPositions[i].y,
+			.z = (float)quadPositions[i].z,
+			.w = 1.0F
+		};
+		setQuadTranslation(renderObjQuadIDs[renderHandle][i], translation);
+		setQuadTranslation(renderObjQuadIDs[renderHandle][i], translation);
+		setQuadScaling(renderObjQuadIDs[renderHandle][i], zeroVector4F);
+		setQuadScaling(renderObjQuadIDs[renderHandle][i], zeroVector4F);
+		setQuadRotation(renderObjQuadIDs[renderHandle][i], zeroVector4F);
+		setQuadRotation(renderObjQuadIDs[renderHandle][i], zeroVector4F);
 	}
-	renderObjQuadIDs[renderHandle] = quadID;
-	
-	render_vector_reset(&renderObjTransforms[renderHandle].translation, transform.translation);
-	render_vector_reset(&renderObjTransforms[renderHandle].scaling, transform.scaling);
-	render_vector_reset(&renderObjTransforms[renderHandle].rotation, transform.rotation);
 	
 	return renderHandle;
 }
@@ -70,37 +81,87 @@ void unloadRenderObject(int *const pRenderHandle) {
 }
 
 bool validateRenderHandle(const int renderHandle) {
-	return renderHandle >= 0 && renderHandle < (int)num_render_object_slots;
+	return renderHandle >= 0 && renderHandle < (int)numRenderObjectSlots;
 }
 
-RenderTransform *getRenderObjTransform(const int renderHandle) {
-	if (!validateRenderHandle(renderHandle)) {
-		logf_message(ERROR, "Error getting render object transform: render object handle (%i) is invalid.", renderHandle);
-		return nullptr;
-	}
-	return &renderObjTransforms[renderHandle];
+bool validateRenderObjectQuadIndex(const int quadIndex) {
+	return quadIndex >= 0 && quadIndex < (int)maxNumRenderObjectQuads;
 }
 
-TextureState *getRenderObjTexState(const int renderHandle) {
-	if (!validateRenderHandle(renderHandle)) {
-		logf_message(ERROR, "Error getting render object texture state: render object handle (%i) is invalid.", renderHandle);
-		return nullptr;
-	}
-	return &renderObjTextureStates[renderHandle];
-}
-
-unsigned int renderObjectGetAnimation(const int renderHandle) {
-	if (!validateRenderHandle(renderHandle)) {
-		logf_message(ERROR, "Error accessing render object: render object handle (%i) is invalid.", renderHandle);
-		return 0;
-	}
-	return renderObjTextureStates[renderHandle].currentAnimation;
-}
-
-bool renderObjectSetAnimation(const int renderHandle, const unsigned int nextAnimation) {
-	if (!validateRenderHandle(renderHandle)) {
-		logf_message(ERROR, "Error accessing render object: render object handle (%i) is invalid.", renderHandle);
+bool renderObjectSetPosition(const int renderHandle, const int quadIndex, const Vector3D position) {
+	if (!validateRenderHandle(renderHandle) || !validateRenderObjectQuadIndex(quadIndex)) {
 		return false;
 	}
-	return textureStateSetAnimation(&renderObjTextureStates[renderHandle], nextAnimation);
+	const Vector4F translation = {
+		.x = (float)position.x,
+		.y = (float)position.y,
+		.z = (float)position.z,
+		.w = 1.0F
+	};
+	return setQuadTranslation(renderObjQuadIDs[renderHandle][quadIndex], translation);
+}
+
+int renderObjectGetTextureHandle(const int renderHandle, const int quadIndex) {
+	if (!validateRenderHandle(renderHandle) || !validateRenderObjectQuadIndex(quadIndex)) {
+		return -1;
+	}
+	
+	const int quadID = renderObjQuadIDs[renderHandle][quadIndex];
+	TextureState *const pTextureState = getQuadTextureState(quadID);
+	if (pTextureState) {
+		return pTextureState->textureHandle;
+	}
+	return -1;
+}
+
+bool renderObjectAnimate(const int renderHandle) {
+	if (!validateRenderHandle(renderHandle)) {
+		return false;
+	}
+	
+	for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
+		const int quadID = renderObjQuadIDs[renderHandle][i];
+		if (!validateQuadID(quadID)) {
+			continue;
+		}
+		
+		TextureState *const pTextureState = getQuadTextureState(quadID);
+		if (textureStateAnimate(pTextureState) == 2) {
+			const unsigned int imageIndex = pTextureState->startCell + pTextureState->currentFrame;
+			updateDrawData(renderHandle, imageIndex);
+		}
+	}
+	
+	return true;
+}
+
+unsigned int renderObjectGetAnimation(const int renderHandle, const int quadIndex) {
+	if (!validateRenderHandle(renderHandle) || !validateRenderObjectQuadIndex(quadIndex)) {
+		return 0;
+	}
+	
+	const int quadID = renderObjQuadIDs[renderHandle][quadIndex];
+	TextureState *const pTextureState = getQuadTextureState(quadID);
+	if (pTextureState) {
+		return pTextureState->currentAnimation;
+	}
+	return 0;
+}
+
+bool renderObjectSetAnimation(const int renderHandle, const int quadIndex, const unsigned int nextAnimation) {
+	if (!validateRenderHandle(renderHandle) || !validateRenderObjectQuadIndex(quadIndex)) {
+		return false;
+	}
+	
+	const int quadID = renderObjQuadIDs[renderHandle][quadIndex];
+	TextureState *const pTextureState = getQuadTextureState(quadID);
+	if (pTextureState) {
+		if (!textureStateSetAnimation(pTextureState, nextAnimation)) {
+			return false;
+		}
+		const unsigned int imageIndex = pTextureState->startCell + pTextureState->currentFrame;
+		updateDrawData(quadID, imageIndex);
+		return true;
+	}
+	return false;
 }
