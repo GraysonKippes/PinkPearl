@@ -128,7 +128,7 @@ bool renderObjectAnimate(const int renderHandle) {
 		TextureState *const pTextureState = getQuadTextureState(quadID);
 		if (textureStateAnimate(pTextureState) == 2) {
 			const unsigned int imageIndex = pTextureState->startCell + pTextureState->currentFrame;
-			updateDrawData(renderHandle, imageIndex);
+			updateDrawData(quadID, imageIndex);
 		}
 	}
 	

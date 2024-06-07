@@ -20,7 +20,7 @@
 #define DATA_PATH (RESOURCE_PATH "data/")
 #define FGT_PATH (RESOURCE_PATH "data/textures.fgt")
 
-AreaRenderState globalAreaRenderState = { 0 };
+AreaRenderState globalAreaRenderState = { };
 
 void init_renderer(void) {
 	log_stack_push("Renderer");
@@ -108,6 +108,5 @@ void render_frame(const float deltaTime) {
 	
 	const Vector4F cameraPosition = areaRenderStateGetCameraPosition(&globalAreaRenderState);
 	const projection_bounds_t projectionBounds = areaRenderStateGetProjectionBounds(globalAreaRenderState);
-
 	drawFrame(deltaTime, cameraPosition, projectionBounds);
 }
