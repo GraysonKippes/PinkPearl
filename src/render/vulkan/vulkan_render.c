@@ -72,7 +72,7 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle);
 
 void createVulkanRenderObjects(void) {
 	log_stack_push("Vulkan");
-	log_message(VERBOSE, "Creating Vulkan render objects...");
+	logMsg(VERBOSE, "Creating Vulkan render objects...");
 
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
@@ -89,7 +89,7 @@ void createVulkanRenderObjects(void) {
 
 void destroyVulkanRenderObjects(void) {
 	log_stack_push("Vulkan");
-	log_message(VERBOSE, "Destroying Vulkan render objects...");
+	logMsg(VERBOSE, "Destroying Vulkan render objects...");
 	
 	vkDeviceWaitIdle(device);
 
@@ -308,7 +308,7 @@ static void rebuildDrawData(void) {
 	
 	LinkedList traversal = bstTraverseInOrder(activeQuadIDs);
 	if (!linkedListValidate(traversal)) {
-		logf_message(ERROR, "Error building draw data: failed to traverse active quad IDs.");
+		logMsgF(ERROR, "Error building draw data: failed to traverse active quad IDs.");
 		return;
 	}
 	

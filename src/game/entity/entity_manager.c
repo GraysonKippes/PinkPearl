@@ -26,7 +26,7 @@ void unload_entity(const int handle) {
 	if (!validateEntityHandle(handle)) {
 		return;
 	} else if (entity_slot_enable_flags[handle] == 0) {
-		logf_message(WARNING, "Unloading already unused entity slot (%u).", handle);
+		logMsgF(WARNING, "Unloading already unused entity slot (%u).", handle);
 		return;
 	}
 	
@@ -35,7 +35,7 @@ void unload_entity(const int handle) {
 
 int loadEntity(const String entityID, const Vector3D initPosition, const Vector3D initVelocity) {
 	if (stringIsNull(entityID)) {
-		log_message(ERROR, "Error loading entity: string entityID is null.");
+		logMsg(ERROR, "Error loading entity: string entityID is null.");
 	}
 	
 	int entityHandle = entityHandleInvalid;
@@ -46,20 +46,20 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 		}
 	}
 	if (!validateEntityHandle(entityHandle)) {
-		log_message(ERROR, "Error loading entity: failed to find available entity handle.");
+		logMsg(ERROR, "Error loading entity: failed to find available entity handle.");
 		return entityHandleInvalid;
 	}
 	
 	entity_record_t entityRecord = { };
 	if (!find_entity_record(entityID, &entityRecord)) {
-		logf_message(ERROR, "Error loading entity: failed to find entity record with ID \"%s\".", entityID.buffer);
+		logMsgF(ERROR, "Error loading entity: failed to find entity record with ID \"%s\".", entityID.buffer);
 		return entityHandleInvalid;
 	}
 	
 	//										  /*   Temporary parameter for testing   */
 	const int renderHandle = loadRenderObject(entityRecord.entity_texture_id, (DimensionsF){ -0.5F, 0.5F, 0.5F, -1.0F }, 1, &initPosition);
 	if (!validateEntityHandle(renderHandle)) {
-		log_message(ERROR, "Error loading entity: failed to load render object.");
+		logMsg(ERROR, "Error loading entity: failed to load render object.");
 		return entityHandleInvalid;
 	}
 	

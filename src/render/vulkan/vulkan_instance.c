@@ -42,7 +42,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 bool check_validation_layer_support(uint32_t num_required_layers, const char *required_layers[]) {
 
-	log_message(VERBOSE, "Checking validation layer support...");
+	logMsg(VERBOSE, "Checking validation layer support...");
 
 	uint32_t num_available_layers = 0;
 	vkEnumerateInstanceLayerProperties(&num_available_layers, nullptr);
@@ -85,7 +85,7 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 
 vulkan_instance_t create_vulkan_instance(void) {
 
-	log_message(VERBOSE, "Creating Vulkan instance...");
+	logMsg(VERBOSE, "Creating Vulkan instance...");
 
 	vulkan_instance_t vulkan_instance = { 0 };
 
@@ -135,7 +135,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 	}
 
 	for (uint32_t i = 0; i < num_extensions; ++i) {
-		logf_message(VERBOSE, "Enabling Vulkan extension \"%s\".", extensions[i]);
+		logMsgF(VERBOSE, "Enabling Vulkan extension \"%s\".", extensions[i]);
 	}
 
 	VkInstanceCreateInfo create_info = {0};
@@ -157,7 +157,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 		vulkan_instance.layer_names.strings = validation_layers;
 
 		for (uint32_t i = 0; i < num_validation_layers; ++i) {
-			logf_message(VERBOSE, "Enabling validation layer \"%s\".", validation_layers[i]);
+			logMsgF(VERBOSE, "Enabling validation layer \"%s\".", validation_layers[i]);
 		}
 	}
 	else {
@@ -171,7 +171,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 
 	VkResult result = vkCreateInstance(&create_info, nullptr, &vulkan_instance.handle);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
+		logMsgF(FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
 		exit(1);
 	}
 
@@ -213,14 +213,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 		break;
 	}
 
-	logf_message(log_level, "Vulkan: %s", pCallbackData->pMessage);
+	logMsgF(log_level, "Vulkan: %s", pCallbackData->pMessage);
 
 	return VK_FALSE;
 }
 
 void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT *messenger_ptr) {
 
-	log_message(VERBOSE, "Creating Vulkan debug messenger...");
+	logMsg(VERBOSE, "Creating Vulkan debug messenger...");
 
 	VkDebugUtilsMessengerCreateInfoEXT create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;

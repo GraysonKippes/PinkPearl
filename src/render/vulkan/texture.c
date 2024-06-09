@@ -121,7 +121,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 	VkImage vkImage = VK_NULL_HANDLE;
 	const VkResult imageCreateResult = vkCreateImage(texture.device, &imageCreateInfo, nullptr, &vkImage);
 	if (imageCreateResult != VK_SUCCESS) {
-		logf_message(ERROR, "Error loading texture: image creation failed (error code: %i).", imageCreateResult);
+		logMsgF(ERROR, "Error loading texture: image creation failed (error code: %i).", imageCreateResult);
 	}
 	return vkImage;
 }
@@ -155,7 +155,7 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 	VkImageView vkImageView = VK_NULL_HANDLE;
 	const VkResult result = vkCreateImageView(texture.device, &image_view_create_info, nullptr, &vkImageView);
 	if (result != VK_SUCCESS) {
-		logf_message(ERROR, "Error loading texture: image view creation failed. (Error code: %i)", result);
+		logMsgF(ERROR, "Error loading texture: image view creation failed. (Error code: %i)", result);
 	}
 	return vkImageView;
 }
@@ -187,7 +187,7 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
 	const VkResult memoryAllocationResult = vkAllocateMemory(texture.device, &allocateInfo, nullptr, &texture.memory);
 	if (memoryAllocationResult != VK_SUCCESS) {
-		logf_message(ERROR, "Error loading texture: failed to allocate memory (error code: %i).", memoryAllocationResult);
+		logMsgF(ERROR, "Error loading texture: failed to allocate memory (error code: %i).", memoryAllocationResult);
 		deleteTexture(&texture);
 		return texture;
 	}

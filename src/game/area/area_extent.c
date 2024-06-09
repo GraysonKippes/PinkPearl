@@ -5,12 +5,12 @@
 area_extent_t new_area_extent(const int x1, const int y1, const int x2, const int y2) {
 
 	if (x1 >= x2) {
-		logf_message(WARNING, "Warning creating new area extent: x1 (%i) is not less than x2 (%i).", x1, x2);
+		logMsgF(WARNING, "Warning creating new area extent: x1 (%i) is not less than x2 (%i).", x1, x2);
 		return new_area_extent(x2, y1, x1, y2);
 	}
 
 	if (y1 >= y2) {
-		logf_message(WARNING, "Warning creating new area extent: y1 (%i) is not less than y2 (%i).", y1, y2);
+		logMsgF(WARNING, "Warning creating new area extent: y1 (%i) is not less than y2 (%i).", y1, y2);
 		return new_area_extent(x1, y2, x2, y1);
 	}
 

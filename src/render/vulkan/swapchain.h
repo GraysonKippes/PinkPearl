@@ -8,7 +8,7 @@
 
 #include "physical_device.h"
 
-typedef struct swapchain_t {
+typedef struct Swapchain {
 	
 	VkSwapchainKHR handle;
 
@@ -20,13 +20,13 @@ typedef struct swapchain_t {
 	VkImageView *image_views;
 	VkFramebuffer *framebuffers;
 
-} swapchain_t;
+} Swapchain;
 
-swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle);
+Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle);
 
-void create_framebuffers(VkDevice device, VkRenderPass render_pass, swapchain_t *swapchain_ptr);
+void create_framebuffers(VkDevice device, VkRenderPass render_pass, Swapchain *swapchain_ptr);
 
-void destroy_swapchain(VkDevice device, swapchain_t swapchain);
+void destroy_swapchain(VkDevice device, Swapchain swapchain);
 
 VkViewport make_viewport(VkExtent2D extent);
 

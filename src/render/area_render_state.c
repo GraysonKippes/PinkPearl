@@ -11,7 +11,7 @@
 #include "vulkan/math/lerp.h"
 
 void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const Room initialRoom) {
-	log_message(VERBOSE, "Resetting area render state...");
+	logMsg(VERBOSE, "Resetting area render state...");
 	
 	if (!pAreaRenderState) {
 		return;
@@ -26,12 +26,12 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	pAreaRenderState->numRoomIDs = area.num_rooms;
 	
 	if (!allocate((void **)&pAreaRenderState->roomIDsToCacheSlots, pAreaRenderState->numRoomIDs, sizeof(uint32_t))) {
-		log_message(ERROR, "Error resetting area render state: failed to allocate room IDs to cache slots pointer-array.");
+		logMsg(ERROR, "Error resetting area render state: failed to allocate room IDs to cache slots pointer-array.");
 		return;
 	}
 	
 	if (!allocate((void **)&pAreaRenderState->roomIDsToPositions, pAreaRenderState->numRoomIDs, sizeof(offset_t))) {
-		log_message(ERROR, "Error resetting area render state: failed to allocate room IDs to room positions pointer array.");
+		logMsg(ERROR, "Error resetting area render state: failed to allocate room IDs to room positions pointer array.");
 		deallocate((void **)&pAreaRenderState->roomIDsToCacheSlots);
 		return;
 	}
@@ -85,7 +85,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot], 0, 0);
 	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot], 1, 1);
 	
-	log_message(VERBOSE, "Done resetting area render state.");
+	logMsg(VERBOSE, "Done resetting area render state.");
 }
 
 bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState) {
@@ -97,7 +97,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const R
 	const uint32_t roomID = (uint32_t)nextRoom.id;
 	
 	if (roomID >= pAreaRenderState->numRoomIDs) {
-		logf_message(ERROR, "Error setting area render state next room: given room ID (%u) is not less than number of room IDs (%u).", roomID, pAreaRenderState->numRoomIDs);
+		logMsgF(ERROR, "Error setting area render state next room: given room ID (%u) is not less than number of room IDs (%u).", roomID, pAreaRenderState->numRoomIDs);
 		return false;
 	}
 	

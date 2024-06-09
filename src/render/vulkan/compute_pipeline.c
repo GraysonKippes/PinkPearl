@@ -44,7 +44,7 @@ ComputePipeline create_compute_pipeline(const VkDevice device, const descriptor_
 
 	const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &compute_pipeline.handle);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Compute pipeline creation failed (error code: %i).", result);
+		logMsgF(FATAL, "Compute pipeline creation failed (error code: %i).", result);
 	}
 	compute_pipeline.device = device;
 

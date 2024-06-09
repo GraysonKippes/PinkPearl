@@ -44,7 +44,7 @@ static const ImageSubresourceRange imageSubresourceRange = {
 
 
 static void createTransferImage(const VkDevice vkDevice) {
-	log_message(VERBOSE, "Creating texture stitching transfer image...");
+	logMsg(VERBOSE, "Creating texture stitching transfer image...");
 	
 	transferImage = (Image){
 		.vkImage = VK_NULL_HANDLE,
@@ -136,14 +136,14 @@ static void createTransferImage(const VkDevice vkDevice) {
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 	transferImage.usage = imageUsageComputeWrite;
 	
-	log_message(VERBOSE, "Done creating texture stitching transfer image.");
+	logMsg(VERBOSE, "Done creating texture stitching transfer image.");
 }
 
 void init_compute_room_texture(const VkDevice vkDevice) {
-	log_message(VERBOSE, "Initializing texture stitcher...");
+	logMsg(VERBOSE, "Initializing texture stitcher...");
 	compute_room_texture_pipeline = create_compute_pipeline(vkDevice, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
 	createTransferImage(vkDevice);
-	log_message(VERBOSE, "Done initializing texture stitcher.");
+	logMsg(VERBOSE, "Done initializing texture stitcher.");
 }
 
 void terminate_compute_room_texture(void) {
@@ -151,7 +151,7 @@ void terminate_compute_room_texture(void) {
 }
 
 void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint16_t **tileIndices) {
-	log_message(VERBOSE, "Computing room texture...");
+	logMsg(VERBOSE, "Computing room texture...");
 	
 	const Texture tilemapTexture = getTexture(tilemapTextureHandle);
 	Texture *const pRoomTexture = getTextureP(destinationTextureHandle);
@@ -178,7 +178,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
 	const VkResult allocate_descriptor_set_result = vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
 	if (allocate_descriptor_set_result != 0) {
-		logf_message(ERROR, "Error computing room texture: descriptor set allocation failed. (Error code: %i)", allocate_descriptor_set_result);
+		logMsgF(ERROR, "Error computing room texture: descriptor set allocation failed. (Error code: %i)", allocate_descriptor_set_result);
 		return;
 	}
 
@@ -304,5 +304,5 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 	vkFreeCommandBuffers(device, cmdPoolGraphics, 1, &cmdBuf);
 
-	log_message(VERBOSE, "Done computing room texture.");
+	logMsg(VERBOSE, "Done computing room texture.");
 }

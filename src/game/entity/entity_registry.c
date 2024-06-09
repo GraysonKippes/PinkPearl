@@ -18,7 +18,7 @@ static bool register_entity_record(const entity_record_t entity_record);
 
 void init_entity_registry(void) {
 	log_stack_push("EntityRegistry");
-	log_message(VERBOSE, "Initializing entity registry...");
+	logMsg(VERBOSE, "Initializing entity registry...");
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		entity_records[i] = (entity_record_t){
@@ -44,25 +44,25 @@ void init_entity_registry(void) {
 	}
 	
 	fclose(fge_file);
-	log_message(VERBOSE, "Done initializing entity registry.");
+	logMsg(VERBOSE, "Done initializing entity registry.");
 	log_stack_pop();
 }
 
 void terminate_entity_registry(void) {
 	log_stack_push("EntityRegistry");
-	log_message(VERBOSE, "Terminating entity registry...");
+	logMsg(VERBOSE, "Terminating entity registry...");
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		deleteString(&entity_records[i].entity_id);
 		deleteString(&entity_records[i].entity_texture_id);
 	}
 	
-	log_message(VERBOSE, "Done terminating entity registry.");
+	logMsg(VERBOSE, "Done terminating entity registry.");
 	log_stack_pop();
 }
 
 static bool register_entity_record(const entity_record_t entity_record) {
-	logf_message(VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.buffer);
+	logMsgF(VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.buffer);
 	
 	size_t hash_index = stringHash(entity_record.entity_id, num_entity_records);
 	for (size_t i = 0; i < num_entity_records; ++i) {

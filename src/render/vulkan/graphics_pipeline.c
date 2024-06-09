@@ -40,7 +40,7 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 
 static void create_render_pass(VkDevice device, VkFormat swapchain_format, VkRenderPass *render_pass_ptr) {
 
-	log_message(VERBOSE, "Creating render pass...");
+	logMsg(VERBOSE, "Creating render pass...");
 
 	VkAttachmentDescription color_attachment = { 0 };
 	color_attachment.flags = 0;
@@ -91,13 +91,13 @@ static void create_render_pass(VkDevice device, VkFormat swapchain_format, VkRen
 
 	VkResult result = vkCreateRenderPass(device, &create_info, nullptr, render_pass_ptr);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Render pass creation failed. (Error code: %i)", result);
+		logMsgF(FATAL, "Render pass creation failed. (Error code: %i)", result);
 	}
 }
 
-graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
+graphics_pipeline_t create_graphics_pipeline(VkDevice device, Swapchain swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
 
-	log_message(VERBOSE, "Creating graphics pipeline...");
+	logMsg(VERBOSE, "Creating graphics pipeline...");
 
 	graphics_pipeline_t pipeline = { 0 };
 
@@ -172,7 +172,7 @@ graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapch
 
 	VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline.handle);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
+		logMsgF(FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
 	}
 
 	return pipeline;
@@ -285,7 +285,7 @@ static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColor
 
 static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
-	log_message(VERBOSE, "Creating graphics pipeline layout...");
+	logMsg(VERBOSE, "Creating graphics pipeline layout...");
 
 	VkPipelineLayoutCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -298,6 +298,6 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 
 	VkResult result = vkCreatePipelineLayout(device, &create_info, nullptr, pipeline_layout_ptr);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Graphics pipeline layout creation failed. (Error code: %i)", result);
+		logMsgF(FATAL, "Graphics pipeline layout creation failed. (Error code: %i)", result);
 	}
 }

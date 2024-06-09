@@ -9,7 +9,7 @@ typedef enum log_level_t {
 	FATAL = 4
 } log_level_t;
 
-void log_message(log_level_t level, const char *message);
-void logf_message(log_level_t level, const char *format, ...);
+void logMsg(log_level_t level, const char *message);
+void logMsgF(log_level_t level, const char *format, ...);
 
 #endif	// LOGGING_H

@@ -34,7 +34,7 @@ void start_game(void) {
 	String entityID = newString(64, "pearl");
 	playerEntityHandle = loadEntity(entityID, zeroVector3D, zeroVector3D);
 	if (!validateEntityHandle(playerEntityHandle)) {
-		logf_message(ERROR, "Failed to load entity \"%s\".", entityID.buffer);
+		logMsgF(ERROR, "Failed to load entity \"%s\".", entityID.buffer);
 	}
 	deleteString(&entityID);
 }

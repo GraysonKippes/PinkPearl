@@ -38,18 +38,18 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	// TODO - modify this to use semaphores between image transitions and data transfer operations.
 
 	if (stringIsNull(textureCreateInfo.textureID)) {
-		log_message(ERROR, "Error loading texture: texture ID is null.");
+		logMsg(ERROR, "Error loading texture: texture ID is null.");
 		return makeNullTexture();
 	}
 
-	logf_message(VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.buffer);
+	logMsgF(VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.buffer);
 
 	if (textureCreateInfo.numAnimations == 0) {
-		log_message(ERROR, "Error loading texture: number of animation create infos is zero.");
+		logMsg(ERROR, "Error loading texture: number of animation create infos is zero.");
 	}
 
 	if (textureCreateInfo.numAnimations > 0 && textureCreateInfo.animations == nullptr) {
-		log_message(ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is nullptr.");
+		logMsg(ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is nullptr.");
 		return makeNullTexture();
 	}
 
@@ -97,7 +97,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 		const uint32_t numBufImgCopies = texture.numImageArrayLayers;
 		VkBufferImageCopy2 *bufImgCopies = nullptr;
 		if (!allocate((void **)&bufImgCopies, numBufImgCopies, sizeof(VkBufferImageCopy2))) {
-			log_message(ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
+			logMsg(ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
 			// TODO - do proper cleanup here.
 			return texture;
 		}

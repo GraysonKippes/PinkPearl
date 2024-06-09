@@ -10,7 +10,7 @@
 
 VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_support_details) {
 
-	log_message(VERBOSE, "Selecting surface format for swapchain...");
+	logMsg(VERBOSE, "Selecting surface format for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.num_formats; ++i) {
 		VkSurfaceFormatKHR format = swapchain_support_details.formats[i];
@@ -18,7 +18,7 @@ VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_s
 			return format;
 	}
 
-	log_message(ERROR, "No appropriate swapchain image format found.");
+	logMsg(ERROR, "No appropriate swapchain image format found.");
 
 	VkSurfaceFormatKHR undefined_format;
 	undefined_format.format = VK_FORMAT_UNDEFINED;
@@ -29,7 +29,7 @@ VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_s
 
 VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_support_details) {
 
-	log_message(VERBOSE, "Selecting presentation mode for swapchain...");
+	logMsg(VERBOSE, "Selecting presentation mode for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.num_present_modes; ++i) {
 		VkPresentModeKHR present_mode = swapchain_support_details.present_modes[i];
@@ -42,7 +42,7 @@ VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_suppo
 
 VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, GLFWwindow *window) {
 
-	log_message(VERBOSE, "Selecting extent for swapchain...");
+	logMsg(VERBOSE, "Selecting extent for swapchain...");
 
 	if (swapchain_support_details.capabilities.currentExtent.width != UINT32_MAX) {
 		return swapchain_support_details.capabilities.currentExtent;
@@ -58,11 +58,11 @@ VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, 
 	return actualExtent;
 }
 
-swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle) {
+Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle) {
 
-	log_message(VERBOSE, "Creating swapchain...");
+	logMsg(VERBOSE, "Creating swapchain...");
 
-	swapchain_t swapchain;
+	Swapchain swapchain;
 
 	VkSurfaceFormatKHR surface_format = choose_surface_format(physical_device.swapchain_support_details);
 	swapchain.image_format = surface_format.format;
@@ -106,13 +106,13 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 
 	VkResult swapchain_creation_result = vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain.handle);
 	if (swapchain_creation_result != VK_SUCCESS) {
-		logf_message(FATAL, "Swapchain creation failed. (Error code: %i)", swapchain_creation_result);
+		logMsgF(FATAL, "Swapchain creation failed. (Error code: %i)", swapchain_creation_result);
 		exit(1);
 	}
 
 	// Retrieve images
 	
-	log_message(VERBOSE, "Retrieving images for swapchain...");
+	logMsg(VERBOSE, "Retrieving images for swapchain...");
 
 	vkGetSwapchainImagesKHR(device, swapchain.handle, &num_images, nullptr);
 	swapchain.num_images = num_images;
@@ -121,7 +121,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 
 	// Create image views
 
-	log_message(VERBOSE, "Creating image views for swapchain...");
+	logMsg(VERBOSE, "Creating image views for swapchain...");
 
 	swapchain.image_views = malloc(swapchain.num_images * sizeof(VkImageView));
 	for (size_t i = 0; i < swapchain.num_images; ++i) {
@@ -145,7 +145,7 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 
 		VkResult image_view_creation_result = vkCreateImageView(device, &image_view_create_info, nullptr, (swapchain.image_views + i));
 		if (image_view_creation_result != VK_SUCCESS) {
-			logf_message(FATAL, "Image view creation for swapchain failed. (Error code: %i)", image_view_creation_result);
+			logMsgF(FATAL, "Image view creation for swapchain failed. (Error code: %i)", image_view_creation_result);
 			exit(1);
 		}
 	}
@@ -153,9 +153,9 @@ swapchain_t create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_
 	return swapchain;
 }
 
-void create_framebuffers(VkDevice device, VkRenderPass render_pass, swapchain_t *swapchain_ptr) {
+void create_framebuffers(VkDevice device, VkRenderPass render_pass, Swapchain *swapchain_ptr) {
 
-	log_message(VERBOSE, "Creating framebuffers for swapchain...");
+	logMsg(VERBOSE, "Creating framebuffers for swapchain...");
 
 	swapchain_ptr->framebuffers = malloc(swapchain_ptr->num_images * sizeof(VkFramebuffer));
 	for (uint32_t i = 0; i < swapchain_ptr->num_images; ++i) {
@@ -173,12 +173,12 @@ void create_framebuffers(VkDevice device, VkRenderPass render_pass, swapchain_t 
 
 		VkResult result = vkCreateFramebuffer(device, &create_info, nullptr, (swapchain_ptr->framebuffers + i));
 		if (result != VK_SUCCESS) {
-			logf_message(FATAL, "Framebuffer creation for swapchain failed. (Error code: %i)", result);
+			logMsgF(FATAL, "Framebuffer creation for swapchain failed. (Error code: %i)", result);
 		}
 	}
 }
 
-void destroy_swapchain(VkDevice device, swapchain_t swapchain) {
+void destroy_swapchain(VkDevice device, Swapchain swapchain) {
 
 	for (size_t i = 0; i < swapchain.num_images; ++i) {
 		vkDestroyImageView(device, swapchain.image_views[i], nullptr);

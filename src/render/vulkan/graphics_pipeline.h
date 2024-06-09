@@ -19,7 +19,7 @@ typedef struct graphics_pipeline_t {
 
 } graphics_pipeline_t;
 
-graphics_pipeline_t create_graphics_pipeline(VkDevice device, swapchain_t swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
+graphics_pipeline_t create_graphics_pipeline(VkDevice device, Swapchain swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
 
 void destroy_graphics_pipeline(VkDevice device, graphics_pipeline_t pipeline);
 

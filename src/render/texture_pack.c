@@ -27,20 +27,20 @@ void deleteTexturePack(TexturePack *const pTexturePack) {
 
 TexturePack readTexturePackFile(const char *pPath) {
 	log_stack_push("LoadTexturePack");
-	logf_message(VERBOSE, "Loading texture pack from \"%s\"...", pPath);
+	logMsgF(VERBOSE, "Loading texture pack from \"%s\"...", pPath);
 
 	TexturePack texturePack = { 0 };
 	texturePack.numTextures = 0;
 	texturePack.pTextureCreateInfos = nullptr;
 
 	if (pPath == nullptr) {
-		log_message(ERROR, "Filename is nullptr.");
+		logMsg(ERROR, "Filename is nullptr.");
 		return texturePack;
 	}
 
 	FILE *pFile = fopen(pPath, "rb");
 	if (pFile == nullptr) {
-		logf_message(ERROR, "File not found at \"%s\".", pPath);
+		logMsgF(ERROR, "File not found at \"%s\".", pPath);
 		return texturePack;
 	}
 
@@ -48,19 +48,19 @@ TexturePack readTexturePackFile(const char *pPath) {
 	char label[4];
 	fread(label, 1, 4, pFile);
 	if (strcmp(label, fgt_label) != 0) {
-		logf_message(ERROR, "Invalid file format; found label \"%s\".", label);
+		logMsgF(ERROR, "Invalid file format; found label \"%s\".", label);
 		goto end_read;
 	}
 
 	read_data(pFile, sizeof(uint32_t), 1, &texturePack.numTextures);
 
 	if (texturePack.numTextures == 0) {
-		log_message(ERROR, "Number of textures specified as zero.");
+		logMsg(ERROR, "Number of textures specified as zero.");
 		goto end_read;
 	}
 
 	if (!allocate((void **)&texturePack.pTextureCreateInfos, texturePack.numTextures, sizeof(TextureCreateInfo))) {
-		log_message(ERROR, "Texture create info array allocation failed.");
+		logMsg(ERROR, "Texture create info array allocation failed.");
 		goto end_read;
 	}
 
@@ -70,7 +70,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 		// Read texture ID.
 		pTextureInfo->textureID = readString(pFile, 256);
 		if (stringIsNull(pTextureInfo->textureID)) {
-			log_message(ERROR, "Error reading texture pack: failed to read texture ID.");
+			logMsg(ERROR, "Error reading texture pack: failed to read texture ID.");
 			goto end_read;
 		}
 
@@ -95,16 +95,16 @@ TexturePack readTexturePackFile(const char *pPath) {
 
 		// Check extents -- if any of them are zero, then there certainly was an error.
 		if (pTextureInfo->numCells.width == 0) {
-			log_message(WARNING, "Texture create info number of cells widthwise is zero.");
+			logMsg(WARNING, "Texture create info number of cells widthwise is zero.");
 		}
 		if (pTextureInfo->numCells.length == 0) {
-			log_message(WARNING, "Texture create info number of cells lengthwise is zero.");
+			logMsg(WARNING, "Texture create info number of cells lengthwise is zero.");
 		}
 		if (pTextureInfo->cellExtent.width == 0) {
-			log_message(WARNING, "Texture create info cell extent width is zero.");
+			logMsg(WARNING, "Texture create info cell extent width is zero.");
 		}
 		if (pTextureInfo->cellExtent.length == 0) {
-			log_message(WARNING, "Texture create info cell extent length is zero.");
+			logMsg(WARNING, "Texture create info cell extent length is zero.");
 		}
 
 		// Read animation create infos.
@@ -112,7 +112,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 		if (pTextureInfo->numAnimations > 0) {
 
 			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->numAnimations, sizeof(TextureAnimation))) {
-				logf_message(ERROR, "Failed to allocate array of animation create infos in texture %u.", i);
+				logMsgF(ERROR, "Failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}
 
@@ -129,7 +129,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 			// This eliminates the need for branching when querying animation cycles in a texture.
 			pTextureInfo->numAnimations = 1;
 			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->numAnimations, sizeof(TextureAnimation))) {
-				logf_message(ERROR, "Error reading texture file: failed to allocate array of animation create infos in texture %u.", i);
+				logMsgF(ERROR, "Error reading texture file: failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}
 

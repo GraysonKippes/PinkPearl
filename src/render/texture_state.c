@@ -25,7 +25,7 @@ TextureState newTextureState(const String textureID) {
 	TextureState textureState = nullTextureState();
 	
 	if (stringIsNull(textureID)) {
-		log_message(ERROR, "Error finding loaded texture: given texture ID is nullptr.");
+		logMsg(ERROR, "Error finding loaded texture: given texture ID is nullptr.");
 		return textureState;
 	}
 	
@@ -49,7 +49,7 @@ bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned 
 	if (pTextureState == nullptr) {
 		return false;
 	} else if (nextAnimation >= pTextureState->numAnimations) {
-		logf_message(WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", pTextureState->currentAnimation, pTextureState->numAnimations);
+		logMsgF(WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", pTextureState->currentAnimation, pTextureState->numAnimations);
 		return false;
 	}
 

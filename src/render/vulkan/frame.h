@@ -39,7 +39,7 @@ typedef struct frame_t {
 
 } frame_t;
 
-typedef struct frame_array_t {
+typedef struct FrameArray {
 
 	uint32_t current_frame;
 	uint32_t num_frames;
@@ -48,7 +48,7 @@ typedef struct frame_array_t {
 	VkDeviceMemory buffer_memory;
 	VkDevice device;
 
-} frame_array_t;
+} FrameArray;
 
 typedef struct frame_array_create_info_t {
 	uint32_t num_frames;
@@ -59,8 +59,8 @@ typedef struct frame_array_create_info_t {
 	VkDescriptorSetLayout descriptor_set_layout;
 } frame_array_create_info_t;
 
-frame_array_t create_frame_array(const frame_array_create_info_t frame_array_create_info);
+FrameArray create_frame_array(const frame_array_create_info_t frame_array_create_info);
 
-bool destroy_frame_array(frame_array_t *const frame_array_ptr);
+bool destroy_frame_array(FrameArray *const frame_array_ptr);
 
 #endif	// FRAME_H

@@ -22,7 +22,7 @@ static const char *shader_directory = SHADER_DIRECTORY;
 static const uint32_t initial_buffer_size = 8192;
 
 static ShaderBytecode read_shader_file(const char *const path) {
-	logf_message(VERBOSE, "Reading shader file at \"%s\"...", path);
+	logMsgF(VERBOSE, "Reading shader file at \"%s\"...", path);
 	
 	ShaderBytecode shader_bytecode = {
 		.bytecode_size = 0,
@@ -30,13 +30,13 @@ static ShaderBytecode read_shader_file(const char *const path) {
 	};
 	
 	if (path == nullptr) {
-		log_message(ERROR, "Error reading shader file: pointer to path string is null.");
+		logMsg(ERROR, "Error reading shader file: pointer to path string is null.");
 		return shader_bytecode;
 	}
 
 	FILE *file = fopen(path, "rb");
 	if (file == nullptr) {
-		log_message(ERROR, "Error reading shader file: could not open file.");
+		logMsg(ERROR, "Error reading shader file: could not open file.");
 		return shader_bytecode;
 	}
 	
@@ -45,7 +45,7 @@ static ShaderBytecode read_shader_file(const char *const path) {
 	}
 	
 	if (!allocate((void **)&shader_bytecode.bytecode, initial_buffer_size, sizeof(byte_t))) {
-		log_message(ERROR, "Error reading shader file: failed to allocate buffer for shader bytecode.");
+		logMsg(ERROR, "Error reading shader file: failed to allocate buffer for shader bytecode.");
 		return shader_bytecode;
 	}
 
@@ -73,7 +73,7 @@ static bool destroy_shader_bytecode(ShaderBytecode *const pShaderBytecode) {
 }
 
 shader_module_t create_shader_module(VkDevice device, const char *const filename) {
-	logf_message(VERBOSE, "Loading shader \"%s\"...", filename);
+	logMsgF(VERBOSE, "Loading shader \"%s\"...", filename);
 
 	shader_module_t shader_module = {
 		.module_handle = VK_NULL_HANDLE,
@@ -81,7 +81,7 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 	};
 
 	if (filename == nullptr) {
-		log_message(ERROR, "Error creating shader module: pointer to filename is nullptr.");
+		logMsg(ERROR, "Error creating shader module: pointer to filename is nullptr.");
 		return shader_module;
 	}
 
@@ -97,11 +97,11 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 		char error_message[256];
 		const errno_t strerror_result = strerror_s(error_message, 256, shader_directory_strncpy_result);
 		if (strerror_result == 0) {
-			logf_message(ERROR, "Error creating shader module: failed to copy shader directory into shader path buffer. (Error code: \"%s\")", error_message);
+			logMsgF(ERROR, "Error creating shader module: failed to copy shader directory into shader path buffer. (Error code: \"%s\")", error_message);
 		}
 		else {
-			log_message(WARNING, "Failed to get error message.");
-			log_message(ERROR, "Error creating shader module: failed to copy shader directory into shader path buffer.");
+			logMsg(WARNING, "Failed to get error message.");
+			logMsg(ERROR, "Error creating shader module: failed to copy shader directory into shader path buffer.");
 		}
 		return shader_module;
 	}
@@ -111,18 +111,18 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 		char error_message[256];
 		const errno_t strerror_result = strerror_s(error_message, 256, filename_strncat_result);
 		if (strerror_result == 0) {
-			logf_message(ERROR, "Error creating shader module: failed to copy shader filename into shader path buffer. (Error code: \"%s\")", error_message);
+			logMsgF(ERROR, "Error creating shader module: failed to copy shader filename into shader path buffer. (Error code: \"%s\")", error_message);
 		}
 		else {
-			log_message(WARNING, "Failed to get error message.");
-			log_message(ERROR, "Error creating shader module: failed to copy shader filename into shader path buffer.");
+			logMsg(WARNING, "Failed to get error message.");
+			logMsg(ERROR, "Error creating shader module: failed to copy shader filename into shader path buffer.");
 		}
 		return shader_module;
 	}
 
 	ShaderBytecode shader_bytecode = read_shader_file(path);
 	if (shader_bytecode.bytecode == nullptr) {
-		log_message(FATAL, "Fatal error creating shader module: shader file reading failed.");
+		logMsg(FATAL, "Fatal error creating shader module: shader file reading failed.");
 		return shader_module;
 	}
 
@@ -136,7 +136,7 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 
 	const VkResult result = vkCreateShaderModule(device, &create_info, nullptr, &shader_module.module_handle);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Fatal error creating shader module: shader module creation failed (error code: %i).", result);
+		logMsgF(FATAL, "Fatal error creating shader module: shader module creation failed (error code: %i).", result);
 		return shader_module;
 	}
 	shader_module.device = device;

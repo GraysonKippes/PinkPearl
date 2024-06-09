@@ -43,44 +43,44 @@ static int portaudio_stream_callback(const void *input_buffer, void *output_buff
 
 void init_portaudio(void) {
 	
-	log_message(VERBOSE, "Initializing PortAudio...");
+	logMsg(VERBOSE, "Initializing PortAudio...");
 	
 	const int init_result = Pa_Initialize();
 	if (init_result != paNoError) {
-		logf_message(ERROR, "Error initializing PortAudio: initialization failed (result code: \"%s\").", Pa_GetErrorText(init_result));
+		logMsgF(ERROR, "Error initializing PortAudio: initialization failed (result code: \"%s\").", Pa_GetErrorText(init_result));
 		return;
 	}
 	
 	const int stream_open_result = Pa_OpenDefaultStream(&audio_stream, num_input_channels, num_output_channels, paFloat32, audio_sample_rate, num_audio_frames_per_buffer, portaudio_stream_callback, nullptr);
 	if (stream_open_result != paNoError) {
-		logf_message(ERROR, "Error initializing PortAudio: failed to open audio stream (result code: \"%s\").", Pa_GetErrorText(stream_open_result));
+		logMsgF(ERROR, "Error initializing PortAudio: failed to open audio stream (result code: \"%s\").", Pa_GetErrorText(stream_open_result));
 		return;
 	}
 
 	const int stream_start_result = Pa_StartStream(audio_stream);
 	if (stream_start_result != paNoError) {
-		logf_message(ERROR, "Error initializing PortAudio: failed to start audio stream (result code: \"%s\").", Pa_GetErrorText(stream_start_result));
+		logMsgF(ERROR, "Error initializing PortAudio: failed to start audio stream (result code: \"%s\").", Pa_GetErrorText(stream_start_result));
 		return;
 	}
 
-	log_message(VERBOSE, "Done initializing PortAudio.");
+	logMsg(VERBOSE, "Done initializing PortAudio.");
 }
 
 void terminate_portaudio(void) {
 	
-	log_message(VERBOSE, "Terminating PortAudio...");
+	logMsg(VERBOSE, "Terminating PortAudio...");
 	
 	const int stream_close_result = Pa_CloseStream(audio_stream);
 	if (stream_close_result != paNoError) {
-		logf_message(ERROR, "Error terminating PortAudio: failed to close audio stream (result code: \"%s\").", Pa_GetErrorText(stream_close_result));
+		logMsgF(ERROR, "Error terminating PortAudio: failed to close audio stream (result code: \"%s\").", Pa_GetErrorText(stream_close_result));
 		return;
 	}
 
 	const int terminate_result = Pa_Terminate();
 	if (terminate_result != paNoError) {
-		logf_message(ERROR, "Error terminating PortAudio: termination failed (result code: \"%s\").", Pa_GetErrorText(terminate_result));
+		logMsgF(ERROR, "Error terminating PortAudio: termination failed (result code: \"%s\").", Pa_GetErrorText(terminate_result));
 		return;
 	}
 	
-	log_message(VERBOSE, "Done terminating PortAudio.");
+	logMsg(VERBOSE, "Done terminating PortAudio.");
 }

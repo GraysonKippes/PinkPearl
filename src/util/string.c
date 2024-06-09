@@ -39,7 +39,7 @@ String newString(const size_t capacity, const char *const pInitData) {
 	
 	const errno_t copyResult = strncpy_s(string.buffer, string.capacity, pInitData, initLen);
 	if (copyResult != 0) {
-		logf_message(ERROR, "Error creating new string: string copy failed (\"%s\").", strerror(copyResult));
+		logMsgF(ERROR, "Error creating new string: string copy failed (\"%s\").", strerror(copyResult));
 	}
 	
 	string.length = initLen > maxLen ? maxLen : initLen;

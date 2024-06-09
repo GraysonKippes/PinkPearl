@@ -52,7 +52,7 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 
 	VkResult result = vkAllocateDescriptorSets(device, &allocate_info, &frame.descriptor_set);
 	if (result != VK_SUCCESS) {
-		logf_message(ERROR, "Descriptor set allocation failed (error code: %i).", result);
+		logMsgF(ERROR, "Descriptor set allocation failed (error code: %i).", result);
 	}
 
 	uint32_t queue_family_indices[2] = {
@@ -98,11 +98,11 @@ static void destroy_frame(VkDevice device, frame_t frame) {
 	vkDestroyBuffer(device, frame.index_buffer, nullptr);
 }
 
-frame_array_t create_frame_array(const frame_array_create_info_t frame_array_create_info) {
+FrameArray create_frame_array(const frame_array_create_info_t frame_array_create_info) {
 
 	static const uint32_t max_num_frames = 3;
 
-	frame_array_t frame_array = { 
+	FrameArray frame_array = { 
 		.current_frame = 0,
 		.num_frames = 0,
 		.frames = nullptr,
@@ -121,8 +121,8 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 	}
 
 	if (!allocate((void **)&frame_array.frames, frame_array.num_frames, sizeof(frame_t))) {
-		log_message(ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
-		return (frame_array_t){ 0 };
+		logMsg(ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
+		return (FrameArray){ 0 };
 	}
 	
 	memory_range_t vertex_buffer_memory_ranges[3];
@@ -212,7 +212,7 @@ frame_array_t create_frame_array(const frame_array_create_info_t frame_array_cre
 	return frame_array;
 }
 
-bool destroy_frame_array(frame_array_t *const frame_array_ptr) {
+bool destroy_frame_array(FrameArray *const frame_array_ptr) {
 	if (frame_array_ptr == nullptr) {
 		return false;
 	}

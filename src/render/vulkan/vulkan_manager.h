@@ -10,6 +10,7 @@
 #include "memory.h"
 #include "physical_device.h"
 #include "swapchain.h"
+#include "texture.h"
 
 #include "render/render_config.h"
 
@@ -25,7 +26,7 @@ extern VkSurfaceKHR surface;
 extern physical_device_t physical_device;
 extern memory_type_set_t memory_type_set;
 extern VkDevice device;
-extern swapchain_t swapchain;
+extern Swapchain swapchain;
 extern graphics_pipeline_t graphics_pipeline;
 extern VkSampler imageSamplerDefault;
 
@@ -55,7 +56,7 @@ extern buffer_partition_t global_storage_buffer_partition;
 
 extern buffer_partition_t global_draw_data_buffer_partition;
 
-extern frame_array_t frame_array;
+extern FrameArray frame_array;
 
 // Creates all Vulkan objects needed for the rendering system.
 void create_vulkan_objects(void);

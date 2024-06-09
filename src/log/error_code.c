@@ -42,7 +42,7 @@ void error_queue_push(const log_level_t log_level, const error_code_t error_code
 
 void error_queue_flush(void) {
 	while (error_queue.head_node_ptr != nullptr) {
-		log_message(error_queue.head_node_ptr->log_level, error_code_str(error_queue.head_node_ptr->error_code));
+		logMsg(error_queue.head_node_ptr->log_level, error_code_str(error_queue.head_node_ptr->error_code));
 		error_queue_node_t *previous_node_ptr = error_queue.head_node_ptr;
 		error_queue.head_node_ptr = error_queue.head_node_ptr->next_node_ptr;
 		deallocate((void **)&previous_node_ptr);

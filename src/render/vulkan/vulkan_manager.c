@@ -15,19 +15,12 @@
 #include "util/bit.h"
 #include "util/byte.h"
 
-#include "buffer.h"
 #include "command_buffer.h"
-#include "compute_pipeline.h"
 #include "descriptor.h"
-#include "frame.h"
-#include "graphics_pipeline.h"
 #include "image.h"
 #include "logical_device.h"
-#include "memory.h"
-#include "physical_device.h"
 #include "queue.h"
 #include "shader.h"
-#include "swapchain.h"
 #include "vertex_input.h"
 #include "vulkan_instance.h"
 
@@ -43,7 +36,7 @@ VkSurfaceKHR surface = VK_NULL_HANDLE;
 physical_device_t physical_device = { };
 memory_type_set_t memory_type_set = { };
 VkDevice device = VK_NULL_HANDLE;
-swapchain_t swapchain = { };
+Swapchain swapchain = { };
 graphics_pipeline_t graphics_pipeline = { };
 VkSampler imageSamplerDefault = VK_NULL_HANDLE;
 
@@ -63,7 +56,7 @@ VkCommandPool compute_command_pool;
 /* -- Render Objects -- */
 
 static VkClearValue clear_color;
-frame_array_t frame_array = { 0 };
+FrameArray frame_array = { };
 
 /* -- Global buffers -- */
 
@@ -72,20 +65,25 @@ buffer_partition_t global_uniform_buffer_partition;
 buffer_partition_t global_storage_buffer_partition;
 buffer_partition_t global_draw_data_buffer_partition;
 
+/* -- Depth Image Attachment -- */
+
+Image depthImage = { };
+VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
+
 /* -- Function Definitions -- */
 
 static void create_window_surface(void) {
-	log_message(VERBOSE, "Creating window surface...");
+	logMsg(VERBOSE, "Creating window surface...");
 	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), nullptr, &surface);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Window surface creation failed. (Error code: %i)", result);
+		logMsgF(FATAL, "Window surface creation failed. (Error code: %i)", result);
 		// TODO - do not use exit() here.
 		exit(1);
 	}
 }
 
 static void create_global_staging_buffer(void) {
-	log_message(VERBOSE, "Creating global staging buffer...");
+	logMsg(VERBOSE, "Creating global staging buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -106,7 +104,7 @@ static void create_global_staging_buffer(void) {
 }
 
 static void create_global_uniform_buffer(void) {
-	log_message(VERBOSE, "Creating global uniform buffer...");
+	logMsg(VERBOSE, "Creating global uniform buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -128,7 +126,7 @@ static void create_global_uniform_buffer(void) {
 }
 
 static void create_global_storage_buffer(void) {
-	log_message(VERBOSE, "Creating global storage buffer...");
+	logMsg(VERBOSE, "Creating global storage buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -149,7 +147,7 @@ static void create_global_storage_buffer(void) {
 }
 
 static void create_global_draw_data_buffer(void) {
-	log_message(VERBOSE, "Creating global draw data buffer...");
+	logMsg(VERBOSE, "Creating global draw data buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -168,9 +166,40 @@ static void create_global_draw_data_buffer(void) {
 	global_draw_data_buffer_partition = create_buffer_partition(buffer_partition_create_info);
 }
 
+static void createDepthImage(void) {
+	
+	const VkImageCreateInfo imageCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = VK_FORMAT_D32_SFLOAT,
+		.extent.width = swapchain.extent.width,
+		.extent.height = swapchain.extent.height,
+		.extent.depth = 1,
+		.mipLevels = 1,
+		.arrayLayers = 1,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.tiling = VK_IMAGE_TILING_OPTIMAL,
+		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 0,
+		.pQueueFamilyIndices = nullptr,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	};
+
+	const VkResult imageCreateResult = vkCreateImage(device, &imageCreateInfo, nullptr, &depthImage.vkImage);
+	if (imageCreateResult != VK_SUCCESS) {
+		logMsgF(ERROR, "Error creating depth image: image creation failed (error code: %i).", imageCreateResult);
+		return;
+	}
+	
+	
+}
+
 void create_vulkan_objects(void) {
 	log_stack_push("Vulkan");
-	log_message(INFO, "Initializing Vulkan...");
+	logMsg(INFO, "Initializing Vulkan...");
 
 	vulkan_instance = create_vulkan_instance();
 
@@ -227,7 +256,7 @@ void create_vulkan_objects(void) {
 
 void destroy_vulkan_objects(void) {
 	log_stack_push("Vulkan");
-	log_message(VERBOSE, "Destroying Vulkan objects...");
+	logMsg(VERBOSE, "Destroying Vulkan objects...");
 
 	destroy_frame_array(&frame_array);
 
@@ -250,6 +279,6 @@ void destroy_vulkan_objects(void) {
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	
-	log_message(VERBOSE, "Done destroying Vulkan objects.");
+	logMsg(VERBOSE, "Done destroying Vulkan objects.");
 	log_stack_pop();
 }

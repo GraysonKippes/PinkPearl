@@ -50,12 +50,12 @@ bool init_compute_matrices(const VkDevice vk_device) {
 
 	const VkResult descriptor_set_allocate_result = vkAllocateDescriptorSets(vk_device, &descriptor_set_allocate_info, &compute_matrices_descriptor_set);
 	if (descriptor_set_allocate_result < 0) {
-		logf_message(ERROR, "Error initializing compute matrices pipeline: descriptor set allocation failed (result code: %i).", descriptor_set_allocate_result);
+		logMsgF(ERROR, "Error initializing compute matrices pipeline: descriptor set allocation failed (result code: %i).", descriptor_set_allocate_result);
 		destroy_compute_pipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (descriptor_set_allocate_result > 0) {
-		logf_message(WARNING, "Warning initializing compute matrices pipeline: descriptor set allocation returned with warning (result code: %i).", descriptor_set_allocate_result);
+		logMsgF(WARNING, "Warning initializing compute matrices pipeline: descriptor set allocation returned with warning (result code: %i).", descriptor_set_allocate_result);
 	}
 
 	const VkSemaphoreCreateInfo semaphore_create_info = {
@@ -66,12 +66,12 @@ bool init_compute_matrices(const VkDevice vk_device) {
 
 	const VkResult semaphore_create_result = vkCreateSemaphore(vk_device, &semaphore_create_info, nullptr, &compute_matrices_semaphore);
 	if (semaphore_create_result < 0) {
-		logf_message(ERROR, "Error initializing compute matrices pipeline: semaphore creation failed (result code: %i).", semaphore_create_result);
+		logMsgF(ERROR, "Error initializing compute matrices pipeline: semaphore creation failed (result code: %i).", semaphore_create_result);
 		destroy_compute_pipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (semaphore_create_result > 0) {
-		logf_message(WARNING, "Warning initializing compute matrices pipeline: semaphore creation returned with warning (result code: %i).", semaphore_create_result);
+		logMsgF(WARNING, "Warning initializing compute matrices pipeline: semaphore creation returned with warning (result code: %i).", semaphore_create_result);
 	}
 
 	const VkFenceCreateInfo fence_create_info = {
@@ -82,13 +82,13 @@ bool init_compute_matrices(const VkDevice vk_device) {
 	
 	const VkResult fence_create_result = vkCreateFence(vk_device, &fence_create_info, nullptr, &compute_matrices_fence);
 	if (fence_create_result < 0) {
-		logf_message(ERROR, "Error initializing compute matrices pipeline: fence creation failed (result code: %i).", fence_create_result);
+		logMsgF(ERROR, "Error initializing compute matrices pipeline: fence creation failed (result code: %i).", fence_create_result);
 		vkDestroySemaphore(vk_device, compute_matrices_semaphore, nullptr);
 		destroy_compute_pipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (fence_create_result > 0) {
-		logf_message(WARNING, "Warning initializing compute matrices pipeline: fence creation returned with warning (result code: %i).", fence_create_result);
+		logMsgF(WARNING, "Warning initializing compute matrices pipeline: fence creation returned with warning (result code: %i).", fence_create_result);
 	}
 
 	return true;
@@ -110,7 +110,7 @@ void computeMatrices(const float deltaTime, const projection_bounds_t projection
 
 	byte_t *mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 0);
 	if (mapped_memory == nullptr) {
-		log_message(ERROR, "Error computing matrices: uniform buffer memory mapping failed.");
+		logMsg(ERROR, "Error computing matrices: uniform buffer memory mapping failed.");
 		return;
 	}
 	memcpy(mapped_memory, &projectionBounds, sizeof projectionBounds);

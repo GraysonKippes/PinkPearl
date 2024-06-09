@@ -18,15 +18,15 @@ void glfw_error_callback(int code, const char *description);
 void init_GLFW(void) {
 
 	log_stack_push("GLFW");
-	log_message(INFO, "Initializing GLFW...");
+	logMsg(INFO, "Initializing GLFW...");
 
 	if (glfwInit() != GLFW_TRUE) {
-		log_message(FATAL, "GLFW initialization failed.");
+		logMsg(FATAL, "GLFW initialization failed.");
 	}
 
 	glfwSetErrorCallback(glfw_error_callback);
 
-	log_message(VERBOSE, "Creating GLFW window...");
+	logMsg(VERBOSE, "Creating GLFW window...");
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -47,7 +47,7 @@ void init_GLFW(void) {
 	}
 
 	if (window == nullptr) {
-		log_message(FATAL, "GLFW window creation failed.");
+		logMsg(FATAL, "GLFW window creation failed.");
 	}
 	
 	init_input_manager(window);
@@ -72,5 +72,5 @@ bool should_application_window_close(void) {
 }
 
 void glfw_error_callback(int code, const char *description) {
-	logf_message(ERROR, "GLFW error (%i): %s", code, description);
+	logMsgF(ERROR, "GLFW error (%i): %s", code, description);
 }

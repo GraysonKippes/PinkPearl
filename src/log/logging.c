@@ -25,7 +25,7 @@ static const char *log_deformat(void);
 
 // TODO - use safe "_s" io functions
 
-void log_message(log_level_t level, const char *message) {
+void logMsg(log_level_t level, const char *message) {
 
 	if (level < severity_threshold) {
 		return;
@@ -38,7 +38,7 @@ void log_message(log_level_t level, const char *message) {
 	pthread_mutex_unlock(&log_stack_mutex);
 }
 
-void logf_message(log_level_t level, const char *format, ...) {
+void logMsgF(log_level_t level, const char *format, ...) {
 
 	if (level < severity_threshold) {
 		return;

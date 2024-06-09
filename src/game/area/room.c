@@ -15,7 +15,7 @@ Extent room_size_to_extent(const RoomSize room_size) {
 		case THREE_TO_THREE: return (Extent){ 24, 15 };
 		case FOUR_TO_THREE: return (Extent){ 32, 20 };
 	};
-	logf_message(ERROR, "Error converting room size to extent: invalid room size (%i).", (int)room_size);
+	logMsgF(ERROR, "Error converting room size to extent: invalid room size (%i).", (int)room_size);
 	return (Extent){ 24, 15 };
 }
 

@@ -9,7 +9,7 @@ const VkCommandPoolCreateFlags transfer_command_pool_flags = VK_COMMAND_POOL_CRE
 
 void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr) {
 	
-	logf_message(VERBOSE, "Creating command pool in queue family %i...", queue_family_index);
+	logMsgF(VERBOSE, "Creating command pool in queue family %i...", queue_family_index);
 
 	VkCommandPoolCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -20,7 +20,7 @@ void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32
 	// TODO - error handling
 	VkResult result = vkCreateCommandPool(device, &create_info, nullptr, command_pool_ptr);
 	if (result != VK_SUCCESS) {
-		logf_message(FATAL, "Command pool creation failed. (Error code: %i)", result);
+		logMsgF(FATAL, "Command pool creation failed. (Error code: %i)", result);
 	}
 }
 
