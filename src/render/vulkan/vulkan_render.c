@@ -208,10 +208,10 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 	
 	const float vertices[NUM_VERTICES_PER_QUAD * VERTEX_INPUT_ELEMENT_STRIDE] = {
 		// Positions									Texture			Color
-		quadDimensions.x1, quadDimensions.y2, 0.0F,		0.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// Top-left
-		quadDimensions.x2, quadDimensions.y2, 0.0F,		1.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// Top-right
-		quadDimensions.x2, quadDimensions.y1, 0.0F,		1.0F, 1.0F,		1.0F, 1.0F, 1.0F,	// Bottom-right
-		quadDimensions.x1, quadDimensions.y1, 0.0F,		0.0F, 1.0F,		1.0F, 1.0F, 1.0F	// Bottom-left
+		quadDimensions.x1, quadDimensions.y1, 0.0F,		0.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// Top-left
+		quadDimensions.x2, quadDimensions.y1, 0.0F,		1.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// Top-right
+		quadDimensions.x2, quadDimensions.y2, 0.0F,		1.0F, 1.0F,		1.0F, 1.0F, 1.0F,	// Bottom-right
+		quadDimensions.x1, quadDimensions.y2, 0.0F,		0.0F, 1.0F,		1.0F, 1.0F, 1.0F	// Bottom-left
 	};
 	
 	const VkDeviceSize verticesSize = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
@@ -243,7 +243,7 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
 	
 	vkFreeCommandBuffers(device, cmdPoolTransfer, frame_array.num_frames, cmdBufs);
-	allocate_command_buffers(device, cmdPoolTransfer, frame_array.num_frames, cmdBufs);
+	allocCmdBufs(device, cmdPoolTransfer, frame_array.num_frames, cmdBufs);
 	
 	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
 	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
@@ -277,7 +277,7 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 			.pSignalSemaphoreInfos = &semaphoreSignalSubmitInfos[i]
 		};
 	}
-	vkQueueSubmit2(transfer_queue, frame_array.num_frames, submitInfos, VK_NULL_HANDLE);
+	vkQueueSubmit2(queueTransfer, frame_array.num_frames, submitInfos, VK_NULL_HANDLE);
 	
 	return true;
 }
@@ -500,8 +500,16 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	uploadLightingData();
 
 	cmdBufBegin(frame_array.frames[frame_array.current_frame].command_buffer, false);
-
-	static const VkClearValue clear_value = { { { 0 } } };
+	
+	const VkClearValue clearValues[2] = {
+		{
+			.color = { { 0.0F, 0.0F, 0.0F, 1.0F } }
+		},
+		{
+			.depthStencil = { 1.0F, 0 }
+		}
+	};
+	
 	const VkRenderPassBeginInfo render_pass_info = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 		.pNext = nullptr,
@@ -510,8 +518,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 		.renderArea.offset.x = 0,
 		.renderArea.offset.y = 0,
 		.renderArea.extent = swapchain.extent,
-		.clearValueCount = 1,
-		.pClearValues = &clear_value
+		.clearValueCount = 2,
+		.pClearValues = clearValues
 	};
 	vkCmdBeginRenderPass(frame_array.frames[frame_array.current_frame].command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 	
@@ -584,7 +592,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const proje
 	};
 
 	timeline_to_binary_semaphore_signal(queueGraphics, frame_array.frames[frame_array.current_frame].semaphore_render_finished, frame_array.frames[frame_array.current_frame].semaphore_present_ready);
-	vkQueuePresentKHR(present_queue, &present_info);
+	vkQueuePresentKHR(queuePresent, &present_info);
 
 	frame_array.current_frame = (frame_array.current_frame + 1) % frame_array.num_frames;
 }

@@ -48,6 +48,12 @@ const ImageUsage imageUsageSampled = {
 	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 };
 
+const ImageUsage imageUsageDepthAttachment = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+	.memoryAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+	.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+};
+
 Texture makeNullTexture(void) {
 	return (Texture){
 		.numAnimations = 0,
@@ -121,7 +127,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 	VkImage vkImage = VK_NULL_HANDLE;
 	const VkResult imageCreateResult = vkCreateImage(texture.device, &imageCreateInfo, nullptr, &vkImage);
 	if (imageCreateResult != VK_SUCCESS) {
-		logMsgF(ERROR, "Error loading texture: image creation failed (error code: %i).", imageCreateResult);
+		logMsgF(ERROR, "Error creating texture: image creation failed (error code: %i).", imageCreateResult);
 	}
 	return vkImage;
 }
@@ -129,7 +135,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 static VkImageView createTextureImageView(const Texture texture, const VkImage vkImage) {
 
 	// Subresource range used in all image views and layout transitions.
-	static const VkImageSubresourceRange image_subresource_range = {
+	static const VkImageSubresourceRange imageSubresourceRange = {
 		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 		.baseMipLevel = 0,
 		.levelCount = 1,
@@ -138,7 +144,7 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 	};
 
 	// Create image view.
-	const VkImageViewCreateInfo image_view_create_info = {
+	const VkImageViewCreateInfo imageViewCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
@@ -149,13 +155,13 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 		.components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
 		.components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
 		.components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
-		.subresourceRange = image_subresource_range
+		.subresourceRange = imageSubresourceRange
 	};
 
 	VkImageView vkImageView = VK_NULL_HANDLE;
-	const VkResult result = vkCreateImageView(texture.device, &image_view_create_info, nullptr, &vkImageView);
+	const VkResult result = vkCreateImageView(texture.device, &imageViewCreateInfo, nullptr, &vkImageView);
 	if (result != VK_SUCCESS) {
-		logMsgF(ERROR, "Error loading texture: image view creation failed. (Error code: %i)", result);
+		logMsgF(ERROR, "Error creating texture: image view creation failed (error code: %i).", result);
 	}
 	return vkImageView;
 }
@@ -198,7 +204,7 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	/* Transition texture image layout to something usable. */
 
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocate_command_buffers(texture.device, cmdPoolGraphics, 1, &cmdBuf);
+	allocCmdBufs(texture.device, cmdPoolGraphics, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 		
 		ImageUsage imageUsage;

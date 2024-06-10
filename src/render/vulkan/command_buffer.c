@@ -24,7 +24,7 @@ void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32
 	}
 }
 
-void allocate_command_buffers(VkDevice device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers) {
+void allocCmdBufs(VkDevice device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers) {
 
 	VkCommandBufferAllocateInfo allocate_info = { 0 };
 	allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

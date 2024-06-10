@@ -21,7 +21,7 @@
 // TODO - remove/replace with struct of booleans/ints
 static game_state_bitfield_t game_state_bitfield = 0;
 
-area_t current_area = { 0 };
+area_t current_area = { };
 static int current_room_index = 0;
 
 static int playerEntityHandle;
@@ -32,7 +32,7 @@ void start_game(void) {
 	areaRenderStateReset(&globalAreaRenderState, current_area, current_area.rooms[current_room_index]);
 
 	String entityID = newString(64, "pearl");
-	playerEntityHandle = loadEntity(entityID, zeroVector3D, zeroVector3D);
+	playerEntityHandle = loadEntity(entityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
 	if (!validateEntityHandle(playerEntityHandle)) {
 		logMsgF(ERROR, "Failed to load entity \"%s\".", entityID.buffer);
 	}

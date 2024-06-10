@@ -24,6 +24,7 @@ target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall 
 	-Werror=bool-compare 
 	-Werror=discarded-qualifiers 
 	-Werror=address 
+	-Werror=array-parameter
 	-Wno-switch
 )
 

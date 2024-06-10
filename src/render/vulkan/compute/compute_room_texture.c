@@ -117,7 +117,7 @@ static void createTransferImage(const VkDevice vkDevice) {
 	
 	// Transition the image layout.
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocate_command_buffers(vkDevice, cmdPoolGraphics, 1, &cmdBuf);
+	allocCmdBufs(vkDevice, cmdPoolGraphics, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(transferImage, imageSubresourceRange, imageUsageComputeWrite);
 		const VkDependencyInfo dependencyInfo = {
@@ -215,18 +215,18 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 
 	// Run compute shader to stitch texture.
 	VkCommandBuffer cmdBufCompute = VK_NULL_HANDLE;
-	allocate_command_buffers(device, compute_command_pool, 1, &cmdBufCompute);
+	allocCmdBufs(device, cmdPoolCompute, 1, &cmdBufCompute);
 	cmdBufBegin(cmdBufCompute, true); {
 		vkCmdBindPipeline(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, compute_room_texture_pipeline.handle);
 		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, compute_room_texture_pipeline.layout, 0, 1, &descriptor_set, 0, nullptr);
 		vkCmdDispatch(cmdBufCompute, tileExtent.width, tileExtent.length, num_room_layers);
 	} vkEndCommandBuffer(cmdBufCompute);
-	submit_command_buffers_async(compute_queue, 1, &cmdBufCompute);
-	vkFreeCommandBuffers(device, compute_command_pool, 1, &cmdBufCompute);
+	submit_command_buffers_async(queueCompute, 1, &cmdBufCompute);
+	vkFreeCommandBuffers(device, cmdPoolCompute, 1, &cmdBufCompute);
 	
 	// Perform the transfer to the target texture image.
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocate_command_buffers(device, cmdPoolGraphics, 1, &cmdBuf);
+	allocCmdBufs(device, cmdPoolGraphics, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 		
 		const VkImageMemoryBarrier2 imageMemoryBarriers1[2] = {

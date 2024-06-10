@@ -38,7 +38,7 @@ const VkDeviceSize matrix_data_size = num_matrices * matrix_size;
 bool init_compute_matrices(const VkDevice vk_device) {
 
 	compute_matrices_pipeline = create_compute_pipeline(vk_device, compute_matrices_layout, COMPUTE_MATRICES_SHADER_NAME);
-	allocate_command_buffers(vk_device, compute_command_pool, 1, &compute_matrices_command_buffer);
+	allocCmdBufs(vk_device, cmdPoolCompute, 1, &compute_matrices_command_buffer);
 
 	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -146,8 +146,8 @@ void computeMatrices(const float deltaTime, const projection_bounds_t projection
 
 	vkUpdateDescriptorSets(device, 2, descriptor_writes, 0, nullptr);
 
-	vkFreeCommandBuffers(compute_matrices_pipeline.device, compute_command_pool, 1, &compute_matrices_command_buffer);
-	allocate_command_buffers(compute_matrices_pipeline.device, compute_command_pool, 1, &compute_matrices_command_buffer);
+	vkFreeCommandBuffers(compute_matrices_pipeline.device, cmdPoolCompute, 1, &compute_matrices_command_buffer);
+	allocCmdBufs(compute_matrices_pipeline.device, cmdPoolCompute, 1, &compute_matrices_command_buffer);
 
 	const VkCommandBufferBeginInfo begin_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -176,5 +176,5 @@ void computeMatrices(const float deltaTime, const projection_bounds_t projection
 		.pSignalSemaphores = &compute_matrices_semaphore
 	};
 
-	vkQueueSubmit(compute_queue, 1, &submit_info, compute_matrices_fence);
+	vkQueueSubmit(queueCompute, 1, &submit_info, compute_matrices_fence);
 }

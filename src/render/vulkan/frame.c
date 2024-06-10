@@ -41,7 +41,7 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 
 	vkCreateFence(device, &fence_create_info, nullptr, &frame.fence_frame_ready);
 
-	allocate_command_buffers(device, command_pool, 1, &frame.command_buffer);
+	allocCmdBufs(device, command_pool, 1, &frame.command_buffer);
 
 	VkDescriptorSetAllocateInfo allocate_info;
 	allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -163,7 +163,7 @@ FrameArray create_frame_array(const frame_array_create_info_t frame_array_create
 	}
 	
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocate_command_buffers(frame_array.device, frame_array_create_info.command_pool, 1, &cmdBuf);
+	allocCmdBufs(frame_array.device, frame_array_create_info.command_pool, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 	
 		const uint16_t indices[6] = {

@@ -8,7 +8,7 @@
 
 extern const descriptor_layout_t graphics_descriptor_set_layout;
 
-typedef struct graphics_pipeline_t {
+typedef struct GraphicsPipeline {
 
 	VkPipeline handle;
 	VkPipelineLayout layout;
@@ -17,10 +17,10 @@ typedef struct graphics_pipeline_t {
 	VkDescriptorPool descriptor_pool;
 	VkDescriptorSetLayout descriptor_set_layout;
 
-} graphics_pipeline_t;
+} GraphicsPipeline;
 
-graphics_pipeline_t create_graphics_pipeline(VkDevice device, Swapchain swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
+GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
 
-void destroy_graphics_pipeline(VkDevice device, graphics_pipeline_t pipeline);
+void destroy_graphics_pipeline(VkDevice device, GraphicsPipeline pipeline);
 
 #endif	// GRAPHICS_PIPELINE_H

@@ -91,7 +91,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	// Transfer image data to texture images.
 	VkCommandBuffer transferCommandBuffer = VK_NULL_HANDLE;
-	allocate_command_buffers(device, cmdPoolTransfer, 1, &transferCommandBuffer);
+	allocCmdBufs(device, cmdPoolTransfer, 1, &transferCommandBuffer);
 	cmdBufBegin(transferCommandBuffer, true); {
 		
 		const uint32_t numBufImgCopies = texture.numImageArrayLayers;
@@ -167,12 +167,12 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.signalSemaphoreCount = 1,
 			.pSignalSemaphores = &semaphore_transfer_finished
 		};
-		vkQueueSubmit(transfer_queue, 1, &submitInfo, nullptr);
+		vkQueueSubmit(queueTransfer, 1, &submitInfo, nullptr);
 	}
 
 	// Command buffer for second image layout transition (transfer destination to sampled).
 	VkCommandBuffer transitionCommandBuffer2 = VK_NULL_HANDLE;
-	allocate_command_buffers(device, cmdPoolGraphics, 1, &transitionCommandBuffer2);
+	allocCmdBufs(device, cmdPoolGraphics, 1, &transitionCommandBuffer2);
 	cmdBufBegin(transitionCommandBuffer2, true); {
 
 		ImageUsage imageUsage = imageUsageSampled;
@@ -215,7 +215,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	}
 
 	vkQueueWaitIdle(queueGraphics);
-	vkQueueWaitIdle(transfer_queue);
+	vkQueueWaitIdle(queueTransfer);
 
 	vkFreeCommandBuffers(device, cmdPoolGraphics, 1, &transitionCommandBuffer2);
 	vkFreeCommandBuffers(device, cmdPoolTransfer, 1, &transferCommandBuffer);

@@ -37,25 +37,25 @@ physical_device_t physical_device = { };
 memory_type_set_t memory_type_set = { };
 VkDevice device = VK_NULL_HANDLE;
 Swapchain swapchain = { };
-graphics_pipeline_t graphics_pipeline = { };
+GraphicsPipeline graphics_pipeline = { };
 VkSampler imageSamplerDefault = VK_NULL_HANDLE;
 
 /* -- Queues -- */
 
 VkQueue queueGraphics;
-VkQueue present_queue;
-VkQueue transfer_queue;
-VkQueue compute_queue;
+VkQueue queuePresent;
+VkQueue queueTransfer;
+VkQueue queueCompute;
 
 /* -- Command Pools -- */
 
 VkCommandPool cmdPoolGraphics;
 VkCommandPool cmdPoolTransfer;
-VkCommandPool compute_command_pool;
+VkCommandPool cmdPoolCompute;
 
 /* -- Render Objects -- */
 
-static VkClearValue clear_color;
+static VkClearValue clearColor;
 FrameArray frame_array = { };
 
 /* -- Global buffers -- */
@@ -67,6 +67,7 @@ buffer_partition_t global_draw_data_buffer_partition;
 
 /* -- Depth Image Attachment -- */
 
+// TODO - include with Swapchain.
 Image depthImage = { };
 VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
 
@@ -168,12 +169,21 @@ static void create_global_draw_data_buffer(void) {
 
 static void createDepthImage(void) {
 	
+	static const VkFormat depthImageFormat = VK_FORMAT_D32_SFLOAT;
+	
+	// Subresource range used in all image views and layout transitions.
+	static const ImageSubresourceRange imageSubresourceRange = {
+		.imageAspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+		.baseArrayLayer = 0,
+		.arrayLayerCount = VK_REMAINING_ARRAY_LAYERS
+	};
+	
 	const VkImageCreateInfo imageCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
 		.imageType = VK_IMAGE_TYPE_2D,
-		.format = VK_FORMAT_D32_SFLOAT,
+		.format = depthImageFormat,
 		.extent.width = swapchain.extent.width,
 		.extent.height = swapchain.extent.height,
 		.extent.depth = 1,
@@ -193,8 +203,64 @@ static void createDepthImage(void) {
 		logMsgF(ERROR, "Error creating depth image: image creation failed (error code: %i).", imageCreateResult);
 		return;
 	}
+	depthImage.vkFormat = depthImageFormat;
 	
+	const VkMemoryRequirements2 imageMemoryRequirements = getImageMemoryRequirements(device, depthImage.vkImage);
+	const VkMemoryAllocateInfo allocateInfo = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.pNext = nullptr,
+		.allocationSize = imageMemoryRequirements.memoryRequirements.size,
+		.memoryTypeIndex = memory_type_set.graphics_resources
+	};
 	
+	const VkResult memoryAllocationResult = vkAllocateMemory(device, &allocateInfo, nullptr, &depthImageMemory);
+	if (memoryAllocationResult != VK_SUCCESS) {
+		logMsgF(ERROR, "Error creating depth image: failed to allocate memory (error code: %i).", memoryAllocationResult);
+		return;
+	}
+	bindImageMemory(device, depthImage.vkImage, depthImageMemory, 0);
+
+	// Create image view.
+	const VkImageViewCreateInfo imageViewCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.image = depthImage.vkImage,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+		.format = depthImage.vkFormat,
+		.components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.subresourceRange = makeImageSubresourceRange(imageSubresourceRange)
+	};
+
+	const VkResult imageViewCreateResult = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &depthImage.vkImageView);
+	if (imageViewCreateResult != VK_SUCCESS) {
+		logMsgF(ERROR, "Error creating depth image: image view creation failed (error code: %i).", imageViewCreateResult);
+		return;
+	}
+	
+	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
+	allocCmdBufs(device, cmdPoolGraphics, 1, &cmdBuf);
+	cmdBufBegin(cmdBuf, true); {
+		depthImage.usage = imageUsageUndefined;
+		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(depthImage, imageSubresourceRange, imageUsageDepthAttachment);
+		const VkDependencyInfo dependencyInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.pNext = nullptr,
+			.dependencyFlags = 0,
+			.memoryBarrierCount = 0,
+			.pMemoryBarriers = nullptr,
+			.bufferMemoryBarrierCount = 0,
+			.pBufferMemoryBarriers = nullptr,
+			.imageMemoryBarrierCount = 1,
+			.pImageMemoryBarriers = &imageMemoryBarrier
+		};
+		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
+		depthImage.usage = imageUsageDepthAttachment;
+	} vkEndCommandBuffer(cmdBuf);
+	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 }
 
 void create_vulkan_objects(void) {
@@ -220,17 +286,18 @@ void create_vulkan_objects(void) {
 	create_global_draw_data_buffer();
 
 	vkGetDeviceQueue(device, *physical_device.queue_family_indices.graphics_family_ptr, 0, &queueGraphics);
-	vkGetDeviceQueue(device, *physical_device.queue_family_indices.present_family_ptr, 0, &present_queue);
-	vkGetDeviceQueue(device, *physical_device.queue_family_indices.transfer_family_ptr, 0, &transfer_queue);
-	vkGetDeviceQueue(device, *physical_device.queue_family_indices.compute_family_ptr, 0, &compute_queue);
+	vkGetDeviceQueue(device, *physical_device.queue_family_indices.present_family_ptr, 0, &queuePresent);
+	vkGetDeviceQueue(device, *physical_device.queue_family_indices.transfer_family_ptr, 0, &queueTransfer);
+	vkGetDeviceQueue(device, *physical_device.queue_family_indices.compute_family_ptr, 0, &queueCompute);
 
 	create_command_pool(device, default_command_pool_flags, *physical_device.queue_family_indices.graphics_family_ptr, &cmdPoolGraphics);
 	create_command_pool(device, transfer_command_pool_flags, *physical_device.queue_family_indices.transfer_family_ptr, &cmdPoolTransfer);
-	create_command_pool(device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, *physical_device.queue_family_indices.compute_family_ptr, &compute_command_pool);
+	create_command_pool(device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, *physical_device.queue_family_indices.compute_family_ptr, &cmdPoolCompute);
 
-	clear_color = (VkClearValue){ { { 0.0F, 0.0F, 0.0F, 1.0F } } };
+	clearColor = (VkClearValue){ { { 0.0F, 0.0F, 0.0F, 1.0F } } };
 
 	swapchain = create_swapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
+	createDepthImage();
 	shader_module_t vertex_shader_module = create_shader_module(device, VERTEX_SHADER_NAME);
 	shader_module_t fragment_shader_module = create_shader_module(device, FRAGMENT_SHADER_NAME);
 	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_set_layout, vertex_shader_module.module_handle, fragment_shader_module.module_handle);
@@ -267,7 +334,7 @@ void destroy_vulkan_objects(void) {
 
 	vkDestroyCommandPool(device, cmdPoolGraphics, nullptr);
 	vkDestroyCommandPool(device, cmdPoolTransfer, nullptr);
-	vkDestroyCommandPool(device, compute_command_pool, nullptr);
+	vkDestroyCommandPool(device, cmdPoolCompute, nullptr);
 
 	destroy_buffer_partition(&global_staging_buffer_partition);
 	destroy_buffer_partition(&global_uniform_buffer_partition);

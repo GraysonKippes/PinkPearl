@@ -11,7 +11,7 @@ extern const VkCommandPoolCreateFlags transfer_command_pool_flags;
 
 void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr);
 
-void allocate_command_buffers(VkDevice vkDevice, VkCommandPool commandPool, uint32_t numBuffers, VkCommandBuffer *pCommandBuffers);
+void allocCmdBufs(const VkDevice vkDevice, const VkCommandPool commandPool, const uint32_t numBuffers, VkCommandBuffer *pCommandBuffers);
 
 void cmdBufBegin(const VkCommandBuffer cmdBuf, const bool singleSubmit);
 
@@ -21,7 +21,6 @@ VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer 
 
 // Submits command buffers to the specified queue, without synchronization from either semaphores or fences.
 // Useful for single-use command buffers such as those used for transfer operations.
-[[deprecated("better synchronization can be used in most cases.")]]
 void submit_command_buffers_async(VkQueue queue, uint32_t num_command_buffers, VkCommandBuffer *command_buffers);
 
 #endif // COMMAND_BUFFER_H

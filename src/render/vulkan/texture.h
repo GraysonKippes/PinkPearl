@@ -89,6 +89,7 @@ extern const ImageUsage imageUsageTransferDestination;
 extern const ImageUsage imageUsageComputeRead;
 extern const ImageUsage imageUsageComputeWrite;
 extern const ImageUsage imageUsageSampled;
+extern const ImageUsage imageUsageDepthAttachment;
 
 // Returns a null texture struct.
 Texture makeNullTexture(void);
@@ -107,9 +108,9 @@ VkMemoryRequirements2 getImageMemoryRequirements(const VkDevice vkDevice, const 
 
 void bindImageMemory(const VkDevice vkDevice, const VkImage vkImage, const VkDeviceMemory vkDeviceMemory, const VkDeviceSize offset);
 
-VkImageSubresourceLayers makeImageSubresourceLayers(const ImageSubresourceRange subresourceRange);
+VkImageSubresourceLayers makeImageSubresourceLayers(const ImageSubresourceRange imageSubresourceRange);
 
-VkImageSubresourceRange makeImageSubresourceRange(const ImageSubresourceRange subresourceRange);
+VkImageSubresourceRange makeImageSubresourceRange(const ImageSubresourceRange imageSubresourceRange);
 
 VkImageMemoryBarrier2 makeImageTransitionBarrier(const Image image, const ImageSubresourceRange subresourceRange, const ImageUsage newUsage);
 

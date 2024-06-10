@@ -61,16 +61,16 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	const Extent roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
 	const DimensionsF roomQuadDimensions = {
 		.x1 = -0.5F * roomExtent.width,
-		.y1 = 0.5F * roomExtent.length,
+		.y1 = -0.5F * roomExtent.length,
 		.x2 = 0.5F * roomExtent.width,
-		.y2 = -0.5F * roomExtent.length
+		.y2 = 0.5F * roomExtent.length
 	};
 	
 	// Testing
 	String textureID = newString(64, "roomM");
 	const Vector3D roomLayerPositions[2] = {
-		{ 0.0, 0.0, 0.0 }, 
-		{ 0.0, 0.0, 15.0 }
+		{ 0.0, 0.0, -48.0 }, 	// Background
+		{ 0.0, 0.0, -16.0 }		// Foreground
 	};
 	pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(textureID, roomQuadDimensions, 2, roomLayerPositions);
 	deleteString(&textureID);
@@ -143,13 +143,15 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 		return zeroVector4F;
 	}
 	
+	static const float posZ = 0.0F;
+	
 	const Extent roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
 	const uint32_t currentRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->currentCacheSlot];
 	const offset_t currentRoomPosition = pAreaRenderState->roomIDsToPositions[currentRoomID];
 	const Vector4F start = {
 		.x = roomExtent.width * currentRoomPosition.x,
 		.y = roomExtent.length * currentRoomPosition.y,
-		.z = 0.0F,
+		.z = posZ,
 		.w = 1.0F
 	};
 	
@@ -163,7 +165,7 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	const Vector4F end = {
 		.x = roomExtent.width * nextRoomPosition.x,
 		.y = roomExtent.length * nextRoomPosition.y,
-		.z = 0.0F,
+		.z = posZ,
 		.w = 1.0F
 	};
 	
@@ -190,7 +192,7 @@ projection_bounds_t areaRenderStateGetProjectionBounds(const AreaRenderState are
 		.right = right,
 		.bottom = bottom,
 		.top = top,
-		.near = 15.0F,
-		.far = -15.0F
+		.near = -64.0F,
+		.far = 64.0F
 	};
 }

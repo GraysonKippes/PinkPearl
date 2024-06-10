@@ -27,21 +27,25 @@ extern physical_device_t physical_device;
 extern memory_type_set_t memory_type_set;
 extern VkDevice device;
 extern Swapchain swapchain;
-extern graphics_pipeline_t graphics_pipeline;
+extern GraphicsPipeline graphics_pipeline;
 extern VkSampler imageSamplerDefault;
 
 /* -- Queues -- */
 
 extern VkQueue queueGraphics;
-extern VkQueue present_queue;
-extern VkQueue transfer_queue;
-extern VkQueue compute_queue;
+extern VkQueue queuePresent;
+extern VkQueue queueTransfer;
+extern VkQueue queueCompute;
 
 /* -- Command Pools -- */
 
 extern VkCommandPool cmdPoolGraphics;
 extern VkCommandPool cmdPoolTransfer;
-extern VkCommandPool compute_command_pool;
+extern VkCommandPool cmdPoolCompute;
+
+/* -- Depth Image Attachment -- */
+
+extern Image depthImage;
 
 /* -- Global buffers -- */
 

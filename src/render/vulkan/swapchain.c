@@ -1,15 +1,15 @@
 #include "swapchain.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
-#include <stdio.h>
-
 #include "log/logging.h"
+
+#include "vulkan_manager.h"
 
 #define clamp(x, min, max) (x > min ? (x < max ? x : max) : min)
 
 VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_support_details) {
-
 	logMsg(VERBOSE, "Selecting surface format for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.num_formats; ++i) {
@@ -28,7 +28,6 @@ VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_s
 }
 
 VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_support_details) {
-
 	logMsg(VERBOSE, "Selecting presentation mode for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.num_present_modes; ++i) {
@@ -41,7 +40,6 @@ VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_suppo
 }
 
 VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, GLFWwindow *window) {
-
 	logMsg(VERBOSE, "Selecting extent for swapchain...");
 
 	if (swapchain_support_details.capabilities.currentExtent.width != UINT32_MAX) {
@@ -59,7 +57,6 @@ VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, 
 }
 
 Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle) {
-
 	logMsg(VERBOSE, "Creating swapchain...");
 
 	Swapchain swapchain;
@@ -153,27 +150,32 @@ Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_de
 	return swapchain;
 }
 
-void create_framebuffers(VkDevice device, VkRenderPass render_pass, Swapchain *swapchain_ptr) {
-
+void create_framebuffers(const VkDevice device, const VkRenderPass renderPass, Swapchain *const pSwapchain) {
 	logMsg(VERBOSE, "Creating framebuffers for swapchain...");
 
-	swapchain_ptr->framebuffers = malloc(swapchain_ptr->num_images * sizeof(VkFramebuffer));
-	for (uint32_t i = 0; i < swapchain_ptr->num_images; ++i) {
+	pSwapchain->framebuffers = malloc(pSwapchain->num_images * sizeof(VkFramebuffer));
+	for (uint32_t i = 0; i < pSwapchain->num_images; ++i) {
 
-		VkFramebufferCreateInfo create_info = {0};
-		create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		create_info.pNext = nullptr;
-		create_info.flags = 0;
-		create_info.renderPass = render_pass;
-		create_info.attachmentCount = 1;
-		create_info.pAttachments = swapchain_ptr->image_views + i;
-		create_info.width = swapchain_ptr->extent.width;
-		create_info.height = swapchain_ptr->extent.height;
-		create_info.layers = 1;
+		const VkImageView attachments[2] = {
+			pSwapchain->image_views[i],
+			depthImage.vkImageView
+		};
 
-		VkResult result = vkCreateFramebuffer(device, &create_info, nullptr, (swapchain_ptr->framebuffers + i));
+		const VkFramebufferCreateInfo createInfo = {
+			 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+			 .pNext = nullptr,
+			 .flags = 0,
+			 .renderPass = renderPass,
+			 .attachmentCount = 2,
+			 .pAttachments = attachments,
+			 .width = pSwapchain->extent.width,
+			 .height = pSwapchain->extent.height,
+			 .layers = 1
+		};
+
+		const VkResult result = vkCreateFramebuffer(device, &createInfo, nullptr, &pSwapchain->framebuffers[i]);
 		if (result != VK_SUCCESS) {
-			logMsgF(FATAL, "Framebuffer creation for swapchain failed. (Error code: %i)", result);
+			logMsgF(FATAL, "Framebuffer creation for swapchain failed (error code: %i).", result);
 		}
 	}
 }
