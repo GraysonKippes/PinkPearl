@@ -43,10 +43,6 @@ extern VkCommandPool cmdPoolGraphics;
 extern VkCommandPool cmdPoolTransfer;
 extern VkCommandPool cmdPoolCompute;
 
-/* -- Depth Image Attachment -- */
-
-extern Image depthImage;
-
 /* -- Global buffers -- */
 
 // Used for staging data to GPU-only buffers (storage, vertex, index) and images.

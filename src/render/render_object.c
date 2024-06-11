@@ -46,25 +46,19 @@ int loadRenderObject(const String textureID, const DimensionsF quadDimensions, c
 	
 	const TextureState quadTextureState = newTextureState(textureID);
 	for (int i = 0; i < numQuads; ++i) {
-		const int quadID = loadQuad(quadDimensions, quadTextureState);
-		if (!validateQuadID(quadID)) {
-			unloadRenderObject(&renderHandle);
-			return renderHandleInvalid;
-		}
-		renderObjQuadIDs[renderHandle][i] = quadID;
-		
-		const Vector4F translation = {
+		const Vector4F quadPosition = {
 			.x = (float)quadPositions[i].x,
 			.y = (float)quadPositions[i].y,
 			.z = (float)quadPositions[i].z,
 			.w = 1.0F
 		};
-		setQuadTranslation(renderObjQuadIDs[renderHandle][i], translation);
-		setQuadTranslation(renderObjQuadIDs[renderHandle][i], translation);
-		setQuadScaling(renderObjQuadIDs[renderHandle][i], zeroVector4F);
-		setQuadScaling(renderObjQuadIDs[renderHandle][i], zeroVector4F);
-		setQuadRotation(renderObjQuadIDs[renderHandle][i], zeroVector4F);
-		setQuadRotation(renderObjQuadIDs[renderHandle][i], zeroVector4F);
+		
+		const int quadID = loadQuad(quadDimensions, quadPosition, quadTextureState);
+		if (!validateQuadID(quadID)) {
+			unloadRenderObject(&renderHandle);
+			return renderHandleInvalid;
+		}
+		renderObjQuadIDs[renderHandle][i] = quadID;
 	}
 	
 	return renderHandle;

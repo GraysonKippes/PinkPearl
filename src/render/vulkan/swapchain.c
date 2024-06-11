@@ -156,18 +156,13 @@ void create_framebuffers(const VkDevice device, const VkRenderPass renderPass, S
 	pSwapchain->framebuffers = malloc(pSwapchain->num_images * sizeof(VkFramebuffer));
 	for (uint32_t i = 0; i < pSwapchain->num_images; ++i) {
 
-		const VkImageView attachments[2] = {
-			pSwapchain->image_views[i],
-			depthImage.vkImageView
-		};
-
 		const VkFramebufferCreateInfo createInfo = {
 			 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			 .pNext = nullptr,
 			 .flags = 0,
 			 .renderPass = renderPass,
-			 .attachmentCount = 2,
-			 .pAttachments = attachments,
+			 .attachmentCount = 1,
+			 .pAttachments = &pSwapchain->image_views[i],
 			 .width = pSwapchain->extent.width,
 			 .height = pSwapchain->extent.height,
 			 .layers = 1

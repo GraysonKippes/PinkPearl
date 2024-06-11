@@ -65,12 +65,6 @@ buffer_partition_t global_uniform_buffer_partition;
 buffer_partition_t global_storage_buffer_partition;
 buffer_partition_t global_draw_data_buffer_partition;
 
-/* -- Depth Image Attachment -- */
-
-// TODO - include with Swapchain.
-Image depthImage = { };
-VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
-
 /* -- Function Definitions -- */
 
 static void create_window_surface(void) {
@@ -167,102 +161,6 @@ static void create_global_draw_data_buffer(void) {
 	global_draw_data_buffer_partition = create_buffer_partition(buffer_partition_create_info);
 }
 
-static void createDepthImage(void) {
-	
-	static const VkFormat depthImageFormat = VK_FORMAT_D32_SFLOAT;
-	
-	// Subresource range used in all image views and layout transitions.
-	static const ImageSubresourceRange imageSubresourceRange = {
-		.imageAspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-		.baseArrayLayer = 0,
-		.arrayLayerCount = VK_REMAINING_ARRAY_LAYERS
-	};
-	
-	const VkImageCreateInfo imageCreateInfo = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.imageType = VK_IMAGE_TYPE_2D,
-		.format = depthImageFormat,
-		.extent.width = swapchain.extent.width,
-		.extent.height = swapchain.extent.height,
-		.extent.depth = 1,
-		.mipLevels = 1,
-		.arrayLayers = 1,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = nullptr,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-	};
-
-	const VkResult imageCreateResult = vkCreateImage(device, &imageCreateInfo, nullptr, &depthImage.vkImage);
-	if (imageCreateResult != VK_SUCCESS) {
-		logMsgF(ERROR, "Error creating depth image: image creation failed (error code: %i).", imageCreateResult);
-		return;
-	}
-	depthImage.vkFormat = depthImageFormat;
-	
-	const VkMemoryRequirements2 imageMemoryRequirements = getImageMemoryRequirements(device, depthImage.vkImage);
-	const VkMemoryAllocateInfo allocateInfo = {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = nullptr,
-		.allocationSize = imageMemoryRequirements.memoryRequirements.size,
-		.memoryTypeIndex = memory_type_set.graphics_resources
-	};
-	
-	const VkResult memoryAllocationResult = vkAllocateMemory(device, &allocateInfo, nullptr, &depthImageMemory);
-	if (memoryAllocationResult != VK_SUCCESS) {
-		logMsgF(ERROR, "Error creating depth image: failed to allocate memory (error code: %i).", memoryAllocationResult);
-		return;
-	}
-	bindImageMemory(device, depthImage.vkImage, depthImageMemory, 0);
-
-	// Create image view.
-	const VkImageViewCreateInfo imageViewCreateInfo = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.image = depthImage.vkImage,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-		.format = depthImage.vkFormat,
-		.components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-		.components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-		.components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-		.components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
-		.subresourceRange = makeImageSubresourceRange(imageSubresourceRange)
-	};
-
-	const VkResult imageViewCreateResult = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &depthImage.vkImageView);
-	if (imageViewCreateResult != VK_SUCCESS) {
-		logMsgF(ERROR, "Error creating depth image: image view creation failed (error code: %i).", imageViewCreateResult);
-		return;
-	}
-	
-	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(device, cmdPoolGraphics, 1, &cmdBuf);
-	cmdBufBegin(cmdBuf, true); {
-		depthImage.usage = imageUsageUndefined;
-		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(depthImage, imageSubresourceRange, imageUsageDepthAttachment);
-		const VkDependencyInfo dependencyInfo = {
-			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-			.pNext = nullptr,
-			.dependencyFlags = 0,
-			.memoryBarrierCount = 0,
-			.pMemoryBarriers = nullptr,
-			.bufferMemoryBarrierCount = 0,
-			.pBufferMemoryBarriers = nullptr,
-			.imageMemoryBarrierCount = 1,
-			.pImageMemoryBarriers = &imageMemoryBarrier
-		};
-		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
-		depthImage.usage = imageUsageDepthAttachment;
-	} vkEndCommandBuffer(cmdBuf);
-	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
-}
-
 void create_vulkan_objects(void) {
 	log_stack_push("Vulkan");
 	logMsg(INFO, "Initializing Vulkan...");
@@ -297,7 +195,6 @@ void create_vulkan_objects(void) {
 	clearColor = (VkClearValue){ { { 0.0F, 0.0F, 0.0F, 1.0F } } };
 
 	swapchain = create_swapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
-	createDepthImage();
 	shader_module_t vertex_shader_module = create_shader_module(device, VERTEX_SHADER_NAME);
 	shader_module_t fragment_shader_module = create_shader_module(device, FRAGMENT_SHADER_NAME);
 	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_set_layout, vertex_shader_module.module_handle, fragment_shader_module.module_handle);

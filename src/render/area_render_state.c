@@ -69,8 +69,8 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	// Testing
 	String textureID = newString(64, "roomM");
 	const Vector3D roomLayerPositions[2] = {
-		{ 0.0, 0.0, -48.0 }, 	// Background
-		{ 0.0, 0.0, -16.0 }		// Foreground
+		{ 0.0, 0.0, -16.0 }, 	// Background
+		{ 0.0, 0.0, -48.0 }		// Foreground
 	};
 	pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(textureID, roomQuadDimensions, 2, roomLayerPositions);
 	deleteString(&textureID);

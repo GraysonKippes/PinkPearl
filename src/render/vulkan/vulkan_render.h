@@ -20,7 +20,7 @@ void destroyVulkanRenderObjects(void);
 
 void initTextureDescriptors(void);
 
-int loadQuad(const DimensionsF quadDimensions, const TextureState quadTextureState);
+int loadQuad(const DimensionsF quadDimensions, const Vector4F quadPosition, const TextureState quadTextureState);
 void unloadQuad(const int quadID);
 bool validateQuadID(const int quadID);
 

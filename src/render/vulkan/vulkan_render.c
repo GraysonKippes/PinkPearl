@@ -35,39 +35,19 @@ typedef struct DrawData {
 	uint32_t image_index;
 } DrawData;
 
-typedef struct DrawInfo {
-	int quadID;
-	uint32_t drawDataIndex;	// The index in array of draw datas.
-	uint32_t imageIndex;
-} DrawInfo;
-
-// Stores draw infos, including IDs for quads currently being rendered.
-BinarySearchTree activeQuadIDs;
+static uint32_t drawDataCount = 0;
+static DrawData drawDatas[VK_CONF_MAX_NUM_QUADS];
 
 // Stores IDs for unused quads.
 Stack inactiveQuadIDs;
 
+uint32_t quadDrawDataIndices[VK_CONF_MAX_NUM_QUADS];
 RenderTransform quadTransforms[VK_CONF_MAX_NUM_QUADS];
 TextureState quadTextureStates[VK_CONF_MAX_NUM_QUADS];
 
-static int cmpFuncDrawInfo(const void *const pA, const void *const pB) {
-	if (pA == nullptr || pB == nullptr) {
-		return -2;
-	}
-	
-	const DrawInfo drawInfo_a = *(DrawInfo *)pA;
-	const DrawInfo drawInfo_b = *(DrawInfo *)pB;
-	if (drawInfo_a.quadID < drawInfo_b.quadID) {
-		return -1;
-	}
-	else if (drawInfo_a.quadID > drawInfo_b.quadID) {
-		return 1;
-	}
-	return 0;
-}
-
 static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions);
-static void rebuildDrawData(void);
+static void insertDrawData(const int quadID, const float quadDepth, const unsigned int imageIndex);
+static void removeDrawData(const int quadID);
 static void updateTextureDescriptor(const int quadID, const int textureHandle);
 
 void createVulkanRenderObjects(void) {
@@ -78,7 +58,6 @@ void createVulkanRenderObjects(void) {
 	init_compute_room_texture(device);
 	
 	// Initialize data structures for managing quad IDs.
-	activeQuadIDs = newBinarySearchTree(sizeof(DrawInfo), cmpFuncDrawInfo);
 	inactiveQuadIDs = newStack(vkConfMaxNumQuads, sizeof(int));
 	for (int quadID = vkConfMaxNumQuads - 1; quadID >= 0; --quadID) {
 		stackPush(&inactiveQuadIDs, &quadID);
@@ -97,7 +76,6 @@ void destroyVulkanRenderObjects(void) {
 	terminate_compute_room_texture();
 	terminateTextureManager();
 	
-	deleteBinarySearchTree(&activeQuadIDs);
 	deleteStack(&inactiveQuadIDs);
 	
 	log_stack_pop();
@@ -133,7 +111,7 @@ void initTextureDescriptors(void) {
 	}
 }
 
-int loadQuad(const DimensionsF quadDimensions, const TextureState quadTextureState) {
+int loadQuad(const DimensionsF quadDimensions, const Vector4F quadPosition, const TextureState quadTextureState) {
 	if (stackIsEmpty(inactiveQuadIDs)) {
 		return -1;
 	}
@@ -144,26 +122,25 @@ int loadQuad(const DimensionsF quadDimensions, const TextureState quadTextureSta
 	if (!validateQuadID(quadID)) {
 		return -1;
 	}
-	const DrawInfo drawInfo = {
-		.quadID = quadID,
-		.drawDataIndex = 0
-	};
-	bstInsert(&activeQuadIDs, &drawInfo);
 	
+	setQuadTranslation(quadID, quadPosition);
+	setQuadTranslation(quadID, quadPosition);
+	setQuadScaling(quadID, zeroVector4F);
+	setQuadScaling(quadID, zeroVector4F);
+	setQuadRotation(quadID, zeroVector4F);
+	setQuadRotation(quadID, zeroVector4F);
 	quadTextureStates[quadID] = quadTextureState;
+	
 	uploadQuadMesh(quadID, quadDimensions);
+	insertDrawData(quadID, quadPosition.z, 0);
 	updateTextureDescriptor(quadID, quadTextureState.textureHandle);
-	rebuildDrawData();
 	
 	return quadID;
 }
 
 void unloadQuad(const int quadID) {
-	if (!bstRemove(&activeQuadIDs, &quadID)) {
-		return;
-	}
+	removeDrawData(quadID);
 	stackPush(&inactiveQuadIDs, &quadID);
-	rebuildDrawData();
 }
 
 bool validateQuadID(const int quadID) {
@@ -294,44 +271,70 @@ static DrawData makeDrawData(const int quadID, const unsigned int imageIndex) {
 	};
 }
 
-static void rebuildDrawData(void) {
-	
-	/* Needs to be called in the following situations:
-	 * 	Texture is animated.
-	 * 	New render object is created/used.
-	 *	Any render object is destroyed/released.
-	 *	Area render enters/exits scroll state.
-	*/
-	
-	uint32_t drawCount = 0;
-	DrawData drawDatas[VK_CONF_MAX_NUM_QUADS];
-	
-	LinkedList traversal = bstTraverseInOrder(activeQuadIDs);
-	if (!linkedListValidate(traversal)) {
-		logMsgF(ERROR, "Error building draw data: failed to traverse active quad IDs.");
+static void insertDrawData(const int quadID, const float quadDepth, const unsigned int imageIndex) {
+	if (vkConfMaxNumQuads - (int)drawDataCount <= 0) {
 		return;
 	}
 	
-	for (LinkedListNode *pNode = traversal.pHeadNode; pNode != nullptr; pNode = pNode->pNextNode) {
-		DrawInfo *const pDrawInfo = (DrawInfo *)((BinarySearchTreeNode *)pNode->pObject)->pObject;
-		if (!pDrawInfo) {
-			deleteLinkedList(&traversal);
-			return;
+	uint32_t insertIndex = drawDataCount;
+	for (uint32_t i = 0; i < drawDataCount; ++i) {
+		const float otherDepth = quadTransforms[drawDatas[i].quadID].translation.current.z;
+		if (quadDepth > otherDepth) {
+			insertIndex = i;
+			break;
 		}
-		drawDatas[drawCount] = makeDrawData(pDrawInfo->quadID, pDrawInfo->imageIndex);
-		pDrawInfo->drawDataIndex = drawCount;
-		drawCount += 1;
 	}
 	
-	deleteLinkedList(&traversal);
+	for (uint32_t i = drawDataCount; i > insertIndex; --i) {
+		drawDatas[i] = drawDatas[i - 1];
+		quadDrawDataIndices[drawDatas[i].quadID] = i;
+	}
+	drawDatas[insertIndex] = makeDrawData(quadID, imageIndex);
+	quadDrawDataIndices[quadID] = insertIndex;
+	drawDataCount += 1;
 	
 	// TODO - cut the partition crap and just do one mapped memory.
 	byte_t *draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
-	memcpy(draw_count_mapped_memory, &drawCount, sizeof(drawCount));
+	memcpy(draw_count_mapped_memory, &drawDataCount, sizeof(drawDataCount));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 	
 	byte_t *draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(draw_data_mapped_memory, drawDatas, drawCount * sizeof(DrawData));
+	memcpy(draw_data_mapped_memory, drawDatas, drawDataCount * sizeof(drawDatas[0]));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+}
+
+static void removeDrawData(const int quadID) {
+	if (!validateQuadID(quadID)) {
+		return;
+	}
+	
+	const uint32_t drawDataIndex = quadDrawDataIndices[quadID];
+	if (drawDataIndex >= drawDataCount) {
+		return;
+	}
+	
+	drawDataCount -= 1;
+	for (uint32_t i = drawDataIndex; i < drawDataCount; ++i) {
+		drawDatas[i] = drawDatas[i + 1];
+	}
+	
+	// TODO - cut the partition crap and just do one mapped memory.
+	byte_t *draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
+	memcpy(draw_count_mapped_memory, &drawDataCount, sizeof(drawDataCount));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	
+	byte_t *draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	memcpy(draw_data_mapped_memory, drawDatas, drawDataCount * sizeof(drawDatas[0]));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+}
+
+void updateDrawData(const int quadID, const unsigned int imageIndex) {
+	
+	const uint32_t drawDataIndex = quadDrawDataIndices[quadID];
+	drawDatas[drawDataIndex] = makeDrawData(quadID, imageIndex);
+	
+	byte_t *drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	memcpy(&drawDataMappedMemory[drawDataIndex * sizeof(DrawData)], &drawDatas[drawDataIndex], sizeof(DrawData));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
@@ -359,29 +362,6 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 		};
 		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 	}
-}
-
-void updateDrawData(const int quadID, const unsigned int imageIndex) {
-	
-	// Search for the draw info in the active quad IDs tree.
-	const DrawInfo searchDrawInfo = {
-		.quadID = quadID
-	};
-	BinarySearchTreeNode *pSearchNode = nullptr;
-	bstSearch(&activeQuadIDs, &searchDrawInfo, &pSearchNode);
-	if (!pSearchNode) {
-		return;
-	} else if (!pSearchNode->pObject) {
-		return;
-	}
-	
-	DrawInfo *const pDrawInfo = (DrawInfo *)pSearchNode->pObject;
-	pDrawInfo->imageIndex = imageIndex;
-	const DrawData drawData = makeDrawData(pDrawInfo->quadID, pDrawInfo->imageIndex);
-	
-	byte_t *drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(&drawDataMappedMemory[pDrawInfo->drawDataIndex * sizeof(DrawData)], &drawData, sizeof(DrawData));
-	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
 static void uploadLightingData(void) {
