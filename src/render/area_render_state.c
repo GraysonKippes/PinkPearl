@@ -10,6 +10,42 @@
 #include "vulkan/compute/compute_room_texture.h"
 #include "vulkan/math/lerp.h"
 
+static const String roomXSTextureID = {
+	.length = 6,
+	.capacity = 7,
+	.buffer = "roomXS"
+};
+
+static const String roomSTextureID = {
+	.length = 5,
+	.capacity = 6,
+	.buffer = "roomS"
+};
+
+static const String roomMTextureID = {
+	.length = 5,
+	.capacity = 6,
+	.buffer = "roomM"
+};
+
+static const String roomLTextureID = {
+	.length = 5,
+	.capacity = 6,
+	.buffer = "roomL"
+};
+
+static String roomSizeToTextureID(const RoomSize roomSize) {
+	switch (roomSize) {
+		case ROOM_SIZE_XS: return roomXSTextureID;
+		case ROOM_SIZE_S: return roomSTextureID;
+		case ROOM_SIZE_M: return roomMTextureID;
+		case ROOM_SIZE_L: return roomLTextureID;
+	};
+	return roomMTextureID;
+}
+
+static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState, const uint32_t cacheSlot, const Room room);
+
 void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const Room initialRoom) {
 	logMsg(VERBOSE, "Resetting area render state...");
 	
@@ -30,7 +66,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 		return;
 	}
 	
-	if (!allocate((void **)&pAreaRenderState->roomIDsToPositions, pAreaRenderState->numRoomIDs, sizeof(offset_t))) {
+	if (!allocate((void **)&pAreaRenderState->roomIDsToPositions, pAreaRenderState->numRoomIDs, sizeof(Offset))) {
 		logMsg(ERROR, "Error resetting area render state: failed to allocate room IDs to room positions pointer array.");
 		deallocate((void **)&pAreaRenderState->roomIDsToCacheSlots);
 		return;
@@ -58,32 +94,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	pAreaRenderState->areaExtent = area.extent;
 	pAreaRenderState->roomSize = area.room_size;
 	
-	const Extent roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
-	const DimensionsF roomQuadDimensions = {
-		.x1 = -0.5F * roomExtent.width,
-		.y1 = -0.5F * roomExtent.length,
-		.x2 = 0.5F * roomExtent.width,
-		.y2 = 0.5F * roomExtent.length
-	};
-	
-	// Testing
-	String textureID = newString(64, "roomM");
-	const Vector3D roomLayerPositions[2] = {
-		{ 0.0, 0.0, -16.0 }, 	// Background
-		{ 0.0, 0.0, -48.0 }		// Foreground
-	};
-	pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot] = loadRenderObject(textureID, roomQuadDimensions, 2, roomLayerPositions);
-	deleteString(&textureID);
-	
-	const int textureHandle = renderObjectGetTextureHandle(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot], 0);
-	const ImageSubresourceRange imageSubresourceRange = {
-		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseArrayLayer = pAreaRenderState->currentCacheSlot * num_room_layers,
-		.arrayLayerCount = num_room_layers
-	};
-	computeStitchTexture(pAreaRenderState->tilemapTextureState.textureHandle, textureHandle, imageSubresourceRange, initialRoom.extent, initialRoom.ppTileIndices);
-	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot], 0, 0);
-	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot], 1, 1);
+	areaRenderStateLoadRoomQuad(pAreaRenderState, pAreaRenderState->currentCacheSlot, initialRoom);
 	
 	logMsg(VERBOSE, "Done resetting area render state.");
 }
@@ -95,7 +106,6 @@ bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState) {
 bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const Room nextRoom) {
 	
 	const uint32_t roomID = (uint32_t)nextRoom.id;
-	
 	if (roomID >= pAreaRenderState->numRoomIDs) {
 		logMsgF(ERROR, "Error setting area render state next room: given room ID (%u) is not less than number of room IDs (%u).", roomID, pAreaRenderState->numRoomIDs);
 		return false;
@@ -128,11 +138,8 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const R
 	pAreaRenderState->roomIDsToCacheSlots[roomID] = pAreaRenderState->nextCacheSlot;
 	pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->nextCacheSlot] = roomID;
 	
-	// Update Vulkan engine.
-	// TODO - move all functionality to render layer.
-	//upload_draw_data(*pAreaRenderState);
 	if (!roomAlreadyLoaded) {
-		//create_room_texture(nextRoom, pAreaRenderState->nextCacheSlot, pAreaRenderState->tilemapTextureState.textureHandle);
+		areaRenderStateLoadRoomQuad(pAreaRenderState, pAreaRenderState->nextCacheSlot, nextRoom);
 	}
 	
 	return !roomAlreadyLoaded;
@@ -147,7 +154,7 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	
 	const Extent roomExtent = room_size_to_extent(pAreaRenderState->roomSize);
 	const uint32_t currentRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->currentCacheSlot];
-	const offset_t currentRoomPosition = pAreaRenderState->roomIDsToPositions[currentRoomID];
+	const Offset currentRoomPosition = pAreaRenderState->roomIDsToPositions[currentRoomID];
 	const Vector4F start = {
 		.x = roomExtent.width * currentRoomPosition.x,
 		.y = roomExtent.length * currentRoomPosition.y,
@@ -161,7 +168,7 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	}
 	
 	const uint32_t nextRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->nextCacheSlot];
-	const offset_t nextRoomPosition = pAreaRenderState->roomIDsToPositions[nextRoomID];
+	const Offset nextRoomPosition = pAreaRenderState->roomIDsToPositions[nextRoomID];
 	const Vector4F end = {
 		.x = roomExtent.width * nextRoomPosition.x,
 		.y = roomExtent.length * nextRoomPosition.y,
@@ -181,13 +188,13 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	return vector4F_lerp(start, end, deltaTime);
 }
 
-projection_bounds_t areaRenderStateGetProjectionBounds(const AreaRenderState areaRenderState) {
+ProjectionBounds areaRenderStateGetProjectionBounds(const AreaRenderState areaRenderState) {
 	const Extent roomExtent = room_size_to_extent(areaRenderState.roomSize);
 	const float top = -((float)roomExtent.length / 2.0F);
 	const float left = -((float)roomExtent.width / 2.0F);
 	const float bottom = -top;
 	const float right = -left;
-	return (projection_bounds_t){
+	return (ProjectionBounds){
 		.left = left,
 		.right = right,
 		.bottom = bottom,
@@ -195,4 +202,41 @@ projection_bounds_t areaRenderStateGetProjectionBounds(const AreaRenderState are
 		.near = -64.0F,
 		.far = 64.0F
 	};
+}
+
+static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState, const uint32_t cacheSlot, const Room room) {
+	
+	const Extent roomExtent = room_size_to_extent(room.size);
+	const DimensionsF roomQuadDimensions = {
+		.x1 = -0.5F * roomExtent.width,
+		.y1 = -0.5F * roomExtent.length,
+		.x2 = 0.5F * roomExtent.width,
+		.y2 = 0.5F * roomExtent.length
+	};
+	
+	const Vector3D roomLayerPositions[2] = {
+		{ // Background
+			(double)room.position.x * room.extent.width, 
+			(double)room.position.y * room.extent.length, 
+			-16.0 
+		},
+		{ // Foreground
+			(double)room.position.x * room.extent.width, 
+			(double)room.position.y * room.extent.length, 
+			-48.0 
+		}
+	};
+	
+	pAreaRenderState->roomRenderObjHandles[cacheSlot] = loadRenderObject(roomSizeToTextureID(room.size), roomQuadDimensions, 2, roomLayerPositions);
+	
+	const int textureHandle = renderObjectGetTextureHandle(pAreaRenderState->roomRenderObjHandles[cacheSlot], 0);
+	const ImageSubresourceRange imageSubresourceRange = {
+		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.baseArrayLayer = cacheSlot * num_room_layers,
+		.arrayLayerCount = num_room_layers
+	};
+	
+	computeStitchTexture(pAreaRenderState->tilemapTextureState.textureHandle, textureHandle, imageSubresourceRange, room.extent, room.ppTileIndices);
+	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[cacheSlot], 0, 0);
+	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[cacheSlot], 1, 1);
 }

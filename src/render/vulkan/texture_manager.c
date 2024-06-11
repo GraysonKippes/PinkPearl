@@ -23,14 +23,11 @@
 #define TEXTURE_PATH (RESOURCE_PATH "assets/textures/")
 
 #define NUM_TEXTURES 67
-#define NUM_RESERVED_TEXTURES 1
 
 typedef struct TextureRecord {
 	String textureID;
 	int textureHandle;
 } TextureRecord;
-
-static const int numReservedTextures = NUM_RESERVED_TEXTURES;
 
 const int numTextures = NUM_TEXTURES;
 int numTexturesLoaded = 0;

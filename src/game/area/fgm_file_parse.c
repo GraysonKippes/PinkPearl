@@ -137,7 +137,7 @@ static int readRoomData(FILE *file, Room *const pRoom) {
 	
 	const uint64_t num_tiles = extentArea(pRoom->extent);
 
-	if (!read_data(file, sizeof(offset_t), 1, &pRoom->position)) {
+	if (!read_data(file, sizeof(Offset), 1, &pRoom->position)) {
 		logMsg(ERROR, "Error reading area file: failed to read room position.");
 		return -1;
 	}

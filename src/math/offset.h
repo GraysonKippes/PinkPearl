@@ -3,13 +3,13 @@
 
 #include <stdint.h>
 
-typedef struct offset_t {
+typedef struct Offset {
 	int32_t x;
 	int32_t y;
-} offset_t;
+} Offset;
 
-offset_t offset_add(const offset_t a, const offset_t b);
+Offset offset_add(const Offset a, const Offset b);
 
-offset_t offset_subtract(const offset_t a, const offset_t b);
+Offset offset_subtract(const Offset a, const Offset b);
 
 #endif	// OFFSET_H

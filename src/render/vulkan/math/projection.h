@@ -1,13 +1,13 @@
 #ifndef PROJECTION_H
 #define PROJECTION_H
 
-typedef struct projection_bounds_t {
+typedef struct ProjectionBounds {
 	float left;
 	float right;
 	float bottom;
 	float top;
 	float near;
 	float far;
-} projection_bounds_t;
+} ProjectionBounds;
 
 #endif	// PROJECTION_H

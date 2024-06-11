@@ -16,10 +16,10 @@ extern const uint32_t num_room_sizes;
 
 // The size of a room, given as ratio of the default room size (24x15).
 typedef enum RoomSize {
-	ONE_TO_THREE = 0,	// 8 x 5	-- Tiny room size, used in small bonus areas.
-	TWO_TO_THREE = 1,	// 16 x 10	-- Small room size, used in some dungeons.
-	THREE_TO_THREE = 2,	// 24 x 15	-- Default room size, used in the Overworld.
-	FOUR_TO_THREE = 3	// 32 x 20	-- Large room size, used in some dungeons.
+	ROOM_SIZE_XS = 0,	// 8 x 5	-- Tiny room size, used in small bonus areas.
+	ROOM_SIZE_S = 1,	// 16 x 10	-- Small room size, used in some dungeons.
+	ROOM_SIZE_M = 2,	// 24 x 15	-- Default room size, used in the Overworld.
+	ROOM_SIZE_L = 3		// 32 x 20	-- Large room size, used in some dungeons.
 } RoomSize;
 
 typedef struct Room {
@@ -27,7 +27,7 @@ typedef struct Room {
 	int id;
 	RoomSize size;
 	Extent extent;
-	offset_t position;
+	Offset position;
 	
 	// Contains the tile indices for each layer in this room.
 	// First order represents a layer, second order represents tile indices for that layer.

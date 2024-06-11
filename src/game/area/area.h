@@ -30,9 +30,9 @@ typedef struct area_t {
 
 } area_t;
 
-bool area_get_room_ptr(const area_t area, const offset_t room_position, const Room **room_pptr);
+bool area_get_room_ptr(const area_t area, const Offset room_position, const Room **room_pptr);
 
-int area_get_room_index(const area_t area, const offset_t room_position);
+int area_get_room_index(const area_t area, const Offset room_position);
 
 typedef enum direction_t {
 	DIRECTION_ERROR = -1,
@@ -46,6 +46,6 @@ typedef enum direction_t {
 // Returns the direction in which the player is leaving the room, or NONE if the player is not leaving the room.
 direction_t test_room_travel(const Vector3D player_position, const area_t area, const int current_room_index);
 
-offset_t direction_offset(const direction_t direction);
+Offset direction_offset(const direction_t direction);
 
 #endif	// AREA_H

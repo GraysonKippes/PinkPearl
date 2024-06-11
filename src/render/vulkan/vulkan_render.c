@@ -422,7 +422,7 @@ static void uploadLightingData(void) {
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 }
 
-void drawFrame(const float deltaTime, const Vector4F cameraPosition, const projection_bounds_t projectionBounds) {
+void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds) {
 
 	vkWaitForFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready);

@@ -107,8 +107,8 @@ void tick_game(void) {
 	if ((int)travel_direction > 0) {
 
 		const Room current_room = current_area.rooms[current_room_index];
-		const offset_t room_offset = direction_offset(travel_direction);
-		const offset_t next_room_position = offset_add(current_room.position, room_offset);
+		const Offset room_offset = direction_offset(travel_direction);
+		const Offset next_room_position = offset_add(current_room.position, room_offset);
 
 		const Room *next_room_ptr = nullptr;
 		const bool result = area_get_room_ptr(current_area, next_room_position, &next_room_ptr);

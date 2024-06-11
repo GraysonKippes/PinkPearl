@@ -100,7 +100,7 @@ void terminate_compute_matrices(void) {
 	destroy_compute_pipeline(&compute_matrices_pipeline);
 }
 
-void computeMatrices(const float deltaTime, const projection_bounds_t projectionBounds, const Vector4F cameraPosition, const RenderTransform *const transforms) {
+void computeMatrices(const float deltaTime, const ProjectionBounds projectionBounds, const Vector4F cameraPosition, const RenderTransform *const transforms) {
 	if (transforms == nullptr) {
 		return;
 	}

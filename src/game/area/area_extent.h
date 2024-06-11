@@ -23,6 +23,6 @@ int area_extent_length(const area_extent_t area_extent);
 // 	the largest coordinates represent the top-right corner of the area.
 // If `position` does not correspond to any position in `area_extent`,
 // 	then this function returns a negative value.
-int area_extent_index(const area_extent_t area_extent, const offset_t position);
+int area_extent_index(const area_extent_t area_extent, const Offset position);
 
 #endif	// AREA_EXTENT_H

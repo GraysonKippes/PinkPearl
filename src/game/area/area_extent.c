@@ -30,7 +30,7 @@ int area_extent_length(const area_extent_t area_extent) {
 	return area_extent.y2 - area_extent.y1 + 1;
 }
 
-int area_extent_index(const area_extent_t area_extent, const offset_t position) {
+int area_extent_index(const area_extent_t area_extent, const Offset position) {
 	
 	if (position.x < area_extent.x1) {
 		return -1;

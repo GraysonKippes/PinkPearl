@@ -31,7 +31,7 @@ typedef struct AreaRenderState {
 	// Maps room IDs to room texture cache slots.
 	unsigned int numRoomIDs;	// Equal to number of rooms.
 	unsigned int *roomIDsToCacheSlots;	// UINT32_MAX represents unmapped room ID.
-	offset_t *roomIDsToPositions;
+	Offset *roomIDsToPositions;
 	
 	// Maps room texture cache slots to room positions.
 	// UINT32_MAX represents unmapped cache slot.
@@ -51,6 +51,6 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const R
 
 Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState);
 
-projection_bounds_t areaRenderStateGetProjectionBounds(const AreaRenderState areaRenderState);
+ProjectionBounds areaRenderStateGetProjectionBounds(const AreaRenderState areaRenderState);
 
 #endif	// AREA_RENDER_STATE_H

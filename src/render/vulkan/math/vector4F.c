@@ -15,10 +15,10 @@ Vector4F vector4F_add(const Vector4F a, const Vector4F b) {
 
 Vector4F vector4F_lerp(const Vector4F start, const Vector4F end, const float delta) {
 	return (Vector4F){
-		.x = lerpF(start.x, end.x, delta),
-		.y = lerpF(start.y, end.y, delta),
-		.z = lerpF(start.z, end.z, delta),
-		.w = lerpF(start.w, end.w, delta)
+		.x = interpolateLinear(start.x, end.x, delta),
+		.y = interpolateLinear(start.y, end.y, delta),
+		.z = interpolateLinear(start.z, end.z, delta),
+		.w = interpolateLinear(start.w, end.w, delta)
 	};
 }
 

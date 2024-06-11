@@ -33,6 +33,6 @@ TextureState *getQuadTextureState(const int quadID);
 
 void updateDrawData(const int quadID, const unsigned int imageIndex);
 
-void drawFrame(const float deltaTime, const Vector4F cameraPosition, const projection_bounds_t projectionBounds);
+void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds);
 
 #endif	// VULKAN_RENDER_H

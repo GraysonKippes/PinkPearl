@@ -5,7 +5,7 @@
 
 #include "log/logging.h"
 
-bool area_get_room_ptr(const area_t area, const offset_t room_position, const Room **room_pptr) {
+bool area_get_room_ptr(const area_t area, const Offset room_position, const Room **room_pptr) {
 
 	if (room_pptr == nullptr) {
 		logMsg(ERROR, "Error getting room pointer: pointer to room pointer is nullptr.");
@@ -50,7 +50,7 @@ bool area_get_room_ptr(const area_t area, const offset_t room_position, const Ro
 	return true;
 }
 
-int area_get_room_index(const area_t area, const offset_t room_position) {
+int area_get_room_index(const area_t area, const Offset room_position) {
 
 	if (area.positions_to_rooms == nullptr) {
 		logMsg(ERROR, "Error getting room index: area.positions_to_rooms is nullptr.");
@@ -105,14 +105,14 @@ direction_t test_room_travel(const Vector3D player_position, const area_t area, 
 	return DIRECTION_NONE;
 }
 
-offset_t direction_offset(const direction_t direction) {
+Offset direction_offset(const direction_t direction) {
 	
 	switch (direction) {
-		case DIRECTION_NORTH: return (offset_t){ .x = 0, .y = 1 };
-		case DIRECTION_EAST: return (offset_t){ .x = 1, .y = 0 };
-		case DIRECTION_SOUTH: return (offset_t){ .x = 0, .y = -1 };
-		case DIRECTION_WEST: return (offset_t){ .x = -1, .y = 0 };
+		case DIRECTION_NORTH: return (Offset){ .x = 0, .y = 1 };
+		case DIRECTION_EAST: return (Offset){ .x = 1, .y = 0 };
+		case DIRECTION_SOUTH: return (Offset){ .x = 0, .y = -1 };
+		case DIRECTION_WEST: return (Offset){ .x = -1, .y = 0 };
 	}
 
-	return (offset_t){ 0 };
+	return (Offset){ 0 };
 }

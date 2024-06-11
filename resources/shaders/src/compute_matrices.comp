@@ -84,6 +84,7 @@ mat4 make_orthographic_projection_matrix(ProjectionBounds bounds) {
 void main() {
 	const uint model_slot = gl_LocalInvocationID.x;
 	output_data.camera_matrix = makeTranslationMat4(uniform_data.camera_position);
+	output_data.camera_matrix[3].y *= -1.0;
 	output_data.projection_matrix = make_orthographic_projection_matrix(uniform_data.projection_bounds);
 	output_data.model_matrices[model_slot] = makeTranslationMat4(vec4Lerp(uniform_data.transforms[model_slot].translation, uniform_data.deltaTime));
 }
