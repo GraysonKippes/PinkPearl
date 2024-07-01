@@ -13,14 +13,14 @@
 
 /* -- DESCRIPTOR LAYOUT -- */
 
-static descriptor_binding_t graphics_descriptor_bindings[4] = {
+static DescriptorBinding graphics_descriptor_bindings[4] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },	// Draw data
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },	// Matrix buffer
 	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = VK_CONF_MAX_NUM_QUADS, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Texture array
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }	// Lighting
 };
 
-const descriptor_layout_t graphics_descriptor_set_layout = {
+const DescriptorSetLayout graphics_descriptor_set_layout = {
 	.num_bindings = 4,
 	.bindings = graphics_descriptor_bindings 
 };
@@ -38,7 +38,7 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 /* -- FUNCTION DEFINITIONS -- */
 
 static VkRenderPass createRenderPass(VkDevice device, VkFormat swapchain_format) {
-	logMsg(VERBOSE, "Creating render pass...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating render pass...");
 
 	const VkAttachmentDescription2 attachmentDescriptions[2] = {
 		{	// Color attachment description
@@ -131,14 +131,14 @@ static VkRenderPass createRenderPass(VkDevice device, VkFormat swapchain_format)
 	VkRenderPass renderPass = VK_NULL_HANDLE;
 	const VkResult result = vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &renderPass);
 	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Render pass creation failed. (Error code: %i)", result);
+		logMsgF(LOG_LEVEL_FATAL, "Render pass creation failed. (Error code: %i)", result);
 	}
 	return renderPass;
 }
 
-GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
+GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, DescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
 
-	logMsg(VERBOSE, "Creating graphics pipeline...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
 	GraphicsPipeline pipeline = { };
 	pipeline.render_pass = createRenderPass(device, swapchain.image_format);
@@ -229,7 +229,7 @@ GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, 
 
 	const VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &pipeline.handle);
 	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
+		logMsgF(LOG_LEVEL_FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
 	}
 
 	return pipeline;
@@ -334,7 +334,7 @@ static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColor
 
 static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
-	logMsg(VERBOSE, "Creating graphics pipeline layout...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating graphics pipeline layout...");
 
 	VkPipelineLayoutCreateInfo create_info = { 0 };
 	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -347,6 +347,6 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 
 	VkResult result = vkCreatePipelineLayout(device, &create_info, nullptr, pipeline_layout_ptr);
 	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Graphics pipeline layout creation failed. (Error code: %i)", result);
+		logMsgF(LOG_LEVEL_FATAL, "Graphics pipeline layout creation failed. (Error code: %i)", result);
 	}
 }

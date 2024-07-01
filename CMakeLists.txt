@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 
-set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
 project(PinkPearl VERSION 0.0)
@@ -9,8 +9,6 @@ add_executable(PinkPearl)
 set(APP_NAME "\"Pink Pearl\"")
 set(RESOURCE_PATH "\"../resources/\"")
 configure_file(src/config.h.in config.h)
-
-set(COMPILE_OPTIONS_MSVC, "/TC /std:c17 /options:strict /W3 /we4013 /we4133 /fsanitize=address")
 
 target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall -Wextra
 	-Werror=return-type 
@@ -30,9 +28,10 @@ target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall 
 
 find_package(Vulkan REQUIRED)
 
-target_link_libraries(PinkPearl PRIVATE Vulkan::Vulkan 
-	"${PROJECT_SOURCE_DIR}/lib/libportaudio.dll" 
+target_link_libraries(PinkPearl PRIVATE 
+	Vulkan::Vulkan 
 	"${PROJECT_SOURCE_DIR}/lib/libglfw3.a"
+	"${PROJECT_SOURCE_DIR}/lib/libportaudio.dll" 
 	"${PROJECT_SOURCE_DIR}/lib/libDataStuff.a"
 )
 

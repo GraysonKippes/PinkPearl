@@ -38,18 +38,18 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	// TODO - modify this to use semaphores between image transitions and data transfer operations.
 
 	if (stringIsNull(textureCreateInfo.textureID)) {
-		logMsg(ERROR, "Error loading texture: texture ID is null.");
+		logMsg(LOG_LEVEL_ERROR, "Error loading texture: texture ID is null.");
 		return makeNullTexture();
 	}
 
-	logMsgF(VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.buffer);
+	logMsgF(LOG_LEVEL_VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.buffer);
 
 	if (textureCreateInfo.numAnimations == 0) {
-		logMsg(ERROR, "Error loading texture: number of animation create infos is zero.");
+		logMsg(LOG_LEVEL_ERROR, "Error loading texture: number of animation create infos is zero.");
 	}
 
 	if (textureCreateInfo.numAnimations > 0 && textureCreateInfo.animations == nullptr) {
-		logMsg(ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is nullptr.");
+		logMsg(LOG_LEVEL_ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is nullptr.");
 		return makeNullTexture();
 	}
 
@@ -81,7 +81,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	memcpy(mapped_memory, base_image_data.data, base_image_size);
 	free_image_data(base_image_data);
 	buffer_partition_unmap_memory(global_staging_buffer_partition);
-			
+	
 	// Subresource range used in all image views and layout transitions.	
 	static const ImageSubresourceRange imageSubresourceRange = {
 		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -91,13 +91,13 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	// Transfer image data to texture images.
 	VkCommandBuffer transferCommandBuffer = VK_NULL_HANDLE;
-	allocCmdBufs(device, cmdPoolTransfer, 1, &transferCommandBuffer);
+	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, 1, &transferCommandBuffer);
 	cmdBufBegin(transferCommandBuffer, true); {
 		
 		const uint32_t numBufImgCopies = texture.numImageArrayLayers;
 		VkBufferImageCopy2 *bufImgCopies = nullptr;
 		if (!allocate((void **)&bufImgCopies, numBufImgCopies, sizeof(VkBufferImageCopy2))) {
-			logMsg(ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
+			logMsg(LOG_LEVEL_ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
 			// TODO - do proper cleanup here.
 			return texture;
 		}
@@ -172,7 +172,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	// Command buffer for second image layout transition (transfer destination to sampled).
 	VkCommandBuffer transitionCommandBuffer2 = VK_NULL_HANDLE;
-	allocCmdBufs(device, cmdPoolGraphics, 1, &transitionCommandBuffer2);
+	allocCmdBufs(device, commandPoolGraphics.vkCommandPool, 1, &transitionCommandBuffer2);
 	cmdBufBegin(transitionCommandBuffer2, true); {
 
 		ImageUsage imageUsage = imageUsageSampled;
@@ -217,8 +217,8 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	vkQueueWaitIdle(queueGraphics);
 	vkQueueWaitIdle(queueTransfer);
 
-	vkFreeCommandBuffers(device, cmdPoolGraphics, 1, &transitionCommandBuffer2);
-	vkFreeCommandBuffers(device, cmdPoolTransfer, 1, &transferCommandBuffer);
+	vkFreeCommandBuffers(device, commandPoolGraphics.vkCommandPool, 1, &transitionCommandBuffer2);
+	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, 1, &transferCommandBuffer);
 
 	vkDestroySemaphore(device, semaphore_transition_finished, nullptr);
 	vkDestroySemaphore(device, semaphore_transfer_finished, nullptr);

@@ -36,12 +36,7 @@ String newString(const size_t capacity, const char *const pInitData) {
 	
 	const size_t maxLen = string.capacity - 1;	// Maximum possible length of 
 	const size_t initLen = strlen(pInitData);	// Length of initial data NOT including null terminator.
-	
-	const errno_t copyResult = strncpy_s(string.buffer, string.capacity, pInitData, initLen);
-	if (copyResult != 0) {
-		logMsgF(ERROR, "Error creating new string: string copy failed (\"%s\").", strerror(copyResult));
-	}
-	
+	strncpy(string.buffer, pInitData, initLen);
 	string.length = initLen > maxLen ? maxLen : initLen;
 	
 	return string;
@@ -127,7 +122,7 @@ bool stringConcatString(String *const pDst, const String src) {
 		pDst->buffer = realloc(pDst->buffer, (new_length + 1) * sizeof(char));
 	}
 	
-	strncpy_s(&pDst->buffer[pDst->length], pDst->length, src.buffer, src.length);
+	strncpy(&pDst->buffer[pDst->length], src.buffer, src.length);
 	pDst->length = new_length;
 	
 	return true;

@@ -6,7 +6,7 @@
 #include "descriptor.h"
 #include "swapchain.h"
 
-extern const descriptor_layout_t graphics_descriptor_set_layout;
+extern const DescriptorSetLayout graphics_descriptor_set_layout;
 
 typedef struct GraphicsPipeline {
 
@@ -19,7 +19,7 @@ typedef struct GraphicsPipeline {
 
 } GraphicsPipeline;
 
-GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, descriptor_layout_t descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
+GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, DescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
 
 void destroy_graphics_pipeline(VkDevice device, GraphicsPipeline pipeline);
 

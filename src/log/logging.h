@@ -2,11 +2,11 @@
 #define LOGGING_H
 
 typedef enum log_level_t {
-	VERBOSE = 0,
-	INFO = 1,
-	WARNING = 2,
-	ERROR = 3,
-	FATAL = 4
+	LOG_LEVEL_VERBOSE = 0,
+	LOG_LEVEL_INFO = 1,
+	LOG_LEVEL_WARNING = 2,
+	LOG_LEVEL_ERROR = 3,
+	LOG_LEVEL_FATAL = 4
 } log_level_t;
 
 void logMsg(log_level_t level, const char *message);

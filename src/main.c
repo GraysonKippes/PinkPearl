@@ -20,9 +20,9 @@
 int main(void) {
 
 	init_log_stack();
-	logMsgF(INFO, "Running Pink Pearl version %u.%u", PinkPearl_VERSION_MAJOR, PinkPearl_VERSION_MINOR);
+	logMsgF(LOG_LEVEL_INFO, "Running Pink Pearl version %u.%u", PinkPearl_VERSION_MAJOR, PinkPearl_VERSION_MINOR);
 	if (debug_enabled) {
-		logMsg(WARNING, "Debug mode enabled.");
+		logMsg(LOG_LEVEL_WARNING, "Debug mode enabled.");
 	}
 
 	init_GLFW();
@@ -34,7 +34,7 @@ int main(void) {
 	start_game();
 	error_queue_flush();
 
-	logMsg(INFO, "Ready to play Pink Pearl!");
+	logMsg(LOG_LEVEL_INFO, "Ready to play Pink Pearl!");
 	run_client();
 
 	terminate_entity_registry();
@@ -43,7 +43,7 @@ int main(void) {
 	terminate_renderer();
 	terminate_GLFW();
 
-	logMsg(INFO, "Stopping Pink Pearl. Goodbye!");
+	logMsg(LOG_LEVEL_INFO, "Stopping Pink Pearl. Goodbye!");
 	terminate_log_stack();
 	terminate_error_queue();
 	

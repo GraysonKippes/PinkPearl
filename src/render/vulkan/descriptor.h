@@ -11,32 +11,45 @@
 /* -- TYPE DEFINITIONS -- */
 
 // Condensed form of struct VkDescriptorSetLayoutBinding.
-typedef struct descriptor_binding_t {
+typedef struct DescriptorBinding {
 
 	VkDescriptorType type;
 	uint32_t count;
 	VkShaderStageFlags stages;
 
-} descriptor_binding_t;
-
-
+} DescriptorBinding;
 
 // Can be used to create a VkDescriptorSetLayout.
-// TODO - change typename to `descriptor_set_layout_t`.
-typedef struct descriptor_layout_t {
+typedef struct DescriptorSetLayout {
 	
 	// This can be used both for descriptor bindings and for sizes for descriptor pools.
 	uint32_t num_bindings;
-	descriptor_binding_t *bindings;
+	DescriptorBinding *bindings;
 
-} descriptor_layout_t;
+} DescriptorSetLayout;
 
-typedef struct descriptor_pool_t {
+typedef struct DescriptorPool {
 
 	VkDescriptorPool handle;
 	VkDescriptorSetLayout layout;
+	VkDevice vkDevice;
 
-} descriptor_pool_t;
+} DescriptorPool;
+
+typedef struct DescriptorSet {
+	
+	VkDescriptorSet vkDescriptorSet;
+	VkDevice vkDevice;
+	
+	bool bound;
+	uint32_t pendingWriteCount;
+	VkWriteDescriptorSet *pPendingWrites;
+	
+} DescriptorSet;
+
+DescriptorSet allocateDescriptorSet(const DescriptorPool descriptorPool);
+
+void descriptorSetPushWrite(DescriptorSet *const pDescriptorSet, const VkWriteDescriptorSet descriptorSetWrite);
 
 
 
@@ -44,19 +57,19 @@ extern const VkSampler no_sampler;
 
 /* -- FUNCTION DECLARATIONS -- */
 
-void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr);
+void create_descriptor_set_layout(VkDevice vkDevice, DescriptorSetLayout descriptorSetLayout, VkDescriptorSetLayout *pDescriptorSetLayout);
 
-void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr);
+void create_descriptor_pool(VkDevice vkDevice, uint32_t max_sets, DescriptorSetLayout descriptor_layout, VkDescriptorPool *descriptor_pool_ptr);
 
-void destroy_descriptor_pool(VkDevice device, descriptor_pool_t descriptor_pool);
+void destroy_descriptor_pool(VkDevice vkDevice, DescriptorPool descriptorPool);
 
-void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets);
+void allocate_descriptor_sets(VkDevice vkDevice, DescriptorPool descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets);
 
 // Convenience function. Makes and returns a VkDescriptorBufferInfo struct with the specified parameters.
-VkDescriptorBufferInfo make_descriptor_buffer_info(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
+VkDescriptorBufferInfo makeDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
 
 // Convenience function. Makes and returns a VkDescriptorImageInfo struct with the specified parameters.
 // Pass VK_NULL_HANDLE for the sampler if the image in question is not going to be sampled.
-VkDescriptorImageInfo make_descriptor_image_info(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout);
+VkDescriptorImageInfo makeDescriptorImageInfo(const VkSampler sampler, const VkImageView imageView, const VkImageLayout imageLayout);
 
 #endif	// DESCRIPTOR_H

@@ -4,9 +4,47 @@
 
 #include "log/logging.h"
 
+DescriptorSet allocateDescriptorSet(const DescriptorPool descriptorPool) {
+	
+	DescriptorSet descriptorSet = {
+		.vkDescriptorSet = VK_NULL_HANDLE,
+		.vkDevice = VK_NULL_HANDLE,
+		.bound = false,
+		.pendingWriteCount = 0,
+		.pPendingWrites = nullptr
+	};
+	
+	VkDescriptorSetAllocateInfo allocateInfo = {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+		.pNext = nullptr,
+		.descriptorPool = descriptorPool.handle,
+		.descriptorSetCount = 1,
+		.pSetLayouts = &descriptorPool.layout
+	};
+	vkAllocateDescriptorSets(descriptorPool.vkDevice, &allocateInfo, &descriptorSet.vkDescriptorSet);
+	
+	descriptorSet.vkDevice = descriptorPool.vkDevice;
+	descriptorSet.pPendingWrites = malloc(8 * sizeof(VkWriteDescriptorSet));
+	
+	return descriptorSet;
+}
+
+void descriptorSetPushWrite(DescriptorSet *const pDescriptorSet, const VkWriteDescriptorSet descriptorSetWrite) {
+	if (!pDescriptorSet) {
+		logMsg(LOG_LEVEL_ERROR, "Error pushing descriptor set write: null pointer(s) detected.");
+		return;
+	} else if (pDescriptorSet->pendingWriteCount >= 8) {
+		logMsg(LOG_LEVEL_ERROR, "Error pushing descriptor set write: maximum number of writes already pushed.");
+		return;
+	}
+	
+	pDescriptorSet->pPendingWrites[pDescriptorSet->pendingWriteCount] = descriptorSetWrite;
+	pDescriptorSet->pendingWriteCount += 1;
+}
 
 
-void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr) {
+
+void create_descriptor_set_layout(VkDevice device, DescriptorSetLayout descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr) {
 
 	VkDescriptorSetLayoutBinding *descriptor_bindings = nullptr;
 
@@ -24,7 +62,7 @@ void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descripto
 		descriptor_bindings[i].stageFlags = descriptor_layout.bindings[i].stages;
 	}
 
-	VkDescriptorSetLayoutCreateInfo create_info = { 0 };
+	VkDescriptorSetLayoutCreateInfo create_info = { };
 	create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	create_info.pNext = nullptr;
 	create_info.flags = 0;
@@ -33,18 +71,18 @@ void create_descriptor_set_layout(VkDevice device, descriptor_layout_t descripto
 
 	VkResult result = vkCreateDescriptorSetLayout(device, &create_info, nullptr, descriptor_set_layout_ptr);
 	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Descriptor set layout creation failed. (Error code: %i)", result);
+		logMsgF(LOG_LEVEL_FATAL, "Descriptor set layout creation failed. (Error code: %i)", result);
 	}
 
 	if (descriptor_bindings != nullptr)
 		free(descriptor_bindings);
 }
 
-void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layout_t descriptor_layout, VkDescriptorPool *descriptor_pool_ptr) {
+void create_descriptor_pool(VkDevice device, uint32_t max_sets, DescriptorSetLayout descriptor_layout, VkDescriptorPool *descriptor_pool_ptr) {
 
 	VkDescriptorPoolSize *pool_sizes = calloc(descriptor_layout.num_bindings, sizeof(VkDescriptorPoolSize));
 	if (pool_sizes == nullptr) {
-		logMsg(ERROR, "Allocation of descriptor pool sizes array failed.");
+		logMsg(LOG_LEVEL_ERROR, "Allocation of descriptor pool sizes array failed.");
 		return;
 	}
 	
@@ -63,18 +101,18 @@ void create_descriptor_pool(VkDevice device, uint32_t max_sets, descriptor_layou
 
 	VkResult result = vkCreateDescriptorPool(device, &create_info, nullptr, descriptor_pool_ptr);
 	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Descriptor pool creation failed. (Error code: %i)", result);
+		logMsgF(LOG_LEVEL_FATAL, "Descriptor pool creation failed. (Error code: %i)", result);
 	}
 
 	free(pool_sizes);
 }
 
-void destroy_descriptor_pool(VkDevice device, descriptor_pool_t descriptor_pool) {
+void destroy_descriptor_pool(VkDevice device, DescriptorPool descriptor_pool) {
 	vkDestroyDescriptorPool(device, descriptor_pool.handle, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptor_pool.layout, nullptr);
 }
 
-void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets) {
+void allocate_descriptor_sets(VkDevice device, DescriptorPool descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets) {
 
 	VkDescriptorSetLayout *layouts = calloc(num_descriptor_sets, sizeof(VkDescriptorSetLayout));
 	if (layouts == nullptr) {
@@ -93,13 +131,13 @@ void allocate_descriptor_sets(VkDevice device, descriptor_pool_t descriptor_pool
 
 	VkResult result = vkAllocateDescriptorSets(device, &allocate_info, descriptor_sets);
 	if (result != VK_SUCCESS) {
-		logMsgF(ERROR, "Descriptor set allocation failed. (Error code: %i)", result);
+		logMsgF(LOG_LEVEL_ERROR, "Descriptor set allocation failed. (Error code: %i)", result);
 	}
 
 	free(layouts);
 }
 
-VkDescriptorBufferInfo make_descriptor_buffer_info(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range) {
+VkDescriptorBufferInfo makeDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range) {
 
 	VkDescriptorBufferInfo info = { 0 };
 	info.buffer = buffer;
@@ -111,7 +149,7 @@ VkDescriptorBufferInfo make_descriptor_buffer_info(VkBuffer buffer, VkDeviceSize
 
 const VkSampler no_sampler = VK_NULL_HANDLE;
 
-VkDescriptorImageInfo make_descriptor_image_info(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout) {
+VkDescriptorImageInfo makeDescriptorImageInfo(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout) {
 
 	VkDescriptorImageInfo info = { 0 };
 	info.sampler = sampler;

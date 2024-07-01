@@ -20,7 +20,7 @@ void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_se
 	vkCreatePipelineLayout(device, &create_info, nullptr, pipeline_layout_ptr);
 }
 
-ComputePipeline create_compute_pipeline(const VkDevice device, const descriptor_layout_t descriptor_layout, const char *const compute_shader_name) {
+ComputePipeline create_compute_pipeline(const VkDevice device, const DescriptorSetLayout descriptor_layout, const char *const compute_shader_name) {
 	
 	shader_module_t compute_shader_module = create_shader_module(device, compute_shader_name);
 
@@ -44,7 +44,7 @@ ComputePipeline create_compute_pipeline(const VkDevice device, const descriptor_
 
 	const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &compute_pipeline.handle);
 	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Compute pipeline creation failed (error code: %i).", result);
+		logMsgF(LOG_LEVEL_FATAL, "Compute pipeline creation failed (error code: %i).", result);
 	}
 	compute_pipeline.device = device;
 

@@ -5,11 +5,50 @@
 
 #include <vulkan/vulkan.h>
 
-extern const VkCommandPoolCreateFlags default_command_pool_flags;
+#include "descriptor.h"
+#include "pipeline.h"
 
-extern const VkCommandPoolCreateFlags transfer_command_pool_flags;
 
-void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr);
+
+typedef struct CommandPool {
+	
+	VkCommandPool vkCommandPool;
+	VkDevice vkDevice;
+	
+	bool transient;
+	bool resetable;
+	
+} CommandPool;
+
+typedef struct CommandBuffer {
+	
+	VkCommandBuffer vkCommandBuffer;
+	
+	bool recording;
+	bool resetable;
+	
+	uint32_t boundDescriptorSetCount;
+	DescriptorSet **ppBoundDescriptorSets;
+	
+} CommandBuffer;
+
+// Creates a new command pool in the specified queue family.
+CommandPool createCommandPool(const VkDevice vkDevice, const uint32_t queueFamilyIndex, const bool transient, const bool resetable);
+
+// Deletes the command pool and resets its objects to null values.
+void deleteCommandPool(CommandPool *const pCommandPool);
+
+CommandBuffer allocateCommandBuffer(const CommandPool commandPool);
+
+void commandBufferBegin(CommandBuffer *const pCommandBuffer, const bool singleSubmit);
+
+void commandBufferEnd(CommandBuffer *const pCommandBuffer);
+
+void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const Pipeline pipeline);
+
+void commandBufferReset(CommandBuffer *const pCommandBuffer);
+
+
 
 void allocCmdBufs(const VkDevice vkDevice, const VkCommandPool commandPool, const uint32_t numBuffers, VkCommandBuffer *pCommandBuffers);
 

@@ -10,14 +10,14 @@
 
 #define WIN32_FORMATTING
 
-static const log_level_t severity_threshold = VERBOSE;
+static const log_level_t severity_threshold = LOG_LEVEL_VERBOSE;
 
 static const char *severity_labels[5] = {
-	"VERBOSE",
-	"INFO",
-	"WARNING",
-	"ERROR",
-	"FATAL"
+	"LOG_LEVEL_VERBOSE",
+	"LOG_LEVEL_INFO",
+	"LOG_LEVEL_WARNING",
+	"LOG_LEVEL_ERROR",
+	"LOG_LEVEL_FATAL"
 };
 
 static const char *log_format(log_level_t level);
@@ -61,11 +61,11 @@ void logMsgF(log_level_t level, const char *format, ...) {
 static const char *log_format(log_level_t level) {
 	switch (level) {
 		default:
-		case VERBOSE: 	return "\x1B[40;90m";	// bg: Black	fg: Bright Black
-		case INFO: 		return "\x1B[40;37m";	// bg: Black	fg: White
-		case WARNING:	return "\x1B[40;93m";	// bg: Black	fg: Bright Yellow
-		case ERROR:		return "\x1B[40;91m";	// bg: Black	fg: Bright Red
-		case FATAL:		return "\x1B[41;97m";	// bg: Red		fg: Bright White
+		case LOG_LEVEL_VERBOSE: 	return "\x1B[40;90m";	// bg: Black	fg: Bright Black
+		case LOG_LEVEL_INFO: 		return "\x1B[40;37m";	// bg: Black	fg: White
+		case LOG_LEVEL_WARNING:	return "\x1B[40;93m";	// bg: Black	fg: Bright Yellow
+		case LOG_LEVEL_ERROR:		return "\x1B[40;91m";	// bg: Black	fg: Bright Red
+		case LOG_LEVEL_FATAL:		return "\x1B[41;97m";	// bg: Red		fg: Bright White
 	}
 }
 

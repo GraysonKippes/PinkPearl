@@ -43,10 +43,10 @@ const int textureHandleMissing = 0;
 static void registerTexture(const int textureHandle, const TextureCreateInfo textureCreateInfo);
 
 void initTextureManager(void) {
-	logMsg(VERBOSE, "Initializing texture manager...");
+	logMsg(LOG_LEVEL_VERBOSE, "Initializing texture manager...");
 	
 	if (textureManagerInitialized) {
-		logMsg(ERROR, "Error initializing texture manager: texture manager already initialized.");
+		logMsg(LOG_LEVEL_ERROR, "Error initializing texture manager: texture manager already initialized.");
 		return;
 	}
 
@@ -82,38 +82,38 @@ void initTextureManager(void) {
 	deleteString(&missingTextureCreateInfo.textureID);
 
 	textureManagerInitialized = true;
-	logMsg(VERBOSE, "Done loading textures.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done loading textures.");
 }
 
 void terminateTextureManager(void) {
-	logMsg(VERBOSE, "Terminating texture manager....");
+	logMsg(LOG_LEVEL_VERBOSE, "Terminating texture manager....");
 	for (int i = 0; i < numTextures; ++i) {
 		deleteTexture(&textures[i]);
 	}
 	textureManagerInitialized = false;
-	logMsg(VERBOSE, "Done terminating texture manager.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done terminating texture manager.");
 }
 
 bool textureManagerLoadTexturePack(const TexturePack texturePack) {
-	logMsg(VERBOSE, "Loading texture pack...");
+	logMsg(LOG_LEVEL_VERBOSE, "Loading texture pack...");
 	
 	if (!textureManagerInitialized) {
 		initTextureManager();
 	}
 	
 	if (texturePack.numTextures == 0) {
-		logMsg(WARNING, "Warning loading texture pack: loaded texture pack is empty.");
+		logMsg(LOG_LEVEL_WARNING, "Warning loading texture pack: loaded texture pack is empty.");
 		return false;
 	}
 
 	if (texturePack.pTextureCreateInfos == nullptr) {
-		logMsg(ERROR, "Error loading texture pack: array of texture create infos is null.");
+		logMsg(LOG_LEVEL_ERROR, "Error loading texture pack: array of texture create infos is null.");
 		return false;
 	}
 	
 	const int textureSlotsRemaining = numTextures - numTexturesLoaded;
 	if (textureSlotsRemaining < (int)texturePack.numTextures) {
-		logMsgF(ERROR, "Error loading texture pack: not enough available texture slots (%i) for texture pack.", textureSlotsRemaining);
+		logMsgF(LOG_LEVEL_ERROR, "Error loading texture pack: not enough available texture slots (%i) for texture pack.", textureSlotsRemaining);
 		return false;
 	}
 	
@@ -121,21 +121,21 @@ bool textureManagerLoadTexturePack(const TexturePack texturePack) {
 		textureManagerLoadTexture(texturePack.pTextureCreateInfos[i]);
 	}
 	
-	logMsg(VERBOSE, "Done loading texture pack.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done loading texture pack.");
 	return true;
 }
 
 void textureManagerLoadTexture(const TextureCreateInfo textureCreateInfo) {
-	logMsgF(VERBOSE, "Initializing texture \"%s\"...", textureCreateInfo.textureID.buffer);
+	logMsgF(LOG_LEVEL_VERBOSE, "Initializing texture \"%s\"...", textureCreateInfo.textureID.buffer);
 	
 	const int textureHandle = numTexturesLoaded++;
 	if (!validateTextureHandle(textureHandle)) {
-		logMsgF(ERROR, "Error initializing texture: invalid texture handle (%i).", textureHandle);
+		logMsgF(LOG_LEVEL_ERROR, "Error initializing texture: invalid texture handle (%i).", textureHandle);
 		return;
 	}
 	
 	if (!textureIsNull(textures[textureHandle])) {
-		logMsgF(ERROR, "Error initializing texture: texture %i already initialized.", textureHandle);
+		logMsgF(LOG_LEVEL_ERROR, "Error initializing texture: texture %i already initialized.", textureHandle);
 		return;
 	}
 	
@@ -149,7 +149,7 @@ void textureManagerLoadTexture(const TextureCreateInfo textureCreateInfo) {
 	textures[textureHandle] = texture;
 	registerTexture(textureHandle, textureCreateInfo);
 	
-	logMsgF(VERBOSE, "Done initializing texture \"%s\".", textureCreateInfo.textureID.buffer);
+	logMsgF(LOG_LEVEL_VERBOSE, "Done initializing texture \"%s\".", textureCreateInfo.textureID.buffer);
 }
 
 bool validateTextureHandle(const int textureHandle) {
@@ -158,7 +158,7 @@ bool validateTextureHandle(const int textureHandle) {
 
 int findTexture(const String textureID) {
 	if (stringIsNull(textureID)) {
-		logMsg(ERROR, "Error finding loaded texture: given texture ID is null.");
+		logMsg(LOG_LEVEL_ERROR, "Error finding loaded texture: given texture ID is null.");
 		return textureHandleMissing;
 	}
 	
@@ -176,7 +176,7 @@ int findTexture(const String textureID) {
 
 Texture getTexture(const int textureHandle) {
 	if (!validateTextureHandle(textureHandle)) {
-		//logMsgF(ERROR, "Error getting loaded texture: texture handle (%u) is invalid.", textureHandle);
+		//logMsgF(LOG_LEVEL_ERROR, "Error getting loaded texture: texture handle (%u) is invalid.", textureHandle);
 		return textures[textureHandleMissing];
 	}
 	return textures[textureHandle];

@@ -19,7 +19,7 @@ typedef struct ComputePipeline {
 
 } ComputePipeline;
 
-ComputePipeline create_compute_pipeline(const VkDevice device, const descriptor_layout_t descriptor_layout, const char *const compute_shader_name);
+ComputePipeline create_compute_pipeline(const VkDevice device, const DescriptorSetLayout descriptor_layout, const char *const compute_shader_name);
 
 bool destroy_compute_pipeline(ComputePipeline *const compute_pipeline_ptr);
 

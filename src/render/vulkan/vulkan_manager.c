@@ -49,13 +49,12 @@ VkQueue queueCompute;
 
 /* -- Command Pools -- */
 
-VkCommandPool cmdPoolGraphics;
-VkCommandPool cmdPoolTransfer;
-VkCommandPool cmdPoolCompute;
+CommandPool commandPoolGraphics;
+CommandPool commandPoolTransfer;
+CommandPool commandPoolCompute;
 
 /* -- Render Objects -- */
 
-static VkClearValue clearColor;
 FrameArray frame_array = { };
 
 /* -- Global buffers -- */
@@ -68,17 +67,17 @@ buffer_partition_t global_draw_data_buffer_partition;
 /* -- Function Definitions -- */
 
 static void create_window_surface(void) {
-	logMsg(VERBOSE, "Creating window surface...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating window surface...");
 	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), nullptr, &surface);
 	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Window surface creation failed. (Error code: %i)", result);
+		logMsgF(LOG_LEVEL_FATAL, "Window surface creation failed. (Error code: %i)", result);
 		// TODO - do not use exit() here.
 		exit(1);
 	}
 }
 
 static void create_global_staging_buffer(void) {
-	logMsg(VERBOSE, "Creating global staging buffer...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating global staging buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -99,7 +98,7 @@ static void create_global_staging_buffer(void) {
 }
 
 static void create_global_uniform_buffer(void) {
-	logMsg(VERBOSE, "Creating global uniform buffer...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating global uniform buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -121,7 +120,7 @@ static void create_global_uniform_buffer(void) {
 }
 
 static void create_global_storage_buffer(void) {
-	logMsg(VERBOSE, "Creating global storage buffer...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating global storage buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -142,7 +141,7 @@ static void create_global_storage_buffer(void) {
 }
 
 static void create_global_draw_data_buffer(void) {
-	logMsg(VERBOSE, "Creating global draw data buffer...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating global draw data buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -163,7 +162,7 @@ static void create_global_draw_data_buffer(void) {
 
 void create_vulkan_objects(void) {
 	log_stack_push("Vulkan");
-	logMsg(INFO, "Initializing Vulkan...");
+	logMsg(LOG_LEVEL_INFO, "Initializing Vulkan...");
 
 	vulkan_instance = create_vulkan_instance();
 
@@ -188,11 +187,9 @@ void create_vulkan_objects(void) {
 	vkGetDeviceQueue(device, *physical_device.queue_family_indices.transfer_family_ptr, 0, &queueTransfer);
 	vkGetDeviceQueue(device, *physical_device.queue_family_indices.compute_family_ptr, 0, &queueCompute);
 
-	create_command_pool(device, default_command_pool_flags, *physical_device.queue_family_indices.graphics_family_ptr, &cmdPoolGraphics);
-	create_command_pool(device, transfer_command_pool_flags, *physical_device.queue_family_indices.transfer_family_ptr, &cmdPoolTransfer);
-	create_command_pool(device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, *physical_device.queue_family_indices.compute_family_ptr, &cmdPoolCompute);
-
-	clearColor = (VkClearValue){ { { 0.0F, 0.0F, 0.0F, 1.0F } } };
+	commandPoolGraphics = createCommandPool(device, *physical_device.queue_family_indices.graphics_family_ptr, false, true);
+	commandPoolTransfer = createCommandPool(device, *physical_device.queue_family_indices.transfer_family_ptr, true, true);
+	commandPoolCompute = createCommandPool(device, *physical_device.queue_family_indices.compute_family_ptr, true, false);
 
 	swapchain = create_swapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
 	shader_module_t vertex_shader_module = create_shader_module(device, VERTEX_SHADER_NAME);
@@ -205,33 +202,36 @@ void create_vulkan_objects(void) {
 
 	create_sampler(physical_device, device, &imageSamplerDefault);
 	
-	const frame_array_create_info_t frame_array_create_info = {
+	const FrameArrayCreateInfo frameArrayCreateInfo = {
 		.num_frames = 2,
 		.physical_device = physical_device,
-		.device = device,
-		.command_pool = cmdPoolGraphics,
-		.descriptor_pool = graphics_pipeline.descriptor_pool,
-		.descriptor_set_layout = graphics_pipeline.descriptor_set_layout
+		.vkDevice = device,
+		.commandPool = commandPoolGraphics,
+		.descriptorPool = (DescriptorPool){
+			.handle = graphics_pipeline.descriptor_pool,
+			.layout = graphics_pipeline.descriptor_set_layout,
+			.vkDevice = device
+		}
 	};
-	frame_array = create_frame_array(frame_array_create_info);
+	frame_array = createFrameArray(frameArrayCreateInfo);
 	
 	log_stack_pop();
 }
 
 void destroy_vulkan_objects(void) {
 	log_stack_push("Vulkan");
-	logMsg(VERBOSE, "Destroying Vulkan objects...");
+	logMsg(LOG_LEVEL_VERBOSE, "Destroying Vulkan objects...");
 
-	destroy_frame_array(&frame_array);
+	deleteFrameArray(&frame_array);
 
 	vkDestroySampler(device, imageSamplerDefault, nullptr);
 
 	destroy_graphics_pipeline(device, graphics_pipeline);
 	destroy_swapchain(device, swapchain);
-
-	vkDestroyCommandPool(device, cmdPoolGraphics, nullptr);
-	vkDestroyCommandPool(device, cmdPoolTransfer, nullptr);
-	vkDestroyCommandPool(device, cmdPoolCompute, nullptr);
+	
+	deleteCommandPool(&commandPoolGraphics);
+	deleteCommandPool(&commandPoolTransfer);
+	deleteCommandPool(&commandPoolCompute);
 
 	destroy_buffer_partition(&global_staging_buffer_partition);
 	destroy_buffer_partition(&global_uniform_buffer_partition);
@@ -243,6 +243,6 @@ void destroy_vulkan_objects(void) {
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	
-	logMsg(VERBOSE, "Done destroying Vulkan objects.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done destroying Vulkan objects.");
 	log_stack_pop();
 }

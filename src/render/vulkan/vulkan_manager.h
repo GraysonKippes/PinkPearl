@@ -39,9 +39,9 @@ extern VkQueue queueCompute;
 
 /* -- Command Pools -- */
 
-extern VkCommandPool cmdPoolGraphics;
-extern VkCommandPool cmdPoolTransfer;
-extern VkCommandPool cmdPoolCompute;
+extern CommandPool commandPoolGraphics;
+extern CommandPool commandPoolTransfer;
+extern CommandPool commandPoolCompute;
 
 /* -- Global buffers -- */
 

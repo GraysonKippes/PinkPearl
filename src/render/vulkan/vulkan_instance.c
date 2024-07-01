@@ -42,7 +42,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 bool check_validation_layer_support(uint32_t num_required_layers, const char *required_layers[]) {
 
-	logMsg(VERBOSE, "Checking validation layer support...");
+	logMsg(LOG_LEVEL_VERBOSE, "Checking validation layer support...");
 
 	uint32_t num_available_layers = 0;
 	vkEnumerateInstanceLayerProperties(&num_available_layers, nullptr);
@@ -85,7 +85,7 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 
 vulkan_instance_t create_vulkan_instance(void) {
 
-	logMsg(VERBOSE, "Creating Vulkan instance...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating Vulkan instance...");
 
 	vulkan_instance_t vulkan_instance = { 0 };
 
@@ -135,7 +135,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 	}
 
 	for (uint32_t i = 0; i < num_extensions; ++i) {
-		logMsgF(VERBOSE, "Enabling Vulkan extension \"%s\".", extensions[i]);
+		logMsgF(LOG_LEVEL_VERBOSE, "Enabling Vulkan extension \"%s\".", extensions[i]);
 	}
 
 	VkInstanceCreateInfo create_info = {0};
@@ -157,7 +157,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 		vulkan_instance.layer_names.strings = validation_layers;
 
 		for (uint32_t i = 0; i < num_validation_layers; ++i) {
-			logMsgF(VERBOSE, "Enabling validation layer \"%s\".", validation_layers[i]);
+			logMsgF(LOG_LEVEL_VERBOSE, "Enabling validation layer \"%s\".", validation_layers[i]);
 		}
 	}
 	else {
@@ -171,7 +171,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 
 	VkResult result = vkCreateInstance(&create_info, nullptr, &vulkan_instance.handle);
 	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
+		logMsgF(LOG_LEVEL_FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
 		exit(1);
 	}
 
@@ -196,20 +196,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 	(void)type;
 	(void)pUserData;
 
-	log_level_t log_level = VERBOSE;
+	log_level_t log_level = LOG_LEVEL_VERBOSE;
 
 	switch (severity) {
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-		log_level = VERBOSE;
+		log_level = LOG_LEVEL_VERBOSE;
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-		log_level = INFO;
+		log_level = LOG_LEVEL_INFO;
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-		log_level = WARNING;
+		log_level = LOG_LEVEL_WARNING;
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-		log_level = ERROR;
+		log_level = LOG_LEVEL_ERROR;
 		break;
 	}
 
@@ -220,7 +220,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 
 void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT *messenger_ptr) {
 
-	logMsg(VERBOSE, "Creating Vulkan debug messenger...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating Vulkan debug messenger...");
 
 	VkDebugUtilsMessengerCreateInfoEXT create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;

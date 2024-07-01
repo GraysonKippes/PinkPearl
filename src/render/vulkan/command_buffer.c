@@ -1,28 +1,159 @@
 #include "command_buffer.h"
 
+#include <stdlib.h>
+
 #include "log/logging.h"
 
-const VkCommandPoolCreateFlags default_command_pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-const VkCommandPoolCreateFlags transfer_command_pool_flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // TODO - this pool may not need the reset flag.
-
-
-void create_command_pool(VkDevice device, VkCommandPoolCreateFlags flags, uint32_t queue_family_index, VkCommandPool *command_pool_ptr) {
+CommandPool createCommandPool(const VkDevice vkDevice, const uint32_t queueFamilyIndex, const bool transient, const bool resetable) {
 	
-	logMsgF(VERBOSE, "Creating command pool in queue family %i...", queue_family_index);
-
-	VkCommandPoolCreateInfo create_info = { 0 };
-	create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	create_info.pNext = nullptr;
-	create_info.flags = flags;
-	create_info.queueFamilyIndex = queue_family_index;
-
-	// TODO - error handling
-	VkResult result = vkCreateCommandPool(device, &create_info, nullptr, command_pool_ptr);
-	if (result != VK_SUCCESS) {
-		logMsgF(FATAL, "Command pool creation failed. (Error code: %i)", result);
+	CommandPool commandPool = {
+		.vkCommandPool = VK_NULL_HANDLE,
+		.vkDevice = VK_NULL_HANDLE,
+		.transient = false,
+		.resetable = false
+	};
+	
+	VkCommandPoolCreateFlags createFlags = 0;
+	if (transient) {
+		createFlags |= VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 	}
+	if (resetable) {
+		createFlags |= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	}
+	
+	const VkCommandPoolCreateInfo createInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = createFlags,
+		.queueFamilyIndex = queueFamilyIndex
+	};
+	vkCreateCommandPool(vkDevice, &createInfo, nullptr, &commandPool.vkCommandPool);
+	
+	commandPool.vkDevice = vkDevice;
+	commandPool.transient = transient;
+	commandPool.resetable = resetable;
+	
+	return commandPool;
 }
+
+void deleteCommandPool(CommandPool *const pCommandPool) {
+	if (!pCommandPool) {
+		logMsg(LOG_LEVEL_ERROR, "Error deleting command pool: null pointer(s) detected.");
+		return;
+	}
+	
+	vkDestroyCommandPool(pCommandPool->vkDevice, pCommandPool->vkCommandPool, nullptr);
+	pCommandPool->vkCommandPool = VK_NULL_HANDLE;
+	pCommandPool->vkDevice = VK_NULL_HANDLE;
+	pCommandPool->transient = false;
+	pCommandPool->resetable = false;
+}
+
+CommandBuffer allocateCommandBuffer(const CommandPool commandPool) {
+	
+	CommandBuffer commandBuffer = { 
+		.vkCommandBuffer = VK_NULL_HANDLE,
+		.recording = false,
+		.resetable = false,
+		.boundDescriptorSetCount = 0,
+		.ppBoundDescriptorSets = nullptr
+	};
+	
+	const VkCommandBufferAllocateInfo allocateInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.pNext = nullptr,
+		.commandPool = commandPool.vkCommandPool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1
+	};
+	vkAllocateCommandBuffers(commandPool.vkDevice, &allocateInfo, &commandBuffer.vkCommandBuffer);
+	
+	commandBuffer.resetable = commandPool.resetable;
+	commandBuffer.ppBoundDescriptorSets = malloc(8 * sizeof(DescriptorSet *));
+	
+	return commandBuffer;
+}
+
+void commandBufferBegin(CommandBuffer *const pCommandBuffer, const bool singleSubmit) {
+	if (!pCommandBuffer) {
+		logMsg(LOG_LEVEL_ERROR, "Error beginning command buffer recording: null pointer(s) detected.");
+		return;
+	} else if (pCommandBuffer->recording) {
+		logMsg(LOG_LEVEL_ERROR, "Error beginning command buffer recording: command buffer already recording.");
+		return;
+	}
+	
+	const VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = nullptr,
+		.flags = singleSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0,
+		.pInheritanceInfo = nullptr
+	};
+	vkBeginCommandBuffer(pCommandBuffer->vkCommandBuffer, &beginInfo);
+	pCommandBuffer->recording = true;
+}
+
+void commandBufferEnd(CommandBuffer *const pCommandBuffer) {
+	if (!pCommandBuffer) {
+		logMsg(LOG_LEVEL_ERROR, "Error ending command buffer recording: null pointer(s) detected.");
+		return;
+	} else if (!pCommandBuffer->recording) {
+		logMsg(LOG_LEVEL_ERROR, "Error ending command buffer recording: command buffer not already recording.");
+		return;
+	}
+	
+	vkEndCommandBuffer(pCommandBuffer->vkCommandBuffer);
+	pCommandBuffer->recording = false;
+}
+
+void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const Pipeline pipeline) {
+	if (!pCommandBuffer || !pDescriptorSet) {
+		logMsg(LOG_LEVEL_ERROR, "Error binding descriptor set: null pointer(s) detected.");
+		return;
+	} else if (!pCommandBuffer->recording) {
+		logMsg(LOG_LEVEL_ERROR, "Error binding descriptor set: command buffer not currently recording.");
+		return;
+	} else if (pCommandBuffer->boundDescriptorSetCount >= 8) {
+		logMsg(LOG_LEVEL_ERROR, "Error binding descriptor set: maximum number of descriptor sets already bound.");
+		return;
+	}
+	
+	VkPipelineBindPoint pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	switch (pipeline.type) {
+		case PIPELINE_TYPE_GRAPHICS:
+			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			break;
+		case PIPELINE_TYPE_COMPUTE:
+			pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+			break;
+	}
+	
+	vkCmdBindDescriptorSets(pCommandBuffer->vkCommandBuffer, pipelineBindPoint, pipeline.vkPipelineLayout, 0, 1, &pDescriptorSet->vkDescriptorSet, 0, nullptr);
+	pCommandBuffer->ppBoundDescriptorSets[pCommandBuffer->boundDescriptorSetCount] = pDescriptorSet;
+	pCommandBuffer->boundDescriptorSetCount += 1;
+	pDescriptorSet->bound = true;
+}
+
+void commandBufferReset(CommandBuffer *const pCommandBuffer) {
+	if (!pCommandBuffer) {
+		logMsg(LOG_LEVEL_ERROR, "Error reseting command buffer: null pointer(s) detected.");
+		return;
+	} else if (!pCommandBuffer->resetable) {
+		logMsg(LOG_LEVEL_ERROR, "Error reseting command buffer: command buffer is not resetable.");
+		return;
+	}
+	
+	vkResetCommandBuffer(pCommandBuffer->vkCommandBuffer, 0);
+	
+	for (uint32_t i = 0; i < pCommandBuffer->boundDescriptorSetCount; ++i) {
+		const DescriptorSet descriptorSet = *pCommandBuffer->ppBoundDescriptorSets[i];
+		vkUpdateDescriptorSets(descriptorSet.vkDevice, descriptorSet.pendingWriteCount, descriptorSet.pPendingWrites, 0, nullptr);
+		pCommandBuffer->ppBoundDescriptorSets[i] = nullptr;
+	}
+	pCommandBuffer->boundDescriptorSetCount = 0;
+}
+
+
 
 void allocCmdBufs(VkDevice device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers) {
 

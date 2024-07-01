@@ -6,54 +6,42 @@
 #include "render/render_config.h"
 #include "util/allocate.h"
 
-#include "command_buffer.h"
 #include "queue.h"
 #include "vertex_input.h"
 #include "vulkan_manager.h"
 
-static frame_t create_frame(physical_device_t physical_device, VkDevice device, VkCommandPool command_pool, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout) {
+static Frame createFrame(physical_device_t physical_device, VkDevice device, CommandPool commandPool, DescriptorPool descriptorPool) {
 
-	frame_t frame = {
-		.command_buffer = VK_NULL_HANDLE,
-		.descriptor_set = VK_NULL_HANDLE,
-		.semaphore_image_available = (binary_semaphore_t){ 0 },
-		.semaphore_present_ready = (binary_semaphore_t){ 0 },
-		.semaphore_render_finished = (timeline_semaphore_t){ 0 },
+	Frame frame = {
+		.commandBuffer = { },
+		.descriptorSet = { },
+		.semaphore_image_available = (binary_semaphore_t){ },
+		.semaphore_present_ready = (binary_semaphore_t){ },
+		.semaphore_render_finished = (timeline_semaphore_t){ },
 		.fence_frame_ready = VK_NULL_HANDLE,
-		.semaphore_buffers_ready = (timeline_semaphore_t){ 0 },
+		.semaphore_buffers_ready = (timeline_semaphore_t){ },
 		.vertex_buffer = VK_NULL_HANDLE,
 		.index_buffer = VK_NULL_HANDLE
 	};
+	
+	const VkDeviceSize index_buffer_size = numRenderObjectSlots * num_indices_per_rect;
+	const VkDeviceSize vertex_buffer_size = numRenderObjectSlots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 
 	const VkFenceCreateInfo fence_create_info = {
 		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT
 	};
-	
-	const VkDeviceSize index_buffer_size = numRenderObjectSlots * num_indices_per_rect;
-	const VkDeviceSize vertex_buffer_size = numRenderObjectSlots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
+
+	vkCreateFence(device, &fence_create_info, nullptr, &frame.fence_frame_ready);
 	
 	frame.semaphore_image_available = create_binary_semaphore(device);
 	frame.semaphore_present_ready = create_binary_semaphore(device);
 	frame.semaphore_render_finished = create_timeline_semaphore(device);
 	frame.semaphore_buffers_ready = create_timeline_semaphore(device);
 
-	vkCreateFence(device, &fence_create_info, nullptr, &frame.fence_frame_ready);
-
-	allocCmdBufs(device, command_pool, 1, &frame.command_buffer);
-
-	VkDescriptorSetAllocateInfo allocate_info;
-	allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocate_info.pNext = nullptr;
-	allocate_info.descriptorPool = descriptor_pool;
-	allocate_info.descriptorSetCount = 1;
-	allocate_info.pSetLayouts = &descriptor_set_layout;
-
-	VkResult result = vkAllocateDescriptorSets(device, &allocate_info, &frame.descriptor_set);
-	if (result != VK_SUCCESS) {
-		logMsgF(ERROR, "Descriptor set allocation failed (error code: %i).", result);
-	}
+	frame.commandBuffer = allocateCommandBuffer(commandPool);
+	frame.descriptorSet = allocateDescriptorSet(descriptorPool);
 
 	uint32_t queue_family_indices[2] = {
 		*physical_device.queue_family_indices.graphics_family_ptr,
@@ -88,7 +76,7 @@ static frame_t create_frame(physical_device_t physical_device, VkDevice device, 
 	return frame;
 }
 
-static void destroy_frame(VkDevice device, frame_t frame) {
+static void destroy_frame(VkDevice device, Frame frame) {
 	destroy_binary_semaphore(&frame.semaphore_image_available);
 	destroy_binary_semaphore(&frame.semaphore_present_ready);
 	destroy_timeline_semaphore(&frame.semaphore_render_finished);
@@ -98,7 +86,7 @@ static void destroy_frame(VkDevice device, frame_t frame) {
 	vkDestroyBuffer(device, frame.index_buffer, nullptr);
 }
 
-FrameArray create_frame_array(const frame_array_create_info_t frame_array_create_info) {
+FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 
 	static const uint32_t max_num_frames = 3;
 
@@ -107,22 +95,22 @@ FrameArray create_frame_array(const frame_array_create_info_t frame_array_create
 		.num_frames = 0,
 		.frames = nullptr,
 		.buffer_memory = VK_NULL_HANDLE,
-		.device = frame_array_create_info.device
+		.device = frameArrayCreateInfo.vkDevice
 	};
 
-	if (frame_array_create_info.num_frames == 0) {
+	if (frameArrayCreateInfo.num_frames == 0) {
 		frame_array.num_frames = 1;
 	}
-	else if (frame_array_create_info.num_frames > max_num_frames) {
+	else if (frameArrayCreateInfo.num_frames > max_num_frames) {
 		frame_array.num_frames = max_num_frames;
 	}
 	else {
-		frame_array.num_frames = frame_array_create_info.num_frames;
+		frame_array.num_frames = frameArrayCreateInfo.num_frames;
 	}
 
-	if (!allocate((void **)&frame_array.frames, frame_array.num_frames, sizeof(frame_t))) {
-		logMsg(ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
-		return (FrameArray){ 0 };
+	if (!allocate((void **)&frame_array.frames, frame_array.num_frames, sizeof(Frame))) {
+		logMsg(LOG_LEVEL_ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
+		return (FrameArray){ };
 	}
 	
 	memory_range_t vertex_buffer_memory_ranges[3];
@@ -131,8 +119,7 @@ FrameArray create_frame_array(const frame_array_create_info_t frame_array_create
 	VkDeviceSize total_index_memory_size = 0;
 
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		frame_array.frames[i] = create_frame(frame_array_create_info.physical_device, frame_array_create_info.device, 
-			frame_array_create_info.command_pool, frame_array_create_info.descriptor_pool, frame_array_create_info.descriptor_set_layout);
+		frame_array.frames[i] = createFrame(frameArrayCreateInfo.physical_device, frameArrayCreateInfo.vkDevice, frameArrayCreateInfo.commandPool, frameArrayCreateInfo.descriptorPool);
 		
 		VkMemoryRequirements vertex_buffer_memory_requirements;
 		VkMemoryRequirements index_buffer_memory_requirements;
@@ -154,7 +141,6 @@ FrameArray create_frame_array(const frame_array_create_info_t frame_array_create
 		.allocationSize = total_vertex_memory_size + total_index_memory_size,
 		.memoryTypeIndex = memory_type_set.graphics_resources
 	};
-	
 	vkAllocateMemory(frame_array.device, &allocate_info, nullptr, &frame_array.buffer_memory);
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
@@ -163,7 +149,7 @@ FrameArray create_frame_array(const frame_array_create_info_t frame_array_create
 	}
 	
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(frame_array.device, frame_array_create_info.command_pool, 1, &cmdBuf);
+	allocCmdBufs(frame_array.device, frameArrayCreateInfo.commandPool.vkCommandPool, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 	
 		const uint16_t indices[6] = {
@@ -212,21 +198,21 @@ FrameArray create_frame_array(const frame_array_create_info_t frame_array_create
 	return frame_array;
 }
 
-bool destroy_frame_array(FrameArray *const frame_array_ptr) {
-	if (frame_array_ptr == nullptr) {
+bool deleteFrameArray(FrameArray *const pFrameArray) {
+	if (pFrameArray == nullptr) {
 		return false;
 	}
 	
-	for (uint32_t i = 0; i < frame_array_ptr->num_frames; ++i) {
-		destroy_frame(frame_array_ptr->device, frame_array_ptr->frames[i]);
+	for (uint32_t i = 0; i < pFrameArray->num_frames; ++i) {
+		destroy_frame(pFrameArray->device, pFrameArray->frames[i]);
 	}
-	deallocate((void **)&frame_array_ptr->frames);
-	frame_array_ptr->num_frames = 0;
-	frame_array_ptr->current_frame = 0;
+	deallocate((void **)&pFrameArray->frames);
+	pFrameArray->num_frames = 0;
+	pFrameArray->current_frame = 0;
 	
-	vkFreeMemory(frame_array_ptr->device, frame_array_ptr->buffer_memory, nullptr);
-	frame_array_ptr->buffer_memory = VK_NULL_HANDLE;
-	frame_array_ptr->device = VK_NULL_HANDLE;
+	vkFreeMemory(pFrameArray->device, pFrameArray->buffer_memory, nullptr);
+	pFrameArray->buffer_memory = VK_NULL_HANDLE;
+	pFrameArray->device = VK_NULL_HANDLE;
 	
 	return true;
 }

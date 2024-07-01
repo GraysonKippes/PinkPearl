@@ -1,8 +1,10 @@
 # Directories
 .vscode/
+.vs/
 build/
 build_gcc/
 build_msvc/
+cmake/
 include/
 lib/
 lib_src/
@@ -13,4 +15,5 @@ resources/data/
 
 # Misc files
 *.bak
+*.json
 *.cppcheck

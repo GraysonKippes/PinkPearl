@@ -25,33 +25,33 @@ static void audio_mixer_mix(void);
 // Call on main thread.
 void init_audio_mixer(void) {
 	
-	logMsg(VERBOSE, "Initializing audio mixer...");
+	logMsg(LOG_LEVEL_VERBOSE, "Initializing audio mixer...");
 	
 	audio_mixer_queue = make_audio_queue();
 	audio_mixer_set_music_track(load_audio_file("demo_dungeon.wav"));
 	
 	const int thread_create_result = pthread_create(&audio_mixer_thread, nullptr, audio_mixer_main, nullptr);
 	if (thread_create_result != 0) {
-		logMsgF(ERROR, "Error initializing audio mixer: thread creation returned with code %i.", thread_create_result);
+		logMsgF(LOG_LEVEL_ERROR, "Error initializing audio mixer: thread creation returned with code %i.", thread_create_result);
 	}
 	
-	logMsg(VERBOSE, "Done initializing audio mixer.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done initializing audio mixer.");
 }
 
 // Call on main thread.
 void terminate_audio_mixer(void) {
 	
-	logMsg(VERBOSE, "Terminating audio mixer...");
+	logMsg(LOG_LEVEL_VERBOSE, "Terminating audio mixer...");
 	
 	atomic_store(&audio_mixer_running, false);
 	const int thread_join_result = pthread_join(audio_mixer_thread, nullptr);
 	if (thread_join_result != 0) {
-		logMsgF(ERROR, "Error terminating audio mixer: thread joining returned with code %i.", thread_join_result);
+		logMsgF(LOG_LEVEL_ERROR, "Error terminating audio mixer: thread joining returned with code %i.", thread_join_result);
 	}
 	
 	destroy_audio_queue(&audio_mixer_queue);
 	
-	logMsg(VERBOSE, "Done terminating audio mixer.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done terminating audio mixer.");
 }
 
 void audio_mixer_set_music_track(const audio_data_t audio_data) {

@@ -13,18 +13,18 @@ audio_data_t load_audio_file(const char *const filename) {
 	
 	audio_data_t audio_data = { 0 };
 	if (filename == nullptr) {
-		logMsg(ERROR, "Error loading audio file: filename is null.");
+		logMsg(LOG_LEVEL_ERROR, "Error loading audio file: filename is null.");
 		return audio_data;
 	}
 	
-	audio_data.samples = drwav_open_file_and_read_pcm_frames_f32(AUDIO_PATH, &audio_data.num_channels, &audio_data.sample_rate, &audio_data.num_samples, nullptr);
+	audio_data.samples = drwav_open_file_and_read_pcm_frames_f32(AUDIO_PATH, &audio_data.num_channels, &audio_data.sample_rate, (drwav_uint64 *)&audio_data.num_samples, nullptr);
 	
 	if (audio_data.samples == nullptr) {
-		logMsgF(ERROR, "Error loading audio file \"%s\": samples is null.", filename);
+		logMsgF(LOG_LEVEL_ERROR, "Error loading audio file \"%s\": samples is null.", filename);
 	}
 	
 	if (audio_data.num_samples == 0) {
-		logMsgF(ERROR, "Error loading audio file \"%s\": number of samples is zero.", filename);
+		logMsgF(LOG_LEVEL_ERROR, "Error loading audio file \"%s\": number of samples is zero.", filename);
 	}
 	
 	return audio_data;

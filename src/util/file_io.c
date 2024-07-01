@@ -12,7 +12,7 @@ bool read_data(FILE *restrict stream, const size_t num_bytes_per_object, const s
 
 	const size_t num_objects_read = fread(buffer, num_bytes_per_object, num_objects, stream);
 	if (num_objects_read != num_objects) {
-		error_queue_push(ERROR, ERROR_CODE_FILE_READ_FAILED);
+		error_queue_push(LOG_LEVEL_ERROR, ERROR_CODE_FILE_READ_FAILED);
 	}
 
 	return num_objects_read == num_objects;
@@ -48,7 +48,7 @@ String readString(FILE *restrict stream, const size_t max_string_capacity) {
 	
 	const long int current_position = ftell(stream);
 	if (current_position < 0) {
-		error_queue_push(ERROR, ERROR_CODE_FILE_READ_FAILED);
+		error_queue_push(LOG_LEVEL_ERROR, ERROR_CODE_FILE_READ_FAILED);
 		return makeNullString();
 	}
 	
@@ -64,7 +64,7 @@ String readString(FILE *restrict stream, const size_t max_string_capacity) {
 	// Seek back to initial position.
 	const int seek_result = fseek(stream, current_position, SEEK_SET);
 	if (seek_result != 0) {
-		error_queue_push(ERROR, ERROR_CODE_FILE_READ_FAILED);
+		error_queue_push(LOG_LEVEL_ERROR, ERROR_CODE_FILE_READ_FAILED);
 		return makeNullString();
 	}
 	
@@ -87,7 +87,7 @@ void file_next_block(FILE *restrict stream) {
 	
 	const long int current_position = ftell(stream);
 	if (current_position < 0) {
-		error_queue_push(ERROR, ERROR_CODE_FILE_READ_FAILED);
+		error_queue_push(LOG_LEVEL_ERROR, ERROR_CODE_FILE_READ_FAILED);
 	}
 	
 	long int next_position = current_position;
@@ -98,6 +98,6 @@ void file_next_block(FILE *restrict stream) {
 	
 	const int seek_result = fseek(stream, next_position, SEEK_SET);
 	if (seek_result != 0) {
-		error_queue_push(ERROR, ERROR_CODE_FILE_READ_FAILED);
+		error_queue_push(LOG_LEVEL_ERROR, ERROR_CODE_FILE_READ_FAILED);
 	}
 }

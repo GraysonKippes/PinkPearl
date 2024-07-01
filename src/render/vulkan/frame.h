@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
+#include "command_buffer.h"
 #include "descriptor.h"
 #include "physical_device.h"
 #include "synchronization.h"
@@ -13,10 +14,11 @@
 // The frame is a set of resources used in drawing a frame.
 // They are placed in a struct for easy duplication, so that multiple frames can be pipelined.
 
-typedef struct frame_t {
-
-	VkCommandBuffer command_buffer;
-	VkDescriptorSet descriptor_set;
+typedef struct Frame {
+	
+	CommandBuffer commandBuffer;
+	
+	DescriptorSet descriptorSet;
 
 	// Signaled when the image for this frame is available.
 	binary_semaphore_t semaphore_image_available;
@@ -37,30 +39,32 @@ typedef struct frame_t {
 	VkBuffer vertex_buffer;
 	VkBuffer index_buffer;
 
-} frame_t;
+} Frame;
 
 typedef struct FrameArray {
 
 	uint32_t current_frame;
 	uint32_t num_frames;
-	frame_t *frames;
+	Frame *frames;
 
 	VkDeviceMemory buffer_memory;
 	VkDevice device;
 
 } FrameArray;
 
-typedef struct frame_array_create_info_t {
+typedef struct FrameArrayCreateInfo {
+	
 	uint32_t num_frames;
 	physical_device_t physical_device;
-	VkDevice device;
-	VkCommandPool command_pool;
-	VkDescriptorPool descriptor_pool;
-	VkDescriptorSetLayout descriptor_set_layout;
-} frame_array_create_info_t;
+	VkDevice vkDevice;
+	
+	CommandPool commandPool;
+	DescriptorPool descriptorPool;
+	
+} FrameArrayCreateInfo;
 
-FrameArray create_frame_array(const frame_array_create_info_t frame_array_create_info);
+FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo);
 
-bool destroy_frame_array(FrameArray *const frame_array_ptr);
+bool deleteFrameArray(FrameArray *const frame_array_ptr);
 
 #endif	// FRAME_H

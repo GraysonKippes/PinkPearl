@@ -23,6 +23,8 @@
 #include "compute/compute_matrices.h"
 #include "compute/compute_room_texture.h"
 
+/* -- Draw Data -- */
+
 typedef struct DrawData {
 	// Indirect draw command data
 	uint32_t index_count;
@@ -52,12 +54,11 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle);
 
 void createVulkanRenderObjects(void) {
 	log_stack_push("Vulkan");
-	logMsg(VERBOSE, "Creating Vulkan render objects...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating Vulkan render objects...");
 
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
 	
-	// Initialize data structures for managing quad IDs.
 	inactiveQuadIDs = newStack(vkConfMaxNumQuads, sizeof(int));
 	for (int quadID = vkConfMaxNumQuads - 1; quadID >= 0; --quadID) {
 		stackPush(&inactiveQuadIDs, &quadID);
@@ -68,7 +69,7 @@ void createVulkanRenderObjects(void) {
 
 void destroyVulkanRenderObjects(void) {
 	log_stack_push("Vulkan");
-	logMsg(VERBOSE, "Destroying Vulkan render objects...");
+	logMsg(LOG_LEVEL_VERBOSE, "Destroying Vulkan render objects...");
 	
 	vkDeviceWaitIdle(device);
 
@@ -97,7 +98,7 @@ void initTextureDescriptors(void) {
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
 		const VkWriteDescriptorSet descriptorWrite = {
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = frame_array.frames[i].descriptor_set,
+			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
 			.dstBinding = 2,
 			.dstArrayElement = 0,
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -219,8 +220,8 @@ static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
 	};
 	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
 	
-	vkFreeCommandBuffers(device, cmdPoolTransfer, frame_array.num_frames, cmdBufs);
-	allocCmdBufs(device, cmdPoolTransfer, frame_array.num_frames, cmdBufs);
+	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
+	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
 	
 	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
 	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { 0 } };
@@ -341,17 +342,13 @@ void updateDrawData(const int quadID, const unsigned int imageIndex) {
 static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 	
 	const Texture texture = getTexture(textureHandle);
-	
-	const VkDescriptorImageInfo descriptorImageInfo = {
-		.sampler = imageSamplerDefault,
-		.imageView = texture.image.vkImageView,
-		.imageLayout = texture.image.usage.imageLayout
-	};
+	const VkDescriptorImageInfo descriptorImageInfo = makeDescriptorImageInfo(imageSamplerDefault, texture.image.vkImageView, texture.image.usage.imageLayout);
+	VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		const VkWriteDescriptorSet descriptorWrite = {
+		writeDescriptorSets[i] = (VkWriteDescriptorSet){
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = frame_array.frames[i].descriptor_set,
+			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
 			.dstBinding = 2,
 			.dstArrayElement = (uint32_t)quadID,
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -360,7 +357,7 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 			.pImageInfo = &descriptorImageInfo,
 			.pTexelBufferView = nullptr
 		};
-		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+		descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);
 	}
 }
 
@@ -426,7 +423,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	vkWaitForFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready);
-	vkResetCommandBuffer(frame_array.frames[frame_array.current_frame].command_buffer, 0);
+	commandBufferReset(&frame_array.frames[frame_array.current_frame].commandBuffer);
 
 	uint32_t image_index = 0;
 	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore, VK_NULL_HANDLE, &image_index);
@@ -444,7 +441,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	const VkDescriptorBufferInfo draw_data_buffer_info = buffer_partition_descriptor_info(global_draw_data_buffer_partition, 1);
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[0].dstSet = frame_array.frames[frame_array.current_frame].descriptor_set;
+	descriptor_writes[0].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
 	descriptor_writes[0].dstBinding = 0;
 	descriptor_writes[0].dstArrayElement = 0;
 	descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -455,7 +452,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	const VkDescriptorBufferInfo matrix_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
 	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[1].dstSet = frame_array.frames[frame_array.current_frame].descriptor_set;
+	descriptor_writes[1].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
 	descriptor_writes[1].dstBinding = 1;
 	descriptor_writes[1].dstArrayElement = 0;
 	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -466,7 +463,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 3);
 	descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[2].dstSet = frame_array.frames[frame_array.current_frame].descriptor_set;
+	descriptor_writes[2].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
 	descriptor_writes[2].dstBinding = 3;
 	descriptor_writes[2].dstArrayElement = 0;
 	descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -479,14 +476,11 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	
 	uploadLightingData();
 
-	cmdBufBegin(frame_array.frames[frame_array.current_frame].command_buffer, false);
+	commandBufferBegin(&frame_array.frames[frame_array.current_frame].commandBuffer, false);
 	
-	const VkClearValue clearValues[2] = {
+	const VkClearValue clearValues[1] = {
 		{
 			.color = { { 0.0F, 0.0F, 0.0F, 1.0F } }
-		},
-		{
-			.depthStencil = { 1.0F, 0 }
 		}
 	};
 	
@@ -498,28 +492,36 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		.renderArea.offset.x = 0,
 		.renderArea.offset.y = 0,
 		.renderArea.extent = swapchain.extent,
-		.clearValueCount = 2,
+		.clearValueCount = 1,
 		.pClearValues = clearValues
 	};
-	vkCmdBeginRenderPass(frame_array.frames[frame_array.current_frame].command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 	
-	vkCmdBindPipeline(frame_array.frames[frame_array.current_frame].command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
-	vkCmdBindDescriptorSets(frame_array.frames[frame_array.current_frame].command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &frame_array.frames[frame_array.current_frame].descriptor_set, 0, nullptr);
+	vkCmdBindPipeline(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
+	
+	Pipeline pipeline = {
+		.vkPipeline = graphics_pipeline.handle,
+		.vkPipelineLayout = graphics_pipeline.layout,
+		.vkDevice = device,
+		.type = PIPELINE_TYPE_GRAPHICS
+	};
+	commandBufferBindDescriptorSet(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, pipeline);
 	
 	const VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].command_buffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
-	vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].command_buffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
+	vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
 	
 	const uint32_t draw_data_offset = global_draw_data_buffer_partition.ranges[1].offset;
-	vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].command_buffer, global_draw_data_buffer_partition.buffer, draw_data_offset, global_draw_data_buffer_partition.buffer, 0, 68, 28);
+	vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, global_draw_data_buffer_partition.buffer, draw_data_offset, global_draw_data_buffer_partition.buffer, 0, 68, 28);
 	
-	vkCmdEndRenderPass(frame_array.frames[frame_array.current_frame].command_buffer);
-	vkEndCommandBuffer(frame_array.frames[frame_array.current_frame].command_buffer);
+	vkCmdEndRenderPass(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer);
+	
+	commandBufferEnd(&frame_array.frames[frame_array.current_frame].commandBuffer);
 
 	const VkCommandBufferSubmitInfo command_buffer_submit_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 		.pNext = nullptr,
-		.commandBuffer = frame_array.frames[frame_array.current_frame].command_buffer,
+		.commandBuffer = frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer,
 		.deviceMask = 0
 	};
 

@@ -10,7 +10,7 @@ memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 	// TODO - redesign this whole function to be flexible with other types of GPUs.
 	// 	Currently it only really targets NVIDIA/AMD GPUs.
 
-	logMsg(VERBOSE, "Selecting GPU memory types...");
+	logMsg(LOG_LEVEL_VERBOSE, "Selecting GPU memory types...");
 
 	VkPhysicalDeviceMemoryProperties memory_properties;
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
@@ -49,9 +49,9 @@ memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 		}
 	}
 
-	logMsgF(VERBOSE, "Memory type graphics: %u", memory_type_set.graphics_resources);
-	logMsgF(VERBOSE, "Memory type staging: %u", memory_type_set.resource_staging);
-	logMsgF(VERBOSE, "Memory type uniform: %u", memory_type_set.uniform_data);
+	logMsgF(LOG_LEVEL_VERBOSE, "Memory type graphics: %u", memory_type_set.graphics_resources);
+	logMsgF(LOG_LEVEL_VERBOSE, "Memory type staging: %u", memory_type_set.resource_staging);
+	logMsgF(LOG_LEVEL_VERBOSE, "Memory type uniform: %u", memory_type_set.uniform_data);
 
 	return memory_type_set;
 }

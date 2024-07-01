@@ -10,14 +10,14 @@
 #include "../descriptor.h"
 #include "../vulkan_manager.h"
 
-static const descriptor_binding_t compute_matrices_bindings[2] = {
+static const DescriptorBinding compute_matrices_bindings[2] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
 };
 
-static const descriptor_layout_t compute_matrices_layout = {
+static const DescriptorSetLayout compute_matrices_layout = {
 	.num_bindings = 2,
-	.bindings = (descriptor_binding_t *)compute_matrices_bindings
+	.bindings = (DescriptorBinding *)compute_matrices_bindings
 };
 
 static ComputePipeline compute_matrices_pipeline;
@@ -38,7 +38,7 @@ const VkDeviceSize matrix_data_size = num_matrices * matrix_size;
 bool init_compute_matrices(const VkDevice vk_device) {
 
 	compute_matrices_pipeline = create_compute_pipeline(vk_device, compute_matrices_layout, COMPUTE_MATRICES_SHADER_NAME);
-	allocCmdBufs(vk_device, cmdPoolCompute, 1, &compute_matrices_command_buffer);
+	allocCmdBufs(vk_device, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
 
 	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -50,12 +50,12 @@ bool init_compute_matrices(const VkDevice vk_device) {
 
 	const VkResult descriptor_set_allocate_result = vkAllocateDescriptorSets(vk_device, &descriptor_set_allocate_info, &compute_matrices_descriptor_set);
 	if (descriptor_set_allocate_result < 0) {
-		logMsgF(ERROR, "Error initializing compute matrices pipeline: descriptor set allocation failed (result code: %i).", descriptor_set_allocate_result);
+		logMsgF(LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: descriptor set allocation failed (result code: %i).", descriptor_set_allocate_result);
 		destroy_compute_pipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (descriptor_set_allocate_result > 0) {
-		logMsgF(WARNING, "Warning initializing compute matrices pipeline: descriptor set allocation returned with warning (result code: %i).", descriptor_set_allocate_result);
+		logMsgF(LOG_LEVEL_WARNING, "Warning initializing compute matrices pipeline: descriptor set allocation returned with warning (result code: %i).", descriptor_set_allocate_result);
 	}
 
 	const VkSemaphoreCreateInfo semaphore_create_info = {
@@ -66,12 +66,12 @@ bool init_compute_matrices(const VkDevice vk_device) {
 
 	const VkResult semaphore_create_result = vkCreateSemaphore(vk_device, &semaphore_create_info, nullptr, &compute_matrices_semaphore);
 	if (semaphore_create_result < 0) {
-		logMsgF(ERROR, "Error initializing compute matrices pipeline: semaphore creation failed (result code: %i).", semaphore_create_result);
+		logMsgF(LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: semaphore creation failed (result code: %i).", semaphore_create_result);
 		destroy_compute_pipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (semaphore_create_result > 0) {
-		logMsgF(WARNING, "Warning initializing compute matrices pipeline: semaphore creation returned with warning (result code: %i).", semaphore_create_result);
+		logMsgF(LOG_LEVEL_WARNING, "Warning initializing compute matrices pipeline: semaphore creation returned with warning (result code: %i).", semaphore_create_result);
 	}
 
 	const VkFenceCreateInfo fence_create_info = {
@@ -82,13 +82,13 @@ bool init_compute_matrices(const VkDevice vk_device) {
 	
 	const VkResult fence_create_result = vkCreateFence(vk_device, &fence_create_info, nullptr, &compute_matrices_fence);
 	if (fence_create_result < 0) {
-		logMsgF(ERROR, "Error initializing compute matrices pipeline: fence creation failed (result code: %i).", fence_create_result);
+		logMsgF(LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: fence creation failed (result code: %i).", fence_create_result);
 		vkDestroySemaphore(vk_device, compute_matrices_semaphore, nullptr);
 		destroy_compute_pipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (fence_create_result > 0) {
-		logMsgF(WARNING, "Warning initializing compute matrices pipeline: fence creation returned with warning (result code: %i).", fence_create_result);
+		logMsgF(LOG_LEVEL_WARNING, "Warning initializing compute matrices pipeline: fence creation returned with warning (result code: %i).", fence_create_result);
 	}
 
 	return true;
@@ -110,7 +110,7 @@ void computeMatrices(const float deltaTime, const ProjectionBounds projectionBou
 
 	byte_t *mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 0);
 	if (mapped_memory == nullptr) {
-		logMsg(ERROR, "Error computing matrices: uniform buffer memory mapping failed.");
+		logMsg(LOG_LEVEL_ERROR, "Error computing matrices: uniform buffer memory mapping failed.");
 		return;
 	}
 	memcpy(mapped_memory, &projectionBounds, sizeof projectionBounds);
@@ -146,8 +146,8 @@ void computeMatrices(const float deltaTime, const ProjectionBounds projectionBou
 
 	vkUpdateDescriptorSets(device, 2, descriptor_writes, 0, nullptr);
 
-	vkFreeCommandBuffers(compute_matrices_pipeline.device, cmdPoolCompute, 1, &compute_matrices_command_buffer);
-	allocCmdBufs(compute_matrices_pipeline.device, cmdPoolCompute, 1, &compute_matrices_command_buffer);
+	vkFreeCommandBuffers(compute_matrices_pipeline.device, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
+	allocCmdBufs(compute_matrices_pipeline.device, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
 
 	const VkCommandBufferBeginInfo begin_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,

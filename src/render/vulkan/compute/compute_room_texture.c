@@ -18,15 +18,15 @@
 
 
 
-static const descriptor_binding_t compute_room_texture_bindings[3] = {
+static const DescriptorBinding compute_room_texture_bindings[3] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
 };
 
-static const descriptor_layout_t compute_room_texture_layout = {
+static const DescriptorSetLayout compute_room_texture_layout = {
 	.num_bindings = 3,
-	.bindings = (descriptor_binding_t *)compute_room_texture_bindings
+	.bindings = (DescriptorBinding *)compute_room_texture_bindings
 };
 
 static ComputePipeline compute_room_texture_pipeline;
@@ -44,7 +44,7 @@ static const ImageSubresourceRange imageSubresourceRange = {
 
 
 static void createTransferImage(const VkDevice vkDevice) {
-	logMsg(VERBOSE, "Creating texture stitching transfer image...");
+	logMsg(LOG_LEVEL_VERBOSE, "Creating texture stitching transfer image...");
 	
 	transferImage = (Image){
 		.vkImage = VK_NULL_HANDLE,
@@ -117,7 +117,7 @@ static void createTransferImage(const VkDevice vkDevice) {
 	
 	// Transition the image layout.
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(vkDevice, cmdPoolGraphics, 1, &cmdBuf);
+	allocCmdBufs(vkDevice, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(transferImage, imageSubresourceRange, imageUsageComputeWrite);
 		const VkDependencyInfo dependencyInfo = {
@@ -136,14 +136,14 @@ static void createTransferImage(const VkDevice vkDevice) {
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 	transferImage.usage = imageUsageComputeWrite;
 	
-	logMsg(VERBOSE, "Done creating texture stitching transfer image.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done creating texture stitching transfer image.");
 }
 
 void init_compute_room_texture(const VkDevice vkDevice) {
-	logMsg(VERBOSE, "Initializing texture stitcher...");
+	logMsg(LOG_LEVEL_VERBOSE, "Initializing texture stitcher...");
 	compute_room_texture_pipeline = create_compute_pipeline(vkDevice, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
 	createTransferImage(vkDevice);
-	logMsg(VERBOSE, "Done initializing texture stitcher.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done initializing texture stitcher.");
 }
 
 void terminate_compute_room_texture(void) {
@@ -151,7 +151,7 @@ void terminate_compute_room_texture(void) {
 }
 
 void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint16_t **tileIndices) {
-	logMsg(VERBOSE, "Computing room texture...");
+	logMsg(LOG_LEVEL_VERBOSE, "Computing room texture...");
 	
 	const Texture tilemapTexture = getTexture(tilemapTextureHandle);
 	Texture *const pRoomTexture = getTextureP(destinationTextureHandle);
@@ -178,13 +178,13 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
 	const VkResult allocate_descriptor_set_result = vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
 	if (allocate_descriptor_set_result != 0) {
-		logMsgF(ERROR, "Error computing room texture: descriptor set allocation failed. (Error code: %i)", allocate_descriptor_set_result);
+		logMsgF(LOG_LEVEL_ERROR, "Error computing room texture: descriptor set allocation failed. (Error code: %i)", allocate_descriptor_set_result);
 		return;
 	}
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 1);
-	const VkDescriptorImageInfo tilemapTexture_info = make_descriptor_image_info(no_sampler, tilemapTexture.image.vkImageView, tilemapTexture.image.usage.imageLayout);
-	const VkDescriptorImageInfo room_texture_storage_info = make_descriptor_image_info(imageSamplerDefault, transferImage.vkImageView, transferImage.usage.imageLayout);
+	const VkDescriptorImageInfo tilemapTexture_info = makeDescriptorImageInfo(no_sampler, tilemapTexture.image.vkImageView, tilemapTexture.image.usage.imageLayout);
+	const VkDescriptorImageInfo room_texture_storage_info = makeDescriptorImageInfo(imageSamplerDefault, transferImage.vkImageView, transferImage.usage.imageLayout);
 	const VkDescriptorImageInfo storage_image_infos[2] = { tilemapTexture_info, room_texture_storage_info };
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
@@ -215,18 +215,18 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 
 	// Run compute shader to stitch texture.
 	VkCommandBuffer cmdBufCompute = VK_NULL_HANDLE;
-	allocCmdBufs(device, cmdPoolCompute, 1, &cmdBufCompute);
+	allocCmdBufs(device, commandPoolCompute.vkCommandPool, 1, &cmdBufCompute);
 	cmdBufBegin(cmdBufCompute, true); {
 		vkCmdBindPipeline(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, compute_room_texture_pipeline.handle);
 		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, compute_room_texture_pipeline.layout, 0, 1, &descriptor_set, 0, nullptr);
 		vkCmdDispatch(cmdBufCompute, tileExtent.width, tileExtent.length, num_room_layers);
 	} vkEndCommandBuffer(cmdBufCompute);
 	submit_command_buffers_async(queueCompute, 1, &cmdBufCompute);
-	vkFreeCommandBuffers(device, cmdPoolCompute, 1, &cmdBufCompute);
+	vkFreeCommandBuffers(device, commandPoolCompute.vkCommandPool, 1, &cmdBufCompute);
 	
 	// Perform the transfer to the target texture image.
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(device, cmdPoolGraphics, 1, &cmdBuf);
+	allocCmdBufs(device, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 		
 		const VkImageMemoryBarrier2 imageMemoryBarriers1[2] = {
@@ -302,7 +302,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 		
 	} vkEndCommandBuffer(cmdBuf);
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
-	vkFreeCommandBuffers(device, cmdPoolGraphics, 1, &cmdBuf);
+	vkFreeCommandBuffers(device, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
 
-	logMsg(VERBOSE, "Done computing room texture.");
+	logMsg(LOG_LEVEL_VERBOSE, "Done computing room texture.");
 }
