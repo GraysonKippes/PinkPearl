@@ -35,18 +35,21 @@ void init_renderer(void) {
 	textureManagerLoadTexturePack(texturePack);
 	deleteTexturePack(&texturePack);
 	
+	// TEMPORARY
+	// Create room textures -- one for each room size.
 	for (int i = 0; i < (int)num_room_sizes; ++i) {
 		
+		// Give each room texture enough layers for each room layer (background, foreground) and each room cache slot.
 		TextureCreateInfo roomTextureCreateInfo = (TextureCreateInfo){
 			.textureID = makeNullString(),
 			.isLoaded = false,
 			.isTilemap = false,
 			.numCells.width = 1,
-			.numCells.length = num_room_layers,
+			.numCells.length = num_room_layers * num_room_texture_cache_slots,
 			.cellExtent.width = 16,
 			.cellExtent.length = 16,
-			.numAnimations = 2,
-			.animations = (TextureAnimation[2]){
+			.numAnimations = 4,
+			.animations = (TextureAnimation[4]){
 				{
 					.startCell = 0,
 					.numFrames = 1,
@@ -54,6 +57,16 @@ void init_renderer(void) {
 				},
 				{
 					.startCell = 1,
+					.numFrames = 1,
+					.framesPerSecond = 0
+				},
+				{
+					.startCell = 2,
+					.numFrames = 1,
+					.framesPerSecond = 0
+				},
+				{
+					.startCell = 3,
 					.numFrames = 1,
 					.framesPerSecond = 0
 				}
