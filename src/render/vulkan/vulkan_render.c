@@ -342,8 +342,11 @@ void updateDrawData(const int quadID, const unsigned int imageIndex) {
 static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 	
 	const Texture texture = getTexture(textureHandle);
-	const VkDescriptorImageInfo descriptorImageInfo = makeDescriptorImageInfo(imageSamplerDefault, texture.image.vkImageView, texture.image.usage.imageLayout);
 	VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
+	
+	// Replace malloc with a better suited allocation, perhaps an arena?
+	VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
+	*pDescriptorImageInfo = makeDescriptorImageInfo(imageSamplerDefault, texture.image.vkImageView, texture.image.usage.imageLayout);
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
 		writeDescriptorSets[i] = (VkWriteDescriptorSet){
@@ -354,7 +357,7 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			.descriptorCount = 1,
 			.pBufferInfo = nullptr,
-			.pImageInfo = &descriptorImageInfo,
+			.pImageInfo = pDescriptorImageInfo,
 			.pTexelBufferView = nullptr
 		};
 		descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);

@@ -13,11 +13,11 @@
 static const log_level_t severity_threshold = LOG_LEVEL_VERBOSE;
 
 static const char *severity_labels[5] = {
-	"LOG_LEVEL_VERBOSE",
-	"LOG_LEVEL_INFO",
-	"LOG_LEVEL_WARNING",
-	"LOG_LEVEL_ERROR",
-	"LOG_LEVEL_FATAL"
+	"VERBOSE",
+	"INFO",
+	"WARNING",
+	"ERROR",
+	"FATAL"
 };
 
 static const char *log_format(log_level_t level);

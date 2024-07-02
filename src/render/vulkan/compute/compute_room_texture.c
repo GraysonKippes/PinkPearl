@@ -229,6 +229,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	allocCmdBufs(device, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 		
+		// Transition the compute texture to transfer source and the destination texture to transfer destination.
 		const VkImageMemoryBarrier2 imageMemoryBarriers1[2] = {
 			[0] = makeImageTransitionBarrier(transferImage, imageSubresourceRange, imageUsageTransferSource),
 			[1] = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageTransferDestination)
@@ -281,6 +282,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 
 		vkCmdCopyImage2(cmdBuf, &copyImageInfo);
 		
+		// Transition the compute texture to general and the destination texture to sampled.
 		const VkImageMemoryBarrier2 imageMemoryBarriers2[2] = {
 			[0] = makeImageTransitionBarrier(transferImage, imageSubresourceRange, imageUsageComputeWrite),
 			[1] = makeImageTransitionBarrier(pRoomTexture->image, imageSubresourceRange, imageUsageSampled)

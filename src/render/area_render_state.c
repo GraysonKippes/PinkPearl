@@ -232,7 +232,8 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	const int textureHandle = renderObjectGetTextureHandle(pAreaRenderState->roomRenderObjHandles[cacheSlot], 0);
 	const ImageSubresourceRange imageSubresourceRange = {
 		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseArrayLayer = cacheSlot * num_room_layers,
+		//.baseArrayLayer = cacheSlot * num_room_layers,
+		.baseArrayLayer = 0,
 		.arrayLayerCount = num_room_layers
 	};
 	
