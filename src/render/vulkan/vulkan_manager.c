@@ -110,7 +110,7 @@ static void create_global_uniform_buffer(void) {
 		.num_partition_sizes = 4,
 		.partition_sizes = (VkDeviceSize[4]){
 			2096,	// Compute matrices
-			2560,	// Compute room texture
+			5120,	// Compute room texture
 			8200,	// Compute area mesh
 			1812	// Lighting data
 		}

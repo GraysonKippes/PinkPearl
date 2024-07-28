@@ -28,7 +28,7 @@ static int playerEntityHandle;
 
 void start_game(void) {
 
-	current_area = parse_fga_file("test");
+	current_area = readAreaData("test");
 	areaRenderStateReset(&globalAreaRenderState, current_area, current_area.rooms[current_room_index]);
 
 	String entityID = newString(64, "pearl");

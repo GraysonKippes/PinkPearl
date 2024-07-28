@@ -150,7 +150,7 @@ void terminate_compute_room_texture(void) {
 	destroy_compute_pipeline(&compute_room_texture_pipeline);
 }
 
-void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint16_t **tileIndices) {
+void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint32_t **tileIndices) {
 	logMsg(LOG_LEVEL_VERBOSE, "Computing room texture...");
 	
 	const Texture tilemapTexture = getTexture(tilemapTextureHandle);
@@ -161,9 +161,10 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	
 	byte_t *mappedMemory = buffer_partition_map_memory(global_uniform_buffer_partition, 1); {
 		const uint32_t numTileIndices = extentArea(tileExtent);
-		const uint32_t layerSize = 640 * sizeof(uint16_t);
+		const uint32_t layerSize = numTileIndices * sizeof(**tileIndices);
+		const uint32_t fullLayerSize = 640 * sizeof(**tileIndices);
 		for (uint32_t i = 0; i < destinationRange.arrayLayerCount; ++i) {
-			memcpy(&mappedMemory[layerSize * i], tileIndices[i], layerSize);
+			memcpy(&mappedMemory[fullLayerSize * i], tileIndices[i], layerSize);
 		}
 	} buffer_partition_unmap_memory(global_uniform_buffer_partition);
 

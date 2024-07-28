@@ -31,7 +31,7 @@ typedef struct Room {
 	
 	// Contains the tile indices for each layer in this room.
 	// First order represents a layer, second order represents tile indices for that layer.
-	uint16_t **ppTileIndices;
+	uint32_t **ppTileIndices;
 
 	unsigned int num_walls;
 	rect_t *walls;

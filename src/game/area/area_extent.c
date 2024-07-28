@@ -32,20 +32,10 @@ int area_extent_length(const area_extent_t area_extent) {
 
 int area_extent_index(const area_extent_t area_extent, const Offset position) {
 	
-	if (position.x < area_extent.x1) {
+	if (position.x < area_extent.x1 || position.x > area_extent.x2 || position.y < area_extent.y1 || position.y > area_extent.y2) {
+		logMsgF(LOG_LEVEL_ERROR, "Error calculating area extent index: position (%i, %i) does not fall within area extent [(%i, %i), (%i, %i)].",
+			position.x, position.y, area_extent.x1, area_extent.y1, area_extent.x2, area_extent.y2);
 		return -1;
-	}
-
-	if (position.x > area_extent.x2) {
-		return -2;
-	}
-
-	if (position.y < area_extent.y1) {
-		return -3;
-	}
-
-	if (position.y > area_extent.y2) {
-		return -4;
 	}
 
 	const int offset_x = position.x - area_extent.x1;

@@ -1,6 +1,9 @@
 #ifndef DIMENSIONS_H
 #define DIMENSIONS_H
 
+// TODO - rename to either Rect or Box
+// TODO - create double version and use in lieu of rect_t
+
 // TODO - use in lieu of area_extent_t
 typedef struct DimensionsI {
 	int x1, y1;

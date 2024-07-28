@@ -5,14 +5,14 @@
 
 #include "log/logging.h"
 
-bool area_get_room_ptr(const area_t area, const Offset room_position, const Room **room_pptr) {
+bool area_get_room_ptr(const area_t area, const Offset room_position, const Room **ppRoom) {
 
-	if (room_pptr == nullptr) {
+	if (!ppRoom) {
 		logMsg(LOG_LEVEL_ERROR, "Error getting room pointer: pointer to room pointer is nullptr.");
 		return false;
 	}
 
-	if (area.rooms == nullptr) {
+	if (!area.rooms) {
 		logMsg(LOG_LEVEL_ERROR, "Error getting room pointer: area.rooms is nullptr.");
 		return false;
 	}
@@ -40,11 +40,11 @@ bool area_get_room_ptr(const area_t area, const Offset room_position, const Room
 		return false;
 	}
 
-	*room_pptr = area.rooms + room_index;
+	*ppRoom = area.rooms + room_index;
 
-	if (room_position.x != (*room_pptr)->position.x || room_position.y != (*room_pptr)->position.y) {
+	if (room_position.x != (*ppRoom)->position.x || room_position.y != (*ppRoom)->position.y) {
 		logMsgF(LOG_LEVEL_WARNING, "Warning getting room pointer: specified room position (%i, %i) does not match the gotten room's position (%i, %i).", 
-				room_position.x, room_position.y, (*room_pptr)->position.x, (*room_pptr)->position.y);
+				room_position.x, room_position.y, (*ppRoom)->position.x, (*ppRoom)->position.y);
 	}
 
 	return true;
