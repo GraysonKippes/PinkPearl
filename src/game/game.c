@@ -18,18 +18,19 @@
 #include "entity/entity_manager.h"
 #include "entity/entity_registry.h"
 
-// TODO - remove/replace with struct of booleans/ints
-static game_state_bitfield_t game_state_bitfield = 0;
+// Stores information about the Pink Pearl game, such as whether or not the game is paused.
+static GameState gameState = { };
 
-Area current_area = { };
-static int current_room_index = 0;
+// The area that the player is currently in.
+Area currentArea = { };
 
+// The handle to the player entity.
 static int playerEntityHandle;
 
 void start_game(void) {
 
-	current_area = readAreaData("test");
-	areaRenderStateReset(&globalAreaRenderState, current_area, current_area.pRooms[current_room_index]);
+	currentArea = readAreaData("test");
+	areaRenderStateReset(&globalAreaRenderState, currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
 
 	String entityID = newString(64, "pearl");
 	playerEntityHandle = loadEntity(entityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
@@ -46,9 +47,9 @@ void tick_game(void) {
 	const bool move_down_pressed = is_input_pressed_or_held(GLFW_KEY_S);	// DOWN
 	const bool move_right_pressed = is_input_pressed_or_held(GLFW_KEY_D);	// RIGHT
 
-	if (game_state_bitfield & (uint32_t)GAME_STATE_SCROLLING) {
+	if (gameState.scrolling) {
 		if (!areaRenderStateIsScrolling(globalAreaRenderState)) {
-			game_state_bitfield &= ~((uint32_t)GAME_STATE_SCROLLING);
+			gameState.scrolling = false;
 		}
 		else {
 			//settle_render_positions();
@@ -103,17 +104,18 @@ void tick_game(void) {
 
 	tickEntities();
 
-	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->transform.position, current_area, current_room_index);
+	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->transform.position, currentArea, currentArea.currentRoomIndex);
 	if (travelDirection != DIRECTION_NONE) {
 
-		const Room current_room = current_area.pRooms[current_room_index];
+		const Room current_room = currentArea.pRooms[currentArea.currentRoomIndex];
 		const Offset room_offset = direction_offset(travelDirection);
 		const Offset next_room_position = offset_add(current_room.position, room_offset);
 
-		const Room *pNextRoom = nullptr;
-		const bool result = areaGetRoom(current_area, next_room_position, &pNextRoom);
+		Room *pNextRoom = nullptr;
+		const bool result = areaGetRoom(currentArea, next_room_position, &pNextRoom);
 		if (result && pNextRoom != nullptr) {
-			game_state_bitfield |= (uint32_t)GAME_STATE_SCROLLING;
+			gameState.scrolling = true;
+			currentArea.currentRoomIndex = pNextRoom->id;
 			areaRenderStateSetNextRoom(&globalAreaRenderState, *pNextRoom);
 		}
 	}

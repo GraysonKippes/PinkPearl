@@ -5,8 +5,8 @@
 #include <stdint.h>
 
 #include "game/area/area.h"
-#include "game/area/area_extent.h"
 #include "game/area/room.h"
+#include "math/Box.h"
 #include "math/offset.h"
 #include "vulkan/math/projection.h"
 #include "vulkan/math/vector4F.h"
@@ -16,7 +16,7 @@
 
 typedef struct AreaRenderState {
 	
-	area_extent_t areaExtent;
+	BoxI areaExtent;
 	RoomSize roomSize;
 	
 	int roomRenderObjHandles[NUM_ROOM_TEXTURE_CACHE_SLOTS];

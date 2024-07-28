@@ -59,7 +59,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const Area ar
 	
 	// TODO - use reallocate function when it is implemented.
 	deallocate((void **)&pAreaRenderState->roomIDsToPositions);
-	pAreaRenderState->numRoomIDs = area.num_rooms;
+	pAreaRenderState->numRoomIDs = area.roomCount;
 	
 	if (!allocate((void **)&pAreaRenderState->roomIDsToCacheSlots, pAreaRenderState->numRoomIDs, sizeof(uint32_t))) {
 		logMsg(LOG_LEVEL_ERROR, "Error resetting area render state: failed to allocate room IDs to cache slots pointer-array.");

@@ -23,6 +23,7 @@ target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall 
 	-Werror=discarded-qualifiers 
 	-Werror=address 
 	-Werror=array-parameter
+	-Werror=endif-labels
 	-Wno-switch
 )
 
@@ -52,7 +53,6 @@ target_sources(PinkPearl PRIVATE
 	src/audio/audio_queue.c
 	src/audio/portaudio/portaudio_manager.c
 	src/game/area/area.c
-	src/game/area/area_extent.c
 	src/game/area/fgm_file_parse.c
 	src/game/area/room.c
 	src/game/entity/entity.c
@@ -64,6 +64,7 @@ target_sources(PinkPearl PRIVATE
 	src/log/error_code.c
 	src/log/log_stack.c
 	src/log/logging.c
+	src/math/Box.c
 	src/math/extent.c
 	src/math/hitbox.c
 	src/math/offset.c

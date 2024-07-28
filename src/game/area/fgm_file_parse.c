@@ -10,10 +10,7 @@
 #include "util/allocate.h"
 #include "util/file_io.h"
 
-#include "area_extent.h"
-
-#define FGA_FILE_DIRECTORY (RESOURCE_PATH "data/area2.fga")
-#define FGA_FILE_DIRECTORY_2 (RESOURCE_PATH "data/DemoDungeon.fga")
+#define FGA_FILE_DIRECTORY (RESOURCE_PATH "data/DemoDungeon.fga")
 
 static int readRoomData(FILE *const pFile, Room *const pRoom);
 
@@ -21,7 +18,7 @@ Area readAreaData(const char *const pFilename) {
 	
 	Area area = { };
 
-	FILE *pFile = fopen(FGA_FILE_DIRECTORY_2, "rb");
+	FILE *pFile = fopen(FGA_FILE_DIRECTORY, "rb");
 	if (!pFile) {
 		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to open file.");
 		return area;
@@ -48,9 +45,10 @@ Area readAreaData(const char *const pFilename) {
 		goto end_read;
 	}
 	
-	const int area_width = area_extent_width(area.extent);
-	const int area_length = area_extent_length(area.extent);
-	const long int extentArea = area_width * area_length;
+	const int areaWidth = boxWidth(area.extent);
+	const int areaLength = boxLength(area.extent);
+	const long int extentArea = areaWidth * areaLength;
+	
 	
 	// Read room size type.
 	uint32_t roomSizeType = 0;
@@ -69,13 +67,13 @@ Area readAreaData(const char *const pFilename) {
 	area.room_extent = room_size_to_extent(area.room_size);
 	
 	// Read room count.
-	if (!read_data(pFile, sizeof(area.num_rooms), 1, &area.num_rooms)) {
+	if (!read_data(pFile, sizeof(area.roomCount), 1, &area.roomCount)) {
 		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read area room count.");
 		goto end_read;
 	}
 	
 	// Allocate array of rooms.
-	area.pRooms = calloc(area.num_rooms, sizeof(Room));
+	area.pRooms = calloc(area.roomCount, sizeof(Room));
 	if (!area.pRooms) {
 		logMsg(LOG_LEVEL_ERROR, "Error creating area: allocation of area.pRooms failed.");
 		goto end_read;
@@ -91,15 +89,15 @@ Area readAreaData(const char *const pFilename) {
 	}
 
 	// Fill the position-to-room map with -1.
-	for (size_t i = 0; i < (size_t)extentArea; ++i) {
+	for (long int i = 0; i < extentArea; ++i) {
 		area.pPositionsToRooms[i] = -1;
 	}
 	
 	// Set information and read data for each room in this area.
-	for (uint32_t i = 0; i < area.num_rooms; ++i) {
+	for (int i = 0; i < area.roomCount; ++i) {
 		
 		// Set basic room information.
-		area.pRooms[i].id = (int)i;					// Unique numeric identifier for the room inside this area.
+		area.pRooms[i].id = i;					// Unique numeric identifier for the room inside this area.
 		area.pRooms[i].size = area.room_size;		// Copy the area room size into the room struct.
 		area.pRooms[i].extent = area.room_extent;	// Copy the area room extent into the room struct.
 		area.pRooms[i].num_entity_spawners = 0;		// Feature not yet implemented.
@@ -115,8 +113,8 @@ Area readAreaData(const char *const pFilename) {
 		}
 
 		// Map the 1D position of this room to an index into the room array inside the area struct.
-		const int room_position = area_extent_index(area.extent, area.pRooms[i].position); 
-		area.pPositionsToRooms[room_position] = i;
+		const int roomPosition = areaExtentIndex(area.extent, area.pRooms[i].position); 
+		area.pPositionsToRooms[roomPosition] = i;
 	}
 	
 end_read:
