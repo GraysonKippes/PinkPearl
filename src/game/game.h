@@ -3,7 +3,7 @@
 
 #include "area/area.h"
 
-extern area_t current_area;
+extern Area current_area;
 
 void start_game(void);
 

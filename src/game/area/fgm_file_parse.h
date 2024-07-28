@@ -7,8 +7,6 @@
 #include "area.h"
 #include "room.h"
 
-area_t parse_fga_file(const char *filename);
-
-area_t readAreaData(const char *const pFilename);
+Area readAreaData(const char *const pFilename);
 
 #endif	// FMG_FILE_PARSE

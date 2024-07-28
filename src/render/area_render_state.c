@@ -46,7 +46,7 @@ static String roomSizeToTextureID(const RoomSize roomSize) {
 
 static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState, const uint32_t cacheSlot, const Room room);
 
-void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const Room initialRoom) {
+void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const Area area, const Room initialRoom) {
 	logMsg(LOG_LEVEL_VERBOSE, "Resetting area render state...");
 	
 	if (!pAreaRenderState) {
@@ -77,7 +77,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t 
 	}
 	
 	for (uint32_t i = 0; i < pAreaRenderState->numRoomIDs; ++i) {
-		pAreaRenderState->roomIDsToPositions[i] = area.rooms[i].position;
+		pAreaRenderState->roomIDsToPositions[i] = area.pRooms[i].position;
 	}
 	
 	for (uint32_t i = 0; i < num_room_texture_cache_slots; ++i) {

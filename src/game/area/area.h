@@ -8,7 +8,7 @@
 #include "area_extent.h"
 #include "room.h"
 
-typedef struct area_t {
+typedef struct Area {
 
 	char *name;
 	char *tilemap_name;
@@ -22,30 +22,30 @@ typedef struct area_t {
 
 	// The rooms in this area.
 	uint32_t num_rooms;
-	Room *rooms;
+	Room *pRooms;
 
-	// Maps positions in the rectangular map to actual rooms in this area.
+	// Maps one-dimensional positions in the rectangular map to indices in the .pRooms array of rooms.
 	// The length of this array should be equal to the area width times the area length.
-	int *positions_to_rooms;
+	// Negative values in this array indicate that there is no room in the corresponding room space.
+	int *pPositionsToRooms;
 
-} area_t;
+} Area;
 
-bool area_get_room_ptr(const area_t area, const Offset room_position, const Room **room_pptr);
+bool areaGetRoom(const Area area, const Offset roomPosition, const Room **ppRoom);
 
-int area_get_room_index(const area_t area, const Offset room_position);
+int area_get_room_index(const Area area, const Offset room_position);
 
-typedef enum direction_t {
-	DIRECTION_ERROR = -1,
+typedef enum CardinalDirection {
 	DIRECTION_NONE = 0,
 	DIRECTION_NORTH = 1,
 	DIRECTION_EAST = 2,
 	DIRECTION_SOUTH = 3,
 	DIRECTION_WEST = 4
-} direction_t;
+} CardinalDirection;
 
 // Returns the direction in which the player is leaving the room, or NONE if the player is not leaving the room.
-direction_t test_room_travel(const Vector3D player_position, const area_t area, const int current_room_index);
+CardinalDirection test_room_travel(const Vector3D player_position, const Area area, const int current_room_index);
 
-Offset direction_offset(const direction_t direction);
+Offset direction_offset(const CardinalDirection direction);
 
 #endif	// AREA_H

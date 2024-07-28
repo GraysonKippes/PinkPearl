@@ -21,7 +21,7 @@
 // TODO - remove/replace with struct of booleans/ints
 static game_state_bitfield_t game_state_bitfield = 0;
 
-area_t current_area = { };
+Area current_area = { };
 static int current_room_index = 0;
 
 static int playerEntityHandle;
@@ -29,7 +29,7 @@ static int playerEntityHandle;
 void start_game(void) {
 
 	current_area = readAreaData("test");
-	areaRenderStateReset(&globalAreaRenderState, current_area, current_area.rooms[current_room_index]);
+	areaRenderStateReset(&globalAreaRenderState, current_area, current_area.pRooms[current_room_index]);
 
 	String entityID = newString(64, "pearl");
 	playerEntityHandle = loadEntity(entityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
@@ -103,20 +103,18 @@ void tick_game(void) {
 
 	tickEntities();
 
-	const direction_t travel_direction = test_room_travel(pPlayerEntity->transform.position, current_area, current_room_index);
-	if ((int)travel_direction > 0) {
+	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->transform.position, current_area, current_room_index);
+	if (travelDirection != DIRECTION_NONE) {
 
-		const Room current_room = current_area.rooms[current_room_index];
-		const Offset room_offset = direction_offset(travel_direction);
+		const Room current_room = current_area.pRooms[current_room_index];
+		const Offset room_offset = direction_offset(travelDirection);
 		const Offset next_room_position = offset_add(current_room.position, room_offset);
 
-		const Room *next_room_ptr = nullptr;
-		const bool result = area_get_room_ptr(current_area, next_room_position, &next_room_ptr);
-
-		if (result && next_room_ptr != nullptr) {
-			current_room_index = area_get_room_index(current_area, next_room_position);
+		const Room *pNextRoom = nullptr;
+		const bool result = areaGetRoom(current_area, next_room_position, &pNextRoom);
+		if (result && pNextRoom != nullptr) {
 			game_state_bitfield |= (uint32_t)GAME_STATE_SCROLLING;
-			areaRenderStateSetNextRoom(&globalAreaRenderState, *next_room_ptr);
+			areaRenderStateSetNextRoom(&globalAreaRenderState, *pNextRoom);
 		}
 	}
 }

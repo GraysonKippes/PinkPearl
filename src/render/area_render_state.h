@@ -40,7 +40,7 @@ typedef struct AreaRenderState {
 } AreaRenderState;
 
 // Resets the global area render state to reflect the given area.
-void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const area_t area, const Room initialRoom);
+void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const Area area, const Room initialRoom);
 
 // Returns true if the current cache slot and the next cache slot are equal, false otherwise.
 bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState);

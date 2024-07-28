@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef struct GameState {
+	bool paused;
+	bool scrolling;
+} GameState;
+
 typedef uint32_t game_state_bitfield_t;
 
 typedef enum game_state_flag_t {
