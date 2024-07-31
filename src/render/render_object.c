@@ -44,6 +44,10 @@ int loadRenderObject(const String textureID, const DimensionsF quadDimensions, c
 		return renderHandleInvalid;
 	}
 	
+	for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
+		renderObjQuadIDs[renderHandle][i] = -1;
+	}
+	
 	const TextureState quadTextureState = newTextureState(textureID);
 	for (int i = 0; i < numQuads; ++i) {
 		const Vector4F quadPosition = {
@@ -67,9 +71,16 @@ int loadRenderObject(const String textureID, const DimensionsF quadDimensions, c
 void unloadRenderObject(int *const pRenderHandle) {
 	if (!pRenderHandle) {
 		return;
-	} else if (validateRenderHandle(*pRenderHandle)) {
+	} else if (!validateRenderHandle(*pRenderHandle)) {
 		return;
 	}
+	
+	for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
+		if (validateQuadID(renderObjQuadIDs[*pRenderHandle][i])) {
+			unloadQuad(renderObjQuadIDs[*pRenderHandle][i]);
+		}
+	}
+	
 	heapPush(&inactiveRenderHandles, pRenderHandle);
 	*pRenderHandle = renderHandleInvalid;
 }

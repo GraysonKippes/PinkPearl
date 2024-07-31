@@ -2,6 +2,7 @@
 #define RENDER_OBJECT_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "math/dimensions.h"

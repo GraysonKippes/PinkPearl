@@ -43,6 +43,7 @@ static DrawData drawDatas[VK_CONF_MAX_NUM_QUADS];
 // Stores IDs for unused quads.
 Stack inactiveQuadIDs;
 
+// Quad information
 uint32_t quadDrawDataIndices[VK_CONF_MAX_NUM_QUADS];
 RenderTransform quadTransforms[VK_CONF_MAX_NUM_QUADS];
 TextureState quadTextureStates[VK_CONF_MAX_NUM_QUADS];

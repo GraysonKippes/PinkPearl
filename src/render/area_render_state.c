@@ -105,13 +105,13 @@ bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState) {
 
 bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const Room nextRoom) {
 	
-	const uint32_t roomID = (uint32_t)nextRoom.id;
-	if (roomID >= pAreaRenderState->numRoomIDs) {
+	const unsigned int roomID = nextRoom.id;
+	if (roomID >= pAreaRenderState->numRoomIDs) {	// TODO - this check may not make sense.
 		logMsgF(LOG_LEVEL_ERROR, "Error setting area render state next room: given room ID (%u) is not less than number of room IDs (%u).", roomID, pAreaRenderState->numRoomIDs);
 		return false;
 	}
-	
-	uint32_t nextCacheSlot = 0;
+
+	unsigned int nextCacheSlot = 0;
 	
 	// Check if the next room is already loaded.
 	bool roomAlreadyLoaded = false;
@@ -146,7 +146,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const R
 }
 
 Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState) {
-	if (pAreaRenderState == nullptr) {
+	if (!pAreaRenderState) {
 		return zeroVector4F;
 	}
 	
@@ -179,7 +179,9 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	static const uint64_t timeLimitMS = 1024;
 	const uint64_t currentTimeMS = getTimeMS();
 	
+	// If the scrolling time limit is reached, update the current room slot to equal the next room cache slot.
 	if (currentTimeMS - pAreaRenderState->scrollStartTimeMS >= timeLimitMS) {
+		unloadRenderObject(&pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot]);
 		pAreaRenderState->currentCacheSlot = pAreaRenderState->nextCacheSlot;
 		return end;
 	}

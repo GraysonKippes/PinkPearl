@@ -17,4 +17,16 @@ bool allocate_max(void **ptr_ptr, const size_t num_objects, const size_t num_byt
 // Returns true normally, but returns false if `ptr_ptr` itself is nullptr.
 bool deallocate(void **ptr_ptr);
 
+typedef void *(*Allocator)(const size_t size);
+
+typedef void *(*Reallocator)(void *const pBuffer, const size_t size);
+
+typedef void (*Deallocator)(void *const pBuffer);
+
+typedef struct AllocationFunctors {
+	Allocator allocator;
+	Reallocator reallocator;
+	Deallocator deallocator;
+} AllocationFunctors;
+
 #endif	// ALLOCATE_H
