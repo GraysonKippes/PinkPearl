@@ -214,7 +214,7 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	}
 	
 	const Extent roomExtent = room_size_to_extent(room.size);
-	const DimensionsF roomQuadDimensions = {
+	const BoxF roomQuadDimensions = {
 		.x1 = -0.5F * roomExtent.width,
 		.y1 = -0.5F * roomExtent.length,
 		.x2 = 0.5F * roomExtent.width,

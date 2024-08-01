@@ -54,7 +54,7 @@ RenderTransform quadTransforms[VK_CONF_MAX_NUM_QUADS];
 // Texture state of each quad.
 TextureState quadTextureStates[VK_CONF_MAX_NUM_QUADS];
 
-static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions);
+static bool uploadQuadMesh(const int quadID, const BoxF quadDimensions);
 
 static void insertDrawData(const int quadID, const float quadDepth, const unsigned int imageIndex);
 
@@ -122,7 +122,7 @@ void initTextureDescriptors(void) {
 	}
 }
 
-int loadQuad(const DimensionsF quadDimensions, const Vector4F quadPosition, const TextureState quadTextureState) {
+int loadQuad(const BoxF quadDimensions, const Vector4F quadPosition, const TextureState quadTextureState) {
 	if (stackIsEmpty(inactiveQuadIDs)) {
 		return -1;
 	}
@@ -189,7 +189,7 @@ TextureState *getQuadTextureState(const int quadID) {
 	return &quadTextureStates[quadID];
 }
 
-static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions) {
+static bool uploadQuadMesh(const int quadID, const BoxF quadDimensions) {
 	if (!validateQuadID(quadID)) {
 		return false;
 	}

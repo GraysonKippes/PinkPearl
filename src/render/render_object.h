@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "math/dimensions.h"
+#include "math/Box.h"
 #include "math/vector3D.h"
 #include "util/string.h"
 #include "vulkan/math/render_vector.h"
@@ -19,7 +19,7 @@ bool initRenderObjectManager(void);
 bool terminateRenderObjectManager(void);
 
 // Loads a render object into the scene, returns a handle to it.
-int loadRenderObject(const String textureID, const DimensionsF quadDimensions, const int numQuads, const Vector3D quadPositions[static numQuads]);
+int loadRenderObject(const String textureID, const BoxF quadDimensions, const int numQuads, const Vector3D quadPositions[static numQuads]);
 
 // Unloads a render object, removing from the scene.
 void unloadRenderObject(int *const pRenderHandle);

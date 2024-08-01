@@ -33,7 +33,7 @@ bool terminateRenderObjectManager(void) {
 	return true;
 }
 
-int loadRenderObject(const String textureID, const DimensionsF quadDimensions, const int numQuads, const Vector3D quadPositions[static numQuads]) {
+int loadRenderObject(const String textureID, const BoxF quadDimensions, const int numQuads, const Vector3D quadPositions[static numQuads]) {
 	if (numQuads <= 0 || numQuads > maxNumRenderObjectQuads) {
 		return renderHandleInvalid;
 	}
