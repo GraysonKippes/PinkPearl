@@ -4,7 +4,6 @@
 #include <stdbool.h>
 
 #include "math/Box.h"
-#include "math/hitbox.h"
 #include "util/string.h"
 
 typedef struct entity_record_t {

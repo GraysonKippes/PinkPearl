@@ -66,7 +66,6 @@ target_sources(PinkPearl PRIVATE
 	src/log/logging.c
 	src/math/Box.c
 	src/math/extent.c
-	src/math/hitbox.c
 	src/math/offset.c
 	src/math/vector3D.c
 	src/render/area_render_state.c

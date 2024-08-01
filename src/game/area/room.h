@@ -6,7 +6,6 @@
 #include "game/entity/entity_spawner.h"
 #include "math/Box.h"
 #include "math/extent.h"
-#include "math/hitbox.h"
 #include "math/offset.h"
 
 #include "tile.h"

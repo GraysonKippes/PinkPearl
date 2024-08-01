@@ -5,7 +5,6 @@
 #include "entity_transform.h"
 
 #include "math/Box.h"
-#include "math/hitbox.h"
 
 typedef struct entity_t {
 	entity_transform_t transform;
