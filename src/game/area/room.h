@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "game/entity/entity_spawner.h"
+#include "math/Box.h"
 #include "math/extent.h"
 #include "math/hitbox.h"
 #include "math/offset.h"
@@ -33,8 +34,8 @@ typedef struct Room {
 	// First order represents a layer, second order represents tile indices for that layer.
 	uint32_t **ppTileIndices;
 
-	unsigned int num_walls;
-	rect_t *walls;
+	unsigned int wallCount;
+	BoxD *pWalls;
 	
 	unsigned int num_entity_spawners;
 	entity_spawner_t *entity_spawners;

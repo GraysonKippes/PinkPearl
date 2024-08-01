@@ -23,7 +23,7 @@ void init_entity_registry(void) {
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		entity_records[i] = (entity_record_t){
 			.entity_id = makeNullString(),
-			.entity_hitbox = (rect_t){ 0.0, 0.0, 0.0, 0.0 },
+			.entity_hitbox = (BoxD){ },
 			.entity_texture_id = makeNullString()
 		};
 	}
@@ -37,7 +37,7 @@ void init_entity_registry(void) {
 		entity_record_t entity_record;
 		entity_record.entity_id = readString(fge_file, 32);
 		file_next_block(fge_file);
-		read_data(fge_file, 1, sizeof(rect_t), &entity_record.entity_hitbox);
+		read_data(fge_file, 1, sizeof(BoxD), &entity_record.entity_hitbox);
 		entity_record.entity_texture_id = readString(fge_file, 32);
 		file_next_block(fge_file);
 		register_entity_record(entity_record);

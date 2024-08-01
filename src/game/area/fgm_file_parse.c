@@ -158,20 +158,20 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 	}
 	
 	// Read wall count from the file.
-	if (!read_data(pFile, sizeof(uint32_t), 1, &pRoom->num_walls)) {
+	if (!read_data(pFile, sizeof(uint32_t), 1, &pRoom->wallCount)) {
 		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
 		return -2;
 	}
 	
-	if (pRoom->num_walls > 0) {
+	if (pRoom->wallCount > 0) {
 		// Allocate array for the walls.
-		if (!allocate((void **)&pRoom->walls, pRoom->num_walls, sizeof(rect_t))) {
+		if (!allocate((void **)&pRoom->pWalls, pRoom->wallCount, sizeof(BoxD))) {
 			logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to allocate room wall array.");
 			return -1;
 		}
 		
 		// Read wall data from the file.
-		if (!read_data(pFile, sizeof(rect_t), pRoom->num_walls, pRoom->walls)) {
+		if (!read_data(pFile, sizeof(BoxD), pRoom->wallCount, pRoom->pWalls)) {
 			logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
 			return -2;
 		}

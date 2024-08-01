@@ -31,7 +31,6 @@ int boxLengthI(const BoxI box);
 
 int boxAreaI(const BoxI box);
 
-// TODO - use in lieu of DimensionsF.
 // Box struct of type single-precision floating-point number.
 typedef struct BoxF {
 	float x1, y1;	// Point 1.
@@ -44,7 +43,6 @@ float boxLengthF(const BoxF box);
 
 float boxAreaF(const BoxF box);
 
-// TODO - use in lieu of rect_t.
 // Box struct of type double-precision floating-point number.
 typedef struct BoxD {
 	double x1, y1;	// Point 1.

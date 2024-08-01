@@ -2,10 +2,10 @@
 
 #include <math.h>
 
-#define SQUARE(x) (x * x)
+#define SQUARE(x) ((x) * (x))
 
-rect_t hitbox_to_world_space(hitbox_t hitbox, Vector3D position) {
-	return (rect_t){
+BoxD hitbox_to_world_space(hitbox_t hitbox, Vector3D position) {
+	return (BoxD){
 		.x1 = position.x - hitbox.width / 2.0,
 		.y1 = position.y - hitbox.length / 2.0,
 		.x2 = position.x + hitbox.width / 2.0,
@@ -23,7 +23,7 @@ static bool rect_overlap_single_axis(const double a1, const double a2, const dou
 	return is_number_between(a1, b1, b2) || is_number_between(a2, b1, b2) || (a1 <= b1 && a2 >= b2);
 }
 
-bool rect_overlap(const rect_t a, const rect_t b) {
+bool rect_overlap(const BoxD a, const BoxD b) {
 	return rect_overlap_single_axis(a.x1, a.x2, b.x1, b.x2) && rect_overlap_single_axis(a.y1, a.y2, b.y1, b.y2);
 }
 
@@ -61,19 +61,19 @@ bool rect_overlap(const rect_t a, const rect_t b) {
  * 
  * let bool o = true if overlap, false if no overlap
  * o = case 1 OR case 2 OR case 3 OR case 4
- * o = cd + ef + gh + cdef		Original boolean function
- * o = cd + cdef + ef + gh		Commutation
+ * o = cd + ef + gh + cdef			Original boolean function
+ * o = cd + cdef + ef + gh			Commutation
  * o = (cd + cdef) + ef + gh		Association
  * o = ((cd) + (cd)ef) + ef + gh	Association
- * o = (cd) + ef + gh			Absorption
- * o = cd + ef + gh			Association
+ * o = (cd) + ef + gh				Absorption
+ * o = cd + ef + gh					Association
  *
  * cd -> "a.x1 is between b.x1 and b.x2"
  * ef -> "a.x2 is between b.x1 and b.x2"
  *
  * */
 
-Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_position, const rect_t hitbox, const rect_t wall) {
+Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall) {
 	
 	// Collision detection and correction works by transforming 
 	// the entity's velocity vector into a linear function:
@@ -89,8 +89,9 @@ Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_posit
 	// e is the upper bound of the domain of the function and represents
 	// 	the ending point of the entity's travel along the x-axis.
 	//
-	// Four such functions can be generated, using x as the independent variable 
-	// and y as the dependent variable. Four more can be generated swapping the axes,
+	// Four such functions can be generated, one for each corner of the hitbox, 
+	// using x as the independent variable and y as the dependent variable. 
+	// Four more can be generated swapping the axes,
 	// which effectively checks for collision in the y-direction instead of the x-direction.
 	// One function is generated for each corner of the entity's hitbox, for these are the
 	// extremities of the entity's body. With the extremities, collision can be checked
@@ -133,8 +134,8 @@ Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_posit
 	//  2 |  A
 	//    |
 	//    O---------------------------
-	//    	2 4 6 8 |    |    |    |+x
-	//    		10   15   20   25
+	//    	2 4 6 8 |    |    |    | +x
+	//    		   10   15   20   25
 	//
 	// The capital A represents the old position of the entity, and
 	// the capital B represents the projected new position of the entity.
@@ -187,8 +188,7 @@ Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_posit
 	if (position_step.x > 0.0) {
 
 		// If the wall is entirely behind or ahead of the entity as it moves right, then skip collision resolution.
-		if (old_position.x + hitbox.x1 >= wall.x2
-				|| new_position.x + hitbox.x2 <= wall.x1) {
+		if (old_position.x + hitbox.x1 >= wall.x2 || new_position.x + hitbox.x2 <= wall.x1) {
 			goto skip;
 		}
 
@@ -222,8 +222,7 @@ Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_posit
 	else if (position_step.x < 0.0) {
 		
 		// If the wall is entirely behind or ahead of the entity as it moves left, then skip collision resolution.
-		if (old_position.x + hitbox.x2 <= wall.x1
-				|| new_position.x + hitbox.x1 >= wall.x2) {
+		if (old_position.x + hitbox.x2 <= wall.x1 || new_position.x + hitbox.x1 >= wall.x2) {
 			goto skip;
 		}
 
@@ -259,8 +258,7 @@ Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_posit
 	if (position_step.y > 0.0) {
 		
 		// If the wall is entirely below or above the entity as it moves up, then skip collision resolution.
-		if (old_position.y + hitbox.y1 >= wall.y2
-				|| new_position.y + hitbox.y2 <= wall.y1) {
+		if (old_position.y + hitbox.y1 >= wall.y2 || new_position.y + hitbox.y2 <= wall.y1) {
 			goto skip;
 		}
 
@@ -294,8 +292,7 @@ Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_posit
 	else if (position_step.y < 0.0) {
 
 		// If the wall is entirely below or above the entity as it moves down, then skip collision resolution.
-		if (old_position.y + hitbox.y2 <= wall.y1
-				|| new_position.y + hitbox.y1 >= wall.y2) {
+		if (old_position.y + hitbox.y2 <= wall.y1 || new_position.y + hitbox.y1 >= wall.y2) {
 			goto skip;
 		}
 

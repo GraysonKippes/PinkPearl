@@ -10,8 +10,8 @@
 
 entity_t new_entity(void) {
 	return (entity_t){
-		.transform = (entity_transform_t){ 0 },
-		.hitbox = (rect_t){ 0 },
+		.transform = (entity_transform_t){ },
+		.hitbox = (BoxD){ },
 		.ai = entityAINull,
 		.render_handle = renderHandleInvalid
 	};
@@ -31,9 +31,9 @@ void tick_entity(entity_t *pEntity) {
 	// The squared length is used instead of the real length because it is only used for comparison.
 	double step_length_squared = SQUARE(position_step.x) + SQUARE(position_step.y) + SQUARE(position_step.z); 
 
-	for (unsigned int i = 0; i < currentArea.pRooms[currentArea.currentRoomIndex].num_walls; ++i) {
+	for (unsigned int i = 0; i < currentArea.pRooms[currentArea.currentRoomIndex].wallCount; ++i) {
 		
-		const rect_t wall = currentArea.pRooms[currentArea.currentRoomIndex].walls[i];
+		const BoxD wall = currentArea.pRooms[currentArea.currentRoomIndex].pWalls[i];
 
 		Vector3D resolved_position = resolve_collision(old_position, new_position, pEntity->hitbox, wall);
 		Vector3D resolved_step = vector3D_subtract(resolved_position, old_position);

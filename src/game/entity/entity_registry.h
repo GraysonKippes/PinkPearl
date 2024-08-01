@@ -3,12 +3,13 @@
 
 #include <stdbool.h>
 
+#include "math/Box.h"
 #include "math/hitbox.h"
 #include "util/string.h"
 
 typedef struct entity_record_t {
 	String entity_id;
-	rect_t entity_hitbox;
+	BoxD entity_hitbox;
 	String entity_texture_id;
 } entity_record_t;
 

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "game/entity/entity_transform.h"
+#include "Box.h"
 #include "vector3D.h"
 
 typedef struct hitbox_t {
@@ -11,17 +12,11 @@ typedef struct hitbox_t {
 	double length;
 } hitbox_t;
 
-typedef struct rect_t {
-	// Position 2 should be greater than position 1.
-	double x1, y1;	// Bottom-left corner of the rect.
-	double x2, y2;	// Top-right corner of the rect.
-} rect_t;
-
-rect_t hitbox_to_world_space(hitbox_t hitbox, Vector3D position);
+BoxD hitbox_to_world_space(hitbox_t hitbox, Vector3D position);
 
 // Returns true if the two rects overlap; returns false otherwise.
-bool rect_overlap(const rect_t a, const rect_t b);
+bool rect_overlap(const BoxD a, const BoxD b);
 
-Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_position, const rect_t hitbox, const rect_t wall);
+Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
 
 #endif	// HITBOX_H

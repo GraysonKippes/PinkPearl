@@ -24,5 +24,5 @@ void deleteRoom(Room room) {
 		free(room.ppTileIndices[i]);
 	}
 	free(room.ppTileIndices);
-	free(room.walls);
+	free(room.pWalls);
 }

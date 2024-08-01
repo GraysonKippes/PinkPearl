@@ -4,11 +4,12 @@
 #include "entity_ai.h"
 #include "entity_transform.h"
 
+#include "math/Box.h"
 #include "math/hitbox.h"
 
 typedef struct entity_t {
 	entity_transform_t transform;
-	rect_t hitbox;
+	BoxD hitbox;
 	entity_ai_t ai;
 	int render_handle;
 } entity_t;
