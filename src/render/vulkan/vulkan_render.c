@@ -15,7 +15,7 @@
 #include "render/texture_state.h"
 #include "util/time.h"
 
-#include "command_buffer.h"
+#include "CommandBuffer.h"
 #include "texture.h"
 #include "texture_manager.h"
 #include "vertex_input.h"
@@ -43,14 +43,23 @@ static DrawData drawDatas[VK_CONF_MAX_NUM_QUADS];
 // Stores IDs for unused quads.
 Stack inactiveQuadIDs;
 
-// Quad information
+// Render object quad fields
+
+// Maps a quad ID to a draw data in the GPU.
 uint32_t quadDrawDataIndices[VK_CONF_MAX_NUM_QUADS];
+
+// Transform of each quad.
 RenderTransform quadTransforms[VK_CONF_MAX_NUM_QUADS];
+
+// Texture state of each quad.
 TextureState quadTextureStates[VK_CONF_MAX_NUM_QUADS];
 
 static bool uploadQuadMesh(const int quadID, const DimensionsF quadDimensions);
+
 static void insertDrawData(const int quadID, const float quadDepth, const unsigned int imageIndex);
+
 static void removeDrawData(const int quadID);
+
 static void updateTextureDescriptor(const int quadID, const int textureHandle);
 
 void createVulkanRenderObjects(void) {
@@ -310,14 +319,20 @@ static void removeDrawData(const int quadID) {
 		return;
 	}
 	
+	// Get the index of the draw data associated with the quad.
 	const uint32_t drawDataIndex = quadDrawDataIndices[quadID];
 	if (drawDataIndex >= drawDataCount) {
 		return;
 	}
 	
+	// Remove the draw data associated with the quad.
 	drawDataCount -= 1;
+	// Move each draw data back one place.
 	for (uint32_t i = drawDataIndex; i < drawDataCount; ++i) {
+		// i = index of the draw data after moved back one place.
+		// i + 1 = index of the draw data before moved back one place.
 		drawDatas[i] = drawDatas[i + 1];
+		quadDrawDataIndices[drawDatas[i].quadID] = i;
 	}
 	
 	// TODO - cut the partition crap and just do one mapped memory.

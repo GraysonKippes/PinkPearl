@@ -15,7 +15,7 @@
 #include "util/bit.h"
 #include "util/byte.h"
 
-#include "command_buffer.h"
+#include "CommandBuffer.h"
 #include "descriptor.h"
 #include "image.h"
 #include "logical_device.h"

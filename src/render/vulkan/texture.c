@@ -9,7 +9,7 @@
 #include "util/allocate.h"
 
 #include "buffer.h"
-#include "command_buffer.h"
+#include "CommandBuffer.h"
 #include "vulkan_manager.h"
 
 const ImageUsage imageUsageUndefined = {

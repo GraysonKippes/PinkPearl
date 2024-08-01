@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
-#include "command_buffer.h"
+#include "CommandBuffer.h"
 #include "descriptor.h"
 #include "physical_device.h"
 #include "synchronization.h"

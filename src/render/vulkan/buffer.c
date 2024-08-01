@@ -7,7 +7,7 @@
 #include "log/logging.h"
 #include "util/allocate.h"
 
-#include "command_buffer.h"
+#include "CommandBuffer.h"
 
 const VkBufferUsageFlags buffer_usage_vertex = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 const VkBufferUsageFlags buffer_usage_index = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;

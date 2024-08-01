@@ -1,4 +1,4 @@
-#include "command_buffer.h"
+#include "CommandBuffer.h"
 
 #include <stdlib.h>
 
@@ -146,8 +146,9 @@ void commandBufferReset(CommandBuffer *const pCommandBuffer) {
 	vkResetCommandBuffer(pCommandBuffer->vkCommandBuffer, 0);
 	
 	for (uint32_t i = 0; i < pCommandBuffer->boundDescriptorSetCount; ++i) {
-		const DescriptorSet descriptorSet = *pCommandBuffer->ppBoundDescriptorSets[i];
-		vkUpdateDescriptorSets(descriptorSet.vkDevice, descriptorSet.pendingWriteCount, descriptorSet.pPendingWrites, 0, nullptr);
+		DescriptorSet *const pDescriptorSet = pCommandBuffer->ppBoundDescriptorSets[i];
+		vkUpdateDescriptorSets(pDescriptorSet->vkDevice, pDescriptorSet->pendingWriteCount, pDescriptorSet->pPendingWrites, 0, nullptr);
+		pDescriptorSet->pendingWriteCount = 0;
 		pCommandBuffer->ppBoundDescriptorSets[i] = nullptr;
 	}
 	pCommandBuffer->boundDescriptorSetCount = 0;

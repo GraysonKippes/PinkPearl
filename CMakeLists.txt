@@ -77,9 +77,9 @@ target_sources(PinkPearl PRIVATE
 	src/render/texture_state.c
 	src/render/stb/image_data.c
 	src/render/vulkan/buffer.c
-	src/render/vulkan/command_buffer.c
+	src/render/vulkan/CommandBuffer.c
 	src/render/vulkan/compute_pipeline.c
-	src/render/vulkan/descriptor.c
+	src/render/vulkan/Descriptor.c
 	src/render/vulkan/frame.c
 	src/render/vulkan/graphics_pipeline.c
 	src/render/vulkan/image.c

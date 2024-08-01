@@ -74,13 +74,11 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const Area ar
 	
 	for (uint32_t i = 0; i < pAreaRenderState->numRoomIDs; ++i) {
 		pAreaRenderState->roomIDsToCacheSlots[i] = UINT32_MAX;
-	}
-	
-	for (uint32_t i = 0; i < pAreaRenderState->numRoomIDs; ++i) {
 		pAreaRenderState->roomIDsToPositions[i] = area.pRooms[i].position;
 	}
 	
 	for (uint32_t i = 0; i < num_room_texture_cache_slots; ++i) {
+		pAreaRenderState->roomRenderObjHandles[i] = -1;
 		pAreaRenderState->cacheSlotsToRoomIDs[i] = UINT32_MAX;
 	}
 	
@@ -156,8 +154,8 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	const uint32_t currentRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->currentCacheSlot];
 	const Offset currentRoomPosition = pAreaRenderState->roomIDsToPositions[currentRoomID];
 	const Vector4F start = {
-		.x = roomExtent.width * currentRoomPosition.x,
-		.y = roomExtent.length * currentRoomPosition.y,
+		.x = (int)roomExtent.width * currentRoomPosition.x,
+		.y = (int)roomExtent.length * currentRoomPosition.y,
 		.z = posZ,
 		.w = 1.0F
 	};
@@ -170,8 +168,8 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	const uint32_t nextRoomID = pAreaRenderState->cacheSlotsToRoomIDs[pAreaRenderState->nextCacheSlot];
 	const Offset nextRoomPosition = pAreaRenderState->roomIDsToPositions[nextRoomID];
 	const Vector4F end = {
-		.x = roomExtent.width * nextRoomPosition.x,
-		.y = roomExtent.length * nextRoomPosition.y,
+		.x = (int)roomExtent.width * nextRoomPosition.x,
+		.y = (int)roomExtent.length * nextRoomPosition.y,
 		.z = posZ,
 		.w = 1.0F
 	};
@@ -181,7 +179,6 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	
 	// If the scrolling time limit is reached, update the current room slot to equal the next room cache slot.
 	if (currentTimeMS - pAreaRenderState->scrollStartTimeMS >= timeLimitMS) {
-		unloadRenderObject(&pAreaRenderState->roomRenderObjHandles[pAreaRenderState->currentCacheSlot]);
 		pAreaRenderState->currentCacheSlot = pAreaRenderState->nextCacheSlot;
 		return end;
 	}
@@ -207,6 +204,14 @@ ProjectionBounds areaRenderStateGetProjectionBounds(const AreaRenderState areaRe
 }
 
 static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState, const uint32_t cacheSlot, const Room room) {
+	if (!pAreaRenderState) {
+		return;
+	}
+	
+	// If there already is a room render object in the cache slot, then unload it first.
+	if (validateRenderHandle(pAreaRenderState->roomRenderObjHandles[cacheSlot])) {
+		unloadRenderObject(&pAreaRenderState->roomRenderObjHandles[cacheSlot]);
+	}
 	
 	const Extent roomExtent = room_size_to_extent(room.size);
 	const DimensionsF roomQuadDimensions = {

@@ -106,7 +106,7 @@ Area readAreaData(const char *const pFilename) {
 		// Read room data.
 		const int result = readRoomData(pFile, &area.pRooms[i]);
 		if (result != 0) {
-			logMsgF(LOG_LEVEL_ERROR, "Error creating area: error encountered while reading data for room %u (error code = %u).", i, result);
+			logMsgF(LOG_LEVEL_ERROR, "Error creating area: error encountered while reading data for room %u (error code = %i).", i, result);
 			free(area.pRooms);
 			area.pRooms = nullptr;
 			goto end_read;
@@ -163,16 +163,18 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 		return -2;
 	}
 	
-	// Allocate array for the walls.
-	if (!allocate((void **)&pRoom->walls, pRoom->num_walls, sizeof(rect_t))) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to allocate room wall array.");
-		return -1;
-	}
-	
-	// Read wall data from the file.
-	if (!read_data(pFile, sizeof(rect_t), pRoom->num_walls, pRoom->walls)) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
-		return -2;
+	if (pRoom->num_walls > 0) {
+		// Allocate array for the walls.
+		if (!allocate((void **)&pRoom->walls, pRoom->num_walls, sizeof(rect_t))) {
+			logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to allocate room wall array.");
+			return -1;
+		}
+		
+		// Read wall data from the file.
+		if (!read_data(pFile, sizeof(rect_t), pRoom->num_walls, pRoom->walls)) {
+			logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
+			return -2;
+		}
 	}
 	
 	return 0;
