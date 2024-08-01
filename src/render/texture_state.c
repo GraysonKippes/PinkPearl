@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "util/allocate.h"
 #include "util/time.h"
 #include "vulkan/texture.h"
@@ -25,7 +25,7 @@ TextureState newTextureState(const String textureID) {
 	TextureState textureState = nullTextureState();
 	
 	if (stringIsNull(textureID)) {
-		logMsg(LOG_LEVEL_ERROR, "Error finding loaded texture: given texture ID is nullptr.");
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error finding loaded texture: given texture ID is nullptr.");
 		return textureState;
 	}
 	
@@ -49,7 +49,7 @@ bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned 
 	if (pTextureState == nullptr) {
 		return false;
 	} else if (nextAnimation >= pTextureState->numAnimations) {
-		logMsgF(LOG_LEVEL_WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", pTextureState->currentAnimation, pTextureState->numAnimations);
+		logMsg(loggerRender, LOG_LEVEL_WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", pTextureState->currentAnimation, pTextureState->numAnimations);
 		return false;
 	}
 

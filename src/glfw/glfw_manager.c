@@ -2,8 +2,7 @@
 
 #include "config.h"
 #include "debug.h"
-#include "log/log_stack.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "render/stb/image_data.h"
 
 #include "input_manager.h"
@@ -16,17 +15,15 @@ static GLFWwindow *window = nullptr;
 void glfw_error_callback(int code, const char *description);
 
 void init_GLFW(void) {
-
-	log_stack_push("GLFW");
-	logMsg(LOG_LEVEL_INFO, "Initializing GLFW...");
+	logMsg(loggerSystem, LOG_LEVEL_INFO, "Initializing GLFW...");
 
 	if (glfwInit() != GLFW_TRUE) {
-		logMsg(LOG_LEVEL_FATAL, "GLFW initialization failed.");
+		logMsg(loggerSystem, LOG_LEVEL_FATAL, "GLFW initialization failed.");
 	}
 
 	glfwSetErrorCallback(glfw_error_callback);
 
-	logMsg(LOG_LEVEL_VERBOSE, "Creating GLFW window...");
+	logMsg(loggerSystem, LOG_LEVEL_VERBOSE, "Creating GLFW window...");
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -47,14 +44,12 @@ void init_GLFW(void) {
 	}
 
 	if (window == nullptr) {
-		logMsg(LOG_LEVEL_FATAL, "GLFW window creation failed.");
+		logMsg(loggerSystem, LOG_LEVEL_FATAL, "GLFW window creation failed.");
 	}
 	
 	init_input_manager(window);
 
 	// TODO - add window icons.
-	
-	log_stack_pop();
 }
 
 void terminate_GLFW(void) {
@@ -72,5 +67,5 @@ bool should_application_window_close(void) {
 }
 
 void glfw_error_callback(int code, const char *description) {
-	logMsgF(LOG_LEVEL_ERROR, "GLFW error (%i): %s", code, description);
+	logMsg(loggerSystem, LOG_LEVEL_ERROR, "GLFW error (%i): %s", code, description);
 }

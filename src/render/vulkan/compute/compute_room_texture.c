@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "render/render_config.h"
 #include "util/allocate.h"
 
@@ -44,7 +44,7 @@ static const ImageSubresourceRange imageSubresourceRange = {
 
 
 static void createTransferImage(const VkDevice vkDevice) {
-	logMsg(LOG_LEVEL_VERBOSE, "Creating texture stitching transfer image...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating texture stitching transfer image...");
 	
 	transferImage = (Image){
 		.vkImage = VK_NULL_HANDLE,
@@ -136,14 +136,14 @@ static void createTransferImage(const VkDevice vkDevice) {
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 	transferImage.usage = imageUsageComputeWrite;
 	
-	logMsg(LOG_LEVEL_VERBOSE, "Done creating texture stitching transfer image.");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done creating texture stitching transfer image.");
 }
 
 void init_compute_room_texture(const VkDevice vkDevice) {
-	logMsg(LOG_LEVEL_VERBOSE, "Initializing texture stitcher...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initializing texture stitcher...");
 	compute_room_texture_pipeline = create_compute_pipeline(vkDevice, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
 	createTransferImage(vkDevice);
-	logMsg(LOG_LEVEL_VERBOSE, "Done initializing texture stitcher.");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done initializing texture stitcher.");
 }
 
 void terminate_compute_room_texture(void) {
@@ -151,7 +151,7 @@ void terminate_compute_room_texture(void) {
 }
 
 void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint32_t **tileIndices) {
-	logMsg(LOG_LEVEL_VERBOSE, "Computing room texture...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Computing room texture...");
 	
 	const Texture tilemapTexture = getTexture(tilemapTextureHandle);
 	Texture *const pRoomTexture = getTextureP(destinationTextureHandle);
@@ -179,7 +179,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
 	const VkResult allocate_descriptor_set_result = vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
 	if (allocate_descriptor_set_result != 0) {
-		logMsgF(LOG_LEVEL_ERROR, "Error computing room texture: descriptor set allocation failed. (Error code: %i)", allocate_descriptor_set_result);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error computing room texture: descriptor set allocation failed. (Error code: %i)", allocate_descriptor_set_result);
 		return;
 	}
 
@@ -307,5 +307,5 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 	vkFreeCommandBuffers(device, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
 
-	logMsg(LOG_LEVEL_VERBOSE, "Done computing room texture.");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done computing room texture.");
 }

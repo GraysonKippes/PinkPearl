@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 
 CommandPool createCommandPool(const VkDevice vkDevice, const uint32_t queueFamilyIndex, const bool transient, const bool resetable) {
 	
@@ -38,7 +38,7 @@ CommandPool createCommandPool(const VkDevice vkDevice, const uint32_t queueFamil
 
 void deleteCommandPool(CommandPool *const pCommandPool) {
 	if (!pCommandPool) {
-		logMsg(LOG_LEVEL_ERROR, "Error deleting command pool: null pointer(s) detected.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting command pool: null pointer(s) detected.");
 		return;
 	}
 	
@@ -76,10 +76,10 @@ CommandBuffer allocateCommandBuffer(const CommandPool commandPool) {
 
 void commandBufferBegin(CommandBuffer *const pCommandBuffer, const bool singleSubmit) {
 	if (!pCommandBuffer) {
-		logMsg(LOG_LEVEL_ERROR, "Error beginning command buffer recording: null pointer(s) detected.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error beginning command buffer recording: null pointer(s) detected.");
 		return;
 	} else if (pCommandBuffer->recording) {
-		logMsg(LOG_LEVEL_ERROR, "Error beginning command buffer recording: command buffer already recording.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error beginning command buffer recording: command buffer already recording.");
 		return;
 	}
 	
@@ -95,10 +95,10 @@ void commandBufferBegin(CommandBuffer *const pCommandBuffer, const bool singleSu
 
 void commandBufferEnd(CommandBuffer *const pCommandBuffer) {
 	if (!pCommandBuffer) {
-		logMsg(LOG_LEVEL_ERROR, "Error ending command buffer recording: null pointer(s) detected.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error ending command buffer recording: null pointer(s) detected.");
 		return;
 	} else if (!pCommandBuffer->recording) {
-		logMsg(LOG_LEVEL_ERROR, "Error ending command buffer recording: command buffer not already recording.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error ending command buffer recording: command buffer not already recording.");
 		return;
 	}
 	
@@ -108,13 +108,13 @@ void commandBufferEnd(CommandBuffer *const pCommandBuffer) {
 
 void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const Pipeline pipeline) {
 	if (!pCommandBuffer || !pDescriptorSet) {
-		logMsg(LOG_LEVEL_ERROR, "Error binding descriptor set: null pointer(s) detected.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: null pointer(s) detected.");
 		return;
 	} else if (!pCommandBuffer->recording) {
-		logMsg(LOG_LEVEL_ERROR, "Error binding descriptor set: command buffer not currently recording.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: command buffer not currently recording.");
 		return;
 	} else if (pCommandBuffer->boundDescriptorSetCount >= 8) {
-		logMsg(LOG_LEVEL_ERROR, "Error binding descriptor set: maximum number of descriptor sets already bound.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: maximum number of descriptor sets already bound.");
 		return;
 	}
 	
@@ -136,10 +136,10 @@ void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, Descrip
 
 void commandBufferReset(CommandBuffer *const pCommandBuffer) {
 	if (!pCommandBuffer) {
-		logMsg(LOG_LEVEL_ERROR, "Error reseting command buffer: null pointer(s) detected.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reseting command buffer: null pointer(s) detected.");
 		return;
 	} else if (!pCommandBuffer->resetable) {
-		logMsg(LOG_LEVEL_ERROR, "Error reseting command buffer: command buffer is not resetable.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reseting command buffer: command buffer is not resetable.");
 		return;
 	}
 	

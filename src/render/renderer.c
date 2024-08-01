@@ -5,8 +5,6 @@
 #include <GLFW/glfw3.h>
 
 #include "config.h"
-#include "log/log_stack.h"
-#include "log/logging.h"
 
 #include "area_render_state.h"
 #include "render_config.h"
@@ -23,8 +21,7 @@
 AreaRenderState globalAreaRenderState = { };
 
 void init_renderer(void) {
-	log_stack_push("Renderer");
-
+	
 	create_vulkan_objects();
 	createVulkanRenderObjects();
 	initRenderObjectManager();
@@ -99,17 +96,12 @@ void init_renderer(void) {
 		textureManagerLoadTexture(roomTextureCreateInfo);
 		deleteString(&roomTextureCreateInfo.textureID);
 	}
-	
-	
-	log_stack_pop();
 }
 
 void terminate_renderer(void) {
-	log_stack_push("Renderer");
 	destroyVulkanRenderObjects();
 	destroy_vulkan_objects();
 	terminateRenderObjectManager();
-	log_stack_pop();
 }
 
 void render_frame(const float deltaTime) {

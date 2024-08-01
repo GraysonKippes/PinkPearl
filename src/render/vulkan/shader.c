@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "util/allocate.h"
 #include "util/byte.h"
 
@@ -20,7 +20,7 @@ static const char *shader_directory = SHADER_DIRECTORY;
 static const uint32_t initial_buffer_size = 8192;
 
 static ShaderBytecode read_shader_file(const char *const path) {
-	logMsgF(LOG_LEVEL_VERBOSE, "Reading shader file at \"%s\"...", path);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Reading shader file at \"%s\"...", path);
 	
 	ShaderBytecode shader_bytecode = {
 		.bytecode_size = 0,
@@ -28,13 +28,13 @@ static ShaderBytecode read_shader_file(const char *const path) {
 	};
 	
 	if (path == nullptr) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading shader file: pointer to path string is null.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: pointer to path string is null.");
 		return shader_bytecode;
 	}
 
 	FILE *file = fopen(path, "rb");
 	if (file == nullptr) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading shader file: could not open file.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: could not open file.");
 		return shader_bytecode;
 	}
 	
@@ -43,7 +43,7 @@ static ShaderBytecode read_shader_file(const char *const path) {
 	}
 	
 	if (!allocate((void **)&shader_bytecode.bytecode, initial_buffer_size, sizeof(byte_t))) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading shader file: failed to allocate buffer for shader bytecode.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: failed to allocate buffer for shader bytecode.");
 		return shader_bytecode;
 	}
 
@@ -71,7 +71,7 @@ static bool destroy_shader_bytecode(ShaderBytecode *const pShaderBytecode) {
 }
 
 shader_module_t create_shader_module(VkDevice device, const char *const filename) {
-	logMsgF(LOG_LEVEL_VERBOSE, "Loading shader \"%s\"...", filename);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading shader \"%s\"...", filename);
 
 	shader_module_t shader_module = {
 		.module_handle = VK_NULL_HANDLE,
@@ -79,7 +79,7 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 	};
 
 	if (filename == nullptr) {
-		logMsg(LOG_LEVEL_ERROR, "Error creating shader module: pointer to filename is nullptr.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating shader module: pointer to filename is nullptr.");
 		return shader_module;
 	}
 
@@ -94,7 +94,7 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 
 	ShaderBytecode shader_bytecode = read_shader_file(path);
 	if (shader_bytecode.bytecode == nullptr) {
-		logMsg(LOG_LEVEL_FATAL, "Fatal error creating shader module: shader file reading failed.");
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Fatal error creating shader module: shader file reading failed.");
 		return shader_module;
 	}
 
@@ -108,7 +108,7 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 
 	const VkResult result = vkCreateShaderModule(device, &create_info, nullptr, &shader_module.module_handle);
 	if (result != VK_SUCCESS) {
-		logMsgF(LOG_LEVEL_FATAL, "Fatal error creating shader module: shader module creation failed (error code: %i).", result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Fatal error creating shader module: shader module creation failed (error code: %i).", result);
 		return shader_module;
 	}
 	shader_module.device = device;

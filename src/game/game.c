@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #include "glfw/input_manager.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "render/area_render_state.h"
 #include "render/render_object.h"
 #include "render/renderer.h"
@@ -35,7 +35,7 @@ void start_game(void) {
 	String entityID = newString(64, "pearl");
 	playerEntityHandle = loadEntity(entityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
 	if (!validateEntityHandle(playerEntityHandle)) {
-		logMsgF(LOG_LEVEL_ERROR, "Failed to load entity \"%s\".", entityID.buffer);
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Failed to load entity \"%s\".", entityID.buffer);
 	}
 	deleteString(&entityID);
 }

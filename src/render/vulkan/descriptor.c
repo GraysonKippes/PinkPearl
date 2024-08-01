@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 
 DescriptorSet allocateDescriptorSet(const DescriptorPool descriptorPool) {
 	
@@ -31,10 +31,10 @@ DescriptorSet allocateDescriptorSet(const DescriptorPool descriptorPool) {
 
 void descriptorSetPushWrite(DescriptorSet *const pDescriptorSet, const VkWriteDescriptorSet descriptorSetWrite) {
 	if (!pDescriptorSet) {
-		logMsg(LOG_LEVEL_ERROR, "Error pushing descriptor set write: null pointer(s) detected.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error pushing descriptor set write: null pointer(s) detected.");
 		return;
 	} else if (pDescriptorSet->pendingWriteCount >= 8) {
-		logMsg(LOG_LEVEL_ERROR, "Error pushing descriptor set write: maximum number of writes already pushed.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error pushing descriptor set write: maximum number of writes already pushed.");
 		return;
 	}
 	
@@ -71,7 +71,7 @@ void create_descriptor_set_layout(VkDevice device, DescriptorSetLayout descripto
 
 	VkResult result = vkCreateDescriptorSetLayout(device, &create_info, nullptr, descriptor_set_layout_ptr);
 	if (result != VK_SUCCESS) {
-		logMsgF(LOG_LEVEL_FATAL, "Descriptor set layout creation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Descriptor set layout creation failed. (Error code: %i)", result);
 	}
 
 	if (descriptor_bindings != nullptr)
@@ -82,7 +82,7 @@ void create_descriptor_pool(VkDevice device, uint32_t max_sets, DescriptorSetLay
 
 	VkDescriptorPoolSize *pool_sizes = calloc(descriptor_layout.num_bindings, sizeof(VkDescriptorPoolSize));
 	if (pool_sizes == nullptr) {
-		logMsg(LOG_LEVEL_ERROR, "Allocation of descriptor pool sizes array failed.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Allocation of descriptor pool sizes array failed.");
 		return;
 	}
 	
@@ -101,7 +101,7 @@ void create_descriptor_pool(VkDevice device, uint32_t max_sets, DescriptorSetLay
 
 	VkResult result = vkCreateDescriptorPool(device, &create_info, nullptr, descriptor_pool_ptr);
 	if (result != VK_SUCCESS) {
-		logMsgF(LOG_LEVEL_FATAL, "Descriptor pool creation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Descriptor pool creation failed. (Error code: %i)", result);
 	}
 
 	free(pool_sizes);
@@ -131,7 +131,7 @@ void allocate_descriptor_sets(VkDevice device, DescriptorPool descriptor_pool, u
 
 	VkResult result = vkAllocateDescriptorSets(device, &allocate_info, descriptor_sets);
 	if (result != VK_SUCCESS) {
-		logMsgF(LOG_LEVEL_ERROR, "Descriptor set allocation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Descriptor set allocation failed. (Error code: %i)", result);
 	}
 
 	free(layouts);

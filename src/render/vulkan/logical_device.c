@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "debug.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "util/string_array.h"
 
 // Returns a pointer-array that must be freed by the caller.
@@ -54,7 +54,7 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_fa
 
 void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical_device, VkDevice *device_ptr) {
 
-	logMsg(LOG_LEVEL_VERBOSE, "Creating logical device...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating logical device...");
 
 	uint32_t num_queue_create_infos = 0;
 	VkDeviceQueueCreateInfo *queue_create_infos = make_queue_create_infos(physical_device.queue_family_indices, &num_queue_create_infos);
@@ -106,7 +106,7 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 	// Compatibility
 	if (debug_enabled) {
 		if (!check_device_validation_layer_support(physical_device.handle, vulkan_instance.layer_names)) {
-			logMsg(LOG_LEVEL_ERROR, "Required validation layers not supported by device.");
+			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Required validation layers not supported by device.");
 			create_info.enabledLayerCount = 0;
 			create_info.ppEnabledLayerNames = nullptr;
 		}
@@ -122,7 +122,7 @@ void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical
 
 	VkResult result = vkCreateDevice(physical_device.handle, &create_info, nullptr, device_ptr);
 	if (result != VK_SUCCESS) {
-		logMsgF(LOG_LEVEL_FATAL, "Logical device creation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Logical device creation failed. (Error code: %i)", result);
 		exit(1); // TODO - better error handling
 	}
 

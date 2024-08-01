@@ -12,17 +12,14 @@
 #include "game/entity/entity_manager.h"
 #include "game/entity/entity_registry.h"
 #include "glfw/glfw_manager.h"
-#include "log/error_code.h"
-#include "log/log_stack.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "render/renderer.h"
 
 int main(void) {
 
-	init_log_stack();
-	logMsgF(LOG_LEVEL_INFO, "Running Pink Pearl version %u.%u", PinkPearl_VERSION_MAJOR, PinkPearl_VERSION_MINOR);
+	logMsg(loggerSystem, LOG_LEVEL_INFO, "Running Pink Pearl version %u.%u", PinkPearl_VERSION_MAJOR, PinkPearl_VERSION_MINOR);
 	if (debug_enabled) {
-		logMsg(LOG_LEVEL_WARNING, "Debug mode enabled.");
+		logMsg(loggerSystem, LOG_LEVEL_WARNING, "Debug mode enabled.");
 	}
 
 	init_GLFW();
@@ -32,9 +29,9 @@ int main(void) {
 	init_entity_registry();
 	init_entity_manager();
 	start_game();
-	error_queue_flush();
+	//error_queue_flush();
 
-	logMsg(LOG_LEVEL_INFO, "Ready to play Pink Pearl!");
+	logMsg(loggerSystem, LOG_LEVEL_INFO, "Ready to play Pink Pearl!");
 	run_client();
 
 	terminate_entity_registry();
@@ -43,9 +40,8 @@ int main(void) {
 	terminate_renderer();
 	terminate_GLFW();
 
-	logMsg(LOG_LEVEL_INFO, "Stopping Pink Pearl. Goodbye!");
-	terminate_log_stack();
-	terminate_error_queue();
+	logMsg(loggerSystem, LOG_LEVEL_INFO, "Stopping Pink Pearl. Goodbye!");
+	//terminate_error_queue();
 	
 	return 0;
 }

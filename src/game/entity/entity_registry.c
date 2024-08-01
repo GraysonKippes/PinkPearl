@@ -3,8 +3,7 @@
 #include <stddef.h>
 
 #include "config.h"
-#include "log/logging.h"
-#include "log/log_stack.h"
+#include "log/Logger.h"
 #include "util/file_io.h"
 #include "util/string.h"
 
@@ -17,8 +16,7 @@ static entity_record_t entity_records[NUM_ENTITY_RECORDS];
 static bool register_entity_record(const entity_record_t entity_record);
 
 void init_entity_registry(void) {
-	log_stack_push("EntityRegistry");
-	logMsg(LOG_LEVEL_VERBOSE, "Initializing entity registry...");
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Initializing entity registry...");
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		entity_records[i] = (entity_record_t){
@@ -44,25 +42,22 @@ void init_entity_registry(void) {
 	}
 	
 	fclose(fge_file);
-	logMsg(LOG_LEVEL_VERBOSE, "Done initializing entity registry.");
-	log_stack_pop();
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Done initializing entity registry.");
 }
 
 void terminate_entity_registry(void) {
-	log_stack_push("EntityRegistry");
-	logMsg(LOG_LEVEL_VERBOSE, "Terminating entity registry...");
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Terminating entity registry...");
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		deleteString(&entity_records[i].entity_id);
 		deleteString(&entity_records[i].entity_texture_id);
 	}
 	
-	logMsg(LOG_LEVEL_VERBOSE, "Done terminating entity registry.");
-	log_stack_pop();
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Done terminating entity registry.");
 }
 
 static bool register_entity_record(const entity_record_t entity_record) {
-	logMsgF(LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.buffer);
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.buffer);
 	
 	size_t hash_index = stringHash(entity_record.entity_id, num_entity_records);
 	for (size_t i = 0; i < num_entity_records; ++i) {

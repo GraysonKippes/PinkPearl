@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "util/bit.h"
 
 
@@ -48,7 +48,7 @@ bool check_physical_device_extension_support(physical_device_t physical_device) 
 
 bool check_device_validation_layer_support(VkPhysicalDevice physical_device, string_array_t required_layer_names) {
 
-	logMsg(LOG_LEVEL_VERBOSE, "Checking device validation layer support...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Checking device validation layer support...");
 
 	// If no layers are required, then no support is needed; therefore, return true.
 	if (is_string_array_empty(required_layer_names)) {
@@ -103,7 +103,7 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 	queue_family_indices.transfer_family_ptr = nullptr;
 	queue_family_indices.compute_family_ptr = nullptr;
 
-	logMsg(LOG_LEVEL_VERBOSE, "Querying queue family indices...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Querying queue family indices...");
 
 	for (uint32_t i = 0; i < num_queue_families; ++i) {
 
@@ -217,7 +217,7 @@ physical_device_t make_new_physical_device(void) {
 
 physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKHR surface) {
 
-	logMsg(LOG_LEVEL_VERBOSE, "Selecting physical device...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting physical device...");
 
 	uint32_t num_physical_devices = 0;
 	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, nullptr);
@@ -239,7 +239,7 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 		physical_device.handle = physical_devices[i];
 		vkGetPhysicalDeviceProperties(physical_device.handle, &physical_device.properties);
 
-		logMsgF(LOG_LEVEL_VERBOSE, "Rating physical device: %s", physical_device.properties.deviceName);
+		logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Rating physical device: %s", physical_device.properties.deviceName);
 
 		list_physical_device_memories(physical_device.handle);
 

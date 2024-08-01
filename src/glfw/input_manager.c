@@ -33,7 +33,6 @@ static void update_input_state(int input_index, int action) {
 }
 
 static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-
 	(void)window;
 	(void)scancode;
 	(void)mods;
@@ -46,10 +45,9 @@ static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int act
 }
 
 static void glfw_mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
-
 	(void)window;
 	(void)mods;
-
+	
 	update_input_state(button + num_key_inputs, action);
 }
 

@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "config.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "render/stb/image_data.h"
 #include "util/allocate.h"
 
@@ -38,18 +38,18 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	// TODO - modify this to use semaphores between image transitions and data transfer operations.
 
 	if (stringIsNull(textureCreateInfo.textureID)) {
-		logMsg(LOG_LEVEL_ERROR, "Error loading texture: texture ID is null.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: texture ID is null.");
 		return makeNullTexture();
 	}
 
-	logMsgF(LOG_LEVEL_VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.buffer);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.buffer);
 
 	if (textureCreateInfo.numAnimations == 0) {
-		logMsg(LOG_LEVEL_ERROR, "Error loading texture: number of animation create infos is zero.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: number of animation create infos is zero.");
 	}
 
 	if (textureCreateInfo.numAnimations > 0 && textureCreateInfo.animations == nullptr) {
-		logMsg(LOG_LEVEL_ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is nullptr.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is nullptr.");
 		return makeNullTexture();
 	}
 
@@ -97,7 +97,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 		const uint32_t numBufImgCopies = texture.numImageArrayLayers;
 		VkBufferImageCopy2 *bufImgCopies = nullptr;
 		if (!allocate((void **)&bufImgCopies, numBufImgCopies, sizeof(VkBufferImageCopy2))) {
-			logMsg(LOG_LEVEL_ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
+			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
 			// TODO - do proper cleanup here.
 			return texture;
 		}

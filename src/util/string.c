@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 
 #include "allocate.h"
 

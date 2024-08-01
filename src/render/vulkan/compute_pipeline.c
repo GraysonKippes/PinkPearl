@@ -4,7 +4,7 @@
 
 #include "shader.h"
 
-#include "log/logging.h"
+#include "log/Logger.h"
 
 void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
 
@@ -44,7 +44,7 @@ ComputePipeline create_compute_pipeline(const VkDevice device, const DescriptorS
 
 	const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &compute_pipeline.handle);
 	if (result != VK_SUCCESS) {
-		logMsgF(LOG_LEVEL_FATAL, "Compute pipeline creation failed (error code: %i).", result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Compute pipeline creation failed (error code: %i).", result);
 	}
 	compute_pipeline.device = device;
 

@@ -8,8 +8,7 @@
 #include <DataStuff/LinkedList.h>
 #include <DataStuff/Stack.h>
 
-#include "log/log_stack.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "game/area/room.h"
 #include "render/render_config.h"
 #include "render/texture_state.h"
@@ -63,8 +62,7 @@ static void removeDrawData(const int quadID);
 static void updateTextureDescriptor(const int quadID, const int textureHandle);
 
 void createVulkanRenderObjects(void) {
-	log_stack_push("Vulkan");
-	logMsg(LOG_LEVEL_VERBOSE, "Creating Vulkan render objects...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating Vulkan render objects...");
 
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
@@ -73,13 +71,10 @@ void createVulkanRenderObjects(void) {
 	for (int quadID = vkConfMaxNumQuads - 1; quadID >= 0; --quadID) {
 		stackPush(&inactiveQuadIDs, &quadID);
 	}
-	
-	log_stack_pop();
 }
 
 void destroyVulkanRenderObjects(void) {
-	log_stack_push("Vulkan");
-	logMsg(LOG_LEVEL_VERBOSE, "Destroying Vulkan render objects...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroying Vulkan render objects...");
 	
 	vkDeviceWaitIdle(device);
 
@@ -88,8 +83,6 @@ void destroyVulkanRenderObjects(void) {
 	terminateTextureManager();
 	
 	deleteStack(&inactiveQuadIDs);
-	
-	log_stack_pop();
 }
 
 void initTextureDescriptors(void) {

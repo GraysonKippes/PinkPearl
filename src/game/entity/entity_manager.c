@@ -4,7 +4,7 @@
 
 #include "entity_registry.h"
 
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "render/render_object.h"
 #include "render/renderer.h"
 
@@ -26,7 +26,7 @@ void unload_entity(const int handle) {
 	if (!validateEntityHandle(handle)) {
 		return;
 	} else if (entity_slot_enable_flags[handle] == 0) {
-		logMsgF(LOG_LEVEL_WARNING, "Unloading already unused entity slot (%u).", handle);
+		logMsg(loggerGame, LOG_LEVEL_WARNING, "Unloading already unused entity slot (%i).", handle);
 		return;
 	}
 	
@@ -35,7 +35,7 @@ void unload_entity(const int handle) {
 
 int loadEntity(const String entityID, const Vector3D initPosition, const Vector3D initVelocity) {
 	if (stringIsNull(entityID)) {
-		logMsg(LOG_LEVEL_ERROR, "Error loading entity: string entityID is null.");
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: string entityID is null.");
 	}
 	
 	int entityHandle = entityHandleInvalid;
@@ -46,20 +46,20 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 		}
 	}
 	if (!validateEntityHandle(entityHandle)) {
-		logMsg(LOG_LEVEL_ERROR, "Error loading entity: failed to find available entity handle.");
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to find available entity handle.");
 		return entityHandleInvalid;
 	}
 	
 	entity_record_t entityRecord = { };
 	if (!find_entity_record(entityID, &entityRecord)) {
-		logMsgF(LOG_LEVEL_ERROR, "Error loading entity: failed to find entity record with ID \"%s\".", entityID.buffer);
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to find entity record with ID \"%s\".", entityID.buffer);
 		return entityHandleInvalid;
 	}
 	
 	//										  /*   Temporary parameter for testing   */
 	const int renderHandle = loadRenderObject(entityRecord.entity_texture_id, (BoxF){ -0.5F, -1.0F, 0.5F, 0.5F }, 1, &initPosition);
 	if (!validateEntityHandle(renderHandle)) {
-		logMsg(LOG_LEVEL_ERROR, "Error loading entity: failed to load render object.");
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to load render object.");
 		return entityHandleInvalid;
 	}
 	
@@ -79,13 +79,13 @@ bool validateEntityHandle(const int entityHandle) {
 }
 
 int getEntity(const int handle, entity_t **const ppEntity) {
-	if (ppEntity == nullptr) {
+	if (!ppEntity) {
 		return 1;
 	} else if (!validateEntityHandle(handle)) {
 		return 2;
 	}
 
-	*ppEntity = entities + handle;
+	*ppEntity = &entities[handle];
 
 	// If the entity slot is unused, then still return the entity there, but return -1 as a warning.
 	return entity_slot_enable_flags[handle] ? 0 : -1;

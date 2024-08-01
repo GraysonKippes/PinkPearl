@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-const Vector3D zeroVector3D = (Vector3D){ 0.0, 0.0, 0.0 };
+const Vector3D zeroVector3D = { 0.0, 0.0, 0.0 };
 
 Vector3D vector3D_add(const Vector3D a, const Vector3D b) {
 	return (Vector3D){
@@ -43,7 +43,7 @@ double vector3D_length(const Vector3D vector) {
 Vector3D vector3D_normalize(const Vector3D vector) {
 	const double length = vector3D_length(vector);
 	if (length == 0.0) {
-		return (Vector3D){ 0.0 };
+		return zeroVector3D;
 	}
 	return vector3D_scalar_divide(vector, length);
 }

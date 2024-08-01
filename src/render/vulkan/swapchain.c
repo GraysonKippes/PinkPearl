@@ -3,14 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 
 #include "vulkan_manager.h"
 
 #define clamp(x, min, max) (x > min ? (x < max ? x : max) : min)
 
 VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_support_details) {
-	logMsg(LOG_LEVEL_VERBOSE, "Selecting surface format for swapchain...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting surface format for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.num_formats; ++i) {
 		VkSurfaceFormatKHR format = swapchain_support_details.formats[i];
@@ -18,7 +18,7 @@ VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_s
 			return format;
 	}
 
-	logMsg(LOG_LEVEL_ERROR, "No appropriate swapchain image format found.");
+	logMsg(loggerVulkan, LOG_LEVEL_ERROR, "No appropriate swapchain image format found.");
 
 	VkSurfaceFormatKHR undefined_format;
 	undefined_format.format = VK_FORMAT_UNDEFINED;
@@ -28,7 +28,7 @@ VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_s
 }
 
 VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_support_details) {
-	logMsg(LOG_LEVEL_VERBOSE, "Selecting presentation mode for swapchain...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting presentation mode for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.num_present_modes; ++i) {
 		VkPresentModeKHR present_mode = swapchain_support_details.present_modes[i];
@@ -40,7 +40,7 @@ VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_suppo
 }
 
 VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, GLFWwindow *window) {
-	logMsg(LOG_LEVEL_VERBOSE, "Selecting extent for swapchain...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting extent for swapchain...");
 
 	if (swapchain_support_details.capabilities.currentExtent.width != UINT32_MAX) {
 		return swapchain_support_details.capabilities.currentExtent;
@@ -57,7 +57,7 @@ VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, 
 }
 
 Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle) {
-	logMsg(LOG_LEVEL_VERBOSE, "Creating swapchain...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating swapchain...");
 
 	Swapchain swapchain;
 
@@ -103,13 +103,13 @@ Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_de
 
 	VkResult swapchain_creation_result = vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain.handle);
 	if (swapchain_creation_result != VK_SUCCESS) {
-		logMsgF(LOG_LEVEL_FATAL, "Swapchain creation failed. (Error code: %i)", swapchain_creation_result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Swapchain creation failed. (Error code: %i)", swapchain_creation_result);
 		exit(1);
 	}
 
 	// Retrieve images
 	
-	logMsg(LOG_LEVEL_VERBOSE, "Retrieving images for swapchain...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Retrieving images for swapchain...");
 
 	vkGetSwapchainImagesKHR(device, swapchain.handle, &num_images, nullptr);
 	swapchain.num_images = num_images;
@@ -118,7 +118,7 @@ Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_de
 
 	// Create image views
 
-	logMsg(LOG_LEVEL_VERBOSE, "Creating image views for swapchain...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating image views for swapchain...");
 
 	swapchain.image_views = malloc(swapchain.num_images * sizeof(VkImageView));
 	for (size_t i = 0; i < swapchain.num_images; ++i) {
@@ -142,7 +142,7 @@ Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_de
 
 		VkResult image_view_creation_result = vkCreateImageView(device, &image_view_create_info, nullptr, (swapchain.image_views + i));
 		if (image_view_creation_result != VK_SUCCESS) {
-			logMsgF(LOG_LEVEL_FATAL, "Image view creation for swapchain failed. (Error code: %i)", image_view_creation_result);
+			logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Image view creation for swapchain failed. (Error code: %i)", image_view_creation_result);
 			exit(1);
 		}
 	}
@@ -151,7 +151,7 @@ Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_de
 }
 
 void create_framebuffers(const VkDevice device, const VkRenderPass renderPass, Swapchain *const pSwapchain) {
-	logMsg(LOG_LEVEL_VERBOSE, "Creating framebuffers for swapchain...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating framebuffers for swapchain...");
 
 	pSwapchain->framebuffers = malloc(pSwapchain->num_images * sizeof(VkFramebuffer));
 	for (uint32_t i = 0; i < pSwapchain->num_images; ++i) {
@@ -170,7 +170,7 @@ void create_framebuffers(const VkDevice device, const VkRenderPass renderPass, S
 
 		const VkResult result = vkCreateFramebuffer(device, &createInfo, nullptr, &pSwapchain->framebuffers[i]);
 		if (result != VK_SUCCESS) {
-			logMsgF(LOG_LEVEL_FATAL, "Framebuffer creation for swapchain failed (error code: %i).", result);
+			logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Framebuffer creation for swapchain failed (error code: %i).", result);
 		}
 	}
 }

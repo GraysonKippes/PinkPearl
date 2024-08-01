@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 
 bool validateArea(const Area area) {
 	return area.pRooms != nullptr
@@ -14,17 +14,17 @@ bool validateArea(const Area area) {
 
 bool areaGetRoom(const Area area, const Offset roomPosition, Room **const ppRoom) {
 	if (!validateArea(area)) {
-		logMsg(LOG_LEVEL_ERROR, "Error getting room pointer: area struct found to be invalid.");
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting room pointer: area struct found to be invalid.");
 		return false;
 	} else if (!ppRoom) {
-		logMsg(LOG_LEVEL_ERROR, "Error getting room pointer: pointer to room pointer is null.");
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting room pointer: pointer to room pointer is null.");
 		return false;
 	}
 
 	// This is an index into the array that maps 1D positions to indices into the area room array.
 	const int roomPositionIndex = areaExtentIndex(area.extent, roomPosition);
 	if (roomPositionIndex < 0) {
-		logMsgF(LOG_LEVEL_ERROR, "Error getting room pointer: room position index is negative (%i).", roomPositionIndex);
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting room pointer: room position index is negative (%i).", roomPositionIndex);
 		return false;
 	}
 
@@ -34,13 +34,13 @@ bool areaGetRoom(const Area area, const Offset roomPosition, Room **const ppRoom
 	}
 
 	if (roomIndex >= area.roomCount) {
-		logMsgF(LOG_LEVEL_ERROR, "Error getting room pointer: room index (%i) is not less than total number of rooms (%i).", roomIndex, area.roomCount);
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting room pointer: room index (%i) is not less than total number of rooms (%i).", roomIndex, area.roomCount);
 		return false;
 	}
 
 	*ppRoom = &area.pRooms[roomIndex];
 	if (roomPosition.x != (*ppRoom)->position.x || roomPosition.y != (*ppRoom)->position.y) {
-		logMsgF(LOG_LEVEL_WARNING, "Warning getting room pointer: specified room position (%i, %i) does not match the gotten room's position (%i, %i).", 
+		logMsg(loggerGame, LOG_LEVEL_WARNING, "Warning getting room pointer: specified room position (%i, %i) does not match the gotten room's position (%i, %i).", 
 				roomPosition.x, roomPosition.y, (*ppRoom)->position.x, (*ppRoom)->position.y);
 	}
 	return true;
@@ -48,10 +48,10 @@ bool areaGetRoom(const Area area, const Offset roomPosition, Room **const ppRoom
 
 bool areaGetCurrentRoom(const Area area, Room **const ppRoom) {
 	if (!validateArea(area)) {
-		logMsg(LOG_LEVEL_ERROR, "Error getting current room pointer: area struct found to be invalid.");
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting current room pointer: area struct found to be invalid.");
 		return false;
 	} else if (!ppRoom) {
-		logMsg(LOG_LEVEL_ERROR, "Error getting current room pointer: pointer to room pointer is null.");
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting current room pointer: pointer to room pointer is null.");
 		return false;
 	}
 	
@@ -62,14 +62,14 @@ bool areaGetCurrentRoom(const Area area, Room **const ppRoom) {
 
 int areaGetRoomIndex(const Area area, const Offset roomPosition) {
 	if (!area.pPositionsToRooms) {
-		logMsg(LOG_LEVEL_ERROR, "Error getting room index: area.pPositionsToRooms is null.");
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting room index: area.pPositionsToRooms is null.");
 		return -2;
 	}
 
 	// This is an index into the array that maps 1D positions to indices into the area room array.
 	const int roomPositionIndex = areaExtentIndex(area.extent, roomPosition);
 	if (roomPositionIndex < 0) {
-		logMsgF(LOG_LEVEL_ERROR, "Error getting room pointer: room position index is negative (%i).", roomPositionIndex);
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting room pointer: room position index is negative (%i).", roomPositionIndex);
 		return -3;
 	}
 
@@ -78,7 +78,7 @@ int areaGetRoomIndex(const Area area, const Offset roomPosition) {
 
 int areaExtentIndex(const BoxI areaExtent, const Offset roomPosition) {
 	if (roomPosition.x < areaExtent.x1 || roomPosition.x > areaExtent.x2 || roomPosition.y < areaExtent.y1 || roomPosition.y > areaExtent.y2) {
-		logMsgF(LOG_LEVEL_ERROR, "Error calculating area extent index: roomPosition (%i, %i) does not fall within area extent [(%i, %i), (%i, %i)].",
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error calculating area extent index: roomPosition (%i, %i) does not fall within area extent [(%i, %i), (%i, %i)].",
 			roomPosition.x, roomPosition.y, areaExtent.x1, areaExtent.y1, areaExtent.x2, areaExtent.y2);
 		return -1;
 	}
@@ -92,7 +92,7 @@ int areaExtentIndex(const BoxI areaExtent, const Offset roomPosition) {
 CardinalDirection test_room_travel(const Vector3D player_position, const Area area, const int current_room_index) {
 	
 	if (current_room_index >= area.roomCount) {
-		logMsgF(LOG_LEVEL_ERROR, "Error testing room travel: specified current room index (%i) is not less than total number of rooms in specified area (%i).", current_room_index, area.roomCount);
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error testing room travel: specified current room index (%i) is not less than total number of rooms in specified area (%i).", current_room_index, area.roomCount);
 		return DIRECTION_NONE;
 	}
 

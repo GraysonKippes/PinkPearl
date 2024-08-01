@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "render/render_config.h"
 #include "util/allocate.h"
 
@@ -109,7 +109,7 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 	}
 
 	if (!allocate((void **)&frame_array.frames, frame_array.num_frames, sizeof(Frame))) {
-		logMsg(LOG_LEVEL_ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
 		return (FrameArray){ };
 	}
 	

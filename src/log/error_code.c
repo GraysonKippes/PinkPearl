@@ -8,8 +8,8 @@
 // Does not necessarily need to be atomic.
 
 typedef struct error_queue_node_t {
-	log_level_t log_level;
-	error_code_t error_code;
+	LogLevel logLevel;
+	ErrorCode errorCode;
 	struct error_queue_node_t *next_node_ptr;
 } error_queue_node_t;
 
@@ -20,13 +20,13 @@ typedef struct error_queue_t {
 
 static error_queue_t error_queue;
 
-void error_queue_push(const log_level_t log_level, const error_code_t error_code) {
+void error_queue_push(const LogLevel logLevel, const ErrorCode errorCode) {
 	
 	error_queue_node_t *new_node_ptr = nullptr;
 	allocate((void **)&new_node_ptr, 1, sizeof(error_queue_node_t));
 	*new_node_ptr = (error_queue_node_t){
-		.log_level = log_level,
-		.error_code = error_code,
+		.logLevel = logLevel,
+		.errorCode = errorCode,
 		.next_node_ptr = nullptr
 	};
 	
@@ -42,7 +42,8 @@ void error_queue_push(const log_level_t log_level, const error_code_t error_code
 
 void error_queue_flush(void) {
 	while (error_queue.head_node_ptr != nullptr) {
-		logMsg(error_queue.head_node_ptr->log_level, error_code_str(error_queue.head_node_ptr->error_code));
+		logMsg(error_queue.head_node_ptr->logLevel, error_code_str(error_queue.head_node_ptr->errorCode));
+		logMsg();
 		error_queue_node_t *previous_node_ptr = error_queue.head_node_ptr;
 		error_queue.head_node_ptr = error_queue.head_node_ptr->next_node_ptr;
 		deallocate((void **)&previous_node_ptr);
@@ -59,8 +60,8 @@ void terminate_error_queue(void) {
 	error_queue.tail_node_ptr = error_queue.head_node_ptr;
 }
 
-char *error_code_str(const error_code_t error_code) {
-	switch (error_code) {
+char *error_code_str(const ErrorCode errorCode) {
+	switch (errorCode) {
 		default: return "Unknown error.";
 		case ERROR_CODE_ALLOCATION_FAILED: return "Allocation failed.";
 		case ERROR_CODE_FILE_READ_FAILED: return "File read failed.";

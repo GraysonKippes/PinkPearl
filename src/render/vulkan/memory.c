@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "util/allocate.h"
 
 memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
@@ -10,7 +10,7 @@ memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 	// TODO - redesign this whole function to be flexible with other types of GPUs.
 	// 	Currently it only really targets NVIDIA/AMD GPUs.
 
-	logMsg(LOG_LEVEL_VERBOSE, "Selecting GPU memory types...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting GPU memory types...");
 
 	VkPhysicalDeviceMemoryProperties memory_properties;
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
@@ -49,9 +49,9 @@ memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 		}
 	}
 
-	logMsgF(LOG_LEVEL_VERBOSE, "Memory type graphics: %u", memory_type_set.graphics_resources);
-	logMsgF(LOG_LEVEL_VERBOSE, "Memory type staging: %u", memory_type_set.resource_staging);
-	logMsgF(LOG_LEVEL_VERBOSE, "Memory type uniform: %u", memory_type_set.uniform_data);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Memory type graphics: %u", memory_type_set.graphics_resources);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Memory type staging: %u", memory_type_set.resource_staging);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Memory type uniform: %u", memory_type_set.uniform_data);
 
 	return memory_type_set;
 }

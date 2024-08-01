@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "render/render_config.h"
 #include "util/allocate.h"
 #include "util/file_io.h"
@@ -20,7 +20,7 @@ Area readAreaData(const char *const pFilename) {
 
 	FILE *pFile = fopen(FGA_FILE_DIRECTORY, "rb");
 	if (!pFile) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to open file.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to open file.");
 		return area;
 	}
 
@@ -28,7 +28,7 @@ Area readAreaData(const char *const pFilename) {
 	char label[4];
 	fread(label, 1, 4, pFile);
 	if (strcmp(label, "FGA") != 0) {
-		logMsgF(LOG_LEVEL_ERROR, "Error reading area file: invalid file format; found label \"%s\".", label);
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: invalid file format; found label \"%s\".", label);
 		goto end_read;
 	}
 	
@@ -41,7 +41,7 @@ Area readAreaData(const char *const pFilename) {
 	
 	// Read area extent.
 	if (!read_data(pFile, sizeof(area.extent), 1, &area.extent)) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read area extent.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read area extent.");
 		goto end_read;
 	}
 	
@@ -49,17 +49,16 @@ Area readAreaData(const char *const pFilename) {
 	const int areaLength = boxLength(area.extent);
 	const long int extentArea = areaWidth * areaLength;
 	
-	
 	// Read room size type.
 	uint32_t roomSizeType = 0;
 	if (!read_data(pFile, sizeof(roomSizeType), 1, &roomSizeType)) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room size type.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room size type.");
 		goto end_read;
 	}
 
 	// Validate room size type, must be between 0 and 3, inclusive.
 	if (roomSizeType >= num_room_sizes) {
-		logMsgF(LOG_LEVEL_ERROR, "Error creating area: room size type is invalid (%u).", roomSizeType);
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: room size type is invalid (%u).", roomSizeType);
 		goto end_read;
 	}
 
@@ -68,21 +67,21 @@ Area readAreaData(const char *const pFilename) {
 	
 	// Read room count.
 	if (!read_data(pFile, sizeof(area.roomCount), 1, &area.roomCount)) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read area room count.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read area room count.");
 		goto end_read;
 	}
 	
 	// Allocate array of rooms.
 	area.pRooms = calloc(area.roomCount, sizeof(Room));
 	if (!area.pRooms) {
-		logMsg(LOG_LEVEL_ERROR, "Error creating area: allocation of area.pRooms failed.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: allocation of area.pRooms failed.");
 		goto end_read;
 	}
 
 	// Allocate 1D position to room array index map.
 	area.pPositionsToRooms = calloc(extentArea, sizeof(int));
 	if (!area.pPositionsToRooms) {
-		logMsg(LOG_LEVEL_ERROR, "Error creating area: allocation of area.pPositionsToRooms failed.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: allocation of area.pPositionsToRooms failed.");
 		free(area.pRooms);
 		area.pRooms = nullptr;
 		goto end_read;
@@ -106,7 +105,7 @@ Area readAreaData(const char *const pFilename) {
 		// Read room data.
 		const int result = readRoomData(pFile, &area.pRooms[i]);
 		if (result != 0) {
-			logMsgF(LOG_LEVEL_ERROR, "Error creating area: error encountered while reading data for room %u (error code = %i).", i, result);
+			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: error encountered while reading data for room %u (error code = %i).", i, result);
 			free(area.pRooms);
 			area.pRooms = nullptr;
 			goto end_read;
@@ -133,46 +132,46 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 	// Allocate tile indices arrays.
 	const uint64_t numTiles = extentArea(pRoom->extent);
 	if (!allocate((void **)&pRoom->ppTileIndices, num_room_layers, sizeof(uint32_t *))) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to allocate array of tile index arrays.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to allocate array of tile index arrays.");
 		return -1;
 	}
 	for (uint32_t i = 0; i < num_room_layers; ++i) {
 		if (!allocate((void **)&pRoom->ppTileIndices[i], numTiles, sizeof(uint32_t))) {
-			logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to allocate tile indices array.");
+			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to allocate tile indices array.");
 			return -1;
 		}
 	}
 	
 	// Read room position from file.
 	if (!read_data(pFile, sizeof(Offset), 1, &pRoom->position)) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room position.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room position.");
 		return -1;
 	}
 	
 	// Read tile data for each layer from file.
 	for (uint32_t i = 0; i < num_room_layers; ++i) {
 		if (!read_data(pFile, sizeof(uint32_t), numTiles, pRoom->ppTileIndices[i])) {
-			logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room tile indices.");
+			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room tile indices.");
 			return -2;
 		}
 	}
 	
 	// Read wall count from the file.
 	if (!read_data(pFile, sizeof(uint32_t), 1, &pRoom->wallCount)) {
-		logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
 		return -2;
 	}
 	
 	if (pRoom->wallCount > 0) {
 		// Allocate array for the walls.
 		if (!allocate((void **)&pRoom->pWalls, pRoom->wallCount, sizeof(BoxD))) {
-			logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to allocate room wall array.");
+			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to allocate room wall array.");
 			return -1;
 		}
 		
 		// Read wall data from the file.
 		if (!read_data(pFile, sizeof(BoxD), pRoom->wallCount, pRoom->pWalls)) {
-			logMsg(LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
+			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
 			return -2;
 		}
 	}

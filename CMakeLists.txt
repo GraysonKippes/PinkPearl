@@ -24,6 +24,7 @@ target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall 
 	-Werror=address 
 	-Werror=array-parameter
 	-Werror=endif-labels
+	-Werror=enum-conversion
 	-Wno-switch
 )
 
@@ -61,9 +62,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/entity/entity_registry.c
 	src/glfw/glfw_manager.c
 	src/glfw/input_manager.c
-	src/log/error_code.c
-	src/log/log_stack.c
-	src/log/logging.c
+	src/log/Logger.c
 	src/math/Box.c
 	src/math/extent.c
 	src/math/offset.c

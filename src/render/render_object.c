@@ -4,7 +4,7 @@
 
 #include <DataStuff/Heap.h>
 
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "vulkan/vulkan_render.h"
 #include "vulkan/texture_manager.h"
 

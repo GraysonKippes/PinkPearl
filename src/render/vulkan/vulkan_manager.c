@@ -7,8 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "debug.h"
-#include "log/log_stack.h"
-#include "log/logging.h"
+#include "log/Logger.h"
 #include "glfw/glfw_manager.h"
 #include "render/render_config.h"
 #include "render/stb/image_data.h"
@@ -67,17 +66,17 @@ buffer_partition_t global_draw_data_buffer_partition;
 /* -- Function Definitions -- */
 
 static void create_window_surface(void) {
-	logMsg(LOG_LEVEL_VERBOSE, "Creating window surface...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating window surface...");
 	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), nullptr, &surface);
 	if (result != VK_SUCCESS) {
-		logMsgF(LOG_LEVEL_FATAL, "Window surface creation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Window surface creation failed (error code: %i).", result);
 		// TODO - do not use exit() here.
 		exit(1);
 	}
 }
 
 static void create_global_staging_buffer(void) {
-	logMsg(LOG_LEVEL_VERBOSE, "Creating global staging buffer...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global staging buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -98,7 +97,7 @@ static void create_global_staging_buffer(void) {
 }
 
 static void create_global_uniform_buffer(void) {
-	logMsg(LOG_LEVEL_VERBOSE, "Creating global uniform buffer...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global uniform buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -120,7 +119,7 @@ static void create_global_uniform_buffer(void) {
 }
 
 static void create_global_storage_buffer(void) {
-	logMsg(LOG_LEVEL_VERBOSE, "Creating global storage buffer...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global storage buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -141,7 +140,7 @@ static void create_global_storage_buffer(void) {
 }
 
 static void create_global_draw_data_buffer(void) {
-	logMsg(LOG_LEVEL_VERBOSE, "Creating global draw data buffer...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global draw data buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
 		.physical_device = physical_device.handle,
@@ -161,8 +160,7 @@ static void create_global_draw_data_buffer(void) {
 }
 
 void create_vulkan_objects(void) {
-	log_stack_push("Vulkan");
-	logMsg(LOG_LEVEL_INFO, "Initializing Vulkan...");
+	logMsg(loggerVulkan, LOG_LEVEL_INFO, "Initializing Vulkan...");
 
 	vulkan_instance = create_vulkan_instance();
 
@@ -214,13 +212,10 @@ void create_vulkan_objects(void) {
 		}
 	};
 	frame_array = createFrameArray(frameArrayCreateInfo);
-	
-	log_stack_pop();
 }
 
 void destroy_vulkan_objects(void) {
-	log_stack_push("Vulkan");
-	logMsg(LOG_LEVEL_VERBOSE, "Destroying Vulkan objects...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroying Vulkan objects...");
 
 	deleteFrameArray(&frame_array);
 
@@ -243,6 +238,5 @@ void destroy_vulkan_objects(void) {
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	
-	logMsg(LOG_LEVEL_VERBOSE, "Done destroying Vulkan objects.");
-	log_stack_pop();
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done destroying Vulkan objects.");
 }
