@@ -7,10 +7,17 @@
 #include "math/Box.h"
 
 typedef struct Entity {
+	
 	EntityTransform transform;
+	
 	BoxD hitbox;
+	
 	EntityAI ai;
-	int render_handle;
+	
+	bool persistent;
+	
+	int renderHandle;
+	
 } Entity;
 
 // Returns an entity with default values.

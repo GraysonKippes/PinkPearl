@@ -50,6 +50,7 @@ void tick_game(void) {
 	if (gameState.scrolling) {
 		if (!areaRenderStateIsScrolling(globalAreaRenderState)) {
 			gameState.scrolling = false;
+			unloadImpersistentEntities();
 		}
 		else {
 			//settle_render_positions();
@@ -72,7 +73,7 @@ void tick_game(void) {
 	pPlayerEntity->transform.velocity.y = 0.0;
 	pPlayerEntity->transform.velocity.z = 0.0;
 	
-	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->render_handle, 0);
+	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->renderHandle, 0);
 	unsigned int nextAnimation = currentAnimation;
 
 	if (move_up_pressed && !move_down_pressed) {
@@ -99,7 +100,7 @@ void tick_game(void) {
 	pPlayerEntity->transform.velocity = vector3D_scalar_multiply(pPlayerEntity->transform.velocity, speed);
 	
 	if (nextAnimation != currentAnimation) {
-		renderObjectSetAnimation(pPlayerEntity->render_handle, 0, nextAnimation);
+		renderObjectSetAnimation(pPlayerEntity->renderHandle, 0, nextAnimation);
 	}
 
 	tickEntities();

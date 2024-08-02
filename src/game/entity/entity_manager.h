@@ -22,7 +22,10 @@ void init_entity_manager(void);
 int loadEntity(const String entityID, const Vector3D initPosition, const Vector3D initVelocity);
 
 // Frees the entity slot at the specified handle.
-void unloadEntity(const int handle);
+void unloadEntity(const int entityHandle);
+
+// Unloads all entities that are not marked persistent.
+void unloadImpersistentEntities(void);
 
 // Returns true if the specified entity handle is a valid entity handle and can be used to safely retrieve entities;
 // 	returns false otherwise.

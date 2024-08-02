@@ -15,7 +15,7 @@ Entity new_entity(void) {
 		.transform = (EntityTransform){ },
 		.hitbox = (BoxD){ },
 		.ai = entityAINull,
-		.render_handle = renderHandleInvalid
+		.renderHandle = renderHandleInvalid
 	};
 }
 
@@ -50,7 +50,7 @@ void tick_entity(Entity *pEntity) {
 	pEntity->transform.position = new_position;
 
 	// Update render object.
-	const int renderHandle = pEntity->render_handle;
+	const int renderHandle = pEntity->renderHandle;
 	renderObjectSetPosition(renderHandle, 0, pEntity->transform.position);
 }
 

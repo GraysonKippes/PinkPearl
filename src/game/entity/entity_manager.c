@@ -11,14 +11,14 @@
 const int maxNumEntities = MAX_NUM_ENTITIES;
 
 static Entity entities[MAX_NUM_ENTITIES];
-static bool entity_slot_enable_flags[MAX_NUM_ENTITIES];
+static bool entitySlotEnabledFlags[MAX_NUM_ENTITIES];
 
 const int entityHandleInvalid = -1;
 
 void init_entity_manager(void) {
 	for (int i = 0; i < maxNumEntities; ++i) {
 		entities[i] = new_entity();
-		entity_slot_enable_flags[i] = false;
+		entitySlotEnabledFlags[i] = false;
 	}
 }
 
@@ -29,7 +29,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	
 	int entityHandle = entityHandleInvalid;
 	for (int i = 0; validateEntityHandle(i); ++i) {
-		if (!entity_slot_enable_flags[i]) {
+		if (!entitySlotEnabledFlags[i]) {
 			entityHandle = i;
 			break;
 		}
@@ -57,22 +57,32 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	};
 	entities[entityHandle].hitbox = entityRecord.entity_hitbox;
 	entities[entityHandle].ai = entityAINull;
-	entities[entityHandle].render_handle = renderHandle;
+	entities[entityHandle].persistent = entityRecord.entityIsPersistent;
+	entities[entityHandle].renderHandle = renderHandle;
 	
-	entity_slot_enable_flags[entityHandle] = true;
+	entitySlotEnabledFlags[entityHandle] = true;
 	
 	return entityHandle;
 }
 
-void unloadEntity(const int handle) {
-	if (!validateEntityHandle(handle)) {
+void unloadEntity(const int entityHandle) {
+	if (!validateEntityHandle(entityHandle)) {
 		return;
-	} else if (!entity_slot_enable_flags[handle]) {
-		logMsg(loggerGame, LOG_LEVEL_WARNING, "Unloading already unused entity slot (%i).", handle);
+	} else if (!entitySlotEnabledFlags[entityHandle]) {
+		logMsg(loggerGame, LOG_LEVEL_WARNING, "Unloading already unused entity slot (%i).", entityHandle);
 		return;
 	}
 	
-	entity_slot_enable_flags[handle] = false;
+	unloadRenderObject(&entities[entityHandle].renderHandle);
+	entitySlotEnabledFlags[entityHandle] = false;
+}
+
+void unloadImpersistentEntities(void) {
+	for (int i = 0; validateEntityHandle(i); ++i) {
+		if (entitySlotEnabledFlags[i] && !entities[i].persistent) {
+			unloadEntity(i);
+		}
+	}
 }
 
 bool validateEntityHandle(const int entityHandle) {
@@ -89,12 +99,12 @@ int getEntity(const int handle, Entity **const ppEntity) {
 	*ppEntity = &entities[handle];
 
 	// If the entity slot is unused, then still return the entity there, but return -1 as a warning.
-	return entity_slot_enable_flags[handle] ? 0 : -1;
+	return entitySlotEnabledFlags[handle] ? 0 : -1;
 }
 
 void tickEntities(void) {
 	for (int i = 0; i < maxNumEntities; ++i) {
-		if (entity_slot_enable_flags[i]) {
+		if (entitySlotEnabledFlags[i]) {
 			tick_entity(&entities[i]);
 		}
 	}

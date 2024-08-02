@@ -16,6 +16,8 @@ typedef struct EntityRecord {
 	
 	BoxF textureDimensions;
 	
+	bool entityIsPersistent;
+	
 } EntityRecord;
 
 void init_entity_registry(void);

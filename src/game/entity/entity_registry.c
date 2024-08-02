@@ -48,6 +48,10 @@ void init_entity_registry(void) {
 		
 		// Read entity texture dimensions.
 		read_data(fge_file, 1, sizeof(BoxF), &entityRecord.textureDimensions);
+		
+		// Read entity properties.
+		read_data(fge_file, 1, 1, &entityRecord.entityIsPersistent);
+		
 		file_next_block(fge_file);
 		
 		register_entity_record(entityRecord);
