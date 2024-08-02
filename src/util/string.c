@@ -11,7 +11,7 @@ String makeNullString(void) {
 	return (String){
 		.length = 0,
 		.capacity = 0,
-		.buffer = nullptr
+		.pBuffer = nullptr
 	};
 }
 
@@ -19,7 +19,7 @@ String newStringEmpty(const size_t initCapacity) {
 	const size_t capacity = initCapacity > 0 ? initCapacity : 16;
 	
 	String string = makeNullString();
-	if (!allocate((void **)&string.buffer, capacity, sizeof(char))) {
+	if (!allocate((void **)&string.pBuffer, capacity, sizeof(char))) {
 		return string;
 	}
 	string.capacity = capacity;
@@ -36,22 +36,22 @@ String newString(const size_t capacity, const char *const pInitData) {
 	
 	const size_t maxLen = string.capacity - 1;	// Maximum possible length of 
 	const size_t initLen = strlen(pInitData);	// Length of initial data NOT including null terminator.
-	strncpy(string.buffer, pInitData, initLen);
+	strncpy(string.pBuffer, pInitData, initLen);
 	string.length = initLen > maxLen ? maxLen : initLen;
 	
 	return string;
 }
 
 String deepCopyString(const String copy) {
-	return newString(copy.capacity, copy.buffer);
+	return newString(copy.capacity, copy.pBuffer);
 }
 
 bool deleteString(String *const pString) {
-	if (pString == nullptr) {
+	if (!pString) {
 		return false;
 	}
 	
-	deallocate((void **)&pString->buffer);
+	deallocate((void **)&pString->pBuffer);
 	pString->length = 0;
 	pString->capacity = 0;
 	
@@ -59,7 +59,7 @@ bool deleteString(String *const pString) {
 }
 
 bool stringIsNull(const String string) {
-	return string.capacity == 0 || string.buffer == nullptr;
+	return string.capacity == 0 || string.pBuffer == nullptr;
 }
 
 bool stringCompare(const String a, const String b) {
@@ -71,7 +71,7 @@ bool stringCompare(const String a, const String b) {
 		return false;
 	}
 	
-	return strncmp(a.buffer, b.buffer, a.length) == 0;
+	return strncmp(a.pBuffer, b.pBuffer, a.length) == 0;
 }
 
 size_t stringReverseSearchChar(const String string, const char c) {
@@ -79,12 +79,12 @@ size_t stringReverseSearchChar(const String string, const char c) {
 		return 0;
 	}
 	
-	const char *reverse_search_result = strrchr(string.buffer, c);
+	const char *reverse_search_result = strrchr(string.pBuffer, c);
 	if (reverse_search_result == nullptr) {
 		return string.length;
 	}
 	
-	const ptrdiff_t ptr_difference = reverse_search_result - string.buffer;
+	const ptrdiff_t ptr_difference = reverse_search_result - string.pBuffer;
 	return (size_t)ptr_difference;
 }
 
@@ -99,10 +99,10 @@ bool stringConcatChar(String *const pString, const char c) {
 	
 	if (pString->length + 1 >= pString->capacity) {
 		// TODO - sanitize reallocation.
-		pString->buffer = realloc(pString->buffer, ++pString->capacity * sizeof(char));
+		pString->pBuffer = realloc(pString->pBuffer, ++pString->capacity * sizeof(char));
 	}
-	pString->buffer[pString->length++] = c;
-	pString->buffer[pString->length] = '\0';
+	pString->pBuffer[pString->length++] = c;
+	pString->pBuffer[pString->length] = '\0';
 	
 	return true;
 }
@@ -119,10 +119,10 @@ bool stringConcatString(String *const pDst, const String src) {
 	const size_t new_length = pDst->length + src.length;
 	if (pDst->capacity <= new_length) {
 		// Reallocate new_length + 1 bytes for the buffer, for the extra byte at the end.
-		pDst->buffer = realloc(pDst->buffer, (new_length + 1) * sizeof(char));
+		pDst->pBuffer = realloc(pDst->pBuffer, (new_length + 1) * sizeof(char));
 	}
 	
-	strncpy(&pDst->buffer[pDst->length], src.buffer, src.length);
+	strncpy(&pDst->pBuffer[pDst->length], src.pBuffer, src.length);
 	pDst->length = new_length;
 	
 	return true;
@@ -141,15 +141,15 @@ bool stringConcatCString(String *const pDst, const char *const src_pstring) {
 	const size_t new_length = pDst->length + src_length;
 	if (pDst->capacity <= new_length) {
 		// Reallocate new_length + 1 bytes for the buffer, for the extra byte at the end.
-		pDst->buffer = realloc(pDst->buffer, (new_length + 1) * sizeof(char));
+		pDst->pBuffer = realloc(pDst->pBuffer, (new_length + 1) * sizeof(char));
 	}
 	
 	for (size_t i = 0; i < src_length; ++i) {
 		const size_t dest_index = pDst->length + i;
-		pDst->buffer[dest_index] = src_pstring[i];
+		pDst->pBuffer[dest_index] = src_pstring[i];
 	}
 	pDst->length = new_length;
-	pDst->buffer[pDst->length] = '\0';
+	pDst->pBuffer[pDst->length] = '\0';
 	
 	return true;
 }
@@ -164,7 +164,7 @@ bool stringRemoveTrailingChars(String *const pString, const size_t num_chars) {
 	}
 	
 	pString->length -= num_chars;
-	pString->buffer[pString->length] = '\0';
+	pString->pBuffer[pString->length] = '\0';
 	return true;
 }
 
@@ -201,7 +201,7 @@ size_t stringHash(const String string, const size_t limit) {
 	static const size_t p = 32;
 	size_t sum = 0;
 	for (size_t i = 0; i < string.length; ++i) {
-		sum += (size_t)string.buffer[i] * exponentiate(p, i);
+		sum += (size_t)string.pBuffer[i] * exponentiate(p, i);
 	}
 	
 	return sum % limit;

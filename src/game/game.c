@@ -10,7 +10,6 @@
 #include "render/render_object.h"
 #include "render/renderer.h"
 #include "render/texture_state.h"
-#include "util/bit.h"
 #include "util/time.h"
 
 #include "game_state.h"
@@ -27,17 +26,18 @@ Area currentArea = { };
 // The handle to the player entity.
 static int playerEntityHandle;
 
+static int testEntityHandle;
+
 void start_game(void) {
 
 	currentArea = readAreaData("test");
 	areaRenderStateReset(&globalAreaRenderState, currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
 
-	String entityID = newString(64, "pearl");
-	playerEntityHandle = loadEntity(entityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
-	if (!validateEntityHandle(playerEntityHandle)) {
-		logMsg(loggerGame, LOG_LEVEL_ERROR, "Failed to load entity \"%s\".", entityID.buffer);
-	}
-	deleteString(&entityID);
+	String playerEntityID = { .length = 5, .capacity = 6, .pBuffer = "pearl" };
+	playerEntityHandle = loadEntity(playerEntityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
+	
+	String testEntityID = { .length = 5, .capacity = 6, .pBuffer = "crate2" };
+	int testEntityHandle = loadEntity(testEntityID, (Vector3D){ 4.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
 }
 
 void tick_game(void) {
@@ -57,7 +57,7 @@ void tick_game(void) {
 		}
 	}
 
-	entity_t *pPlayerEntity = nullptr;
+	Entity *pPlayerEntity = nullptr;
 	int result = getEntity(playerEntityHandle, &pPlayerEntity);
 	if (pPlayerEntity == nullptr || result != 0) {
 		return;

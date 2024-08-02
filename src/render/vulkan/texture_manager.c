@@ -126,7 +126,7 @@ bool textureManagerLoadTexturePack(const TexturePack texturePack) {
 }
 
 void textureManagerLoadTexture(const TextureCreateInfo textureCreateInfo) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initializing texture \"%s\"...", textureCreateInfo.textureID.buffer);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initializing texture \"%s\"...", textureCreateInfo.textureID.pBuffer);
 	
 	const int textureHandle = numTexturesLoaded++;
 	if (!validateTextureHandle(textureHandle)) {
@@ -149,7 +149,7 @@ void textureManagerLoadTexture(const TextureCreateInfo textureCreateInfo) {
 	textures[textureHandle] = texture;
 	registerTexture(textureHandle, textureCreateInfo);
 	
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done initializing texture \"%s\".", textureCreateInfo.textureID.buffer);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done initializing texture \"%s\".", textureCreateInfo.textureID.pBuffer);
 }
 
 bool validateTextureHandle(const int textureHandle) {

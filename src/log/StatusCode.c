@@ -9,7 +9,7 @@
 
 typedef struct error_queue_node_t {
 	LogLevel logLevel;
-	ErrorCode errorCode;
+	StatusCode errorCode;
 	struct error_queue_node_t *next_node_ptr;
 } error_queue_node_t;
 
@@ -20,7 +20,7 @@ typedef struct error_queue_t {
 
 static error_queue_t error_queue;
 
-void error_queue_push(const LogLevel logLevel, const ErrorCode errorCode) {
+void error_queue_push(const LogLevel logLevel, const StatusCode errorCode) {
 	
 	error_queue_node_t *new_node_ptr = nullptr;
 	allocate((void **)&new_node_ptr, 1, sizeof(error_queue_node_t));
@@ -60,12 +60,12 @@ void terminate_error_queue(void) {
 	error_queue.tail_node_ptr = error_queue.head_node_ptr;
 }
 
-char *error_code_str(const ErrorCode errorCode) {
+char *error_code_str(const StatusCode errorCode) {
 	switch (errorCode) {
 		default: return "Unknown error.";
-		case ERROR_CODE_ALLOCATION_FAILED: return "Allocation failed.";
-		case ERROR_CODE_FILE_READ_FAILED: return "File read failed.";
-		case ERROR_CODE_MAX_OBJECTS_EXCEEDED: return "Max objects to allocate exceeded by specified number of objects.";
-		case ERROR_CODE_UNLOADING_UNUSED_RESOURCE: return "Attempting to unload an unused/unallocated resource.";
+		case STATUS_CODE_ALLOCATION_FAILED: return "Allocation failed.";
+		case STATUS_CODE_FILE_READ_FAILED: return "File read failed.";
+		case STATUS_CODE_MAX_OBJECTS_EXCEEDED: return "Max objects to allocate exceeded by specified number of objects.";
+		case STATUS_CODE_UNLOADING_UNUSED_RESOURCE: return "Attempting to unload an unused/unallocated resource.";
 	}
 }

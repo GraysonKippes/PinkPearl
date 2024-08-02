@@ -3,10 +3,10 @@
 
 #include "math/vector3D.h"
 
-typedef struct entity_transform_t {
+typedef struct EntityTransform {
 	Vector3D position;
 	Vector3D velocity;
 	unsigned long long int last_stationary_time;
-} entity_transform_t;
+} EntityTransform;
 
 #endif	// ENTITY_TRANSFORM_H

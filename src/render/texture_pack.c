@@ -30,7 +30,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 	texturePack.numTextures = 0;
 	texturePack.pTextureCreateInfos = nullptr;
 
-	if (pPath == nullptr) {
+	if (!pPath) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Filename is nullptr.");
 		return texturePack;
 	}

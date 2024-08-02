@@ -11,18 +11,18 @@
 
 #define NUM_ENTITY_RECORDS 2
 static const size_t num_entity_records = NUM_ENTITY_RECORDS;
-static entity_record_t entity_records[NUM_ENTITY_RECORDS];
+static EntityRecord entity_records[NUM_ENTITY_RECORDS];
 
-static bool register_entity_record(const entity_record_t entity_record);
+static bool register_entity_record(const EntityRecord entity_record);
 
 void init_entity_registry(void) {
 	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Initializing entity registry...");
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
-		entity_records[i] = (entity_record_t){
+		entity_records[i] = (EntityRecord){
 			.entity_id = makeNullString(),
 			.entity_hitbox = (BoxD){ },
-			.entity_texture_id = makeNullString()
+			.textureID = makeNullString()
 		};
 	}
 	
@@ -32,13 +32,25 @@ void init_entity_registry(void) {
 	}
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
-		entity_record_t entity_record;
-		entity_record.entity_id = readString(fge_file, 32);
+		
+		EntityRecord entityRecord = { };
+		
+		// Read entity ID.
+		entityRecord.entity_id = readString(fge_file, 32);
 		file_next_block(fge_file);
-		read_data(fge_file, 1, sizeof(BoxD), &entity_record.entity_hitbox);
-		entity_record.entity_texture_id = readString(fge_file, 32);
+		
+		// Read entity hitbox.
+		read_data(fge_file, 1, sizeof(BoxD), &entityRecord.entity_hitbox);
+		
+		// Read entity texture ID.
+		entityRecord.textureID = readString(fge_file, 32);
 		file_next_block(fge_file);
-		register_entity_record(entity_record);
+		
+		// Read entity texture dimensions.
+		read_data(fge_file, 1, sizeof(BoxF), &entityRecord.textureDimensions);
+		file_next_block(fge_file);
+		
+		register_entity_record(entityRecord);
 	}
 	
 	fclose(fge_file);
@@ -50,14 +62,14 @@ void terminate_entity_registry(void) {
 	
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		deleteString(&entity_records[i].entity_id);
-		deleteString(&entity_records[i].entity_texture_id);
+		deleteString(&entity_records[i].textureID);
 	}
 	
 	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Done terminating entity registry.");
 }
 
-static bool register_entity_record(const entity_record_t entity_record) {
-	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.buffer);
+static bool register_entity_record(const EntityRecord entity_record) {
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.pBuffer);
 	
 	size_t hash_index = stringHash(entity_record.entity_id, num_entity_records);
 	for (size_t i = 0; i < num_entity_records; ++i) {
@@ -73,15 +85,15 @@ static bool register_entity_record(const entity_record_t entity_record) {
 	return false;
 }
 
-bool find_entity_record(const String entity_id, entity_record_t *const entity_record_ptr) {
-	if (entity_record_ptr == nullptr) {
+bool find_entity_record(const String entity_id, EntityRecord *const pEntityRecord) {
+	if (!pEntityRecord) {
 		return false;
 	}
 	
 	size_t hash_index = stringHash(entity_id, num_entity_records);
 	for (size_t i = 0; i < num_entity_records; ++i) {
 		if (stringCompare(entity_id, entity_records[i].entity_id)) {
-			*entity_record_ptr = entity_records[i];
+			*pEntityRecord = entity_records[i];
 			return true;
 		}
 		else {

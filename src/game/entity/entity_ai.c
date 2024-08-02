@@ -2,10 +2,18 @@
 
 // "Null" or default AI behavior functions.
 
-static void entity_ai_regular_tick_null(void) {
+static void entityAIRegularTickNull(void) {
 	
 }
 
-const entity_ai_t entityAINull = {
-	.regular_tick = entity_ai_regular_tick_null
+const EntityAI entityAINull = {
+	.regularTick = entityAIRegularTickNull
+};
+
+static void entityAIRegularTickBasic(void) {
+	
+}
+
+const EntityAI entityAIBasic = {
+	.regularTick = entityAIRegularTickBasic
 };

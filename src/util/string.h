@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 typedef struct String {
 	
@@ -15,7 +16,7 @@ typedef struct String {
 	size_t capacity;
 	
 	// Character buffer containing the string's contents.
-	char *buffer;
+	char *pBuffer;
 	
 } String;
 

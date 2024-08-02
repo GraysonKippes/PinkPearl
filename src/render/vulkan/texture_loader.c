@@ -35,6 +35,8 @@ static String textureIDToPath(const String textureID) {
 // Loaded textures are required to have animation create infos all with the same extent.
 Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
+	static const VkDeviceSize numImageChannels = 4;
+
 	// TODO - modify this to use semaphores between image transitions and data transfer operations.
 
 	if (stringIsNull(textureCreateInfo.textureID)) {
@@ -42,7 +44,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 		return makeNullTexture();
 	}
 
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.buffer);
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.pBuffer);
 
 	if (textureCreateInfo.numAnimations == 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: number of animation create infos is zero.");
@@ -73,11 +75,10 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	// Load image data into image staging buffer.
 	byte_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 2);
-	image_data_t base_image_data = load_image_data(path.buffer, 0);
+	image_data_t base_image_data = load_image_data(path.pBuffer, numImageChannels);
 	const VkDeviceSize base_image_width = base_image_data.width;
 	const VkDeviceSize base_image_height = base_image_data.height;
-	const VkDeviceSize base_image_channels = base_image_data.num_channels;
-	const VkDeviceSize base_image_size = base_image_width * base_image_height * base_image_channels;
+	const VkDeviceSize base_image_size = base_image_width * base_image_height * numImageChannels;
 	memcpy(mapped_memory, base_image_data.data, base_image_size);
 	free_image_data(base_image_data);
 	buffer_partition_unmap_memory(global_staging_buffer_partition);
@@ -118,9 +119,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			const uint32_t texel_offset_y = cell_offset_y * textureCreateInfo.cellExtent.length;
 			const uint32_t texel_offset = texel_offset_y * atlasExtentWidth + texel_offset_x;
 
-			static const VkDeviceSize bytes_per_texel = 4;
-
-			bufImgCopies[i].bufferOffset = buffer_partition_offset + (VkDeviceSize)texel_offset * bytes_per_texel;
+			bufImgCopies[i].bufferOffset = buffer_partition_offset + (VkDeviceSize)texel_offset * numImageChannels;
 			bufImgCopies[i].bufferRowLength = atlasExtentWidth;
 			bufImgCopies[i].bufferImageHeight = atlasExtentLength;
 

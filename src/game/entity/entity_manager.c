@@ -10,27 +10,16 @@
 
 const int maxNumEntities = MAX_NUM_ENTITIES;
 
-static entity_t entities[MAX_NUM_ENTITIES];
-static uint8_t entity_slot_enable_flags[MAX_NUM_ENTITIES];
+static Entity entities[MAX_NUM_ENTITIES];
+static bool entity_slot_enable_flags[MAX_NUM_ENTITIES];
 
 const int entityHandleInvalid = -1;
 
 void init_entity_manager(void) {
 	for (int i = 0; i < maxNumEntities; ++i) {
 		entities[i] = new_entity();
-		entity_slot_enable_flags[i] = 0;
+		entity_slot_enable_flags[i] = false;
 	}
-}
-
-void unload_entity(const int handle) {
-	if (!validateEntityHandle(handle)) {
-		return;
-	} else if (entity_slot_enable_flags[handle] == 0) {
-		logMsg(loggerGame, LOG_LEVEL_WARNING, "Unloading already unused entity slot (%i).", handle);
-		return;
-	}
-	
-	entity_slot_enable_flags[handle] = 0;
 }
 
 int loadEntity(const String entityID, const Vector3D initPosition, const Vector3D initVelocity) {
@@ -41,8 +30,8 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	int entityHandle = entityHandleInvalid;
 	for (int i = 0; validateEntityHandle(i); ++i) {
 		if (!entity_slot_enable_flags[i]) {
-			entity_slot_enable_flags[i] = 1;
 			entityHandle = i;
+			break;
 		}
 	}
 	if (!validateEntityHandle(entityHandle)) {
@@ -50,20 +39,19 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 		return entityHandleInvalid;
 	}
 	
-	entity_record_t entityRecord = { };
+	EntityRecord entityRecord = { };
 	if (!find_entity_record(entityID, &entityRecord)) {
-		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to find entity record with ID \"%s\".", entityID.buffer);
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to find entity record with ID \"%s\".", entityID.pBuffer);
 		return entityHandleInvalid;
 	}
 	
-	//										  /*   Temporary parameter for testing   */
-	const int renderHandle = loadRenderObject(entityRecord.entity_texture_id, (BoxF){ -0.5F, -1.0F, 0.5F, 0.5F }, 1, &initPosition);
-	if (!validateEntityHandle(renderHandle)) {
+	const int renderHandle = loadRenderObject(entityRecord.textureID, entityRecord.textureDimensions, 1, &initPosition);
+	if (!validateRenderHandle(renderHandle)) {
 		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to load render object.");
 		return entityHandleInvalid;
 	}
 	
-	entities[entityHandle].transform = (entity_transform_t){
+	entities[entityHandle].transform = (EntityTransform){
 		.position = initPosition,
 		.velocity = initVelocity
 	};
@@ -71,14 +59,27 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	entities[entityHandle].ai = entityAINull;
 	entities[entityHandle].render_handle = renderHandle;
 	
+	entity_slot_enable_flags[entityHandle] = true;
+	
 	return entityHandle;
+}
+
+void unloadEntity(const int handle) {
+	if (!validateEntityHandle(handle)) {
+		return;
+	} else if (!entity_slot_enable_flags[handle]) {
+		logMsg(loggerGame, LOG_LEVEL_WARNING, "Unloading already unused entity slot (%i).", handle);
+		return;
+	}
+	
+	entity_slot_enable_flags[handle] = false;
 }
 
 bool validateEntityHandle(const int entityHandle) {
 	return entityHandle >= 0 && entityHandle < maxNumEntities;
 }
 
-int getEntity(const int handle, entity_t **const ppEntity) {
+int getEntity(const int handle, Entity **const ppEntity) {
 	if (!ppEntity) {
 		return 1;
 	} else if (!validateEntityHandle(handle)) {

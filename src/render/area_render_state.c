@@ -13,25 +13,25 @@
 static const String roomXSTextureID = {
 	.length = 6,
 	.capacity = 7,
-	.buffer = "roomXS"
+	.pBuffer = "roomXS"
 };
 
 static const String roomSTextureID = {
 	.length = 5,
 	.capacity = 6,
-	.buffer = "roomS"
+	.pBuffer = "roomS"
 };
 
 static const String roomMTextureID = {
 	.length = 5,
 	.capacity = 6,
-	.buffer = "roomM"
+	.pBuffer = "roomM"
 };
 
 static const String roomLTextureID = {
 	.length = 5,
 	.capacity = 6,
-	.buffer = "roomL"
+	.pBuffer = "roomL"
 };
 
 static String roomSizeToTextureID(const RoomSize roomSize) {

@@ -14,6 +14,7 @@ extern const int numTextures;
 extern const int textureHandleMissing;
 
 void initTextureManager(void);
+
 void terminateTextureManager(void);
 
 // Loads all the textures inside texturePack into the texture manager.

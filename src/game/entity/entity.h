@@ -6,18 +6,18 @@
 
 #include "math/Box.h"
 
-typedef struct entity_t {
-	entity_transform_t transform;
+typedef struct Entity {
+	EntityTransform transform;
 	BoxD hitbox;
-	entity_ai_t ai;
+	EntityAI ai;
 	int render_handle;
-} entity_t;
+} Entity;
 
 // Returns an entity with default values.
 // Always use this function to initialize entities.
-entity_t new_entity(void);
+Entity new_entity(void);
 
 // Ticks the entity's game logic.
-void tick_entity(entity_t *entity_ptr);
+void tick_entity(Entity *pEntity);
 
 #endif	// ENTITY_H

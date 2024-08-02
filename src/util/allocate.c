@@ -14,7 +14,7 @@ bool allocate(void **ptr_ptr, const size_t num_objects, const size_t num_bytes_p
 		}
 	}
 
-	//error_queue_push(LOG_LOG_LEVEL_ERROR, ERROR_CODE_ALLOCATION_FAILED);
+	//error_queue_push(LOG_LOG_LEVEL_ERROR, STATUS_CODE_ALLOCATION_FAILED);
 	return false;
 }
 
@@ -24,7 +24,7 @@ bool allocate_max(void **ptr_ptr, const size_t num_objects, const size_t num_byt
 		size_t num_objects_to_allocate = num_objects;
 		if (num_objects_to_allocate > max_num_objects) {
 			num_objects_to_allocate = max_num_objects;
-			//error_queue_push(LOG_LOG_LEVEL_WARNING, ERROR_CODE_MAX_OBJECTS_EXCEEDED);
+			//error_queue_push(LOG_LOG_LEVEL_WARNING, STATUS_CODE_MAX_OBJECTS_EXCEEDED);
 		}
 		void *ptr = calloc(num_objects, num_bytes_per_object);
 		if (ptr != nullptr) {
@@ -33,7 +33,7 @@ bool allocate_max(void **ptr_ptr, const size_t num_objects, const size_t num_byt
 		}
 	}
 
-	//error_queue_push(LOG_LOG_LEVEL_ERROR, ERROR_CODE_ALLOCATION_FAILED);
+	//error_queue_push(LOG_LOG_LEVEL_ERROR, STATUS_CODE_ALLOCATION_FAILED);
 	return false;
 }
 

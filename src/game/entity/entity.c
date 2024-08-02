@@ -10,16 +10,16 @@
 
 static Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
 
-entity_t new_entity(void) {
-	return (entity_t){
-		.transform = (entity_transform_t){ },
+Entity new_entity(void) {
+	return (Entity){
+		.transform = (EntityTransform){ },
 		.hitbox = (BoxD){ },
 		.ai = entityAINull,
 		.render_handle = renderHandleInvalid
 	};
 }
 
-void tick_entity(entity_t *pEntity) {
+void tick_entity(Entity *pEntity) {
 	if (!pEntity) {
 		return;
 	}
