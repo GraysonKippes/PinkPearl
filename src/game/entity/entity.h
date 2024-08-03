@@ -21,6 +21,14 @@ typedef struct Entity {
 	// Controls whether or not this entity is unloaded when the player leaves the current room.
 	bool persistent;
 	
+	/* Stats */
+	
+	int currentHP;
+	
+	int maxHP;
+	
+	double speed;
+	
 	// Handle to the render object associated with this entity.
 	int renderHandle;
 	

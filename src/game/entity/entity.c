@@ -24,7 +24,7 @@ void tick_entity(Entity *const pEntity) {
 		return;
 	}
 
-	pEntity->ai.regularTick(pEntity);
+	pEntity->ai.onTick(pEntity);
 
 	const Vector3D old_position = pEntity->transform.position;
 	const Vector3D position_step = pEntity->transform.velocity;

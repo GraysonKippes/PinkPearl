@@ -12,11 +12,15 @@ typedef struct EntityRecord {
 	
 	BoxD entityHitbox;
 	
+	bool entityIsPersistent;
+	
+	int entityHP;
+	
+	double entitySpeed;
+	
 	String textureID;
 	
 	BoxF textureDimensions;
-	
-	bool entityIsPersistent;
 	
 } EntityRecord;
 

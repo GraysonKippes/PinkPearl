@@ -2,18 +2,23 @@
 
 #include "entity.h"
 
+#include "util/Random.h"
+
 static void entityAIRegularTickNull(Entity *const pEntity) {
 	(void)pEntity;
 }
 
 const EntityAI entityAINull = {
-	.regularTick = entityAIRegularTickNull
+	.onTick = entityAIRegularTickNull
 };
 
 static void entityAIRegularTickSlime(Entity *const pEntity) {
-	pEntity->transform.velocity.x = -0.125;
+	
+	static const double speed = 0.125;
+	
+	pEntity->transform.velocity.x = speed;
 }
 
 const EntityAI entityAISlime = {
-	.regularTick = entityAIRegularTickSlime
+	.onTick = entityAIRegularTickSlime
 };
