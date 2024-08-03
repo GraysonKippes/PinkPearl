@@ -8,8 +8,6 @@
 #include "math/extent.h"
 #include "math/offset.h"
 
-#include "tile.h"
-
 #define NUM_ROOM_SIZES 4
 
 extern const uint32_t num_room_sizes;
