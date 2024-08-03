@@ -6,16 +6,22 @@
 
 #include "math/Box.h"
 
+// Represents a single "being" with the game (e.g. the player, NPCs, enemies, interactable objects).
 typedef struct Entity {
 	
+	// The current position and velocity of the entity.
 	EntityTransform transform;
 	
+	// The hitbox, or collision bounds of the entity.
 	BoxD hitbox;
 	
+	// The artificial intelligence of the entity, if it is a non-player mobile entity.
 	EntityAI ai;
 	
+	// Controls whether or not this entity is unloaded when the player leaves the current room.
 	bool persistent;
 	
+	// Handle to the render object associated with this entity.
 	int renderHandle;
 	
 } Entity;
@@ -25,6 +31,6 @@ typedef struct Entity {
 Entity new_entity(void);
 
 // Ticks the entity's game logic.
-void tick_entity(Entity *pEntity);
+void tick_entity(Entity *const pEntity);
 
 #endif	// ENTITY_H

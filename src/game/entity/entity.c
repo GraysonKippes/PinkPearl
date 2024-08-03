@@ -19,10 +19,12 @@ Entity new_entity(void) {
 	};
 }
 
-void tick_entity(Entity *pEntity) {
+void tick_entity(Entity *const pEntity) {
 	if (!pEntity) {
 		return;
 	}
+
+	pEntity->ai.regularTick(pEntity);
 
 	const Vector3D old_position = pEntity->transform.position;
 	const Vector3D position_step = pEntity->transform.velocity;

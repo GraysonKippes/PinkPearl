@@ -9,38 +9,41 @@
 
 #define FGE_PATH (RESOURCE_PATH "data/test.fge")
 
-#define NUM_ENTITY_RECORDS 2
-static const size_t num_entity_records = NUM_ENTITY_RECORDS;
-static EntityRecord entity_records[NUM_ENTITY_RECORDS];
+#define ENTITY_RECORD_COUNT 3
 
-static bool register_entity_record(const EntityRecord entity_record);
+static const size_t entityRecordCount = ENTITY_RECORD_COUNT;
+
+static EntityRecord entityRecords[ENTITY_RECORD_COUNT];
+
+static bool register_entity_record(const EntityRecord entityRecord);
 
 void init_entity_registry(void) {
 	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Initializing entity registry...");
 	
-	for (size_t i = 0; i < num_entity_records; ++i) {
-		entity_records[i] = (EntityRecord){
-			.entity_id = makeNullString(),
-			.entity_hitbox = (BoxD){ },
-			.textureID = makeNullString()
+	for (size_t i = 0; i < entityRecordCount; ++i) {
+		entityRecords[i] = (EntityRecord){
+			.entityID = makeNullString(),
+			.entityHitbox = (BoxD){ },
+			.textureID = makeNullString(),
+			.textureDimensions = (BoxF){ }
 		};
 	}
 	
 	FILE *fge_file = fopen(FGE_PATH, "rb");
-	if (fge_file == nullptr) {
+	if (!fge_file) {
 		return;
 	}
 	
-	for (size_t i = 0; i < num_entity_records; ++i) {
+	for (size_t i = 0; i < entityRecordCount; ++i) {
 		
 		EntityRecord entityRecord = { };
 		
 		// Read entity ID.
-		entityRecord.entity_id = readString(fge_file, 32);
+		entityRecord.entityID = readString(fge_file, 32);
 		file_next_block(fge_file);
 		
 		// Read entity hitbox.
-		read_data(fge_file, 1, sizeof(BoxD), &entityRecord.entity_hitbox);
+		read_data(fge_file, 1, sizeof(BoxD), &entityRecord.entityHitbox);
 		
 		// Read entity texture ID.
 		entityRecord.textureID = readString(fge_file, 32);
@@ -64,45 +67,45 @@ void init_entity_registry(void) {
 void terminate_entity_registry(void) {
 	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Terminating entity registry...");
 	
-	for (size_t i = 0; i < num_entity_records; ++i) {
-		deleteString(&entity_records[i].entity_id);
-		deleteString(&entity_records[i].textureID);
+	for (size_t i = 0; i < entityRecordCount; ++i) {
+		deleteString(&entityRecords[i].entityID);
+		deleteString(&entityRecords[i].textureID);
 	}
 	
 	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Done terminating entity registry.");
 }
 
-static bool register_entity_record(const EntityRecord entity_record) {
-	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", entity_record.entity_id.pBuffer);
+static bool register_entity_record(const EntityRecord entityRecord) {
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", entityRecord.entityID.pBuffer);
 	
-	size_t hash_index = stringHash(entity_record.entity_id, num_entity_records);
-	for (size_t i = 0; i < num_entity_records; ++i) {
-		if (stringIsNull(entity_records[hash_index].entity_id)) {
-			entity_records[hash_index] = entity_record;
+	size_t hash_index = stringHash(entityRecord.entityID, entityRecordCount);
+	for (size_t i = 0; i < entityRecordCount; ++i) {
+		if (stringIsNull(entityRecords[hash_index].entityID)) {
+			entityRecords[hash_index] = entityRecord;
 			return true;
 		}
 		else {
 			hash_index += 1;
-			hash_index %= num_entity_records;
+			hash_index %= entityRecordCount;
 		}
 	}
 	return false;
 }
 
-bool find_entity_record(const String entity_id, EntityRecord *const pEntityRecord) {
+bool find_entity_record(const String entityID, EntityRecord *const pEntityRecord) {
 	if (!pEntityRecord) {
 		return false;
 	}
 	
-	size_t hash_index = stringHash(entity_id, num_entity_records);
-	for (size_t i = 0; i < num_entity_records; ++i) {
-		if (stringCompare(entity_id, entity_records[i].entity_id)) {
-			*pEntityRecord = entity_records[i];
+	size_t hash_index = stringHash(entityID, entityRecordCount);
+	for (size_t i = 0; i < entityRecordCount; ++i) {
+		if (stringCompare(entityID, entityRecords[i].entityID)) {
+			*pEntityRecord = entityRecords[i];
 			return true;
 		}
 		else {
 			hash_index++;
-			hash_index %= num_entity_records;
+			hash_index %= entityRecordCount;
 		}
 	}
 	return false;

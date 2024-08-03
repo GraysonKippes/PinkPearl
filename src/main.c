@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <time.h>
-#include <stdbool.h>
-
 #include "config.h"
 
 #include "client.h"
@@ -14,9 +10,10 @@
 #include "glfw/glfw_manager.h"
 #include "log/Logger.h"
 #include "render/renderer.h"
+#include "util/Random.h"
 
 int main(void) {
-
+	
 	logMsg(loggerSystem, LOG_LEVEL_INFO, "Running Pink Pearl version %u.%u", PinkPearl_VERSION_MAJOR, PinkPearl_VERSION_MINOR);
 	if (debug_enabled) {
 		logMsg(loggerSystem, LOG_LEVEL_WARNING, "Debug mode enabled.");
@@ -28,6 +25,7 @@ int main(void) {
 	init_portaudio();
 	init_entity_registry();
 	init_entity_manager();
+	initRandom();
 	start_game();
 	//error_queue_flush();
 

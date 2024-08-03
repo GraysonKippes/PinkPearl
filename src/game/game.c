@@ -26,8 +26,6 @@ Area currentArea = { };
 // The handle to the player entity.
 static int playerEntityHandle;
 
-static int testEntityHandle;
-
 void start_game(void) {
 
 	currentArea = readAreaData("test");
@@ -36,8 +34,15 @@ void start_game(void) {
 	String playerEntityID = { .length = 5, .capacity = 6, .pBuffer = "pearl" };
 	playerEntityHandle = loadEntity(playerEntityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
 	
-	String testEntityID = { .length = 5, .capacity = 6, .pBuffer = "crate2" };
-	int testEntityHandle = loadEntity(testEntityID, (Vector3D){ 4.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
+	String testEntityID = { .length = 5, .capacity = 6, .pBuffer = "slime" };
+	const int slimeEntityHandle = loadEntity(testEntityID, (Vector3D){ 5.5, 2.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
+	
+	// TODO - temporary to test entity AI until AIs are added to entity records.
+	Entity *pSlimeEntity = nullptr;
+	getEntity(slimeEntityHandle, &pSlimeEntity);
+	if (pSlimeEntity) {
+		pSlimeEntity->ai = entityAISlime;
+	}
 }
 
 void tick_game(void) {

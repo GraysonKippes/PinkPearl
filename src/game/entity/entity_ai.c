@@ -1,19 +1,19 @@
 #include "entity_ai.h"
 
-// "Null" or default AI behavior functions.
+#include "entity.h"
 
-static void entityAIRegularTickNull(void) {
-	
+static void entityAIRegularTickNull(Entity *const pEntity) {
+	(void)pEntity;
 }
 
 const EntityAI entityAINull = {
 	.regularTick = entityAIRegularTickNull
 };
 
-static void entityAIRegularTickBasic(void) {
-	
+static void entityAIRegularTickSlime(Entity *const pEntity) {
+	pEntity->transform.velocity.x = -0.125;
 }
 
-const EntityAI entityAIBasic = {
-	.regularTick = entityAIRegularTickBasic
+const EntityAI entityAISlime = {
+	.regularTick = entityAIRegularTickSlime
 };

@@ -8,9 +8,9 @@
 
 typedef struct EntityRecord {
 	
-	String entity_id;
+	String entityID;
 	
-	BoxD entity_hitbox;
+	BoxD entityHitbox;
 	
 	String textureID;
 	
