@@ -71,8 +71,12 @@ void tick_game(void) {
 
 	static const double max_speed = 0.24;	// Tiles / s
 	static const double acceleration_constant = 1.8; // Tiles / s^2
+	
+	// Compute time in seconds since last stable and multiply with the acceleration magnitude constant (which is in tiles per second squared).
+	// This results in the unbounded speed, must be capped at a maximum magnitude.
 	const double accelerated_speed = (getTimeMS() - pPlayerEntity->transform.last_stationary_time) * 0.001 * acceleration_constant;
-	const double speed = fmin(accelerated_speed, max_speed);
+	//const double speed = fmin(accelerated_speed, max_speed);
+	const double speed = max_speed;
 
 	pPlayerEntity->transform.velocity.x = 0.0;
 	pPlayerEntity->transform.velocity.y = 0.0;

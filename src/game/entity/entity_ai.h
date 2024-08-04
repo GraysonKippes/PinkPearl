@@ -4,6 +4,9 @@
 typedef struct Entity Entity;
 
 typedef struct EntityAI {
+	
+	// The time point in milliseconds of the last action performed by the entity.
+	unsigned long long int lastActionTimeMS;
 
 	// This function is called each tick, and it represents regular, idle behavior 
 	// 	when there is no specific action being done.

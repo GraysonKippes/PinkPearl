@@ -16,8 +16,11 @@ Vector3D vector3D_add(const Vector3D a, const Vector3D b);
 Vector3D vector3D_subtract(const Vector3D a, const Vector3D b);
 
 Vector3D vector3D_scalar_multiply(const Vector3D vector, const double scalar);
+
 Vector3D vector3D_scalar_divide(const Vector3D vector, const double scalar);
+
 double vector3D_length(const Vector3D vector);
+
 Vector3D vector3D_normalize(const Vector3D vector);
 
 #endif	// VECTOR3D_H
