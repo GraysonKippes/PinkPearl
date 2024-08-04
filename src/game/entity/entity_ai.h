@@ -1,9 +1,13 @@
 #ifndef ENTITY_AI_H
 #define ENTITY_AI_H
 
+#include "util/string.h"
+
 typedef struct Entity Entity;
 
 typedef struct EntityAI {
+	
+	// TODO - add string-based ID for entity AI.
 	
 	// The time point in milliseconds of the last action performed by the entity.
 	unsigned long long int lastActionTimeMS;

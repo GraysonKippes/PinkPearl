@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "game/entity/entity_spawner.h"
+#include "game/entity/EntitySpawner.h"
 #include "math/Box.h"
 #include "math/extent.h"
 #include "math/offset.h"
@@ -35,7 +35,7 @@ typedef struct Room {
 	BoxD *pWalls;
 	
 	unsigned int num_entity_spawners;
-	entity_spawner_t *entity_spawners;
+	EntitySpawner *entity_spawners;
 
 } Room;
 

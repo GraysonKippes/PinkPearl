@@ -56,7 +56,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 		.velocity = initVelocity
 	};
 	entities[entityHandle].hitbox = entityRecord.entityHitbox;
-	entities[entityHandle].ai = entityAINull;
+	entities[entityHandle].ai = entityRecord.entityAI;
 	entities[entityHandle].persistent = entityRecord.entityIsPersistent;
 	entities[entityHandle].renderHandle = renderHandle;
 	

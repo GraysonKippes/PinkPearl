@@ -1,6 +1,7 @@
 #include "entity_registry.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "config.h"
 #include "log/Logger.h"
@@ -15,15 +16,22 @@ static const size_t entityRecordCount = ENTITY_RECORD_COUNT;
 
 static EntityRecord entityRecords[ENTITY_RECORD_COUNT];
 
+// TODO - make hash table of entity AIs.
+static EntityAI entityAIs[2];
+
 static bool register_entity_record(const EntityRecord entityRecord);
 
 void init_entity_registry(void) {
 	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Initializing entity registry...");
 	
+	entityAIs[0] = entityAINull;
+	entityAIs[1] = entityAISlime;
+	
 	for (size_t i = 0; i < entityRecordCount; ++i) {
 		entityRecords[i] = (EntityRecord){
 			.entityID = makeNullString(),
 			.entityHitbox = (BoxD){ },
+			.entityAI = entityAINull,
 			.textureID = makeNullString(),
 			.textureDimensions = (BoxF){ }
 		};
@@ -54,6 +62,12 @@ void init_entity_registry(void) {
 		
 		// Read entity properties.
 		read_data(fge_file, 1, 1, &entityRecord.entityIsPersistent);
+		
+		// TEMP - read entity AI ID
+		// TODO - implement string-based ID for entity AIs.
+		uint8_t entityAIID = 0;
+		read_data(fge_file, 1, 1, &entityAIID);
+		entityRecord.entityAI = entityAIs[entityAIID];
 		
 		file_next_block(fge_file);
 		

@@ -16,6 +16,7 @@
 #include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
 #include "entity/entity_registry.h"
+#include "entity/EntitySpawner.h"
 
 // Stores information about the Pink Pearl game, such as whether or not the game is paused.
 static GameState gameState = { };
@@ -34,15 +35,20 @@ void start_game(void) {
 	String playerEntityID = { .length = 5, .capacity = 6, .pBuffer = "pearl" };
 	playerEntityHandle = loadEntity(playerEntityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
 	
-	String testEntityID = { .length = 5, .capacity = 6, .pBuffer = "slime" };
-	const int slimeEntityHandle = loadEntity(testEntityID, (Vector3D){ 5.5, 2.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
+	//String testEntityID = { .length = 5, .capacity = 6, .pBuffer = "slime" };
+	//loadEntity(testEntityID, (Vector3D){ 5.5, 2.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
 	
-	// TODO - temporary to test entity AI until AIs are added to entity records.
-	Entity *pSlimeEntity = nullptr;
-	getEntity(slimeEntityHandle, &pSlimeEntity);
-	if (pSlimeEntity) {
-		pSlimeEntity->ai = entityAISlime;
-	}
+	// Test entity spawner.
+	EntitySpawner testEntitySpawner = {
+		.entityID = (String){ .length = 5, .capacity = 6, .pBuffer = "slime" },
+		.reloadMode = RELOAD_AFTER_REFRESH,
+		.spawnCounter = 0,
+		.minSpawnCount = 2,
+		.maxSpawnCount = 5
+	};
+	
+	entitySpawnerReload(&testEntitySpawner);
+	entitySpawnerSpawnEntities(&testEntitySpawner);
 }
 
 void tick_game(void) {

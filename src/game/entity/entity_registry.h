@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "entity_ai.h"
+
 #include "math/Box.h"
 #include "util/string.h"
 
@@ -11,6 +13,8 @@ typedef struct EntityRecord {
 	String entityID;
 	
 	BoxD entityHitbox;
+	
+	EntityAI entityAI;
 	
 	bool entityIsPersistent;
 	
