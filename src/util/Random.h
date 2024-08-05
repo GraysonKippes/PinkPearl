@@ -24,7 +24,7 @@ LIST_OF_RANDOM_FUNCTIONS
 			unsigned int: randomU, \
 			unsigned long: randomUL, \
 			unsigned long long: randomULL \
-		)(minimum, (typeof(minimum))maximum)
+		)(minimum, maximum)
 
 void initRandom(void);
 
