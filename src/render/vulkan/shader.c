@@ -1,4 +1,4 @@
-#include "shader.h"
+#include "Shader.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,20 +19,20 @@ typedef struct ShaderBytecode {
 static const char *shader_directory = SHADER_DIRECTORY;
 static const uint32_t initial_buffer_size = 8192;
 
-static ShaderBytecode read_shader_file(const char *const path) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Reading shader file at \"%s\"...", path);
+static ShaderBytecode read_shader_file(const char *const pPath) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Reading shader file at \"%s\"...", pPath);
 	
 	ShaderBytecode shader_bytecode = {
 		.bytecode_size = 0,
 		.bytecode = nullptr
 	};
 	
-	if (path == nullptr) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: pointer to path string is null.");
+	if (pPath == nullptr) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: pointer to pPath string is null.");
 		return shader_bytecode;
 	}
 
-	FILE *file = fopen(path, "rb");
+	FILE *file = fopen(pPath, "rb");
 	if (file == nullptr) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: could not open file.");
 		return shader_bytecode;
@@ -70,16 +70,16 @@ static bool destroy_shader_bytecode(ShaderBytecode *const pShaderBytecode) {
 	return true;
 }
 
-shader_module_t create_shader_module(VkDevice device, const char *const filename) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading shader \"%s\"...", filename);
+ShaderModule create_shader_module(const VkDevice device, const char *const pFilename) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading shader \"%s\"...", pFilename);
 
-	shader_module_t shader_module = {
+	ShaderModule shader_module = {
 		.module_handle = VK_NULL_HANDLE,
 		.device = VK_NULL_HANDLE
 	};
 
-	if (filename == nullptr) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating shader module: pointer to filename is nullptr.");
+	if (!pFilename) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating shader module: pointer to pFilename is nullptr.");
 		return shader_module;
 	}
 
@@ -87,10 +87,10 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 	memset(path, '\0', 256);
 
 	// Length does not include null-terminator.
-	const size_t filename_length = strlen(filename); // Limit to 64 characters.
-	const size_t shader_directory_length = strlen(SHADER_DIRECTORY); // Limit to 256 - 64 - 1 characters, to make room for filename and for null-terminator.
+	const size_t filename_length = strlen(pFilename); // Limit to 64 characters.
+	const size_t shader_directory_length = strlen(SHADER_DIRECTORY); // Limit to 256 - 64 - 1 characters, to make room for pFilename and for null-terminator.
 	strncpy(path, shader_directory, shader_directory_length);
-	strncat(path, filename, filename_length);
+	strncat(path, pFilename, filename_length);
 
 	ShaderBytecode shader_bytecode = read_shader_file(path);
 	if (shader_bytecode.bytecode == nullptr) {
@@ -117,7 +117,7 @@ shader_module_t create_shader_module(VkDevice device, const char *const filename
 	return shader_module;
 }
 
-bool destroy_shader_module(shader_module_t *const shader_module_ptr) {
+bool destroy_shader_module(ShaderModule *const shader_module_ptr) {
 	
 	if (shader_module_ptr == nullptr) {
 		return false;

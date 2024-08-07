@@ -4,26 +4,14 @@
 #include <vulkan/vulkan.h>
 
 #include "descriptor.h"
+#include "Pipeline.h"
 #include "swapchain.h"
-
-extern const DescriptorSetLayout graphics_descriptor_set_layout;
-
-typedef struct GraphicsPipeline {
-
-	VkPipeline handle;
-	VkPipelineLayout layout;
-	//VkRenderPass render_pass;
-
-	VkDescriptorPool descriptor_pool;
-	VkDescriptorSetLayout descriptor_set_layout;
-
-} GraphicsPipeline;
 
 // TODO - move this somewhere else.
 VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFormat);
 
-GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, VkRenderPass renderPass, DescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
+Pipeline createGraphicsPipeline(VkDevice device, Swapchain swapchain, VkRenderPass renderPass, DescriptorSetLayout descriptorSetLayout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
 
-void destroy_graphics_pipeline(VkDevice device, GraphicsPipeline pipeline);
+void destroyGraphicsPipeline(Pipeline *const pPipeline);
 
 #endif	// GRAPHICS_PIPELINE_H

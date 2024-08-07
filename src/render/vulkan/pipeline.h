@@ -9,12 +9,16 @@ typedef enum PipelineType {
 } PipelineType;
 
 typedef struct Pipeline {
+	
+	PipelineType type;
 
 	VkPipeline vkPipeline;
 	VkPipelineLayout vkPipelineLayout;
-	VkDevice vkDevice;
 	
-	PipelineType type;
+	VkDescriptorPool vkDescriptorPool;
+	VkDescriptorSetLayout vkDescriptorSetLayout;
+	
+	VkDevice vkDevice;
 
 } Pipeline;
 

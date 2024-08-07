@@ -5,12 +5,24 @@
 
 #include <vulkan/vulkan.h>
 
-typedef struct shader_module_t {
+typedef enum ShaderStage {
+	SHADER_STAGE_VERTEX,
+	SHADER_STAGE_TESSELATION_CONTROL,
+	SHADER_STAGE_TESSELATION_EVALUATION,
+	SHADER_STAGE_GEOMETRY,
+	SHADER_STAGE_FRAGMENT,
+	SHADER_STAGE_COMPUTE,
+	SHADER_STAGE_TASK,
+	SHADER_STAGE_MESH
+} ShaderStage;
+
+typedef struct ShaderModule {
 	VkShaderModule module_handle;
 	VkDevice device;
-} shader_module_t;
+} ShaderModule;
 
-shader_module_t create_shader_module(VkDevice device, const char *const filename);
-bool destroy_shader_module(shader_module_t *const shader_module_ptr);
+ShaderModule create_shader_module(const VkDevice device, const char *const pFilename);
+
+bool destroy_shader_module(ShaderModule *const shader_module_ptr);
 
 #endif	// SHADER_H

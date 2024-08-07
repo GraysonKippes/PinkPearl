@@ -11,20 +11,6 @@
 #include "vertex_input.h"
 #include "vulkan_manager.h"
 
-/* -- DESCRIPTOR LAYOUT -- */
-
-static DescriptorBinding graphics_descriptor_bindings[4] = {
-	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },	// Draw data
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },	// Matrix buffer
-	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = VK_CONF_MAX_NUM_QUADS, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Texture array
-	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }	// Lighting
-};
-
-const DescriptorSetLayout graphics_descriptor_set_layout = {
-	.num_bindings = 4,
-	.bindings = graphics_descriptor_bindings 
-};
-
 /* -- FUNCTION DECLARATIONS -- */
 
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void);
@@ -139,11 +125,11 @@ VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFor
 	return renderPass;
 }
 
-GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, VkRenderPass renderPass, DescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
+Pipeline createGraphicsPipeline(VkDevice device, Swapchain swapchain, VkRenderPass renderPass, DescriptorSetLayout descriptorSetLayout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
-	GraphicsPipeline pipeline = { };
-	//pipeline.render_pass = createRenderPass(device, swapchain.image_format);
+	Pipeline pipeline = { };
+	pipeline.type = PIPELINE_TYPE_GRAPHICS;
 
 	VkPipelineShaderStageCreateInfo shader_stage_vertex_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -165,10 +151,10 @@ GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, 
 
 	VkPipelineShaderStageCreateInfo shader_stages[2] = { shader_stage_vertex_info, shader_stage_fragment_info };
 
-	create_descriptor_pool(device, NUM_FRAMES_IN_FLIGHT, descriptor_set_layout, &pipeline.descriptor_pool);
-	create_descriptor_set_layout(device, descriptor_set_layout, &pipeline.descriptor_set_layout);
+	create_descriptor_pool(device, NUM_FRAMES_IN_FLIGHT, descriptorSetLayout, &pipeline.vkDescriptorPool);
+	create_descriptor_set_layout(device, descriptorSetLayout, &pipeline.vkDescriptorSetLayout);
 
-	create_graphics_pipeline_layout(device, pipeline.descriptor_set_layout, &pipeline.layout);
+	create_graphics_pipeline_layout(device, pipeline.vkDescriptorSetLayout, &pipeline.vkPipelineLayout);
 
 	VkVertexInputBindingDescription binding_description = get_binding_description();
 
@@ -209,55 +195,59 @@ GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, 
 		.pDepthStencilState = nullptr,
 		.pColorBlendState = &color_blending,
 		.pDynamicState = nullptr,
-		.layout = pipeline.layout,
+		.layout = pipeline.vkPipelineLayout,
 		.renderPass = renderPass,
 		.subpass = 0,
 		.basePipelineHandle = VK_NULL_HANDLE,
 		.basePipelineIndex= -1
 	};
 
-	const VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &pipeline.handle);
+	const VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &pipeline.vkPipeline);
 	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Graphics pipeline creation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Graphics pipeline creation failed (error code: %i).", result);
 	}
 
 	return pipeline;
 }
 
-void destroy_graphics_pipeline(VkDevice device, GraphicsPipeline pipeline) {
-
-	vkDestroyPipeline(device, pipeline.handle, nullptr);
-	vkDestroyPipelineLayout(device, pipeline.layout, nullptr);
+void destroyGraphicsPipeline(Pipeline *const pPipeline) {
+	if (!pPipeline) {
+		return;
+	}
 	
-
-	vkDestroyDescriptorPool(device, pipeline.descriptor_pool, nullptr);
-	vkDestroyDescriptorSetLayout(device, pipeline.descriptor_set_layout, nullptr);
+	// Destroy the Vulkan objects associated with the pipeline struct.
+	vkDestroyPipeline(pPipeline->vkDevice, pPipeline->vkPipeline, nullptr);
+	vkDestroyPipelineLayout(pPipeline->vkDevice, pPipeline->vkPipelineLayout, nullptr);
+	vkDestroyDescriptorPool(pPipeline->vkDevice, pPipeline->vkDescriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(pPipeline->vkDevice, pPipeline->vkDescriptorSetLayout, nullptr);
+	
+	// Nullify the handles inside the struct.
+	pPipeline->vkPipeline = VK_NULL_HANDLE;
+	pPipeline->vkPipelineLayout = VK_NULL_HANDLE;
+	pPipeline->vkDescriptorPool = VK_NULL_HANDLE;
+	pPipeline->vkDescriptorSetLayout = VK_NULL_HANDLE;
 }
 
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
-
-	VkPipelineInputAssemblyStateCreateInfo input_assembly = { 0 };
-	input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	input_assembly.pNext = nullptr;
-	input_assembly.flags = 0;
-	input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	input_assembly.primitiveRestartEnable = VK_FALSE;
-
-	return input_assembly;
+	return (VkPipelineInputAssemblyStateCreateInfo){
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		.primitiveRestartEnable = VK_FALSE
+	};
 }
 
-static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_ptr, VkRect2D *scissor_ptr) {
-
-	VkPipelineViewportStateCreateInfo viewport_state = { 0 };
-	viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewport_state.pNext = nullptr;
-	viewport_state.flags = 0;
-	viewport_state.viewportCount = 1;
-	viewport_state.pViewports = viewport_ptr;
-	viewport_state.scissorCount = 1;
-	viewport_state.pScissors = scissor_ptr;
-
-	return viewport_state;
+static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *pViewport, VkRect2D *pScissor) {
+	return (VkPipelineViewportStateCreateInfo){
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.viewportCount = 1,
+		.pViewports = pViewport,
+		.scissorCount = 1,
+		.pScissors = pScissor	
+	};
 }
 
 static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
@@ -279,19 +269,17 @@ static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
 }
 
 static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
-
-	VkPipelineMultisampleStateCreateInfo multisampling = { 0 };
-	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.pNext = nullptr;
-	multisampling.flags = 0;
-	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisampling.minSampleShading = 1.0F;
-	multisampling.pSampleMask = nullptr;
-	multisampling.alphaToCoverageEnable = VK_FALSE;
-	multisampling.alphaToOneEnable = VK_FALSE;
-
-	return multisampling;
+	return (VkPipelineMultisampleStateCreateInfo){
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.sampleShadingEnable = VK_FALSE,
+		.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+		.minSampleShading = 1.0F,
+		.pSampleMask = nullptr,
+		.alphaToCoverageEnable = VK_FALSE,
+		.alphaToOneEnable = VK_FALSE
+	};
 }
 
 static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void) {
@@ -322,20 +310,20 @@ static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColor
 }
 
 static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
-
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline layout...");
 
-	VkPipelineLayoutCreateInfo create_info = { 0 };
-	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	create_info.pNext = nullptr;
-	create_info.flags = 0;
-	create_info.setLayoutCount = 1;
-	create_info.pSetLayouts = &descriptor_set_layout;
-	create_info.pushConstantRangeCount = 0;
-	create_info.pPushConstantRanges = nullptr;
+	const VkPipelineLayoutCreateInfo createInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.setLayoutCount = 1,
+		.pSetLayouts = &descriptor_set_layout,
+		.pushConstantRangeCount = 0,
+		.pPushConstantRanges = nullptr
+	};
 
-	VkResult result = vkCreatePipelineLayout(device, &create_info, nullptr, pipeline_layout_ptr);
+	VkResult result = vkCreatePipelineLayout(device, &createInfo, nullptr, pipeline_layout_ptr);
 	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Graphics pipeline layout creation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Graphics pipeline layout creation failed (error code: %i).", result);
 	}
 }

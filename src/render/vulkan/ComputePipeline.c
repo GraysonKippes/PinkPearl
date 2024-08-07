@@ -22,7 +22,7 @@ void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_se
 
 ComputePipeline create_compute_pipeline(const VkDevice device, const DescriptorSetLayout descriptor_layout, const char *const compute_shader_name) {
 	
-	shader_module_t compute_shader_module = create_shader_module(device, compute_shader_name);
+	ShaderModule compute_shader_module = create_shader_module(device, compute_shader_name);
 
 	ComputePipeline compute_pipeline = { 0 };
 

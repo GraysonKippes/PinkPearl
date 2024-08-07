@@ -509,15 +509,9 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	};
 	vkCmdBeginRenderPass(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	
-	vkCmdBindPipeline(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
+	vkCmdBindPipeline(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.vkPipeline);
 	
-	Pipeline pipeline = {
-		.vkPipeline = graphics_pipeline.handle,
-		.vkPipelineLayout = graphics_pipeline.layout,
-		.vkDevice = device,
-		.type = PIPELINE_TYPE_GRAPHICS
-	};
-	commandBufferBindDescriptorSet(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, pipeline);
+	commandBufferBindDescriptorSet(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
 	
 	const VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);

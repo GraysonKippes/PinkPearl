@@ -15,10 +15,11 @@
 
 #include "CommandBuffer.h"
 #include "descriptor.h"
+#include "GraphicsPipeline.h"
 #include "image.h"
 #include "logical_device.h"
 #include "queue.h"
-#include "shader.h"
+#include "Shader.h"
 #include "vertex_input.h"
 #include "vulkan_instance.h"
 
@@ -35,7 +36,7 @@ physical_device_t physical_device = { };
 memory_type_set_t memory_type_set = { };
 VkDevice device = VK_NULL_HANDLE;
 Swapchain swapchain = { };
-GraphicsPipeline graphics_pipeline = { };
+Pipeline graphicsPipeline = { };
 VkRenderPass renderPass = VK_NULL_HANDLE;
 VkSampler imageSamplerDefault = VK_NULL_HANDLE;
 
@@ -62,6 +63,20 @@ buffer_partition_t global_staging_buffer_partition;
 buffer_partition_t global_uniform_buffer_partition;
 buffer_partition_t global_storage_buffer_partition;
 buffer_partition_t global_draw_data_buffer_partition;
+
+/* -- Graphics Pipeline Descriptor Set Layout -- */
+
+static const DescriptorBinding graphicsPipelineDescriptorBindings[4] = {
+	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },	// Draw data
+	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },	// Matrix buffer
+	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = VK_CONF_MAX_NUM_QUADS, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Texture array
+	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }	// Lighting
+};
+
+static const DescriptorSetLayout graphicsPipelineDescriptorSetLayout = {
+	.num_bindings = 4,
+	.bindings = (DescriptorBinding *const)graphicsPipelineDescriptorBindings
+};
 
 /* -- Function Definitions -- */
 
@@ -193,10 +208,10 @@ void create_vulkan_objects(void) {
 	
 	renderPass = createRenderPass(device, swapchain.image_format);
 	
-	shader_module_t vertex_shader_module = create_shader_module(device, VERTEX_SHADER_NAME);
-	shader_module_t fragment_shader_module = create_shader_module(device, FRAGMENT_SHADER_NAME);
+	ShaderModule vertex_shader_module = create_shader_module(device, VERTEX_SHADER_NAME);
+	ShaderModule fragment_shader_module = create_shader_module(device, FRAGMENT_SHADER_NAME);
 	
-	graphics_pipeline = create_graphics_pipeline(device, swapchain, renderPass, graphics_descriptor_set_layout, vertex_shader_module.module_handle, fragment_shader_module.module_handle);
+	graphicsPipeline = createGraphicsPipeline(device, swapchain, renderPass, graphicsPipelineDescriptorSetLayout, vertex_shader_module.module_handle, fragment_shader_module.module_handle);
 	
 	destroy_shader_module(&vertex_shader_module);
 	destroy_shader_module(&fragment_shader_module);
@@ -211,8 +226,8 @@ void create_vulkan_objects(void) {
 		.vkDevice = device,
 		.commandPool = commandPoolGraphics,
 		.descriptorPool = (DescriptorPool){
-			.handle = graphics_pipeline.descriptor_pool,
-			.layout = graphics_pipeline.descriptor_set_layout,
+			.handle = graphicsPipeline.vkDescriptorPool,
+			.layout = graphicsPipeline.vkDescriptorSetLayout,
 			.vkDevice = device
 		}
 	};
@@ -226,8 +241,10 @@ void destroy_vulkan_objects(void) {
 
 	vkDestroySampler(device, imageSamplerDefault, nullptr);
 
-	destroy_graphics_pipeline(device, graphics_pipeline);
+	destroyGraphicsPipeline(&graphicsPipeline);
+	
 	vkDestroyRenderPass(device, renderPass, nullptr);
+	
 	destroy_swapchain(device, swapchain);
 	
 	deleteCommandPool(&commandPoolGraphics);
