@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+// TODO - maybe? replace with Vector2I
 typedef struct Offset {
 	int32_t x;
 	int32_t y;

@@ -1,6 +1,9 @@
 #include "entity.h"
 
+#include <math.h>
 #include <stddef.h>
+
+#include "log/Logger.h"
 
 #include "game/game.h"
 #include "render/render_object.h"
@@ -12,7 +15,7 @@ static Vector3D resolve_collision(const Vector3D old_position, const Vector3D ne
 
 Entity new_entity(void) {
 	return (Entity){
-		.transform = (EntityTransform){ },
+		.physics = (EntityPhysics){ },
 		.hitbox = (BoxD){ },
 		.ai = entityAINull,
 		.renderHandle = renderHandleInvalid
@@ -26,34 +29,54 @@ void tick_entity(Entity *const pEntity) {
 
 	pEntity->ai.onTick(pEntity);
 
-	const Vector3D old_position = pEntity->transform.position;
-	const Vector3D position_step = pEntity->transform.velocity;
-	Vector3D new_position = vector3D_add(old_position, position_step);
+	// Compute and apply kinetic friction.
+	// Points in the opposite direction of movement (i.e. velocity), applied to acceleration.
+	static const double frictionCoefficient = 0.12;
+	Vector3D friction = vector3D_normalize(pEntity->physics.velocity);
+	friction = vector3D_scalar_multiply(friction, -frictionCoefficient);
+	pEntity->physics.acceleration = vector3D_add(pEntity->physics.acceleration, friction);
+
+	// Apply acceleration to velocity.
+	pEntity->physics.velocity = vector3D_add(pEntity->physics.velocity, pEntity->physics.acceleration);
+	
+	// Compute capped speed.
+	static const double maxSpeed = 0.24;
+	const double uncappedSpeed = vector3D_length(pEntity->physics.velocity);
+	const double cappedSpeed = copysign(fmin(fabs(uncappedSpeed), fabs(maxSpeed)), uncappedSpeed);
+	
+	// Cap the speed (magnitude) of the velocity.
+	pEntity->physics.velocity = vector3D_normalize(pEntity->physics.velocity);
+	pEntity->physics.velocity = vector3D_scalar_multiply(pEntity->physics.velocity, cappedSpeed);
+
+	// Update entity position.
+	const Vector3D previousPosition = pEntity->physics.position;
+	const Vector3D positionStep = pEntity->physics.velocity;
+	Vector3D nextPosition = vector3D_add(previousPosition, positionStep);
 
 	// The square of the distance of the currently selected new position from the old position.
 	// This variable is used to track which resolved new position is the shortest from the entity.
 	// The squared length is used instead of the real length because it is only used for comparison.
-	double step_length_squared = SQUARE(position_step.x) + SQUARE(position_step.y) + SQUARE(position_step.z); 
+	double step_length_squared = SQUARE(positionStep.x) + SQUARE(positionStep.y) + SQUARE(positionStep.z); 
 
 	for (unsigned int i = 0; i < currentArea.pRooms[currentArea.currentRoomIndex].wallCount; ++i) {
 		
 		const BoxD wall = currentArea.pRooms[currentArea.currentRoomIndex].pWalls[i];
 
-		Vector3D resolved_position = resolve_collision(old_position, new_position, pEntity->hitbox, wall);
-		Vector3D resolved_step = vector3D_subtract(resolved_position, old_position);
+		Vector3D resolved_position = resolve_collision(previousPosition, nextPosition, pEntity->hitbox, wall);
+		Vector3D resolved_step = vector3D_subtract(resolved_position, previousPosition);
 		const double resolved_step_length_squared = SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z);
 
 		if (resolved_step_length_squared < step_length_squared) {
-			new_position = resolved_position;
+			nextPosition = resolved_position;
 			step_length_squared = resolved_step_length_squared;
 		}
 	}
 
-	pEntity->transform.position = new_position;
+	pEntity->physics.position = nextPosition;
 
 	// Update render object.
 	const int renderHandle = pEntity->renderHandle;
-	renderObjectSetPosition(renderHandle, 0, pEntity->transform.position);
+	renderObjectSetPosition(renderHandle, 0, pEntity->physics.position);
 }
 
 /* -- Copied from hitbox.h -- */

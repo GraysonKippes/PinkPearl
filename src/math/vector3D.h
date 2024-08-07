@@ -9,6 +9,8 @@ typedef struct Vector3D {
 
 extern const Vector3D zeroVector3D;
 
+bool vector3DIsZero(const Vector3D vector);
+
 // Returns the vector sum a + b.
 Vector3D vector3D_add(const Vector3D a, const Vector3D b);
 

@@ -4,6 +4,11 @@
 
 const Vector3D zeroVector3D = { 0.0, 0.0, 0.0 };
 
+bool vector3DIsZero(const Vector3D vector) {
+	static const double tolerance = 0.0001;
+	return fabs(vector.x) < tolerance && fabs(vector.y) < tolerance && fabs(vector.z) < tolerance;
+}
+
 Vector3D vector3D_add(const Vector3D a, const Vector3D b) {
 	return (Vector3D){
 		.x = a.x + b.x,
@@ -41,9 +46,9 @@ double vector3D_length(const Vector3D vector) {
 }
 
 Vector3D vector3D_normalize(const Vector3D vector) {
-	const double length = vector3D_length(vector);
-	if (length == 0.0) {
+	if (vector3DIsZero(vector)) {
 		return zeroVector3D;
 	}
+	const double length = vector3D_length(vector);
 	return vector3D_scalar_divide(vector, length);
 }

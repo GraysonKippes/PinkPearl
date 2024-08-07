@@ -2,7 +2,7 @@
 #define ENTITY_H
 
 #include "entity_ai.h"
-#include "entity_transform.h"
+#include "EntityPhysics.h"
 
 #include "math/Box.h"
 
@@ -10,7 +10,7 @@
 typedef struct Entity {
 	
 	// The current position and velocity of the entity.
-	EntityTransform transform;
+	EntityPhysics physics;
 	
 	// The hitbox, or collision bounds of the entity.
 	BoxD hitbox;

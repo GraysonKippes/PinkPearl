@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// TODO - consider switching to signed integers
+// TODO - consider switching to signed integers / merging with Offset
 typedef struct Extent {
 	uint32_t width;
 	uint32_t length;

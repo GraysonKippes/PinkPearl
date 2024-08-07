@@ -51,7 +51,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 		return entityHandleInvalid;
 	}
 	
-	entities[entityHandle].transform = (EntityTransform){
+	entities[entityHandle].physics = (EntityPhysics){
 		.position = initPosition,
 		.velocity = initVelocity
 	};

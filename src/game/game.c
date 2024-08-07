@@ -35,9 +35,6 @@ void start_game(void) {
 	String playerEntityID = { .length = 5, .capacity = 6, .pBuffer = "pearl" };
 	playerEntityHandle = loadEntity(playerEntityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
 	
-	//String testEntityID = { .length = 5, .capacity = 6, .pBuffer = "slime" };
-	//loadEntity(testEntityID, (Vector3D){ 5.5, 2.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
-	
 	// Test entity spawner.
 	EntitySpawner testEntitySpawner = {
 		.entityID = (String){ .length = 5, .capacity = 6, .pBuffer = "slime" },
@@ -47,8 +44,8 @@ void start_game(void) {
 		.maxSpawnCount = 5
 	};
 	
-	entitySpawnerReload(&testEntitySpawner);
-	entitySpawnerSpawnEntities(&testEntitySpawner);
+	//entitySpawnerReload(&testEntitySpawner);
+	//entitySpawnerSpawnEntities(&testEntitySpawner);
 }
 
 void tick_game(void) {
@@ -75,35 +72,36 @@ void tick_game(void) {
 		return;
 	}
 	
-	static const double speed = 0.24;
+	//static const double speed = 0.24;
+	static const double accelerationMagnitude = 0.24;
 
-	pPlayerEntity->transform.velocity = zeroVector3D;
+	pPlayerEntity->physics.acceleration = zeroVector3D;
 	
 	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->renderHandle, 0);
 	unsigned int nextAnimation = currentAnimation;
 
 	if (move_up_pressed && !move_down_pressed) {
-		pPlayerEntity->transform.velocity.y = 1.0;
+		pPlayerEntity->physics.acceleration.y = 1.0;
 		nextAnimation = 1;
 	}
 	
 	if (!move_up_pressed && move_down_pressed) {
-		pPlayerEntity->transform.velocity.y = -1.0;
+		pPlayerEntity->physics.acceleration.y = -1.0;
 		nextAnimation = 5;
 	}
 	
 	if (move_left_pressed && !move_right_pressed) {
-		pPlayerEntity->transform.velocity.x = -1.0;
+		pPlayerEntity->physics.acceleration.x = -1.0;
 		nextAnimation = 7;
 	}
 	
 	if (!move_left_pressed && move_right_pressed) {
-		pPlayerEntity->transform.velocity.x = 1.0;
+		pPlayerEntity->physics.acceleration.x = 1.0;
 		nextAnimation = 3;
 	}
 
-	pPlayerEntity->transform.velocity = vector3D_normalize(pPlayerEntity->transform.velocity);
-	pPlayerEntity->transform.velocity = vector3D_scalar_multiply(pPlayerEntity->transform.velocity, speed);
+	pPlayerEntity->physics.acceleration = vector3D_normalize(pPlayerEntity->physics.acceleration);
+	pPlayerEntity->physics.acceleration = vector3D_scalar_multiply(pPlayerEntity->physics.acceleration, accelerationMagnitude);
 	
 	if (nextAnimation != currentAnimation) {
 		renderObjectSetAnimation(pPlayerEntity->renderHandle, 0, nextAnimation);
@@ -111,7 +109,7 @@ void tick_game(void) {
 
 	tickEntities();
 
-	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->transform.position, currentArea, currentArea.currentRoomIndex);
+	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->physics.position, currentArea, currentArea.currentRoomIndex);
 	if (travelDirection != DIRECTION_NONE) {
 
 		const Room current_room = currentArea.pRooms[currentArea.currentRoomIndex];

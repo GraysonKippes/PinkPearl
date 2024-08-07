@@ -10,7 +10,7 @@ const Logger loggerSystem = {
 
 const Logger loggerGame = {
 	.pName = "Game",
-	.levelThreshold = LOG_LEVEL_ERROR
+	.levelThreshold = LOG_LEVEL_INFO
 };
 
 const Logger loggerRender = {
@@ -25,7 +25,7 @@ const Logger loggerVulkan = {
 
 const Logger loggerAudio = {
 	.pName = "Audio",
-	.levelThreshold = LOG_LEVEL_ERROR
+	.levelThreshold = LOG_LEVEL_INFO
 };
 
 static const char *logFormat(const LogLevel level);
