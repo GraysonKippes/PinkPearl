@@ -6,7 +6,7 @@
 #include "render/render_config.h"
 
 #include "../CommandBuffer.h"
-#include "../compute_pipeline.h"
+#include "../ComputePipeline.h"
 #include "../descriptor.h"
 #include "../vulkan_manager.h"
 

@@ -36,6 +36,7 @@ memory_type_set_t memory_type_set = { };
 VkDevice device = VK_NULL_HANDLE;
 Swapchain swapchain = { };
 GraphicsPipeline graphics_pipeline = { };
+VkRenderPass renderPass = VK_NULL_HANDLE;
 VkSampler imageSamplerDefault = VK_NULL_HANDLE;
 
 /* -- Queues -- */
@@ -189,13 +190,18 @@ void create_vulkan_objects(void) {
 	commandPoolCompute = createCommandPool(device, *physical_device.queue_family_indices.compute_family_ptr, true, false);
 
 	swapchain = create_swapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
+	
+	renderPass = createRenderPass(device, swapchain.image_format);
+	
 	shader_module_t vertex_shader_module = create_shader_module(device, VERTEX_SHADER_NAME);
 	shader_module_t fragment_shader_module = create_shader_module(device, FRAGMENT_SHADER_NAME);
-	graphics_pipeline = create_graphics_pipeline(device, swapchain, graphics_descriptor_set_layout, vertex_shader_module.module_handle, fragment_shader_module.module_handle);
-	create_framebuffers(device, graphics_pipeline.render_pass, &swapchain);
-
+	
+	graphics_pipeline = create_graphics_pipeline(device, swapchain, renderPass, graphics_descriptor_set_layout, vertex_shader_module.module_handle, fragment_shader_module.module_handle);
+	
 	destroy_shader_module(&vertex_shader_module);
 	destroy_shader_module(&fragment_shader_module);
+	
+	create_framebuffers(device, renderPass, &swapchain);
 
 	create_sampler(physical_device, device, &imageSamplerDefault);
 	
@@ -221,6 +227,7 @@ void destroy_vulkan_objects(void) {
 	vkDestroySampler(device, imageSamplerDefault, nullptr);
 
 	destroy_graphics_pipeline(device, graphics_pipeline);
+	vkDestroyRenderPass(device, renderPass, nullptr);
 	destroy_swapchain(device, swapchain);
 	
 	deleteCommandPool(&commandPoolGraphics);

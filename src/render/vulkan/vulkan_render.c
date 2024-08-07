@@ -496,10 +496,10 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		}
 	};
 	
-	const VkRenderPassBeginInfo render_pass_info = {
+	const VkRenderPassBeginInfo renderPassBeginInfo = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 		.pNext = nullptr,
-		.renderPass = graphics_pipeline.render_pass,
+		.renderPass = renderPass,
 		.framebuffer = swapchain.framebuffers[image_index],
 		.renderArea.offset.x = 0,
 		.renderArea.offset.y = 0,
@@ -507,7 +507,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		.clearValueCount = 1,
 		.pClearValues = clearValues
 	};
-	vkCmdBeginRenderPass(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	
 	vkCmdBindPipeline(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
 	

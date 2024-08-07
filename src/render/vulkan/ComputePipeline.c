@@ -1,4 +1,4 @@
-#include "compute_pipeline.h"
+#include "ComputePipeline.h"
 
 #include <stdlib.h>
 

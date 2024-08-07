@@ -9,7 +9,7 @@
 #include "util/allocate.h"
 
 #include "../CommandBuffer.h"
-#include "../compute_pipeline.h"
+#include "../ComputePipeline.h"
 #include "../descriptor.h"
 #include "../image.h"
 #include "../texture.h"

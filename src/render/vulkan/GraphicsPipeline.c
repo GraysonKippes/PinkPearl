@@ -1,4 +1,4 @@
-#include "graphics_pipeline.h"
+#include "GraphicsPipeline.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -28,7 +28,7 @@ const DescriptorSetLayout graphics_descriptor_set_layout = {
 /* -- FUNCTION DECLARATIONS -- */
 
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void);
-static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *viewport_ptr, VkRect2D *scissor_ptr);
+static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *pViewport, VkRect2D *pScissor);
 static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void);
 static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void);
 static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void);
@@ -37,15 +37,17 @@ static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayo
 
 /* -- FUNCTION DEFINITIONS -- */
 
-static VkRenderPass createRenderPass(VkDevice device, VkFormat swapchain_format) {
+VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFormat) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating render pass...");
+
+	// TODO - get rid of depth testing stuff.
 
 	const VkAttachmentDescription2 attachmentDescriptions[2] = {
 		{	// Color attachment description
 			.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2,
 			.pNext = nullptr,
 			.flags = 0,
-			.format = swapchain_format,
+			.format = swapchainFormat,
 			.samples = VK_SAMPLE_COUNT_1_BIT,
 			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -133,31 +135,33 @@ static VkRenderPass createRenderPass(VkDevice device, VkFormat swapchain_format)
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Render pass creation failed. (Error code: %i)", result);
 	}
+	
 	return renderPass;
 }
 
-GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, DescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
-
+GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, VkRenderPass renderPass, DescriptorSetLayout descriptor_set_layout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
 	GraphicsPipeline pipeline = { };
-	pipeline.render_pass = createRenderPass(device, swapchain.image_format);
+	//pipeline.render_pass = createRenderPass(device, swapchain.image_format);
 
-	VkPipelineShaderStageCreateInfo shader_stage_vertex_info = { 0 };
-	shader_stage_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shader_stage_vertex_info.pNext = nullptr;
-	shader_stage_vertex_info.flags = 0;
-	shader_stage_vertex_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	shader_stage_vertex_info.module = vertex_shader;
-	shader_stage_vertex_info.pName = "main";
+	VkPipelineShaderStageCreateInfo shader_stage_vertex_info = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.stage = VK_SHADER_STAGE_VERTEX_BIT,
+		.module = vertex_shader,
+		.pName = "main"
+	};
 
-	VkPipelineShaderStageCreateInfo shader_stage_fragment_info = { 0 };
-	shader_stage_fragment_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shader_stage_fragment_info.pNext = nullptr;
-	shader_stage_fragment_info.flags = 0;
-	shader_stage_fragment_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	shader_stage_fragment_info.module = fragment_shader;
-	shader_stage_fragment_info.pName = "main";
+	VkPipelineShaderStageCreateInfo shader_stage_fragment_info = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.module = fragment_shader,
+		.pName = "main"
+	};
 
 	VkPipelineShaderStageCreateInfo shader_stages[2] = { shader_stage_vertex_info, shader_stage_fragment_info };
 
@@ -190,21 +194,6 @@ GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, 
 	VkPipelineMultisampleStateCreateInfo multisampling = make_multisampling_info();
 	VkPipelineColorBlendAttachmentState color_blend_attachment = make_color_blend_attachment();
 	VkPipelineColorBlendStateCreateInfo color_blending = make_color_blend_info(&color_blend_attachment);
-	
-	const VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.depthTestEnable = VK_TRUE,
-		.depthWriteEnable = VK_TRUE,
-		.depthCompareOp = VK_COMPARE_OP_LESS,
-		.depthBoundsTestEnable = VK_FALSE,
-		.stencilTestEnable = VK_FALSE,
-		.front = { },
-		.back = { },
-		.minDepthBounds = 0.0F,
-		.maxDepthBounds = 1.0F
-	};
 
 	const VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -221,7 +210,7 @@ GraphicsPipeline create_graphics_pipeline(VkDevice device, Swapchain swapchain, 
 		.pColorBlendState = &color_blending,
 		.pDynamicState = nullptr,
 		.layout = pipeline.layout,
-		.renderPass = pipeline.render_pass,
+		.renderPass = renderPass,
 		.subpass = 0,
 		.basePipelineHandle = VK_NULL_HANDLE,
 		.basePipelineIndex= -1
@@ -239,7 +228,7 @@ void destroy_graphics_pipeline(VkDevice device, GraphicsPipeline pipeline) {
 
 	vkDestroyPipeline(device, pipeline.handle, nullptr);
 	vkDestroyPipelineLayout(device, pipeline.layout, nullptr);
-	vkDestroyRenderPass(device, pipeline.render_pass, nullptr);
+	
 
 	vkDestroyDescriptorPool(device, pipeline.descriptor_pool, nullptr);
 	vkDestroyDescriptorSetLayout(device, pipeline.descriptor_set_layout, nullptr);

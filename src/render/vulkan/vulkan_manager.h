@@ -4,9 +4,9 @@
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
-#include "compute_pipeline.h"
+#include "ComputePipeline.h"
 #include "frame.h"
-#include "graphics_pipeline.h"
+#include "GraphicsPipeline.h"
 #include "memory.h"
 #include "physical_device.h"
 #include "swapchain.h"
@@ -28,6 +28,7 @@ extern memory_type_set_t memory_type_set;
 extern VkDevice device;
 extern Swapchain swapchain;
 extern GraphicsPipeline graphics_pipeline;
+extern VkRenderPass renderPass;
 extern VkSampler imageSamplerDefault;
 
 /* -- Queues -- */
