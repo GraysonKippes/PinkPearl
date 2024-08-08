@@ -241,7 +241,7 @@ void destroy_vulkan_objects(void) {
 
 	vkDestroySampler(device, imageSamplerDefault, nullptr);
 
-	destroyGraphicsPipeline(&graphicsPipeline);
+	destroyPipeline(&graphicsPipeline);
 	
 	vkDestroyRenderPass(device, renderPass, nullptr);
 	

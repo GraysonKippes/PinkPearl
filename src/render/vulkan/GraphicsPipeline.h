@@ -12,6 +12,4 @@ VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFor
 
 Pipeline createGraphicsPipeline(VkDevice device, Swapchain swapchain, VkRenderPass renderPass, DescriptorSetLayout descriptorSetLayout, VkShaderModule vertex_shader, VkShaderModule fragment_shader);
 
-void destroyGraphicsPipeline(Pipeline *const pPipeline);
-
 #endif	// GRAPHICS_PIPELINE_H

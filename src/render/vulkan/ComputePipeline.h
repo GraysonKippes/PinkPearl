@@ -6,21 +6,8 @@
 #include <vulkan/vulkan.h>
 
 #include "descriptor.h"
+#include "Pipeline.h"
 
-typedef struct ComputePipeline {
-
-	VkPipeline handle;
-	VkPipelineLayout layout;
-
-	VkDescriptorPool descriptor_pool;
-	VkDescriptorSetLayout descriptor_set_layout;
-
-	VkDevice device;
-
-} ComputePipeline;
-
-ComputePipeline create_compute_pipeline(const VkDevice device, const DescriptorSetLayout descriptor_layout, const char *const compute_shader_name);
-
-bool destroy_compute_pipeline(ComputePipeline *const compute_pipeline_ptr);
+Pipeline createComputePipeline(const VkDevice vkDevice, const DescriptorSetLayout descriptorSetLayout, const char *const pComputeShaderFilename);
 
 #endif	// COMPUTE_PIPELINE_H

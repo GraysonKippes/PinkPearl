@@ -85,6 +85,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/logical_device.c
 	src/render/vulkan/memory.c
 	src/render/vulkan/physical_device.c
+	src/render/vulkan/Pipeline.c
 	src/render/vulkan/queue.c
 	src/render/vulkan/shader.c
 	src/render/vulkan/swapchain.c

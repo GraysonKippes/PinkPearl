@@ -29,7 +29,7 @@ static const DescriptorSetLayout compute_room_texture_layout = {
 	.bindings = (DescriptorBinding *)compute_room_texture_bindings
 };
 
-static ComputePipeline compute_room_texture_pipeline;
+static Pipeline computeRoomTexturePipeline;
 
 static Image transferImage;
 static VkDeviceMemory transferImageMemory;
@@ -141,13 +141,13 @@ static void createTransferImage(const VkDevice vkDevice) {
 
 void init_compute_room_texture(const VkDevice vkDevice) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initializing texture stitcher...");
-	compute_room_texture_pipeline = create_compute_pipeline(vkDevice, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
+	computeRoomTexturePipeline = createComputePipeline(vkDevice, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
 	createTransferImage(vkDevice);
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done initializing texture stitcher.");
 }
 
 void terminate_compute_room_texture(void) {
-	destroy_compute_pipeline(&compute_room_texture_pipeline);
+	destroyPipeline(&computeRoomTexturePipeline);
 }
 
 void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint32_t **tileIndices) {
@@ -171,9 +171,9 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 		.pNext = nullptr,
-		.descriptorPool = compute_room_texture_pipeline.descriptor_pool,
+		.descriptorPool = computeRoomTexturePipeline.vkDescriptorPool,
 		.descriptorSetCount = 1,
-		.pSetLayouts = &compute_room_texture_pipeline.descriptor_set_layout
+		.pSetLayouts = &computeRoomTexturePipeline.vkDescriptorSetLayout
 	};
 
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
@@ -218,8 +218,8 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	VkCommandBuffer cmdBufCompute = VK_NULL_HANDLE;
 	allocCmdBufs(device, commandPoolCompute.vkCommandPool, 1, &cmdBufCompute);
 	cmdBufBegin(cmdBufCompute, true); {
-		vkCmdBindPipeline(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, compute_room_texture_pipeline.handle);
-		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, compute_room_texture_pipeline.layout, 0, 1, &descriptor_set, 0, nullptr);
+		vkCmdBindPipeline(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipeline);
+		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipelineLayout, 0, 1, &descriptor_set, 0, nullptr);
 		vkCmdDispatch(cmdBufCompute, tileExtent.width, tileExtent.length, num_room_layers);
 	} vkEndCommandBuffer(cmdBufCompute);
 	submit_command_buffers_async(queueCompute, 1, &cmdBufCompute);

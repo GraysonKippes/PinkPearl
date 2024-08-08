@@ -6,71 +6,50 @@
 
 #include "log/Logger.h"
 
-void create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
+void create_pipeline_layout(VkDevice vkDevice, VkDescriptorSetLayout vkDescriptorSetLayout, VkPipelineLayout *pPipelineLayout) {
 
-	VkPipelineLayoutCreateInfo create_info = {0};
-	create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	create_info.pNext = nullptr;
-	create_info.flags = 0;
-	create_info.setLayoutCount = 1;
-	create_info.pSetLayouts = &descriptor_set_layout;
-	create_info.pushConstantRangeCount = 0;
-	create_info.pPushConstantRanges = nullptr;
+	const VkPipelineLayoutCreateInfo createInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.setLayoutCount = 1,
+		.pSetLayouts = &vkDescriptorSetLayout,
+		.pushConstantRangeCount = 0,
+		.pPushConstantRanges = nullptr
+	};
 
-	vkCreatePipelineLayout(device, &create_info, nullptr, pipeline_layout_ptr);
+	vkCreatePipelineLayout(vkDevice, &createInfo, nullptr, pPipelineLayout);
 }
 
-ComputePipeline create_compute_pipeline(const VkDevice device, const DescriptorSetLayout descriptor_layout, const char *const compute_shader_name) {
+Pipeline createComputePipeline(const VkDevice vkDevice, const DescriptorSetLayout descriptorSetLayout, const char *const pComputeShaderFilename) {
 	
-	ShaderModule compute_shader_module = create_shader_module(device, compute_shader_name);
+	Pipeline computePipeline = { };
+	computePipeline.type = PIPELINE_TYPE_COMPUTE;
+	
+	ShaderModule compute_shader_module = create_shader_module(vkDevice, pComputeShaderFilename);
 
-	ComputePipeline compute_pipeline = { 0 };
-
-	create_descriptor_set_layout(device, descriptor_layout, &compute_pipeline.descriptor_set_layout);
-	create_pipeline_layout(device, compute_pipeline.descriptor_set_layout, &compute_pipeline.layout);
+	create_descriptor_set_layout(vkDevice, descriptorSetLayout, &computePipeline.vkDescriptorSetLayout);
+	create_pipeline_layout(vkDevice, computePipeline.vkDescriptorSetLayout, &computePipeline.vkPipelineLayout);
 	// TODO - manage descriptor set memory better.
-	create_descriptor_pool(device, 256, descriptor_layout, &compute_pipeline.descriptor_pool);
+	create_descriptor_pool(vkDevice, 256, descriptorSetLayout, &computePipeline.vkDescriptorPool);
 
-	const VkComputePipelineCreateInfo create_info = {
+	const VkComputePipelineCreateInfo createInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.layout = compute_pipeline.layout,
+		.layout = computePipeline.vkPipelineLayout,
 		.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 		.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT,
 		.stage.module = compute_shader_module.module_handle,
 		.stage.pName = "main"
 	};
 
-	const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &compute_pipeline.handle);
+	const VkResult result = vkCreateComputePipelines(vkDevice, VK_NULL_HANDLE, 1, &createInfo, nullptr, &computePipeline.vkPipeline);
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Compute pipeline creation failed (error code: %i).", result);
 	}
-	compute_pipeline.device = device;
+	computePipeline.vkDevice = vkDevice;
 
 	destroy_shader_module(&compute_shader_module);
-	return compute_pipeline;
-}
-
-bool destroy_compute_pipeline(ComputePipeline *const compute_pipeline_ptr) {
-
-	if (compute_pipeline_ptr == nullptr) {
-		return false;
-	}
-
-	vkDestroyPipeline(compute_pipeline_ptr->device, compute_pipeline_ptr->handle, nullptr);
-	compute_pipeline_ptr->handle = VK_NULL_HANDLE;
-
-	vkDestroyPipelineLayout(compute_pipeline_ptr->device, compute_pipeline_ptr->layout, nullptr);
-	compute_pipeline_ptr->layout = VK_NULL_HANDLE;
-
-	vkDestroyDescriptorPool(compute_pipeline_ptr->device, compute_pipeline_ptr->descriptor_pool, nullptr);
-	compute_pipeline_ptr->descriptor_pool = VK_NULL_HANDLE;
-
-	vkDestroyDescriptorSetLayout(compute_pipeline_ptr->device, compute_pipeline_ptr->descriptor_set_layout, nullptr);
-	compute_pipeline_ptr->descriptor_set_layout = VK_NULL_HANDLE;
-
-	compute_pipeline_ptr->device = VK_NULL_HANDLE;
-
-	return true;
+	return computePipeline;
 }

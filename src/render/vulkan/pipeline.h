@@ -22,4 +22,6 @@ typedef struct Pipeline {
 
 } Pipeline;
 
+bool destroyPipeline(Pipeline *const pPipeline);
+
 #endif	// PIPELINE_H

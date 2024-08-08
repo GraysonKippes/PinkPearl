@@ -20,38 +20,41 @@ static const DescriptorSetLayout compute_matrices_layout = {
 	.bindings = (DescriptorBinding *)compute_matrices_bindings
 };
 
-static ComputePipeline compute_matrices_pipeline;
+static Pipeline compute_matrices_pipeline;
 
 static VkCommandBuffer compute_matrices_command_buffer = VK_NULL_HANDLE;
+
 static VkDescriptorSet compute_matrices_descriptor_set = VK_NULL_HANDLE;
+
 VkSemaphore compute_matrices_semaphore = VK_NULL_HANDLE;
+
 static VkFence compute_matrices_fence = VK_NULL_HANDLE;
 
 // One camera matrix, one projection matrix, and one matrix for each render object slot.
 static const VkDeviceSize num_matrices = NUM_RENDER_OBJECT_SLOTS + 2;
-	
+
 // Size in bytes of a 4x4 matrix of single-precision floating point numbers.
 static const VkDeviceSize matrix_size = 16 * sizeof(float);
 
 const VkDeviceSize matrix_data_size = num_matrices * matrix_size;
 
-bool init_compute_matrices(const VkDevice vk_device) {
+bool init_compute_matrices(const VkDevice vkDevice) {
 
-	compute_matrices_pipeline = create_compute_pipeline(vk_device, compute_matrices_layout, COMPUTE_MATRICES_SHADER_NAME);
-	allocCmdBufs(vk_device, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
+	compute_matrices_pipeline = createComputePipeline(vkDevice, compute_matrices_layout, COMPUTE_MATRICES_SHADER_NAME);
+	allocCmdBufs(vkDevice, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
 
 	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 		.pNext = nullptr,
-		.descriptorPool = compute_matrices_pipeline.descriptor_pool,
+		.descriptorPool = compute_matrices_pipeline.vkDescriptorPool,
 		.descriptorSetCount = 1,
-		.pSetLayouts = &compute_matrices_pipeline.descriptor_set_layout
+		.pSetLayouts = &compute_matrices_pipeline.vkDescriptorSetLayout
 	};
 
-	const VkResult descriptor_set_allocate_result = vkAllocateDescriptorSets(vk_device, &descriptor_set_allocate_info, &compute_matrices_descriptor_set);
+	const VkResult descriptor_set_allocate_result = vkAllocateDescriptorSets(vkDevice, &descriptor_set_allocate_info, &compute_matrices_descriptor_set);
 	if (descriptor_set_allocate_result < 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: descriptor set allocation failed (result code: %i).", descriptor_set_allocate_result);
-		destroy_compute_pipeline(&compute_matrices_pipeline);
+		destroyPipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (descriptor_set_allocate_result > 0) {
@@ -64,10 +67,10 @@ bool init_compute_matrices(const VkDevice vk_device) {
 		.flags = 0
 	};
 
-	const VkResult semaphore_create_result = vkCreateSemaphore(vk_device, &semaphore_create_info, nullptr, &compute_matrices_semaphore);
+	const VkResult semaphore_create_result = vkCreateSemaphore(vkDevice, &semaphore_create_info, nullptr, &compute_matrices_semaphore);
 	if (semaphore_create_result < 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: semaphore creation failed (result code: %i).", semaphore_create_result);
-		destroy_compute_pipeline(&compute_matrices_pipeline);
+		destroyPipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (semaphore_create_result > 0) {
@@ -80,11 +83,11 @@ bool init_compute_matrices(const VkDevice vk_device) {
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT
 	};
 	
-	const VkResult fence_create_result = vkCreateFence(vk_device, &fence_create_info, nullptr, &compute_matrices_fence);
+	const VkResult fence_create_result = vkCreateFence(vkDevice, &fence_create_info, nullptr, &compute_matrices_fence);
 	if (fence_create_result < 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: fence creation failed (result code: %i).", fence_create_result);
-		vkDestroySemaphore(vk_device, compute_matrices_semaphore, nullptr);
-		destroy_compute_pipeline(&compute_matrices_pipeline);
+		vkDestroySemaphore(vkDevice, compute_matrices_semaphore, nullptr);
+		destroyPipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (fence_create_result > 0) {
@@ -95,21 +98,21 @@ bool init_compute_matrices(const VkDevice vk_device) {
 }
 
 void terminate_compute_matrices(void) {
-	vkDestroyFence(compute_matrices_pipeline.device, compute_matrices_fence, nullptr);
-	vkDestroySemaphore(compute_matrices_pipeline.device, compute_matrices_semaphore, nullptr);
-	destroy_compute_pipeline(&compute_matrices_pipeline);
+	vkDestroyFence(compute_matrices_pipeline.vkDevice, compute_matrices_fence, nullptr);
+	vkDestroySemaphore(compute_matrices_pipeline.vkDevice, compute_matrices_semaphore, nullptr);
+	destroyPipeline(&compute_matrices_pipeline);
 }
 
 void computeMatrices(const float deltaTime, const ProjectionBounds projectionBounds, const Vector4F cameraPosition, const RenderTransform *const transforms) {
-	if (transforms == nullptr) {
+	if (!transforms) {
 		return;
 	}
 
-	vkWaitForFences(compute_matrices_pipeline.device, 1, &compute_matrices_fence, VK_TRUE, UINT64_MAX);
-	vkResetFences(compute_matrices_pipeline.device, 1, &compute_matrices_fence);
+	vkWaitForFences(compute_matrices_pipeline.vkDevice, 1, &compute_matrices_fence, VK_TRUE, UINT64_MAX);
+	vkResetFences(compute_matrices_pipeline.vkDevice, 1, &compute_matrices_fence);
 
 	byte_t *mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 0);
-	if (mapped_memory == nullptr) {
+	if (!mapped_memory) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error computing matrices: uniform buffer memory mapping failed.");
 		return;
 	}
@@ -146,8 +149,8 @@ void computeMatrices(const float deltaTime, const ProjectionBounds projectionBou
 
 	vkUpdateDescriptorSets(device, 2, descriptor_writes, 0, nullptr);
 
-	vkFreeCommandBuffers(compute_matrices_pipeline.device, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
-	allocCmdBufs(compute_matrices_pipeline.device, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
+	vkFreeCommandBuffers(compute_matrices_pipeline.vkDevice, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
+	allocCmdBufs(compute_matrices_pipeline.vkDevice, commandPoolCompute.vkCommandPool, 1, &compute_matrices_command_buffer);
 
 	const VkCommandBufferBeginInfo begin_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -158,8 +161,8 @@ void computeMatrices(const float deltaTime, const ProjectionBounds projectionBou
 
 	vkBeginCommandBuffer(compute_matrices_command_buffer, &begin_info);
 
-	vkCmdBindPipeline(compute_matrices_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_matrices_pipeline.handle);
-	vkCmdBindDescriptorSets(compute_matrices_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_matrices_pipeline.layout, 0, 1, &compute_matrices_descriptor_set, 0, nullptr);
+	vkCmdBindPipeline(compute_matrices_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_matrices_pipeline.vkPipeline);
+	vkCmdBindDescriptorSets(compute_matrices_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_matrices_pipeline.vkPipelineLayout, 0, 1, &compute_matrices_descriptor_set, 0, nullptr);
 	vkCmdDispatch(compute_matrices_command_buffer, 1, 1, 1);
 
 	vkEndCommandBuffer(compute_matrices_command_buffer);

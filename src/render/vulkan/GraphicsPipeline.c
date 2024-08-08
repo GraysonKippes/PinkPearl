@@ -210,24 +210,6 @@ Pipeline createGraphicsPipeline(VkDevice device, Swapchain swapchain, VkRenderPa
 	return pipeline;
 }
 
-void destroyGraphicsPipeline(Pipeline *const pPipeline) {
-	if (!pPipeline) {
-		return;
-	}
-	
-	// Destroy the Vulkan objects associated with the pipeline struct.
-	vkDestroyPipeline(pPipeline->vkDevice, pPipeline->vkPipeline, nullptr);
-	vkDestroyPipelineLayout(pPipeline->vkDevice, pPipeline->vkPipelineLayout, nullptr);
-	vkDestroyDescriptorPool(pPipeline->vkDevice, pPipeline->vkDescriptorPool, nullptr);
-	vkDestroyDescriptorSetLayout(pPipeline->vkDevice, pPipeline->vkDescriptorSetLayout, nullptr);
-	
-	// Nullify the handles inside the struct.
-	pPipeline->vkPipeline = VK_NULL_HANDLE;
-	pPipeline->vkPipelineLayout = VK_NULL_HANDLE;
-	pPipeline->vkDescriptorPool = VK_NULL_HANDLE;
-	pPipeline->vkDescriptorSetLayout = VK_NULL_HANDLE;
-}
-
 static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
 	return (VkPipelineInputAssemblyStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
