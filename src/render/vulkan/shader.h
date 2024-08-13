@@ -7,8 +7,8 @@
 
 typedef enum ShaderStage {
 	SHADER_STAGE_VERTEX,
-	SHADER_STAGE_TESSELATION_CONTROL,
-	SHADER_STAGE_TESSELATION_EVALUATION,
+	SHADER_STAGE_TESSELLATION_CONTROL,
+	SHADER_STAGE_TESSELLATION_EVALUATION,
 	SHADER_STAGE_GEOMETRY,
 	SHADER_STAGE_FRAGMENT,
 	SHADER_STAGE_COMPUTE,
@@ -17,12 +17,19 @@ typedef enum ShaderStage {
 } ShaderStage;
 
 typedef struct ShaderModule {
-	VkShaderModule module_handle;
-	VkDevice device;
+	
+	ShaderStage stage;
+	
+	VkShaderModule vkShaderModule;
+	
+	VkDevice vkDevice;
+	
 } ShaderModule;
 
-ShaderModule create_shader_module(const VkDevice device, const char *const pFilename);
+ShaderModule createShaderModule(const VkDevice vkDevice, const ShaderStage shaderStage, const char *const pFilename);
 
-bool destroy_shader_module(ShaderModule *const shader_module_ptr);
+bool destroyShaderModule(ShaderModule *const pShaderModule);
+
+VkPipelineShaderStageCreateInfo makeShaderStageCreateInfo(const ShaderModule shaderModule);
 
 #endif	// SHADER_H

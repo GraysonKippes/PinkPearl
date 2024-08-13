@@ -208,13 +208,13 @@ void create_vulkan_objects(void) {
 	
 	renderPass = createRenderPass(device, swapchain.image_format);
 	
-	ShaderModule vertex_shader_module = create_shader_module(device, VERTEX_SHADER_NAME);
-	ShaderModule fragment_shader_module = create_shader_module(device, FRAGMENT_SHADER_NAME);
+	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, VERTEX_SHADER_NAME);
+	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, FRAGMENT_SHADER_NAME);
 	
-	graphicsPipeline = createGraphicsPipeline(device, swapchain, renderPass, graphicsPipelineDescriptorSetLayout, vertex_shader_module.module_handle, fragment_shader_module.module_handle);
+	graphicsPipeline = createGraphicsPipeline2(device, swapchain, renderPass, graphicsPipelineDescriptorSetLayout, 2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
 	
-	destroy_shader_module(&vertex_shader_module);
-	destroy_shader_module(&fragment_shader_module);
+	destroyShaderModule(&vertexShaderModule);
+	destroyShaderModule(&fragmentShaderModule);
 	
 	create_framebuffers(device, renderPass, &swapchain);
 

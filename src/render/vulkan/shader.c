@@ -11,6 +11,8 @@
 
 #define SHADER_DIRECTORY (RESOURCE_PATH "shaders/")
 
+static const char shaderEntrypoint[] = "main";
+
 typedef struct ShaderBytecode {
 	uint32_t bytecode_size;
 	byte_t *bytecode;
@@ -70,18 +72,21 @@ static bool destroy_shader_bytecode(ShaderBytecode *const pShaderBytecode) {
 	return true;
 }
 
-ShaderModule create_shader_module(const VkDevice device, const char *const pFilename) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading shader \"%s\"...", pFilename);
+ShaderModule createShaderModule(const VkDevice vkDevice, const ShaderStage shaderStage, const char *const pFilename) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating shader module...");
 
-	ShaderModule shader_module = {
-		.module_handle = VK_NULL_HANDLE,
-		.device = VK_NULL_HANDLE
+	ShaderModule shaderModule = {
+		.stage = shaderStage,
+		.vkShaderModule = VK_NULL_HANDLE,
+		.vkDevice = VK_NULL_HANDLE
 	};
 
 	if (!pFilename) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating shader module: pointer to pFilename is nullptr.");
-		return shader_module;
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating shader module: pFilename is null.");
+		return shaderModule;
 	}
+	
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading shader source \"%s\"...", pFilename);
 
 	char path[256];
 	memset(path, '\0', 256);
@@ -93,9 +98,9 @@ ShaderModule create_shader_module(const VkDevice device, const char *const pFile
 	strncat(path, pFilename, filename_length);
 
 	ShaderBytecode shader_bytecode = read_shader_file(path);
-	if (shader_bytecode.bytecode == nullptr) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Fatal error creating shader module: shader file reading failed.");
-		return shader_module;
+	if (!shader_bytecode.bytecode) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating shader module: shader file reading failed.");
+		return shaderModule;
 	}
 
 	const VkShaderModuleCreateInfo create_info = {
@@ -106,26 +111,69 @@ ShaderModule create_shader_module(const VkDevice device, const char *const pFile
 		.pCode = (uint32_t *)shader_bytecode.bytecode
 	};
 
-	const VkResult result = vkCreateShaderModule(device, &create_info, nullptr, &shader_module.module_handle);
+	const VkResult result = vkCreateShaderModule(vkDevice, &create_info, nullptr, &shaderModule.vkShaderModule);
 	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Fatal error creating shader module: shader module creation failed (error code: %i).", result);
-		return shader_module;
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating shader module: shader module creation failed (error code: %i).", result);
+		return shaderModule;
 	}
-	shader_module.device = device;
+	shaderModule.vkDevice = vkDevice;
 
 	destroy_shader_bytecode(&shader_bytecode);
-	return shader_module;
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created shader module.");
+	return shaderModule;
 }
 
-bool destroy_shader_module(ShaderModule *const shader_module_ptr) {
-	
-	if (shader_module_ptr == nullptr) {
+bool destroyShaderModule(ShaderModule *const pShaderModule) {
+	if (!pShaderModule) {
 		return false;
 	}
 	
-	vkDestroyShaderModule(shader_module_ptr->device, shader_module_ptr->module_handle, nullptr);
-	shader_module_ptr->module_handle = VK_NULL_HANDLE;
-	shader_module_ptr->device = VK_NULL_HANDLE;
+	vkDestroyShaderModule(pShaderModule->vkDevice, pShaderModule->vkShaderModule, nullptr);
+	pShaderModule->vkShaderModule = VK_NULL_HANDLE;
+	pShaderModule->vkDevice = VK_NULL_HANDLE;
 	
 	return true;
+}
+
+VkPipelineShaderStageCreateInfo makeShaderStageCreateInfo(const ShaderModule shaderModule) {
+	
+	VkShaderStageFlags vkShaderStageFlags = VK_SHADER_STAGE_ALL;
+	switch (shaderModule.stage) {
+		case SHADER_STAGE_VERTEX:
+			vkShaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT; 
+			break;
+		case SHADER_STAGE_TESSELLATION_CONTROL:
+			vkShaderStageFlags = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT; 
+			break;
+		case SHADER_STAGE_TESSELLATION_EVALUATION:
+			vkShaderStageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT; 
+			break;
+		case SHADER_STAGE_GEOMETRY:
+			vkShaderStageFlags = VK_SHADER_STAGE_GEOMETRY_BIT; 
+			break;
+		case SHADER_STAGE_FRAGMENT:
+			vkShaderStageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; 
+			break;
+		case SHADER_STAGE_COMPUTE:
+			vkShaderStageFlags = VK_SHADER_STAGE_COMPUTE_BIT; 
+			break;
+		case SHADER_STAGE_TASK:
+			vkShaderStageFlags = VK_SHADER_STAGE_TASK_BIT_EXT; 
+			break;
+		case SHADER_STAGE_MESH:
+			vkShaderStageFlags = VK_SHADER_STAGE_MESH_BIT_EXT; 
+			break;
+		default:
+			logMsg(loggerVulkan,LOG_LEVEL_ERROR, "Error making shader stage create info: invalid shader stage (%i).", (int)shaderModule.stage);
+			break;
+	}
+	
+	return (VkPipelineShaderStageCreateInfo){
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.stage = vkShaderStageFlags,
+		.module = shaderModule.vkShaderModule,
+		.pName = shaderEntrypoint
+	};
 }

@@ -23,13 +23,14 @@ void create_pipeline_layout(VkDevice vkDevice, VkDescriptorSetLayout vkDescripto
 
 Pipeline createComputePipeline(const VkDevice vkDevice, const DescriptorSetLayout descriptorSetLayout, const char *const pComputeShaderFilename) {
 	
-	Pipeline computePipeline = { };
-	computePipeline.type = PIPELINE_TYPE_COMPUTE;
+	Pipeline computePipeline = { .type = PIPELINE_TYPE_COMPUTE };
 	
-	ShaderModule compute_shader_module = create_shader_module(vkDevice, pComputeShaderFilename);
+	ShaderModule compute_shader_module = createShaderModule(vkDevice, SHADER_STAGE_COMPUTE, pComputeShaderFilename);
 
 	create_descriptor_set_layout(vkDevice, descriptorSetLayout, &computePipeline.vkDescriptorSetLayout);
-	create_pipeline_layout(vkDevice, computePipeline.vkDescriptorSetLayout, &computePipeline.vkPipelineLayout);
+	
+	computePipeline.vkPipelineLayout = createPipelineLayout(vkDevice, computePipeline.vkDescriptorSetLayout);
+	
 	// TODO - manage descriptor set memory better.
 	create_descriptor_pool(vkDevice, 256, descriptorSetLayout, &computePipeline.vkDescriptorPool);
 
@@ -40,7 +41,7 @@ Pipeline createComputePipeline(const VkDevice vkDevice, const DescriptorSetLayou
 		.layout = computePipeline.vkPipelineLayout,
 		.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 		.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT,
-		.stage.module = compute_shader_module.module_handle,
+		.stage.module = compute_shader_module.vkShaderModule,
 		.stage.pName = "main"
 	};
 
@@ -50,6 +51,6 @@ Pipeline createComputePipeline(const VkDevice vkDevice, const DescriptorSetLayou
 	}
 	computePipeline.vkDevice = vkDevice;
 
-	destroy_shader_module(&compute_shader_module);
+	destroyShaderModule(&compute_shader_module);
 	return computePipeline;
 }

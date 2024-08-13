@@ -24,4 +24,6 @@ typedef struct Pipeline {
 
 bool destroyPipeline(Pipeline *const pPipeline);
 
+VkPipelineLayout createPipelineLayout(VkDevice vkDevice, VkDescriptorSetLayout vkDescriptorSetLayout);
+
 #endif	// PIPELINE_H

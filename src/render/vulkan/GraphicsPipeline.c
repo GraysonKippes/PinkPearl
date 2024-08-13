@@ -13,22 +13,24 @@
 
 /* -- FUNCTION DECLARATIONS -- */
 
-static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void);
-static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *pViewport, VkRect2D *pScissor);
-static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void);
-static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void);
-static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void);
-static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState attachmentState[static 1]);
-static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr);
+static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(void);
+
+static VkPipelineViewportStateCreateInfo makePipelineViewportStateCreateInfo(VkViewport *pViewport, VkRect2D *pScissor);
+
+static VkPipelineRasterizationStateCreateInfo makePipelineRasterizationStateCreateInfo(void);
+
+static VkPipelineMultisampleStateCreateInfo makePipelineMultisampleStateCreateInfo(void);
+
+static VkPipelineColorBlendAttachmentState makePipelineColorBlendAttachmentState(void);
+
+static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(VkPipelineColorBlendAttachmentState attachmentState[static 1]);
 
 /* -- FUNCTION DEFINITIONS -- */
 
-VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFormat) {
+VkRenderPass createRenderPass(const VkDevice vkDevice, const VkFormat swapchainFormat) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating render pass...");
 
-	// TODO - get rid of depth testing stuff.
-
-	const VkAttachmentDescription2 attachmentDescriptions[2] = {
+	const VkAttachmentDescription2 attachmentDescriptions[1] = {
 		{	// Color attachment description
 			.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2,
 			.pNext = nullptr,
@@ -41,36 +43,16 @@ VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFor
 			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 			.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-		},
-		{	// Depth attachment description
-			.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2,
-			.pNext = nullptr,
-			.flags = 0,
-			.format = VK_FORMAT_D32_SFLOAT,
-			.samples = VK_SAMPLE_COUNT_1_BIT,
-			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		}
 	};
 
-	const VkAttachmentReference2 attachmentReferences[2] = {
+	const VkAttachmentReference2 attachmentReferences[1] = {
 		{	// Color attachment reference
 			.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
 			.pNext = nullptr,
 			.attachment = 0,
 			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT
-		},
-		{	// Depth attachment reference
-			.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
-			.pNext = nullptr,
-			.attachment = 1,
-			.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT
 		}
 	};
 
@@ -102,7 +84,7 @@ VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFor
 		.viewOffset = 0
 	};
 
-	VkRenderPassCreateInfo2 renderPassCreateInfo = {
+	const VkRenderPassCreateInfo2 renderPassCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2,
 		.pNext = nullptr,
 		.flags = 0,
@@ -117,7 +99,7 @@ VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFor
 	};
 
 	VkRenderPass renderPass = VK_NULL_HANDLE;
-	const VkResult result = vkCreateRenderPass2(device, &renderPassCreateInfo, nullptr, &renderPass);
+	const VkResult result = vkCreateRenderPass2(vkDevice, &renderPassCreateInfo, nullptr, &renderPass);
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Render pass creation failed. (Error code: %i)", result);
 	}
@@ -125,36 +107,21 @@ VkRenderPass createRenderPass(const VkDevice device, const VkFormat swapchainFor
 	return renderPass;
 }
 
-Pipeline createGraphicsPipeline(VkDevice device, Swapchain swapchain, VkRenderPass renderPass, DescriptorSetLayout descriptorSetLayout, VkShaderModule vertex_shader, VkShaderModule fragment_shader) {
+Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapchain, const VkRenderPass renderPass, const DescriptorSetLayout descriptorSetLayout, 
+		const uint32_t shaderModuleCount, const ShaderModule shaderModules[static const shaderModuleCount]) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
-	Pipeline pipeline = { };
-	pipeline.type = PIPELINE_TYPE_GRAPHICS;
+	Pipeline pipeline = { .type = PIPELINE_TYPE_GRAPHICS };
 
-	VkPipelineShaderStageCreateInfo shader_stage_vertex_info = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.stage = VK_SHADER_STAGE_VERTEX_BIT,
-		.module = vertex_shader,
-		.pName = "main"
-	};
+	VkPipelineShaderStageCreateInfo shaderStateCreateInfos[shaderModuleCount];
+	for (uint32_t i = 0; i < shaderModuleCount; ++i) {
+		shaderStateCreateInfos[i] = makeShaderStageCreateInfo(shaderModules[i]);
+	}
 
-	VkPipelineShaderStageCreateInfo shader_stage_fragment_info = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.module = fragment_shader,
-		.pName = "main"
-	};
+	create_descriptor_pool(vkDevice, NUM_FRAMES_IN_FLIGHT, descriptorSetLayout, &pipeline.vkDescriptorPool);
+	create_descriptor_set_layout(vkDevice, descriptorSetLayout, &pipeline.vkDescriptorSetLayout);
 
-	VkPipelineShaderStageCreateInfo shader_stages[2] = { shader_stage_vertex_info, shader_stage_fragment_info };
-
-	create_descriptor_pool(device, NUM_FRAMES_IN_FLIGHT, descriptorSetLayout, &pipeline.vkDescriptorPool);
-	create_descriptor_set_layout(device, descriptorSetLayout, &pipeline.vkDescriptorSetLayout);
-
-	create_graphics_pipeline_layout(device, pipeline.vkDescriptorSetLayout, &pipeline.vkPipelineLayout);
+	pipeline.vkPipelineLayout = createPipelineLayout(vkDevice, pipeline.vkDescriptorSetLayout);
 
 	VkVertexInputBindingDescription binding_description = get_binding_description();
 
@@ -174,19 +141,19 @@ Pipeline createGraphicsPipeline(VkDevice device, Swapchain swapchain, VkRenderPa
 	VkViewport viewport = make_viewport(swapchain.extent);
 	VkRect2D scissor = make_scissor(swapchain.extent);
 
-	VkPipelineInputAssemblyStateCreateInfo input_assembly = make_input_assembly_info();
-	VkPipelineViewportStateCreateInfo viewport_state = make_viewport_state_info(&viewport, &scissor);
-	VkPipelineRasterizationStateCreateInfo rasterizer = make_rasterization_info();
-	VkPipelineMultisampleStateCreateInfo multisampling = make_multisampling_info();
-	VkPipelineColorBlendAttachmentState color_blend_attachment = make_color_blend_attachment();
-	VkPipelineColorBlendStateCreateInfo color_blending = make_color_blend_info(&color_blend_attachment);
+	VkPipelineInputAssemblyStateCreateInfo input_assembly = makePipelineInputAssemblyStateCreateInfo();
+	VkPipelineViewportStateCreateInfo viewport_state = makePipelineViewportStateCreateInfo(&viewport, &scissor);
+	VkPipelineRasterizationStateCreateInfo rasterizer = makePipelineRasterizationStateCreateInfo();
+	VkPipelineMultisampleStateCreateInfo multisampling = makePipelineMultisampleStateCreateInfo();
+	VkPipelineColorBlendAttachmentState color_blend_attachment = makePipelineColorBlendAttachmentState();
+	VkPipelineColorBlendStateCreateInfo color_blending = makePipelineColorBlendStateCreateInfo(&color_blend_attachment);
 
 	const VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.stageCount = 2,
-		.pStages = shader_stages,
+		.stageCount = shaderModuleCount,
+		.pStages = shaderStateCreateInfos,
 		.pVertexInputState = &vertex_input_info,
 		.pInputAssemblyState = &input_assembly,
 		.pViewportState = &viewport_state,
@@ -202,7 +169,7 @@ Pipeline createGraphicsPipeline(VkDevice device, Swapchain swapchain, VkRenderPa
 		.basePipelineIndex= -1
 	};
 
-	const VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &pipeline.vkPipeline);
+	const VkResult result = vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &pipeline.vkPipeline);
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Graphics pipeline creation failed (error code: %i).", result);
 	}
@@ -210,7 +177,7 @@ Pipeline createGraphicsPipeline(VkDevice device, Swapchain swapchain, VkRenderPa
 	return pipeline;
 }
 
-static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
+static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(void) {
 	return (VkPipelineInputAssemblyStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 		.pNext = nullptr,
@@ -220,7 +187,7 @@ static VkPipelineInputAssemblyStateCreateInfo make_input_assembly_info(void) {
 	};
 }
 
-static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *pViewport, VkRect2D *pScissor) {
+static VkPipelineViewportStateCreateInfo makePipelineViewportStateCreateInfo(VkViewport *pViewport, VkRect2D *pScissor) {
 	return (VkPipelineViewportStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
 		.pNext = nullptr,
@@ -232,7 +199,7 @@ static VkPipelineViewportStateCreateInfo make_viewport_state_info(VkViewport *pV
 	};
 }
 
-static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
+static VkPipelineRasterizationStateCreateInfo makePipelineRasterizationStateCreateInfo(void) {
 	return (VkPipelineRasterizationStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.pNext = nullptr,
@@ -250,7 +217,7 @@ static VkPipelineRasterizationStateCreateInfo make_rasterization_info(void) {
 	};
 }
 
-static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
+static VkPipelineMultisampleStateCreateInfo makePipelineMultisampleStateCreateInfo(void) {
 	return (VkPipelineMultisampleStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 		.pNext = nullptr,
@@ -264,7 +231,7 @@ static VkPipelineMultisampleStateCreateInfo make_multisampling_info(void) {
 	};
 }
 
-static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void) {
+static VkPipelineColorBlendAttachmentState makePipelineColorBlendAttachmentState(void) {
 	return (VkPipelineColorBlendAttachmentState){
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
 		.blendEnable = VK_TRUE,
@@ -277,7 +244,7 @@ static VkPipelineColorBlendAttachmentState make_color_blend_attachment(void) {
 	};
 }
 
-static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColorBlendAttachmentState attachmentState[static 1]) {
+static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(VkPipelineColorBlendAttachmentState attachmentState[static 1]) {
 	return (VkPipelineColorBlendStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 		.pNext = nullptr,
@@ -289,23 +256,4 @@ static VkPipelineColorBlendStateCreateInfo make_color_blend_info(VkPipelineColor
 		.blendConstants = { 0.0F, 0.0F, 0.0F, 0.0F }
 	};
 	
-}
-
-static void create_graphics_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout *pipeline_layout_ptr) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline layout...");
-
-	const VkPipelineLayoutCreateInfo createInfo = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.setLayoutCount = 1,
-		.pSetLayouts = &descriptor_set_layout,
-		.pushConstantRangeCount = 0,
-		.pPushConstantRanges = nullptr
-	};
-
-	VkResult result = vkCreatePipelineLayout(device, &createInfo, nullptr, pipeline_layout_ptr);
-	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Graphics pipeline layout creation failed (error code: %i).", result);
-	}
 }
