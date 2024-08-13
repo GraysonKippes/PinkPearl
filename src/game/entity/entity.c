@@ -17,7 +17,7 @@ Entity new_entity(void) {
 	return (Entity){
 		.physics = (EntityPhysics){ },
 		.hitbox = (BoxD){ },
-		.ai = entityAINull,
+		.ai = entityAINone,
 		.renderHandle = renderHandleInvalid
 	};
 }

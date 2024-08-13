@@ -2,8 +2,9 @@
 #define ENTITY_REGISTRY_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
-#include "entity_ai.h"
+#include "EntityAI.h"
 
 #include "math/Box.h"
 #include "util/string.h"
@@ -12,15 +13,21 @@ typedef struct EntityRecord {
 	
 	String entityID;
 	
-	BoxD entityHitbox;
+	/* -- Entity Properties -- */
 	
 	EntityAI entityAI;
 	
+	BoxD entityHitbox;
+	
 	bool entityIsPersistent;
 	
-	int entityHP;
+	/* -- Entity Statistics -- */
+	
+	int32_t entityHP;
 	
 	double entitySpeed;
+	
+	/* -- Texture Properties -- */
 	
 	String textureID;
 	
@@ -28,7 +35,7 @@ typedef struct EntityRecord {
 	
 } EntityRecord;
 
-void init_entity_registry(void);
+void initEntityRegistry(void);
 
 void terminate_entity_registry(void);
 

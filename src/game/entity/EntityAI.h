@@ -7,7 +7,8 @@ typedef struct Entity Entity;
 
 typedef struct EntityAI {
 	
-	// TODO - add string-based ID for entity AI.
+	// The unique, string-based identifier for this entity AI.
+	String id;
 	
 	// The time point in milliseconds of the last action performed by the entity.
 	unsigned long long int lastActionTimeMS;
@@ -19,7 +20,7 @@ typedef struct EntityAI {
 } EntityAI;
 
 // Entity AI that gives no behavior--AKA none of the behavior functions do anything.
-extern const EntityAI entityAINull;
+extern const EntityAI entityAINone;
 
 // The slime enemy's AI.
 extern const EntityAI entityAISlime;

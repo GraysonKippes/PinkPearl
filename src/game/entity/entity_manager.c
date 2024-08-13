@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-#include "entity_registry.h"
+#include "EntityRegistry.h"
 
 #include "log/Logger.h"
 #include "render/render_object.h"
@@ -58,6 +58,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	entities[entityHandle].hitbox = entityRecord.entityHitbox;
 	entities[entityHandle].ai = entityRecord.entityAI;
 	entities[entityHandle].persistent = entityRecord.entityIsPersistent;
+	entities[entityHandle].speed = entityRecord.entitySpeed;
 	entities[entityHandle].renderHandle = renderHandle;
 	
 	entitySlotEnabledFlags[entityHandle] = true;

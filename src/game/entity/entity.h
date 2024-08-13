@@ -1,7 +1,7 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include "entity_ai.h"
+#include "EntityAI.h"
 #include "EntityPhysics.h"
 
 #include "math/Box.h"

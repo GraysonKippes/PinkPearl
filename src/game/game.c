@@ -15,7 +15,7 @@
 #include "game_state.h"
 #include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
-#include "entity/entity_registry.h"
+#include "entity/EntityRegistry.h"
 #include "entity/EntitySpawner.h"
 
 // Stores information about the Pink Pearl game, such as whether or not the game is paused.
@@ -44,8 +44,8 @@ void start_game(void) {
 		.maxSpawnCount = 5
 	};
 	
-	//entitySpawnerReload(&testEntitySpawner);
-	//entitySpawnerSpawnEntities(&testEntitySpawner);
+	entitySpawnerReload(&testEntitySpawner);
+	entitySpawnerSpawnEntities(&testEntitySpawner);
 }
 
 void tick_game(void) {

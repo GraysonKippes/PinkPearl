@@ -6,7 +6,7 @@
 #include "audio/portaudio/portaudio_manager.h"
 #include "game/game.h"
 #include "game/entity/entity_manager.h"
-#include "game/entity/entity_registry.h"
+#include "game/entity/EntityRegistry.h"
 #include "glfw/glfw_manager.h"
 #include "log/Logger.h"
 #include "render/renderer.h"
@@ -23,7 +23,7 @@ int main(void) {
 	init_renderer();
 	init_audio_mixer();
 	init_portaudio();
-	init_entity_registry();
+	initEntityRegistry();
 	init_entity_manager();
 	initRandom();
 	start_game();

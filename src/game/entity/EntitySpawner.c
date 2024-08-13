@@ -1,7 +1,7 @@
 #include "EntitySpawner.h"
 
 #include "entity_manager.h"
-#include "entity_registry.h"
+#include "EntityRegistry.h"
 
 #include "util/Random.h"
 
