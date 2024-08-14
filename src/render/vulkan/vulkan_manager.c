@@ -211,7 +211,7 @@ void create_vulkan_objects(void) {
 	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, VERTEX_SHADER_NAME);
 	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, FRAGMENT_SHADER_NAME);
 	
-	graphicsPipeline = createGraphicsPipeline2(device, swapchain, renderPass, graphicsPipelineDescriptorSetLayout, 2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
+	graphicsPipeline = createGraphicsPipeline(device, swapchain, renderPass, graphicsPipelineDescriptorSetLayout, 2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
 	
 	destroyShaderModule(&vertexShaderModule);
 	destroyShaderModule(&fragmentShaderModule);

@@ -189,10 +189,10 @@ static bool uploadQuadMesh(const int quadID, const BoxF quadDimensions) {
 	
 	const float vertices[NUM_VERTICES_PER_QUAD * VERTEX_INPUT_ELEMENT_STRIDE] = {
 		// Positions									Texture			Color
-		quadDimensions.x1, quadDimensions.y1, 0.0F,		0.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// Top-left
-		quadDimensions.x2, quadDimensions.y1, 0.0F,		1.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// Top-right
-		quadDimensions.x2, quadDimensions.y2, 0.0F,		1.0F, 1.0F,		1.0F, 1.0F, 1.0F,	// Bottom-right
-		quadDimensions.x1, quadDimensions.y2, 0.0F,		0.0F, 1.0F,		1.0F, 1.0F, 1.0F	// Bottom-left
+		quadDimensions.x1, quadDimensions.y1, 0.0F,		0.0F, 1.0F,		1.0F, 1.0F, 1.0F,	// 0: Bottom-left
+		quadDimensions.x1, quadDimensions.y2, 0.0F,		0.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// 1: Top-left
+		quadDimensions.x2, quadDimensions.y2, 0.0F,		1.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// 2: Top-right
+		quadDimensions.x2, quadDimensions.y1, 0.0F,		1.0F, 1.0F,		1.0F, 1.0F, 1.0F	// 3: Bottom-right
 	};
 	
 	const VkDeviceSize verticesSize = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);

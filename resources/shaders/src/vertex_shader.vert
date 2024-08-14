@@ -34,13 +34,6 @@ layout(location = 1) out vec2 out_tex_coord;
 layout(location = 2) out vec3 out_color;
 layout(location = 3) out uint out_draw_index;
 
-const mat4 invert_y_matrix = mat4(
-	1.0, 0.0, 0.0, 0.0,
-	0.0, -1.0, 0.0, 0.0,
-	0.0, 0.0, 1.0, 0.0,
-	0.0, 0.0, 0.0, 1.0
-);
-
 void main() {
 
 	out_draw_index = gl_DrawID;
@@ -51,12 +44,8 @@ void main() {
 		model_matrix = matrix_buffer.matrices[draw_info.render_object_slot];
 	}
 
-	// TODO - temporary hotfix
-	mat4 cam_mat = matrix_buffer.camera_matrix;
-	cam_mat[3].x *= -1.0;
-
 	vec4 homogenous_coordinates = vec4(in_position, 1.0);
-	gl_Position = matrix_buffer.projection_matrix * cam_mat * model_matrix * homogenous_coordinates;
+	gl_Position = matrix_buffer.projection_matrix * matrix_buffer.camera_matrix * model_matrix * homogenous_coordinates;
 
 	out_position = vec3(model_matrix * homogenous_coordinates);
 	out_tex_coord = in_tex_coord;

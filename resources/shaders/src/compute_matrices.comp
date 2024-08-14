@@ -4,9 +4,9 @@
 // and creates translation matrices. Then each matrix is multiplied by the camera
 // and projection matrices, and push to an output buffer.
 
-#define NUM_MODELS 256
+#define NUM_QUADS 256
 
-layout(local_size_x = NUM_MODELS) in;
+layout(local_size_x = NUM_QUADS) in;
 
 // Keeps track of current and previous vectors for interpolation.
 struct RenderVector {
@@ -30,16 +30,16 @@ struct ProjectionBounds {
 };
 
 layout(std140, binding = 0) readonly uniform uniform_data_t {
-	ProjectionBounds projection_bounds;
+	ProjectionBounds projectionBounds;
 	float deltaTime;
-	vec4 camera_position;
-	RenderTransform transforms[NUM_MODELS];
+	vec4 cameraPosition;
+	RenderTransform transforms[NUM_QUADS];
 } uniform_data;
 
 layout(std140, binding = 1) writeonly buffer output_buffer {
-	mat4 camera_matrix;
-	mat4 projection_matrix;
-	mat4 model_matrices[NUM_MODELS];
+	mat4 viewMatrix;				// View (camera) matrix, transforms from world space to view (camera) space.
+	mat4 projectionMatrix;			// Projection matrix, transforms from view space to clip space.
+	mat4 modelMatrices[NUM_QUADS];	// Model matrices, transform from local space to world space.
 } output_data;
 
 vec4 vec4Lerp(const RenderVector vector, const float deltaTime) {
@@ -51,40 +51,54 @@ vec4 vec4Lerp(const RenderVector vector, const float deltaTime) {
 	);
 }
 
-mat4 makeTranslationMat4(const vec4 translation) {
-	mat4 translation_matrix = mat4(1.0);
-	translation_matrix[3].xyz = translation.xyz;
-	translation_matrix[3].y *= -1.0;
-	return translation_matrix;
+mat4 makeTranslationMat4(const vec4 position) {
+	return mat4(
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		position.xyz,  1.0
+	);
+}
+
+// Computes a view matrix given a camera position.
+mat4 makeViewMatrix(const vec4 cameraPosition) {
+	return mat4(
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		-cameraPosition.xyz, 1.0
+	);
 }
 
 // Makes and returns an orthographic projection matrix.
 // TODO - make this just take width, height, length, etc., instead of bounds.
 mat4 make_orthographic_projection_matrix(ProjectionBounds bounds) {
 	
-	const float zoom_factor = 1.0;
+	const float zoomFactor = 1.0;
 	
-	const float scale_x = (2.0 * zoom_factor) / (bounds.right - bounds.left);
-	const float scale_y = (2.0 * zoom_factor) / (bounds.bottom - bounds.top);
-	const float scale_z = -(2.0 * zoom_factor) / (bounds.far - bounds.near);
+	const float scaleX = (2.0 * zoomFactor) / (bounds.right - bounds.left);
+	const float scaleY = -(2.0 * zoomFactor) / (bounds.bottom - bounds.top);
+	const float scaleZ = -(2.0 * zoomFactor) / (bounds.far - bounds.near);
 
-	const float mid_x = (bounds.right + bounds.left) / (bounds.right - bounds.left);
-	const float mid_y = (bounds.top + bounds.bottom) / (bounds.top - bounds.bottom);
-	const float mid_z = (bounds.far + bounds.near) / (bounds.far - bounds.near);
+	const float midX = (bounds.right + bounds.left) / (bounds.right - bounds.left);
+	const float midY = (bounds.top + bounds.bottom) / (bounds.top - bounds.bottom);
+	const float midZ = (bounds.far + bounds.near) / (bounds.far - bounds.near);
 
-	mat4 projection_matrix;
-	projection_matrix[0] = vec4(scale_x, 0.0, 0.0, 0.0);
-	projection_matrix[1] = vec4(0.0, scale_y, 0.0, 0.0);
-	projection_matrix[2] = vec4(0.0, 0.0, scale_z, 0.0);
-	projection_matrix[3] = vec4(-mid_x, -mid_y, -mid_z, 1.0);
-
-	return projection_matrix;
+	return mat4(
+		scaleX, 0.0, 0.0, 0.0,
+		0.0, scaleY, 0.0, 0.0,
+		0.0, 0.0, scaleZ, 0.0,
+		-midX, -midY, -midZ, 1.0
+	);
 }
 
 void main() {
-	const uint model_slot = gl_LocalInvocationID.x;
-	output_data.camera_matrix = makeTranslationMat4(uniform_data.camera_position);
-	output_data.camera_matrix[3].y *= -1.0;
-	output_data.projection_matrix = make_orthographic_projection_matrix(uniform_data.projection_bounds);
-	output_data.model_matrices[model_slot] = makeTranslationMat4(vec4Lerp(uniform_data.transforms[model_slot].translation, uniform_data.deltaTime));
+
+	const uint quadID = gl_LocalInvocationID.x;
+	
+	output_data.modelMatrices[quadID] = makeTranslationMat4(vec4Lerp(uniform_data.transforms[quadID].translation, uniform_data.deltaTime));
+	
+	output_data.viewMatrix = makeViewMatrix(uniform_data.cameraPosition);
+	
+	output_data.projectionMatrix = make_orthographic_projection_matrix(uniform_data.projectionBounds);
 }
