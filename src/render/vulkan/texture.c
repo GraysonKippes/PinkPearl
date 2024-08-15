@@ -98,21 +98,22 @@ bool deleteImage(Image *const pImage) {
 	return true;
 }
 
-Texture makeNullTexture(void) {
-	return (Texture){
-		.numAnimations = 0,
-		.animations = nullptr,
-		.numImageArrayLayers = 0,
-		.image = (Image){ 
-			.vkImage = VK_NULL_HANDLE,
-			.vkImageView = VK_NULL_HANDLE,
-			.usage = imageUsageUndefined
-		},
-		.format = VK_FORMAT_UNDEFINED,
-		.vkDeviceMemory = VK_NULL_HANDLE,
-		.vkDevice = VK_NULL_HANDLE
-	};
-}
+const Texture nullTexture = {
+	.isLoaded = false,
+	.isTilemap = false,
+	.numAnimations = 0,
+	.animations = nullptr,
+	.numImageArrayLayers = 0,
+	.image.usage = imageUsageUndefined,
+	.image.extent.width = 0,
+	.image.extent.length = 0,
+	.image.vkImage = VK_NULL_HANDLE,
+	.image.vkImageView = VK_NULL_HANDLE,
+	.image.vkFormat = VK_FORMAT_UNDEFINED,
+	.image.vkDevice = VK_NULL_HANDLE,
+	.vkDeviceMemory = VK_NULL_HANDLE,
+	.vkDevice = VK_NULL_HANDLE
+};
 
 bool textureIsNull(const Texture texture) {
 	return texture.numImageArrayLayers == 0
@@ -153,7 +154,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 		.pNext = nullptr,
 		.flags = 0,
 		.imageType = VK_IMAGE_TYPE_2D,
-		.format = texture.format,
+		.format = getTextureImageFormat(textureCreateInfo),
 		.extent.width = textureCreateInfo.cellExtent.width,
 		.extent.height = textureCreateInfo.cellExtent.length,
 		.extent.depth = 1,
@@ -177,7 +178,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 	return vkImage;
 }
 
-static VkImageView createTextureImageView(const Texture texture, const VkImage vkImage) {
+static VkImageView createTextureImageView(const Texture texture, const TextureCreateInfo textureCreateInfo, const VkImage vkImage) {
 
 	// Subresource range used in all image views and layout transitions.
 	static const VkImageSubresourceRange imageSubresourceRange = {
@@ -195,7 +196,7 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 		.flags = 0,
 		.image = vkImage,
 		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-		.format = texture.format,
+		.format = getTextureImageFormat(textureCreateInfo),
 		.components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
 		.components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
 		.components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -213,10 +214,9 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 
 Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
-	Texture texture = makeNullTexture();
+	Texture texture = nullTexture;
 	texture.numAnimations = textureCreateInfo.numAnimations;
 	texture.numImageArrayLayers = textureCreateInfo.numCells.width * textureCreateInfo.numCells.length;
-	texture.format = getTextureImageFormat(textureCreateInfo);
 	texture.vkDevice = device;	// TODO - pass vkDevice through parameters, not global state.
 	texture.isLoaded = textureCreateInfo.isLoaded;
 	texture.isTilemap = textureCreateInfo.isTilemap;
@@ -244,7 +244,7 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	}
 
 	bindImageMemory(texture.vkDevice, texture.image.vkImage, texture.vkDeviceMemory, 0);
-	texture.image.vkImageView = createTextureImageView(texture, texture.image.vkImage);
+	texture.image.vkImageView = createTextureImageView(texture, textureCreateInfo, texture.image.vkImage);
 	texture.image.vkDevice = texture.vkDevice;
 
 	/* Transition texture image layout to something usable. */
@@ -301,7 +301,7 @@ bool deleteTexture(Texture *const pTexture) {
 	vkDestroyImage(pTexture->vkDevice, pTexture->image.vkImage, nullptr);
 	vkDestroyImageView(pTexture->vkDevice, pTexture->image.vkImageView, nullptr);
 	vkFreeMemory(pTexture->vkDevice, pTexture->vkDeviceMemory, nullptr);
-	*pTexture = makeNullTexture();
+	*pTexture = nullTexture;
 
 	return true;
 }

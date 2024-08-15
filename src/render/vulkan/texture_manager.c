@@ -52,7 +52,7 @@ void initTextureManager(void) {
 
 	// Nullify each texture first.
 	for (int i = 0; i < numTextures; ++i) {
-		textures[i] = makeNullTexture();
+		textures[i] = nullTexture;
 	}
 	
 	// Nullify texture records FIRST, hash-collision-resolution relies on records being null to begin with.
@@ -141,7 +141,7 @@ void textureManagerLoadTexture(const TextureCreateInfo textureCreateInfo) {
 		return;
 	}
 	
-	Texture texture = makeNullTexture();
+	Texture texture = nullTexture;
 	if (textureCreateInfo.isLoaded) {
 		texture = loadTexture(textureCreateInfo);
 	} else {

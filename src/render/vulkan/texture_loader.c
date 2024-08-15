@@ -41,7 +41,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	if (stringIsNull(textureCreateInfo.textureID)) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: texture ID is null.");
-		return makeNullTexture();
+		return nullTexture;
 	}
 
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading texture \"%s\"...", textureCreateInfo.textureID.pBuffer);
@@ -52,7 +52,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	if (textureCreateInfo.numAnimations > 0 && textureCreateInfo.animations == nullptr) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: number of animation create infos is greater than zero, but array of animation create infos is nullptr.");
-		return makeNullTexture();
+		return nullTexture;
 	}
 
 	Texture texture = createTexture(textureCreateInfo);

@@ -67,21 +67,20 @@ typedef struct TextureAnimation {
 
 typedef struct Texture {
 	
-	uint32_t numImageArrayLayers;
-	Image image;
-	
-	[[deprecated("moving format to iamge struct.")]]
-	VkFormat format;
-	
-	VkDeviceMemory vkDeviceMemory;
-	
-	VkDevice vkDevice;
-	
 	bool isLoaded;
 	bool isTilemap;
 	
 	uint32_t numAnimations;
 	TextureAnimation *animations;
+	
+	// TODO - maybe move this to Image.
+	uint32_t numImageArrayLayers;
+	
+	Image image;
+	
+	VkDeviceMemory vkDeviceMemory;
+	
+	VkDevice vkDevice;
 	
 } Texture;
 
@@ -111,8 +110,8 @@ extern const ImageUsage imageUsageComputeWrite;
 extern const ImageUsage imageUsageSampled;
 extern const ImageUsage imageUsageDepthAttachment;
 
-// Returns a null texture struct.
-Texture makeNullTexture(void);
+// Zeroed-out or "null" texture.
+extern const Texture nullTexture;
 
 // Returns true if the texture is "null" or empty, false otherwise.
 bool textureIsNull(const Texture texture);
