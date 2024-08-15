@@ -2,14 +2,14 @@
 
 #include <stdlib.h>
 
-bool allocate(void **ptr_ptr, const size_t num_objects, const size_t num_bytes_per_object) {
+bool allocate(void **ppObject, const size_t num_objects, const size_t num_bytes_per_object) {
 
-	// TODO - include automatic reallocation if ptr_ptr is not nullptr.
+	// TODO - include automatic reallocation if ppObject is not nullptr.
 
-	if (ptr_ptr != nullptr && num_objects > 0 && num_bytes_per_object > 0) {
+	if (ppObject != nullptr && num_objects > 0 && num_bytes_per_object > 0) {
 		void *ptr = calloc(num_objects, num_bytes_per_object);
 		if (ptr != nullptr) {
-			*ptr_ptr = ptr;
+			*ppObject = ptr;
 			return true;
 		}
 	}
@@ -18,9 +18,9 @@ bool allocate(void **ptr_ptr, const size_t num_objects, const size_t num_bytes_p
 	return false;
 }
 
-bool allocate_max(void **ptr_ptr, const size_t num_objects, const size_t num_bytes_per_object, const size_t max_num_objects) {
+bool allocate_max(void **ppObject, const size_t num_objects, const size_t num_bytes_per_object, const size_t max_num_objects) {
 
-	if (ptr_ptr != nullptr && num_objects > 0 && num_bytes_per_object > 0) {
+	if (ppObject != nullptr && num_objects > 0 && num_bytes_per_object > 0) {
 		size_t num_objects_to_allocate = num_objects;
 		if (num_objects_to_allocate > max_num_objects) {
 			num_objects_to_allocate = max_num_objects;
@@ -28,7 +28,7 @@ bool allocate_max(void **ptr_ptr, const size_t num_objects, const size_t num_byt
 		}
 		void *ptr = calloc(num_objects, num_bytes_per_object);
 		if (ptr != nullptr) {
-			*ptr_ptr = ptr;
+			*ppObject = ptr;
 			return true;
 		}
 	}
@@ -37,15 +37,14 @@ bool allocate_max(void **ptr_ptr, const size_t num_objects, const size_t num_byt
 	return false;
 }
 
-bool deallocate(void **ptr_ptr) {
-
-	if (ptr_ptr == nullptr) {
+bool deallocate(void **const ppObject) {
+	if (!ppObject) {
 		return false;
 	}
 
-	if (*ptr_ptr != nullptr) {
-		free(*ptr_ptr);
-		*ptr_ptr = nullptr;
+	if (*ppObject != nullptr) {
+		free(*ppObject);
+		*ppObject = nullptr;
 	}
 
 	return true;

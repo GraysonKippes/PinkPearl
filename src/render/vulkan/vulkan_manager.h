@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
-//#include "ComputePipeline.h"
 #include "frame.h"
 #include "memory.h"
 #include "physical_device.h"

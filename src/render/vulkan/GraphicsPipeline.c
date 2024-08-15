@@ -173,6 +173,7 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Graphics pipeline creation failed (error code: %i).", result);
 	}
+	pipeline.vkDevice = vkDevice;
 
 	return pipeline;
 }

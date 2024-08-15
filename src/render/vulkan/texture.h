@@ -9,6 +9,8 @@
 #include "math/extent.h"
 #include "util/string.h"
 
+/* -- IMAGE OBJECT and FUNCTIONALITY -- */
+
 // Describes the usage of an image inside the GPU.
 typedef struct ImageUsage {
 	VkPipelineStageFlags2	pipelineStageMask;	// All pipeline stages in which the image is used.
@@ -16,7 +18,19 @@ typedef struct ImageUsage {
 	VkImageLayout			imageLayout;		// The current layout of the image.
 } ImageUsage;
 
+typedef struct ImageSubresourceRange {
+	VkImageAspectFlags 	imageAspectMask;
+	uint32_t 			baseArrayLayer;
+	uint32_t 			arrayLayerCount;
+} ImageSubresourceRange;
+
 typedef struct Image {
+
+	// Description of image usage.
+	ImageUsage usage;
+	
+	// Size of the texture in texels.
+	Extent extent;
 	
 	// Handle to the Vulkan image.
 	VkImage vkImage;
@@ -25,21 +39,25 @@ typedef struct Image {
 	VkImageView vkImageView;
 	
 	// Format of this image.
-	VkFormat vkFormat;	
-
-	// Description of image usage.
-	ImageUsage usage;
+	VkFormat vkFormat;
 	
-	// Size of the texture in texels.
-	Extent extent;
+	// The Vulkan device with which this image was created.
+	VkDevice vkDevice;
 	
 } Image;
 
-typedef struct ImageSubresourceRange {
-	VkImageAspectFlags 	imageAspectMask;
-	uint32_t 			baseArrayLayer;
-	uint32_t 			arrayLayerCount;
-} ImageSubresourceRange;
+// Checks if the Vulkan object handles are not null and all the image properties are valid.
+// Returns true if the image is valid, false otherwise.
+bool validateImage(const Image image);
+
+// Only checks if the Vulkan object handles are not null, meant to be used for object deletion.
+// Returns true if the image is valid, false otherwise.
+bool weaklyValidateImage(const Image image);
+
+// Destroys the Vulkan objects associated with this image and resets all the handles and other image properties.
+bool deleteImage(Image *const pImage);
+
+/* -- TEXTURE OBJECT and FUNCTIONALITY -- */
 
 typedef struct TextureAnimation {
 	uint32_t startCell;
@@ -51,11 +69,13 @@ typedef struct Texture {
 	
 	uint32_t numImageArrayLayers;
 	Image image;
+	
 	[[deprecated("moving format to iamge struct.")]]
 	VkFormat format;
 	
-	VkDeviceMemory memory;
-	VkDevice device;
+	VkDeviceMemory vkDeviceMemory;
+	
+	VkDevice vkDevice;
 	
 	bool isLoaded;
 	bool isTilemap;

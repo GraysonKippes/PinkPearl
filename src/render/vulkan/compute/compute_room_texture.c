@@ -32,6 +32,7 @@ static const DescriptorSetLayout compute_room_texture_layout = {
 static Pipeline computeRoomTexturePipeline;
 
 static Image transferImage;
+
 static VkDeviceMemory transferImageMemory;
 
 // Subresource range used in all image views and layout transitions.
@@ -87,6 +88,7 @@ static void createTransferImage(const VkDevice vkDevice) {
 	};
 	vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &transferImage.vkImage);
 	transferImage.vkFormat = VK_FORMAT_R8G8B8A8_UINT;
+	transferImage.extent = imageDimensions;
 	
 	// Allocate memory for the image and bind the image to it.
 	const VkMemoryRequirements2 imageMemoryRequirements = getImageMemoryRequirements(vkDevice, transferImage.vkImage);
@@ -136,7 +138,9 @@ static void createTransferImage(const VkDevice vkDevice) {
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 	transferImage.usage = imageUsageComputeWrite;
 	
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done creating texture stitching transfer image.");
+	transferImage.vkDevice = vkDevice;
+	
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created texture stitching transfer image.");
 }
 
 void init_compute_room_texture(const VkDevice vkDevice) {
@@ -147,7 +151,9 @@ void init_compute_room_texture(const VkDevice vkDevice) {
 }
 
 void terminate_compute_room_texture(void) {
-	destroyPipeline(&computeRoomTexturePipeline);
+	vkFreeMemory(transferImage.vkDevice, transferImageMemory, nullptr);
+	deleteImage(&transferImage);
+	deletePipeline(&computeRoomTexturePipeline);
 }
 
 void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint32_t **tileIndices) {

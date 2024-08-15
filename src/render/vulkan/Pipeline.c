@@ -2,8 +2,20 @@
 
 #include "log/Logger.h"
 
-bool destroyPipeline(Pipeline *const pPipeline) {
+bool validatePipeline(const Pipeline pipeline) {
+	return pipeline.vkPipeline != VK_NULL_HANDLE
+		&& pipeline.vkPipelineLayout != VK_NULL_HANDLE
+		&& pipeline.vkDescriptorPool != VK_NULL_HANDLE
+		&& pipeline.vkDescriptorSetLayout != VK_NULL_HANDLE
+		&& pipeline.vkDevice != VK_NULL_HANDLE;
+}
+
+bool deletePipeline(Pipeline *const pPipeline) {
 	if (!pPipeline) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error destroying pipeline: pointer to pipeline object is null.");
+		return false;
+	} else if (!validatePipeline(*pPipeline)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error destroying pipeline: pipeline object is invalid.");
 		return false;
 	}
 	

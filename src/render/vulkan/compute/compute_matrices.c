@@ -54,7 +54,7 @@ bool init_compute_matrices(const VkDevice vkDevice) {
 	const VkResult descriptor_set_allocate_result = vkAllocateDescriptorSets(vkDevice, &descriptor_set_allocate_info, &compute_matrices_descriptor_set);
 	if (descriptor_set_allocate_result < 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: descriptor set allocation failed (result code: %i).", descriptor_set_allocate_result);
-		destroyPipeline(&compute_matrices_pipeline);
+		deletePipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (descriptor_set_allocate_result > 0) {
@@ -70,7 +70,7 @@ bool init_compute_matrices(const VkDevice vkDevice) {
 	const VkResult semaphore_create_result = vkCreateSemaphore(vkDevice, &semaphore_create_info, nullptr, &compute_matrices_semaphore);
 	if (semaphore_create_result < 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: semaphore creation failed (result code: %i).", semaphore_create_result);
-		destroyPipeline(&compute_matrices_pipeline);
+		deletePipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (semaphore_create_result > 0) {
@@ -87,7 +87,7 @@ bool init_compute_matrices(const VkDevice vkDevice) {
 	if (fence_create_result < 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: fence creation failed (result code: %i).", fence_create_result);
 		vkDestroySemaphore(vkDevice, compute_matrices_semaphore, nullptr);
-		destroyPipeline(&compute_matrices_pipeline);
+		deletePipeline(&compute_matrices_pipeline);
 		return false;
 	}
 	else if (fence_create_result > 0) {
@@ -100,7 +100,7 @@ bool init_compute_matrices(const VkDevice vkDevice) {
 void terminate_compute_matrices(void) {
 	vkDestroyFence(compute_matrices_pipeline.vkDevice, compute_matrices_fence, nullptr);
 	vkDestroySemaphore(compute_matrices_pipeline.vkDevice, compute_matrices_semaphore, nullptr);
-	destroyPipeline(&compute_matrices_pipeline);
+	deletePipeline(&compute_matrices_pipeline);
 }
 
 void computeMatrices(const float deltaTime, const ProjectionBounds projectionBounds, const Vector4F cameraPosition, const RenderTransform *const transforms) {

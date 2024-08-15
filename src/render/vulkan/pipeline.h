@@ -22,7 +22,9 @@ typedef struct Pipeline {
 
 } Pipeline;
 
-bool destroyPipeline(Pipeline *const pPipeline);
+bool validatePipeline(const Pipeline pipeline);
+
+bool deletePipeline(Pipeline *const pPipeline);
 
 VkPipelineLayout createPipelineLayout(VkDevice vkDevice, VkDescriptorSetLayout vkDescriptorSetLayout);
 

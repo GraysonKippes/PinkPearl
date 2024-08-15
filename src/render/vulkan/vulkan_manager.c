@@ -30,14 +30,23 @@ const int vkConfMaxNumQuads = VK_CONF_MAX_NUM_QUADS;
 /* -- Vulkan Objects -- */
 
 static vulkan_instance_t vulkan_instance = { };
+
 static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
+
 VkSurfaceKHR surface = VK_NULL_HANDLE;
+
 physical_device_t physical_device = { };
+
 memory_type_set_t memory_type_set = { };
+
 VkDevice device = VK_NULL_HANDLE;
+
 Swapchain swapchain = { };
+
 Pipeline graphicsPipeline = { };
+
 VkRenderPass renderPass = VK_NULL_HANDLE;
+
 VkSampler imageSamplerDefault = VK_NULL_HANDLE;
 
 /* -- Queues -- */
@@ -175,7 +184,7 @@ static void create_global_draw_data_buffer(void) {
 }
 
 void create_vulkan_objects(void) {
-	logMsg(loggerVulkan, LOG_LEVEL_INFO, "Initializing Vulkan...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initializing Vulkan...");
 
 	vulkan_instance = create_vulkan_instance();
 
@@ -204,7 +213,7 @@ void create_vulkan_objects(void) {
 	commandPoolTransfer = createCommandPool(device, *physical_device.queue_family_indices.transfer_family_ptr, true, true);
 	commandPoolCompute = createCommandPool(device, *physical_device.queue_family_indices.compute_family_ptr, true, false);
 
-	swapchain = create_swapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
+	swapchain = createSwapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
 	
 	renderPass = createRenderPass(device, swapchain.image_format);
 	
@@ -241,11 +250,11 @@ void destroy_vulkan_objects(void) {
 
 	vkDestroySampler(device, imageSamplerDefault, nullptr);
 
-	destroyPipeline(&graphicsPipeline);
+	deletePipeline(&graphicsPipeline);
 	
 	vkDestroyRenderPass(device, renderPass, nullptr);
 	
-	destroy_swapchain(device, swapchain);
+	deleteSwapchain(device, swapchain);
 	
 	deleteCommandPool(&commandPoolGraphics);
 	deleteCommandPool(&commandPoolTransfer);
@@ -261,5 +270,5 @@ void destroy_vulkan_objects(void) {
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done destroying Vulkan objects.");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroyed Vulkan objects.");
 }

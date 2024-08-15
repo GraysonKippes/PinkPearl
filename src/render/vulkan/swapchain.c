@@ -56,7 +56,7 @@ VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, 
 	return actualExtent;
 }
 
-Swapchain create_swapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle) {
+Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating swapchain...");
 
 	Swapchain swapchain;
@@ -175,7 +175,7 @@ void create_framebuffers(const VkDevice device, const VkRenderPass renderPass, S
 	}
 }
 
-void destroy_swapchain(VkDevice device, Swapchain swapchain) {
+void deleteSwapchain(VkDevice device, Swapchain swapchain) {
 
 	for (size_t i = 0; i < swapchain.num_images; ++i) {
 		vkDestroyImageView(device, swapchain.image_views[i], nullptr);

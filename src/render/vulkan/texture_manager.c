@@ -88,10 +88,12 @@ void initTextureManager(void) {
 void terminateTextureManager(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Terminating texture manager....");
 	for (int i = 0; i < numTextures; ++i) {
-		deleteTexture(&textures[i]);
+		if (!textureIsNull(textures[i])) {
+			deleteTexture(&textures[i]);
+		}
 	}
 	textureManagerInitialized = false;
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done terminating texture manager.");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Terminated texture manager.");
 }
 
 bool textureManagerLoadTexturePack(const TexturePack texturePack) {

@@ -54,6 +54,50 @@ const ImageUsage imageUsageDepthAttachment = {
 	.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 };
 
+bool validateImage(const Image image) {
+	return image.usage.pipelineStageMask != VK_PIPELINE_STAGE_2_NONE
+		&& image.usage.memoryAccessMask != VK_ACCESS_NONE
+		&& image.usage.imageLayout != VK_IMAGE_LAYOUT_UNDEFINED
+		&& image.extent.length > 0
+		&& image.extent.width > 0
+		&& image.vkImage != VK_NULL_HANDLE
+		&& image.vkImageView != VK_NULL_HANDLE
+		&& image.vkFormat != VK_FORMAT_UNDEFINED
+		&& image.vkDevice != VK_NULL_HANDLE;
+}
+
+bool weaklyValidateImage(const Image image) {
+	return image.vkImage != VK_NULL_HANDLE
+		&& image.vkImageView != VK_NULL_HANDLE
+		&& image.vkDevice != VK_NULL_HANDLE;
+}
+
+bool deleteImage(Image *const pImage) {
+	if (!pImage) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting image: pointer to image object is null.");
+		return false;
+	} else if (!weaklyValidateImage(*pImage)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting image: image object is invalid (image = { .usage = { .pipelineStageMask = 0x%llX, .memoryAccessMask = 0x%llX, .imageLayout = 0x%llX }, .extent = { .width = %u, .length = %u }, .vkImage = %p, .vkImageView = %p, vkFormat = 0x%llX, .vkDevice = %p }).", 
+				pImage->usage.pipelineStageMask, pImage->usage.memoryAccessMask, pImage->usage.imageLayout, pImage->extent.width, pImage->extent.length, pImage->vkImage, pImage->vkImageView, pImage->vkFormat, pImage->vkDevice);
+		return false;
+	}
+	
+	// Destroy the Vulkan objects associated with the image struct.
+	vkDestroyImage(pImage->vkDevice, pImage->vkImage, nullptr);
+	vkDestroyImageView(pImage->vkDevice, pImage->vkImageView, nullptr);
+	
+	// Nullify the handles inside the struct.
+	pImage->vkImage = VK_NULL_HANDLE;
+	pImage->vkImageView = VK_NULL_HANDLE;
+	pImage->vkDevice = VK_NULL_HANDLE;
+	
+	// Reset other information attached to the image.
+	pImage->usage = imageUsageUndefined;
+	pImage->extent = (Extent){ 0, 0 };
+
+	return true;
+}
+
 Texture makeNullTexture(void) {
 	return (Texture){
 		.numAnimations = 0,
@@ -65,8 +109,8 @@ Texture makeNullTexture(void) {
 			.usage = imageUsageUndefined
 		},
 		.format = VK_FORMAT_UNDEFINED,
-		.memory = VK_NULL_HANDLE,
-		.device = VK_NULL_HANDLE
+		.vkDeviceMemory = VK_NULL_HANDLE,
+		.vkDevice = VK_NULL_HANDLE
 	};
 }
 
@@ -74,8 +118,8 @@ bool textureIsNull(const Texture texture) {
 	return texture.numImageArrayLayers == 0
 		|| texture.image.vkImage == VK_NULL_HANDLE
 		|| texture.image.vkImageView == VK_NULL_HANDLE
-		|| texture.memory == VK_NULL_HANDLE
-		|| texture.device == VK_NULL_HANDLE;
+		|| texture.vkDeviceMemory == VK_NULL_HANDLE
+		|| texture.vkDevice == VK_NULL_HANDLE;
 }
 
 static VkFormat getTextureImageFormat(const TextureCreateInfo textureCreateInfo) {
@@ -125,10 +169,11 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 	};
 
 	VkImage vkImage = VK_NULL_HANDLE;
-	const VkResult imageCreateResult = vkCreateImage(texture.device, &imageCreateInfo, nullptr, &vkImage);
+	const VkResult imageCreateResult = vkCreateImage(texture.vkDevice, &imageCreateInfo, nullptr, &vkImage);
 	if (imageCreateResult != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating texture: image creation failed (error code: %i).", imageCreateResult);
 	}
+	
 	return vkImage;
 }
 
@@ -159,7 +204,7 @@ static VkImageView createTextureImageView(const Texture texture, const VkImage v
 	};
 
 	VkImageView vkImageView = VK_NULL_HANDLE;
-	const VkResult result = vkCreateImageView(texture.device, &imageViewCreateInfo, nullptr, &vkImageView);
+	const VkResult result = vkCreateImageView(texture.vkDevice, &imageViewCreateInfo, nullptr, &vkImageView);
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating texture: image view creation failed (error code: %i).", result);
 	}
@@ -172,7 +217,7 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	texture.numAnimations = textureCreateInfo.numAnimations;
 	texture.numImageArrayLayers = textureCreateInfo.numCells.width * textureCreateInfo.numCells.length;
 	texture.format = getTextureImageFormat(textureCreateInfo);
-	texture.device = device;	// TODO - pass vkDevice through parameters, not global state.
+	texture.vkDevice = device;	// TODO - pass vkDevice through parameters, not global state.
 	texture.isLoaded = textureCreateInfo.isLoaded;
 	texture.isTilemap = textureCreateInfo.isTilemap;
 
@@ -183,7 +228,7 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	texture.image.extent = textureCreateInfo.cellExtent;
 
 	// Allocate memory for the texture image.
-	const VkMemoryRequirements2 imageMemoryRequirements = getImageMemoryRequirements(texture.device, texture.image.vkImage);
+	const VkMemoryRequirements2 imageMemoryRequirements = getImageMemoryRequirements(texture.vkDevice, texture.image.vkImage);
 	const VkMemoryAllocateInfo allocateInfo = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.pNext = nullptr,
@@ -191,20 +236,21 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 		.memoryTypeIndex = memory_type_set.graphics_resources
 	};
 
-	const VkResult memoryAllocationResult = vkAllocateMemory(texture.device, &allocateInfo, nullptr, &texture.memory);
+	const VkResult memoryAllocationResult = vkAllocateMemory(texture.vkDevice, &allocateInfo, nullptr, &texture.vkDeviceMemory);
 	if (memoryAllocationResult != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: failed to allocate memory (error code: %i).", memoryAllocationResult);
 		deleteTexture(&texture);
 		return texture;
 	}
 
-	bindImageMemory(texture.device, texture.image.vkImage, texture.memory, 0);
+	bindImageMemory(texture.vkDevice, texture.image.vkImage, texture.vkDeviceMemory, 0);
 	texture.image.vkImageView = createTextureImageView(texture, texture.image.vkImage);
+	texture.image.vkDevice = texture.vkDevice;
 
 	/* Transition texture image layout to something usable. */
 
 	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(texture.device, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
+	allocCmdBufs(texture.vkDevice, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 		
 		ImageUsage imageUsage;
@@ -243,13 +289,18 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
 bool deleteTexture(Texture *const pTexture) {
 	if (!pTexture) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting texture: pointer to texture object is null.");
+		return false;
+	} else if (textureIsNull(*pTexture)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting texture: texture object is invalid.");
 		return false;
 	}
 	
-	deallocate((void **)&pTexture->animations);
-	vkDestroyImage(pTexture->device, pTexture->image.vkImage, nullptr);
-	vkDestroyImageView(pTexture->device, pTexture->image.vkImageView, nullptr);
-	vkFreeMemory(pTexture->device, pTexture->memory, nullptr);
+	// TODO - implement allocator objects for each type of allocation (i.e. heap, stack, text, arena).
+	//deallocate((void **)&pTexture->animations);
+	vkDestroyImage(pTexture->vkDevice, pTexture->image.vkImage, nullptr);
+	vkDestroyImageView(pTexture->vkDevice, pTexture->image.vkImageView, nullptr);
+	vkFreeMemory(pTexture->vkDevice, pTexture->vkDeviceMemory, nullptr);
 	*pTexture = makeNullTexture();
 
 	return true;
