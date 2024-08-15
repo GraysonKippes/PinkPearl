@@ -42,7 +42,7 @@ static DrawData drawDatas[VK_CONF_MAX_NUM_QUADS];
 // Stores IDs for unused quads.
 Stack inactiveQuadIDs;
 
-// Render object quad fields
+/* -- Quad object fields -- */
 
 // Maps a quad ID to a draw data in the GPU.
 uint32_t quadDrawDataIndices[VK_CONF_MAX_NUM_QUADS];
@@ -52,6 +52,8 @@ RenderTransform quadTransforms[VK_CONF_MAX_NUM_QUADS];
 
 // Texture state of each quad.
 TextureState quadTextureStates[VK_CONF_MAX_NUM_QUADS];
+
+/* -- Function Declarations -- */
 
 static bool uploadQuadMesh(const int quadID, const BoxF quadDimensions);
 
@@ -142,9 +144,18 @@ int loadQuad(const BoxF quadDimensions, const Vector4F quadPosition, const Textu
 	return quadID;
 }
 
-void unloadQuad(const int quadID) {
-	removeDrawData(quadID);
-	stackPush(&inactiveQuadIDs, &quadID);
+void unloadQuad(int *const pQuadID) {
+	if (!pQuadID) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error unloading quad: pointer to quad ID is null.");
+		return;
+	} else if (!validateQuadID(*pQuadID)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error unloading quad: quad ID (%i) is invalid.", *pQuadID);
+		return;
+	}
+	
+	removeDrawData(*pQuadID);
+	stackPush(&inactiveQuadIDs, pQuadID);
+	*pQuadID = -1;
 }
 
 bool validateQuadID(const int quadID) {
@@ -280,6 +291,7 @@ static void insertDrawData(const int quadID, const float quadDepth, const unsign
 		return;
 	}
 	
+	// Iterate over the already loaded quads to compare depth and determine where to insert this quad.
 	uint32_t insertIndex = drawDataCount;
 	for (uint32_t i = 0; i < drawDataCount; ++i) {
 		const float otherDepth = quadTransforms[drawDatas[i].quadID].translation.current.z;
@@ -289,61 +301,66 @@ static void insertDrawData(const int quadID, const float quadDepth, const unsign
 		}
 	}
 	
+	// Move each draw data after the inserted draw data forward one place.
 	for (uint32_t i = drawDataCount; i > insertIndex; --i) {
 		drawDatas[i] = drawDatas[i - 1];
 		quadDrawDataIndices[drawDatas[i].quadID] = i;
 	}
+	
+	// Insert the new draw data.
 	drawDatas[insertIndex] = makeDrawData(quadID, imageIndex);
 	quadDrawDataIndices[quadID] = insertIndex;
 	drawDataCount += 1;
 	
 	// TODO - cut the partition crap and just do one mapped memory.
-	byte_t *draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
+	uint8_t *const draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
 	memcpy(draw_count_mapped_memory, &drawDataCount, sizeof(drawDataCount));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 	
-	byte_t *draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	uint8_t *const draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
 	memcpy(draw_data_mapped_memory, drawDatas, drawDataCount * sizeof(drawDatas[0]));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
 static void removeDrawData(const int quadID) {
-	if (!validateQuadID(quadID)) {
-		return;
-	}
 	
 	// Get the index of the draw data associated with the quad.
 	const uint32_t drawDataIndex = quadDrawDataIndices[quadID];
 	if (drawDataIndex >= drawDataCount) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error removing draw data: quad's draw data index (%u) is not less than draw data count (%u) (quad ID = %i).", drawDataIndex, drawDataCount, quadID);
 		return;
 	}
 	
 	// Remove the draw data associated with the quad.
 	drawDataCount -= 1;
-	// Move each draw data back one place.
+	// Move each draw data ahead of the removed draw data forward one place.
 	for (uint32_t i = drawDataIndex; i < drawDataCount; ++i) {
-		// i = index of the draw data after moved back one place.
-		// i + 1 = index of the draw data before moved back one place.
-		drawDatas[i] = drawDatas[i + 1];
+		// i = index of the draw data after being moved forward one place.
+		// i + 1 = index of the draw data before being moved forward one place.
+		drawDatas[i] = drawDatas[i + 1];	// Copy the next draw data into this place.
 		quadDrawDataIndices[drawDatas[i].quadID] = i;
 	}
 	
 	// TODO - cut the partition crap and just do one mapped memory.
-	byte_t *draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
+	uint8_t *const draw_count_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
 	memcpy(draw_count_mapped_memory, &drawDataCount, sizeof(drawDataCount));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 	
-	byte_t *draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	uint8_t *const draw_data_mapped_memory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
 	memcpy(draw_data_mapped_memory, drawDatas, drawDataCount * sizeof(drawDatas[0]));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
 void updateDrawData(const int quadID, const unsigned int imageIndex) {
+	if (!validateQuadID(quadID)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error updating draw data: quad ID (%i) is invalid.", quadID);
+		return;
+	}
 	
 	const uint32_t drawDataIndex = quadDrawDataIndices[quadID];
 	drawDatas[drawDataIndex] = makeDrawData(quadID, imageIndex);
 	
-	byte_t *drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	uint8_t *const drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
 	memcpy(&drawDataMappedMemory[drawDataIndex * sizeof(DrawData)], &drawDatas[drawDataIndex], sizeof(DrawData));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }

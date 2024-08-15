@@ -44,7 +44,8 @@ void start_game(void) {
 		.maxSpawnCount = 5
 	};
 	
-	entitySpawnerReload(&testEntitySpawner);
+	//entitySpawnerReload(&testEntitySpawner);
+	testEntitySpawner.spawnCounter = 5;
 	entitySpawnerSpawnEntities(&testEntitySpawner);
 }
 

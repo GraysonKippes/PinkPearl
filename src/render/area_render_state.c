@@ -244,8 +244,6 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	};
 	
 	computeStitchTexture(pAreaRenderState->tilemapTextureState.textureHandle, textureHandle, imageSubresourceRange, room.extent, room.ppTileIndices);
-	//renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[cacheSlot], 0, 0);
-	//renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[cacheSlot], 1, 1);
 	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[cacheSlot], 0, cacheSlot * num_room_layers);
 	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[cacheSlot], 1, cacheSlot * num_room_layers + 1);
 }

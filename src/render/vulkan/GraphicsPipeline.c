@@ -15,7 +15,7 @@
 
 static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(void);
 
-static VkPipelineViewportStateCreateInfo makePipelineViewportStateCreateInfo(VkViewport *pViewport, VkRect2D *pScissor);
+static VkPipelineViewportStateCreateInfo makePipelineViewportStateCreateInfo(const VkViewport *const pViewport, const VkRect2D *const pScissor);
 
 static VkPipelineRasterizationStateCreateInfo makePipelineRasterizationStateCreateInfo(void);
 
@@ -23,7 +23,7 @@ static VkPipelineMultisampleStateCreateInfo makePipelineMultisampleStateCreateIn
 
 static VkPipelineColorBlendAttachmentState makePipelineColorBlendAttachmentState(void);
 
-static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(VkPipelineColorBlendAttachmentState attachmentState[static 1]);
+static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendAttachmentState *const pAttachmentState);
 
 /* -- FUNCTION DEFINITIONS -- */
 
@@ -187,7 +187,7 @@ static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCrea
 	};
 }
 
-static VkPipelineViewportStateCreateInfo makePipelineViewportStateCreateInfo(VkViewport *pViewport, VkRect2D *pScissor) {
+static VkPipelineViewportStateCreateInfo makePipelineViewportStateCreateInfo(const VkViewport *const pViewport, const VkRect2D *const pScissor) {
 	return (VkPipelineViewportStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
 		.pNext = nullptr,
@@ -244,7 +244,7 @@ static VkPipelineColorBlendAttachmentState makePipelineColorBlendAttachmentState
 	};
 }
 
-static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(VkPipelineColorBlendAttachmentState attachmentState[static 1]) {
+static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendAttachmentState *const pAttachmentState) {
 	return (VkPipelineColorBlendStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 		.pNext = nullptr,
@@ -252,8 +252,7 @@ static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo
 		.logicOpEnable = VK_FALSE,
 		.logicOp = VK_LOGIC_OP_COPY,
 		.attachmentCount = 1,
-		.pAttachments = attachmentState,
+		.pAttachments = pAttachmentState,
 		.blendConstants = { 0.0F, 0.0F, 0.0F, 0.0F }
 	};
-	
 }

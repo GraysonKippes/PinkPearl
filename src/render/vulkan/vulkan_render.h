@@ -21,7 +21,7 @@ void destroyVulkanRenderObjects(void);
 void initTextureDescriptors(void);
 
 int loadQuad(const BoxF quadDimensions, const Vector4F quadPosition, const TextureState quadTextureState);
-void unloadQuad(const int quadID);
+void unloadQuad(int *const pQuadID);
 bool validateQuadID(const int quadID);
 
 // Quad transform mutators.

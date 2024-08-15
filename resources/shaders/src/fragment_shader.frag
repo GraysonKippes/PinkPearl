@@ -5,14 +5,14 @@
 
 struct DrawData {
 	// Indirect draw info
-	uint index_count;
-	uint instance_count;
-	uint first_index;
-	int vertex_offset;
-	uint first_instance;
+	uint indexCount;
+	uint instanceCount;
+	uint firstIndex;
+	int vertexOffset;
+	uint firstInstance;
 	// Additional draw data
-	int render_object_slot;
-	uint image_index;
+	int quadID;
+	uint imageIndex;
 };
 
 layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
@@ -63,8 +63,8 @@ void main() {
 	texel_position.x = floor(in_position.x * 16.0) / 16.0;
 	texel_position.y = floor(in_position.y * 16.0) / 16.0;
 
-	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.image_index));
-	out_color = texture(texture_samplers[draw_info.render_object_slot], texture_coordinates) * vec4(in_color, 1.0);
+	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.imageIndex));
+	out_color = texture(texture_samplers[draw_info.quadID], texture_coordinates) * vec4(in_color, 1.0);
 	
 	/* Apply lighting
 	out_color.rgb *= (lighting_data.ambient_lighting.color * lighting_data.ambient_lighting.intensity);

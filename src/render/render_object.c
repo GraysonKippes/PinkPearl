@@ -77,7 +77,7 @@ void unloadRenderObject(int *const pRenderHandle) {
 	
 	for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
 		if (validateQuadID(renderObjQuadIDs[*pRenderHandle][i])) {
-			unloadQuad(renderObjQuadIDs[*pRenderHandle][i]);
+			unloadQuad(&renderObjQuadIDs[*pRenderHandle][i]);
 		}
 	}
 	
