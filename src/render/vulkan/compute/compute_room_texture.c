@@ -77,7 +77,7 @@ static void createTransferImage(const VkDevice vkDevice) {
 		.extent.height = imageDimensions.length,
 		.extent.depth = 1,
 		.mipLevels = 1,
-		.arrayLayers = num_room_layers,
+		.arrayLayers = numRoomLayers,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = VK_IMAGE_TILING_OPTIMAL,
 		.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
@@ -226,7 +226,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	cmdBufBegin(cmdBufCompute, true); {
 		vkCmdBindPipeline(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipeline);
 		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipelineLayout, 0, 1, &descriptor_set, 0, nullptr);
-		vkCmdDispatch(cmdBufCompute, tileExtent.width, tileExtent.length, num_room_layers);
+		vkCmdDispatch(cmdBufCompute, tileExtent.width, tileExtent.length, numRoomLayers);
 	} vkEndCommandBuffer(cmdBufCompute);
 	submit_command_buffers_async(queueCompute, 1, &cmdBufCompute);
 	vkFreeCommandBuffers(device, commandPoolCompute.vkCommandPool, 1, &cmdBufCompute);

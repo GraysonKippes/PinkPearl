@@ -46,7 +46,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	}
 	
 	const int renderHandle = loadRenderObject(entityRecord.textureID, entityRecord.textureDimensions, 1, &initPosition);
-	if (!validateRenderHandle(renderHandle)) {
+	if (!validateRenderObjectHandle(renderHandle)) {
 		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to load render object.");
 		return entityHandleInvalid;
 	}

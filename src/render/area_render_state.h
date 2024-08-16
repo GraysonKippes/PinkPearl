@@ -14,15 +14,28 @@
 #include "render_config.h"
 #include "texture_state.h"
 
-// TODO - rename to AreaRenderObject.
+typedef struct RoomRenderState {
+	
+	int roomID;
+	
+	// Contains the index for each quad of this room.
+	// Each room layer has one quad.
+	int quadIndices[NUM_ROOM_LAYERS];
+	
+} RoomRenderState;
+
 typedef struct AreaRenderState {
 	
 	BoxI areaExtent;
+	
 	RoomSize roomSize;
 	
 	// The render object handle for each room in the room cache.
 	// TODO - switch to using a single render object for the entire area, with quads for each room/layer.
+	[[deprecated]]
 	int roomRenderObjHandles[NUM_ROOM_TEXTURE_CACHE_SLOTS];
+	
+	int renderObjectHandle;
 	
 	TextureState tilemapTextureState;
 	

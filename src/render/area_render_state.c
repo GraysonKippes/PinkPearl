@@ -77,7 +77,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const Area ar
 		pAreaRenderState->roomIDsToPositions[i] = area.pRooms[i].position;
 	}
 	
-	for (uint32_t i = 0; i < num_room_texture_cache_slots; ++i) {
+	for (uint32_t i = 0; i < numRoomTextureCacheSlots; ++i) {
 		pAreaRenderState->roomRenderObjHandles[i] = -1;
 		pAreaRenderState->cacheSlotsToRoomIDs[i] = UINT32_MAX;
 	}
@@ -94,7 +94,7 @@ void areaRenderStateReset(AreaRenderState *const pAreaRenderState, const Area ar
 	
 	areaRenderStateLoadRoomQuad(pAreaRenderState, pAreaRenderState->currentCacheSlot, initialRoom);
 	
-	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Done resetting area render state.");
+	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Reset area render state.");
 }
 
 bool areaRenderStateIsScrolling(const AreaRenderState areaRenderState) {
@@ -113,7 +113,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const R
 	
 	// Check if the next room is already loaded.
 	bool roomAlreadyLoaded = false;
-	for (uint32_t i = 0; i < num_room_texture_cache_slots; ++i) {
+	for (uint32_t i = 0; i < numRoomTextureCacheSlots; ++i) {
 		if (pAreaRenderState->cacheSlotsToRoomIDs[i] == roomID) {
 			roomAlreadyLoaded = true;
 			nextCacheSlot = i;
@@ -123,7 +123,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const R
 	
 	// If the room is not already loaded, find the first cache slot not being used.
 	if (!roomAlreadyLoaded) {
-		for (uint32_t i = 0; i < num_room_texture_cache_slots; ++i) {
+		for (uint32_t i = 0; i < numRoomTextureCacheSlots; ++i) {
 			if (i != pAreaRenderState->currentCacheSlot) {
 				nextCacheSlot = i;
 			}
@@ -203,17 +203,17 @@ ProjectionBounds areaRenderStateGetProjectionBounds(const AreaRenderState areaRe
 	};
 }
 
-static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState, const uint32_t cacheSlot, const Room room) {
+static int areaRenderStateGetRoomQuadIndex(const AreaRenderState areaRenderState, const int roomCacheSlot, const int roomLayer) {
+	return areaRenderState.roomQuadIndices[roomCacheSlot * numRoomTextureCacheSlots + roomLayer];
+}
+
+static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState, const unsigned int roomCacheSlot, const Room room) {
 	if (!pAreaRenderState) {
 		return;
 	}
 	
-	// If there already is a room render object in the cache slot, then unload it first.
-	if (validateRenderHandle(pAreaRenderState->roomRenderObjHandles[cacheSlot])) {
-		unloadRenderObject(&pAreaRenderState->roomRenderObjHandles[cacheSlot]);
-	}
-	
 	const Extent roomExtent = room_size_to_extent(room.size);
+	
 	const BoxF roomQuadDimensions = {
 		.x1 = -0.5F * roomExtent.width,
 		.y1 = -0.5F * roomExtent.length,
@@ -234,16 +234,21 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 		}
 	};
 	
-	pAreaRenderState->roomRenderObjHandles[cacheSlot] = loadRenderObject(roomSizeToTextureID(room.size), roomQuadDimensions, 2, roomLayerPositions);
+	// If there already is a room render object in the cache slot, then unload it first.
+	if (validateRenderObjectHandle(pAreaRenderState->roomRenderObjHandles[roomCacheSlot])) {
+		unloadRenderObject(&pAreaRenderState->roomRenderObjHandles[roomCacheSlot]);
+	}
 	
-	const int textureHandle = renderObjectGetTextureHandle(pAreaRenderState->roomRenderObjHandles[cacheSlot], 0);
+	pAreaRenderState->roomRenderObjHandles[roomCacheSlot] = loadRenderObject(roomSizeToTextureID(room.size), roomQuadDimensions, 2, roomLayerPositions);
+	
+	const int textureHandle = renderObjectGetTextureHandle(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0);
 	const ImageSubresourceRange imageSubresourceRange = {
 		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseArrayLayer = cacheSlot * num_room_layers,
-		.arrayLayerCount = num_room_layers
+		.baseArrayLayer = roomCacheSlot * numRoomLayers,
+		.arrayLayerCount = numRoomLayers
 	};
 	
 	computeStitchTexture(pAreaRenderState->tilemapTextureState.textureHandle, textureHandle, imageSubresourceRange, room.extent, room.ppTileIndices);
-	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[cacheSlot], 0, cacheSlot * num_room_layers);
-	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[cacheSlot], 1, cacheSlot * num_room_layers + 1);
+	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0, roomCacheSlot * numRoomLayers);
+	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 1, roomCacheSlot * numRoomLayers + 1);
 }

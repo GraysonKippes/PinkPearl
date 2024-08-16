@@ -131,11 +131,11 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 	
 	// Allocate tile indices arrays.
 	const uint64_t numTiles = extentArea(pRoom->extent);
-	if (!allocate((void **)&pRoom->ppTileIndices, num_room_layers, sizeof(uint32_t *))) {
+	if (!allocate((void **)&pRoom->ppTileIndices, numRoomLayers, sizeof(uint32_t *))) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to allocate array of tile index arrays.");
 		return -1;
 	}
-	for (uint32_t i = 0; i < num_room_layers; ++i) {
+	for (uint32_t i = 0; i < numRoomLayers; ++i) {
 		if (!allocate((void **)&pRoom->ppTileIndices[i], numTiles, sizeof(uint32_t))) {
 			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to allocate tile indices array.");
 			return -1;
@@ -149,7 +149,7 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 	}
 	
 	// Read tile data for each layer from file.
-	for (uint32_t i = 0; i < num_room_layers; ++i) {
+	for (uint32_t i = 0; i < numRoomLayers; ++i) {
 		if (!read_data(pFile, sizeof(uint32_t), numTiles, pRoom->ppTileIndices[i])) {
 			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room tile indices.");
 			return -2;

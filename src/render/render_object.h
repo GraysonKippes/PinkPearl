@@ -16,6 +16,7 @@
 extern const int renderHandleInvalid;
 
 bool initRenderObjectManager(void);
+
 bool terminateRenderObjectManager(void);
 
 // Loads a render object into the scene, returns a handle to it.
@@ -25,7 +26,15 @@ int loadRenderObject(const String textureID, const BoxF quadDimensions, const in
 void unloadRenderObject(int *const pRenderHandle);
 
 // Returns true if the render handle is both below the number of render object slots and positive, false otherwise.
-bool validateRenderHandle(int renderHandle);
+bool validateRenderObjectHandle(const int renderHandle);
+
+// Adds a quad to the render object.
+// Returns an index into the render object's quad array.
+int renderObjectLoadQuad(const int renderObjectHandle, const BoxF quadDimensions, const Vector3D quadPosition, const TextureState textureState);
+
+void renderObjectUnloadQuad(const int renderObjectHandle, const int quadIndex);
+
+bool renderObjectQuadExists(const int renderObjectHandle, const int quadIndex);
 
 // Returns true if the quad index is both below the max number of quads per render object and positive, false otherwise.
 bool validateRenderObjectQuadIndex(const int quadIndex);

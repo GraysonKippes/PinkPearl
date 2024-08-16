@@ -32,7 +32,7 @@ typedef struct DrawData {
 	int32_t vertex_offset;
 	uint32_t first_instance;
 	// Additional draw info
-	int32_t quadID;
+	int32_t quadHandle;
 	uint32_t image_index;
 } DrawData;
 
@@ -55,13 +55,13 @@ TextureState quadTextureStates[VK_CONF_MAX_NUM_QUADS];
 
 /* -- Function Declarations -- */
 
-static bool uploadQuadMesh(const int quadID, const BoxF quadDimensions);
+static bool uploadQuadMesh(const int quadHandle, const BoxF quadDimensions);
 
-static void insertDrawData(const int quadID, const float quadDepth, const unsigned int imageIndex);
+static void insertDrawData(const int quadHandle, const float quadDepth, const unsigned int imageIndex);
 
-static void removeDrawData(const int quadID);
+static void removeDrawData(const int quadHandle);
 
-static void updateTextureDescriptor(const int quadID, const int textureHandle);
+static void updateTextureDescriptor(const int quadHandle, const int textureHandle);
 
 void createVulkanRenderObjects(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating Vulkan render objects...");
@@ -70,8 +70,8 @@ void createVulkanRenderObjects(void) {
 	init_compute_room_texture(device);
 	
 	inactiveQuadIDs = newStack(vkConfMaxNumQuads, sizeof(int));
-	for (int quadID = vkConfMaxNumQuads - 1; quadID >= 0; --quadID) {
-		stackPush(&inactiveQuadIDs, &quadID);
+	for (int quadHandle = vkConfMaxNumQuads - 1; quadHandle >= 0; --quadHandle) {
+		stackPush(&inactiveQuadIDs, &quadHandle);
 	}
 }
 
@@ -123,78 +123,78 @@ int loadQuad(const BoxF quadDimensions, const Vector4F quadPosition, const Textu
 	}
 	
 	// Retrieve first quad ID and push draw info.
-	int quadID = -1;
-	stackPop(&inactiveQuadIDs, &quadID);
-	if (!validateQuadID(quadID)) {
+	int quadHandle = -1;
+	stackPop(&inactiveQuadIDs, &quadHandle);
+	if (!validateQuadHandle(quadHandle)) {
 		return -1;
 	}
 	
-	setQuadTranslation(quadID, quadPosition);
-	setQuadTranslation(quadID, quadPosition);
-	setQuadScaling(quadID, zeroVector4F);
-	setQuadScaling(quadID, zeroVector4F);
-	setQuadRotation(quadID, zeroVector4F);
-	setQuadRotation(quadID, zeroVector4F);
-	quadTextureStates[quadID] = quadTextureState;
+	setQuadTranslation(quadHandle, quadPosition);
+	setQuadTranslation(quadHandle, quadPosition);
+	setQuadScaling(quadHandle, zeroVector4F);
+	setQuadScaling(quadHandle, zeroVector4F);
+	setQuadRotation(quadHandle, zeroVector4F);
+	setQuadRotation(quadHandle, zeroVector4F);
+	quadTextureStates[quadHandle] = quadTextureState;
 	
-	uploadQuadMesh(quadID, quadDimensions);
-	insertDrawData(quadID, quadPosition.z, 0);
-	updateTextureDescriptor(quadID, quadTextureState.textureHandle);
+	uploadQuadMesh(quadHandle, quadDimensions);
+	insertDrawData(quadHandle, quadPosition.z, 0);
+	updateTextureDescriptor(quadHandle, quadTextureState.textureHandle);
 	
-	return quadID;
+	return quadHandle;
 }
 
-void unloadQuad(int *const pQuadID) {
-	if (!pQuadID) {
+void unloadQuad(int *const pQuadHandle) {
+	if (!pQuadHandle) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error unloading quad: pointer to quad ID is null.");
 		return;
-	} else if (!validateQuadID(*pQuadID)) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error unloading quad: quad ID (%i) is invalid.", *pQuadID);
+	} else if (!validateQuadHandle(*pQuadHandle)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error unloading quad: quad ID (%i) is invalid.", *pQuadHandle);
 		return;
 	}
 	
-	removeDrawData(*pQuadID);
-	stackPush(&inactiveQuadIDs, pQuadID);
-	*pQuadID = -1;
+	removeDrawData(*pQuadHandle);
+	stackPush(&inactiveQuadIDs, pQuadHandle);
+	*pQuadHandle = -1;
 }
 
-bool validateQuadID(const int quadID) {
-	return quadID >= 0 && quadID < vkConfMaxNumQuads;
+bool validateQuadHandle(const int quadHandle) {
+	return quadHandle >= 0 && quadHandle < vkConfMaxNumQuads;
 }
 
-bool setQuadTranslation(const int quadID, const Vector4F translation) {
-	if (!validateQuadID(quadID)) {
+bool setQuadTranslation(const int quadHandle, const Vector4F translation) {
+	if (!validateQuadHandle(quadHandle)) {
 		return false;
 	}
-	renderVectorSet(&quadTransforms[quadID].translation, translation);
+	renderVectorSet(&quadTransforms[quadHandle].translation, translation);
 	return true;
 }
 
-bool setQuadScaling(const int quadID, const Vector4F scaling) {
-	if (!validateQuadID(quadID)) {
+bool setQuadScaling(const int quadHandle, const Vector4F scaling) {
+	if (!validateQuadHandle(quadHandle)) {
 		return false;
 	}
-	renderVectorSet(&quadTransforms[quadID].scaling, scaling);
+	renderVectorSet(&quadTransforms[quadHandle].scaling, scaling);
 	return true;
 }
 
-bool setQuadRotation(const int quadID, const Vector4F rotation) {
-	if (!validateQuadID(quadID)) {
+bool setQuadRotation(const int quadHandle, const Vector4F rotation) {
+	if (!validateQuadHandle(quadHandle)) {
 		return false;
 	}
-	renderVectorSet(&quadTransforms[quadID].rotation, rotation);
+	renderVectorSet(&quadTransforms[quadHandle].rotation, rotation);
 	return true;
 }
 
-TextureState *getQuadTextureState(const int quadID) {
-	if (!validateQuadID(quadID)) {
+TextureState *getQuadTextureState(const int quadHandle) {
+	if (!validateQuadHandle(quadHandle)) {
 		return nullptr;
 	}
-	return &quadTextureStates[quadID];
+	return &quadTextureStates[quadHandle];
 }
 
-static bool uploadQuadMesh(const int quadID, const BoxF quadDimensions) {
-	if (!validateQuadID(quadID)) {
+static bool uploadQuadMesh(const int quadHandle, const BoxF quadDimensions) {
+	if (!validateQuadHandle(quadHandle)) {
 		return false;
 	}
 	
@@ -207,7 +207,7 @@ static bool uploadQuadMesh(const int quadID, const BoxF quadDimensions) {
 	};
 	
 	const VkDeviceSize verticesSize = num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
-	const VkDeviceSize verticesOffset = verticesSize * (VkDeviceSize)quadID;
+	const VkDeviceSize verticesOffset = verticesSize * (VkDeviceSize)quadHandle;
 	
 	byte_t *const mappedMemoryVertices = buffer_partition_map_memory(global_staging_buffer_partition, 0);
 	memcpy(&mappedMemoryVertices[verticesOffset], vertices, verticesSize);
@@ -274,19 +274,19 @@ static bool uploadQuadMesh(const int quadID, const BoxF quadDimensions) {
 	return true;
 }
 
-static DrawData makeDrawData(const int quadID, const unsigned int imageIndex) {
+static DrawData makeDrawData(const int quadHandle, const unsigned int imageIndex) {
 	return (DrawData){
 		.index_count = num_indices_per_rect,
 		.instance_count = 1,
 		.first_index = 0,
-		.vertex_offset = num_vertices_per_rect * quadID,
+		.vertex_offset = num_vertices_per_rect * quadHandle,
 		.first_instance = 0,
-		.quadID = quadID,
+		.quadHandle = quadHandle,
 		.image_index = imageIndex
 	};
 }
 
-static void insertDrawData(const int quadID, const float quadDepth, const unsigned int imageIndex) {
+static void insertDrawData(const int quadHandle, const float quadDepth, const unsigned int imageIndex) {
 	if (vkConfMaxNumQuads - (int)drawDataCount <= 0) {
 		return;
 	}
@@ -294,7 +294,7 @@ static void insertDrawData(const int quadID, const float quadDepth, const unsign
 	// Iterate over the already loaded quads to compare depth and determine where to insert this quad.
 	uint32_t insertIndex = drawDataCount;
 	for (uint32_t i = 0; i < drawDataCount; ++i) {
-		const float otherDepth = quadTransforms[drawDatas[i].quadID].translation.current.z;
+		const float otherDepth = quadTransforms[drawDatas[i].quadHandle].translation.current.z;
 		if (quadDepth > otherDepth) {
 			insertIndex = i;
 			break;
@@ -304,12 +304,12 @@ static void insertDrawData(const int quadID, const float quadDepth, const unsign
 	// Move each draw data after the inserted draw data forward one place.
 	for (uint32_t i = drawDataCount; i > insertIndex; --i) {
 		drawDatas[i] = drawDatas[i - 1];
-		quadDrawDataIndices[drawDatas[i].quadID] = i;
+		quadDrawDataIndices[drawDatas[i].quadHandle] = i;
 	}
 	
 	// Insert the new draw data.
-	drawDatas[insertIndex] = makeDrawData(quadID, imageIndex);
-	quadDrawDataIndices[quadID] = insertIndex;
+	drawDatas[insertIndex] = makeDrawData(quadHandle, imageIndex);
+	quadDrawDataIndices[quadHandle] = insertIndex;
 	drawDataCount += 1;
 	
 	// TODO - cut the partition crap and just do one mapped memory.
@@ -322,12 +322,12 @@ static void insertDrawData(const int quadID, const float quadDepth, const unsign
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
-static void removeDrawData(const int quadID) {
+static void removeDrawData(const int quadHandle) {
 	
 	// Get the index of the draw data associated with the quad.
-	const uint32_t drawDataIndex = quadDrawDataIndices[quadID];
+	const uint32_t drawDataIndex = quadDrawDataIndices[quadHandle];
 	if (drawDataIndex >= drawDataCount) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error removing draw data: quad's draw data index (%u) is not less than draw data count (%u) (quad ID = %i).", drawDataIndex, drawDataCount, quadID);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error removing draw data: quad's draw data index (%u) is not less than draw data count (%u) (quad ID = %i).", drawDataIndex, drawDataCount, quadHandle);
 		return;
 	}
 	
@@ -338,7 +338,7 @@ static void removeDrawData(const int quadID) {
 		// i = index of the draw data after being moved forward one place.
 		// i + 1 = index of the draw data before being moved forward one place.
 		drawDatas[i] = drawDatas[i + 1];	// Copy the next draw data into this place.
-		quadDrawDataIndices[drawDatas[i].quadID] = i;
+		quadDrawDataIndices[drawDatas[i].quadHandle] = i;
 	}
 	
 	// TODO - cut the partition crap and just do one mapped memory.
@@ -351,21 +351,21 @@ static void removeDrawData(const int quadID) {
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
-void updateDrawData(const int quadID, const unsigned int imageIndex) {
-	if (!validateQuadID(quadID)) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error updating draw data: quad ID (%i) is invalid.", quadID);
+void updateDrawData(const int quadHandle, const unsigned int imageIndex) {
+	if (!validateQuadHandle(quadHandle)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error updating draw data: quad ID (%i) is invalid.", quadHandle);
 		return;
 	}
 	
-	const uint32_t drawDataIndex = quadDrawDataIndices[quadID];
-	drawDatas[drawDataIndex] = makeDrawData(quadID, imageIndex);
+	const uint32_t drawDataIndex = quadDrawDataIndices[quadHandle];
+	drawDatas[drawDataIndex] = makeDrawData(quadHandle, imageIndex);
 	
 	uint8_t *const drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
 	memcpy(&drawDataMappedMemory[drawDataIndex * sizeof(DrawData)], &drawDatas[drawDataIndex], sizeof(DrawData));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }
 
-static void updateTextureDescriptor(const int quadID, const int textureHandle) {
+static void updateTextureDescriptor(const int quadHandle, const int textureHandle) {
 	
 	const Texture texture = getTexture(textureHandle);
 	VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
@@ -379,7 +379,7 @@ static void updateTextureDescriptor(const int quadID, const int textureHandle) {
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
 			.dstBinding = 2,
-			.dstArrayElement = (uint32_t)quadID,
+			.dstArrayElement = (uint32_t)quadHandle,
 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			.descriptorCount = 1,
 			.pBufferInfo = nullptr,
