@@ -45,6 +45,8 @@ Swapchain swapchain = { };
 
 Pipeline graphicsPipeline = { };
 
+Pipeline graphicsPipelineDebug = { };
+
 VkRenderPass renderPass = VK_NULL_HANDLE;
 
 VkSampler imageSamplerDefault = VK_NULL_HANDLE;
@@ -220,7 +222,9 @@ void create_vulkan_objects(void) {
 	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, VERTEX_SHADER_NAME);
 	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, FRAGMENT_SHADER_NAME);
 	
-	graphicsPipeline = createGraphicsPipeline(device, swapchain, renderPass, graphicsPipelineDescriptorSetLayout, 2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
+	graphicsPipeline = createGraphicsPipeline(device, swapchain, renderPass, graphicsPipelineDescriptorSetLayout,
+			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL,
+			2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
 	
 	destroyShaderModule(&vertexShaderModule);
 	destroyShaderModule(&fragmentShaderModule);

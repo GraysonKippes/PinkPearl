@@ -13,11 +13,11 @@
 
 /* -- FUNCTION DECLARATIONS -- */
 
-static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(void);
+static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(const VkPrimitiveTopology topology);
 
 static VkPipelineViewportStateCreateInfo makePipelineViewportStateCreateInfo(const VkViewport *const pViewport, const VkRect2D *const pScissor);
 
-static VkPipelineRasterizationStateCreateInfo makePipelineRasterizationStateCreateInfo(void);
+static VkPipelineRasterizationStateCreateInfo makePipelineRasterizationStateCreateInfo(const VkPolygonMode polygonMode);
 
 static VkPipelineMultisampleStateCreateInfo makePipelineMultisampleStateCreateInfo(void);
 
@@ -107,7 +107,8 @@ VkRenderPass createRenderPass(const VkDevice vkDevice, const VkFormat swapchainF
 	return renderPass;
 }
 
-Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapchain, const VkRenderPass renderPass, const DescriptorSetLayout descriptorSetLayout, 
+Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapchain, const VkRenderPass renderPass, const DescriptorSetLayout descriptorSetLayout,
+		const VkPrimitiveTopology topology, const VkPolygonMode polygonMode,
 		const uint32_t shaderModuleCount, const ShaderModule shaderModules[static const shaderModuleCount]) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
@@ -141,9 +142,9 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 	VkViewport viewport = make_viewport(swapchain.extent);
 	VkRect2D scissor = make_scissor(swapchain.extent);
 
-	VkPipelineInputAssemblyStateCreateInfo input_assembly = makePipelineInputAssemblyStateCreateInfo();
+	VkPipelineInputAssemblyStateCreateInfo input_assembly = makePipelineInputAssemblyStateCreateInfo(topology);
 	VkPipelineViewportStateCreateInfo viewport_state = makePipelineViewportStateCreateInfo(&viewport, &scissor);
-	VkPipelineRasterizationStateCreateInfo rasterizer = makePipelineRasterizationStateCreateInfo();
+	VkPipelineRasterizationStateCreateInfo rasterizer = makePipelineRasterizationStateCreateInfo(polygonMode);
 	VkPipelineMultisampleStateCreateInfo multisampling = makePipelineMultisampleStateCreateInfo();
 	VkPipelineColorBlendAttachmentState color_blend_attachment = makePipelineColorBlendAttachmentState();
 	VkPipelineColorBlendStateCreateInfo color_blending = makePipelineColorBlendStateCreateInfo(&color_blend_attachment);
@@ -171,19 +172,19 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 
 	const VkResult result = vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &pipeline.vkPipeline);
 	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Graphics pipeline creation failed (error code: %i).", result);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Graphics pipeline creation failed (error code: %i).", result);
 	}
 	pipeline.vkDevice = vkDevice;
 
 	return pipeline;
 }
 
-static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(void) {
+static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(const VkPrimitiveTopology topology) {
 	return (VkPipelineInputAssemblyStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		.topology = topology,
 		.primitiveRestartEnable = VK_FALSE
 	};
 }
@@ -200,14 +201,14 @@ static VkPipelineViewportStateCreateInfo makePipelineViewportStateCreateInfo(con
 	};
 }
 
-static VkPipelineRasterizationStateCreateInfo makePipelineRasterizationStateCreateInfo(void) {
+static VkPipelineRasterizationStateCreateInfo makePipelineRasterizationStateCreateInfo(const VkPolygonMode polygonMode) {
 	return (VkPipelineRasterizationStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
 		.depthClampEnable = VK_FALSE,
 		.rasterizerDiscardEnable = VK_FALSE,
-		.polygonMode = VK_POLYGON_MODE_FILL,
+		.polygonMode = polygonMode,
 		.cullMode = VK_CULL_MODE_BACK_BIT,
 		.frontFace = VK_FRONT_FACE_CLOCKWISE,
 		.depthBiasEnable = VK_FALSE,

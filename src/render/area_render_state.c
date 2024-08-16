@@ -203,10 +203,6 @@ ProjectionBounds areaRenderStateGetProjectionBounds(const AreaRenderState areaRe
 	};
 }
 
-static int areaRenderStateGetRoomQuadIndex(const AreaRenderState areaRenderState, const int roomCacheSlot, const int roomLayer) {
-	return areaRenderState.roomQuadIndices[roomCacheSlot * numRoomTextureCacheSlots + roomLayer];
-}
-
 static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState, const unsigned int roomCacheSlot, const Room room) {
 	if (!pAreaRenderState) {
 		return;

@@ -11,7 +11,8 @@
 // TODO - move this somewhere else.
 VkRenderPass createRenderPass(const VkDevice vkDevice, const VkFormat swapchainFormat);
 
-Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapchain, const VkRenderPass renderPass, const DescriptorSetLayout descriptorSetLayout, 
+Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapchain, const VkRenderPass renderPass, const DescriptorSetLayout descriptorSetLayout,
+		const VkPrimitiveTopology topology, const VkPolygonMode polygonMode,
 		const uint32_t shaderModuleCount, const ShaderModule shaderModules[static const shaderModuleCount]);
 
 #endif	// GRAPHICS_PIPELINE_H
