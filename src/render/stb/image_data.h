@@ -6,7 +6,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "util/byte.h"
+#include "util/Types.h"
 
 // TODO - change integer types to uint32_t.
 typedef struct image_data_t {

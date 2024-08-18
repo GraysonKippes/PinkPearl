@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "util/byte.h"
+#include "util/Types.h"
 
 #include "memory.h"
 #include "physical_device.h"

@@ -7,7 +7,7 @@
 #include "config.h"
 #include "log/Logger.h"
 #include "util/allocate.h"
-#include "util/byte.h"
+#include "util/Types.h"
 
 #define SHADER_DIRECTORY (RESOURCE_PATH "shaders/")
 
