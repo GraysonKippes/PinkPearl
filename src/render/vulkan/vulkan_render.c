@@ -11,12 +11,12 @@
 #include "log/Logger.h"
 #include "game/area/room.h"
 #include "render/render_config.h"
-#include "render/texture_state.h"
 #include "util/time.h"
 
 #include "CommandBuffer.h"
 #include "texture.h"
 #include "texture_manager.h"
+#include "TextureState.h"
 #include "vertex_input.h"
 #include "vulkan_manager.h"
 #include "compute/compute_matrices.h"

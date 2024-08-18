@@ -73,7 +73,6 @@ target_sources(PinkPearl PRIVATE
 	src/render/render_object.c
 	src/render/renderer.c
 	src/render/texture_pack.c
-	src/render/texture_state.c
 	src/render/stb/image_data.c
 	src/render/vulkan/buffer.c
 	src/render/vulkan/CommandBuffer.c
@@ -93,6 +92,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/texture.c
 	src/render/vulkan/texture_loader.c
 	src/render/vulkan/texture_manager.c
+	src/render/vulkan/TextureState.c
 	src/render/vulkan/vertex_input.c
 	src/render/vulkan/vulkan_instance.c
 	src/render/vulkan/vulkan_manager.c

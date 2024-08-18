@@ -1,12 +1,13 @@
-#include "texture_state.h"
+#include "TextureState.h"
 
 #include <stddef.h>
 
 #include "log/Logger.h"
 #include "util/allocate.h"
 #include "util/time.h"
-#include "vulkan/texture.h"
-#include "vulkan/texture_manager.h"
+
+#include "texture.h"
+#include "texture_manager.h"
 
 TextureState nullTextureState(void) {
 	return (TextureState){

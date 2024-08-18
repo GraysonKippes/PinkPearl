@@ -8,11 +8,11 @@
 #include "game/area/room.h"
 #include "math/Box.h"
 #include "math/offset.h"
+#include "vulkan/TextureState.h"
 #include "vulkan/math/projection.h"
 #include "vulkan/math/vector4F.h"
 
 #include "render_config.h"
-#include "texture_state.h"
 
 typedef struct RoomRenderState {
 	

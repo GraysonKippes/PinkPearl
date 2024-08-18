@@ -9,7 +9,7 @@
 #include "render/area_render_state.h"
 #include "render/render_object.h"
 #include "render/renderer.h"
-#include "render/texture_state.h"
+#include "render/vulkan/TextureState.h"
 #include "util/time.h"
 
 #include "game_state.h"

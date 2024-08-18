@@ -8,10 +8,10 @@
 #include "math/Box.h"
 #include "math/vector3D.h"
 #include "util/string.h"
+#include "vulkan/TextureState.h"
 #include "vulkan/math/render_vector.h"
 
 #include "render_config.h"
-#include "texture_state.h"
 
 extern const int renderHandleInvalid;
 

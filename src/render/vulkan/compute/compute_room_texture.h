@@ -6,7 +6,7 @@
 #include "game/area/room.h"
 
 #include "../texture.h"
-#include "../../texture_state.h"
+#include "../TextureState.h"
 
 void init_compute_room_texture(const VkDevice vkDevice);
 

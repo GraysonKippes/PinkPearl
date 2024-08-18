@@ -8,14 +8,15 @@
 #include "math/Box.h"
 #include "render/area_render_state.h"
 #include "render/render_object.h"
-#include "render/texture_state.h"
 
 #include "texture.h"
+#include "TextureState.h"
 #include "math/projection.h"
 
 // This file holds all functionality for drawing the scene with the Vulkan API.
 
 void createVulkanRenderObjects(void);
+
 void destroyVulkanRenderObjects(void);
 
 void initTextureDescriptors(void);
