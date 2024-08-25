@@ -55,7 +55,7 @@ typedef struct FrameArray {
 typedef struct FrameArrayCreateInfo {
 	
 	uint32_t num_frames;
-	physical_device_t physical_device;
+	PhysicalDevice physical_device;
 	VkDevice vkDevice;
 	
 	CommandPool commandPool;

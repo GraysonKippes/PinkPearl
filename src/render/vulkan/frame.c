@@ -10,7 +10,7 @@
 #include "vertex_input.h"
 #include "vulkan_manager.h"
 
-static Frame createFrame(physical_device_t physical_device, VkDevice device, CommandPool commandPool, DescriptorPool descriptorPool) {
+static Frame createFrame(PhysicalDevice physical_device, VkDevice device, CommandPool commandPool, DescriptorPool descriptorPool) {
 
 	Frame frame = {
 		.commandBuffer = { },

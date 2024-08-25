@@ -13,7 +13,7 @@
 
 
 
-typedef struct queue_family_indices_t {
+typedef struct QueueFamilyIndices {
 	
 	uint32_t *graphics_family_ptr;
 
@@ -23,11 +23,11 @@ typedef struct queue_family_indices_t {
 
 	uint32_t *compute_family_ptr;
 
-} queue_family_indices_t;
+} QueueFamilyIndices;
 
 
 
-typedef struct swapchain_support_details_t {
+typedef struct SwapchainSupportDetails {
 	
 	VkSurfaceCapabilitiesKHR capabilities;
 
@@ -37,29 +37,29 @@ typedef struct swapchain_support_details_t {
 	size_t num_present_modes;
 	VkPresentModeKHR *present_modes;
 
-} swapchain_support_details_t;
+} SwapchainSupportDetails;
 
 
 
-typedef struct physical_device_t {
+typedef struct PhysicalDevice {
 	
 	VkPhysicalDevice handle;
 	VkPhysicalDeviceProperties properties;
 	VkPhysicalDeviceFeatures features;
 
-	queue_family_indices_t queue_family_indices;
-	swapchain_support_details_t swapchain_support_details;
+	QueueFamilyIndices queue_family_indices;
+	SwapchainSupportDetails swapchain_support_details;
 	string_array_t extension_names;
 
-} physical_device_t;
+} PhysicalDevice;
 
 
 
 // Selects a physical device from all the physical devices available on the user's machine.
-physical_device_t select_physical_device(VkInstance vk_instance, VkSurfaceKHR surface);
+PhysicalDevice select_physical_device(VkInstance vk_instance, VkSurfaceKHR surface);
 
 // Frees all the arrays inside the physical device struct.
-void destroy_physical_device(physical_device_t physical_device);
+void destroy_physical_device(PhysicalDevice physical_device);
 
 bool check_device_validation_layer_support(VkPhysicalDevice physical_device, string_array_t required_layer_names);
 

@@ -370,3 +370,49 @@ VkImageMemoryBarrier2 makeImageTransitionBarrier(const Image image, const ImageS
 		.subresourceRange = makeImageSubresourceRange(subresourceRange)
 	};
 }
+
+Sampler createSampler(VkDevice vkDevice, PhysicalDevice physicalDevice) {
+	
+	static const VkFilter filter = VK_FILTER_NEAREST;
+	static const VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	
+	const VkSamplerCreateInfo createInfo = {
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.magFilter = filter,
+		.minFilter = filter,
+		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+		.addressModeU = addressMode,
+		.addressModeV = addressMode,
+		.addressModeW = addressMode,
+		.mipLodBias = 0.0F,
+		.anisotropyEnable = VK_TRUE,
+		.maxAnisotropy = physicalDevice.properties.limits.maxSamplerAnisotropy,
+		.compareEnable = VK_FALSE,
+		.compareOp = VK_COMPARE_OP_ALWAYS,
+		.minLod = 0.0F,
+		.maxLod = 0.0F,
+		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+		.unnormalizedCoordinates = VK_FALSE
+	};
+	
+	VkSampler vkSampler = VK_NULL_HANDLE;
+	const VkResult result = vkCreateSampler(vkDevice, &createInfo, nullptr, &vkSampler);
+	if (result != VK_SUCCESS) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating sampler: failed to create sampler (error code: %i).", result);
+		return (Sampler){ .vkSampler = VK_NULL_HANDLE, .vkDevice = VK_NULL_HANDLE };
+	}
+	
+	return (Sampler){ .vkSampler = vkSampler, .vkDevice = vkDevice };
+}
+
+void deleteSampler(Sampler *const pSampler) {
+	if (!pSampler) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting sampler: pointer to sampler object is null.");
+	}
+	
+	vkDestroySampler(pSampler->vkDevice, pSampler->vkSampler, nullptr);
+	pSampler->vkSampler = VK_NULL_HANDLE;
+	pSampler->vkDevice = VK_NULL_HANDLE;
+}

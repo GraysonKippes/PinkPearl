@@ -28,14 +28,6 @@ void unloadRenderObject(int *const pRenderHandle);
 // Returns true if the render handle is both below the number of render object slots and positive, false otherwise.
 bool validateRenderObjectHandle(const int renderHandle);
 
-// Adds a quad to the render object.
-// Returns an index into the render object's quad array.
-int renderObjectLoadQuad(const int renderObjectHandle, const BoxF quadDimensions, const Vector3D quadPosition, const TextureState textureState);
-
-void renderObjectUnloadQuad(const int renderObjectHandle, const int quadIndex);
-
-bool renderObjectQuadExists(const int renderObjectHandle, const int quadIndex);
-
 // Returns true if the quad index is both below the max number of quads per render object and positive, false otherwise.
 bool validateRenderObjectQuadIndex(const int quadIndex);
 

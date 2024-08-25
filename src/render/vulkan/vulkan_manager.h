@@ -22,13 +22,14 @@ extern const int vkConfMaxNumQuads;
 /* -- Core State -- */
 
 extern VkSurfaceKHR surface;
-extern physical_device_t physical_device;
+extern PhysicalDevice physical_device;
 extern memory_type_set_t memory_type_set;
 extern VkDevice device;
 extern Swapchain swapchain;
 extern Pipeline graphicsPipeline;
 extern VkRenderPass renderPass;
-extern VkSampler imageSamplerDefault;
+//extern VkSampler imageSamplerDefault;
+extern Sampler samplerDefault;
 
 /* -- Queues -- */
 

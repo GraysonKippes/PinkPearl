@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "physical_device.h"
+
 #include "math/extent.h"
 #include "util/string.h"
 
@@ -57,6 +59,14 @@ bool weaklyValidateImage(const Image image);
 // Destroys the Vulkan objects associated with this image and resets all the handles and other image properties.
 bool deleteImage(Image *const pImage);
 
+extern const ImageUsage imageUsageUndefined;
+extern const ImageUsage imageUsageTransferSource;
+extern const ImageUsage imageUsageTransferDestination;
+extern const ImageUsage imageUsageComputeRead;
+extern const ImageUsage imageUsageComputeWrite;
+extern const ImageUsage imageUsageSampled;
+extern const ImageUsage imageUsageDepthAttachment;
+
 /* -- TEXTURE OBJECT and FUNCTIONALITY -- */
 
 typedef struct TextureAnimation {
@@ -102,14 +112,6 @@ typedef struct TextureCreateInfo {
 
 } TextureCreateInfo;
 
-extern const ImageUsage imageUsageUndefined;
-extern const ImageUsage imageUsageTransferSource;
-extern const ImageUsage imageUsageTransferDestination;
-extern const ImageUsage imageUsageComputeRead;
-extern const ImageUsage imageUsageComputeWrite;
-extern const ImageUsage imageUsageSampled;
-extern const ImageUsage imageUsageDepthAttachment;
-
 // Zeroed-out or "null" texture.
 extern const Texture nullTexture;
 
@@ -132,5 +134,19 @@ VkImageSubresourceLayers makeImageSubresourceLayers(const ImageSubresourceRange 
 VkImageSubresourceRange makeImageSubresourceRange(const ImageSubresourceRange imageSubresourceRange);
 
 VkImageMemoryBarrier2 makeImageTransitionBarrier(const Image image, const ImageSubresourceRange subresourceRange, const ImageUsage newUsage);
+
+/* -- SAMPLER OBJECT and FUNCTIONALITY -- */
+
+typedef struct Sampler {
+	
+	VkSampler vkSampler;
+	
+	VkDevice vkDevice;
+	
+} Sampler;
+
+Sampler createSampler(VkDevice vkDevice, PhysicalDevice physicalDevice);
+
+void deleteSampler(Sampler *const pSampler);
 
 #endif	// VK_TEXTURE_H

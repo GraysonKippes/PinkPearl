@@ -20,7 +20,7 @@ static const char *device_extensions[1] = {
 
 void list_physical_device_memories(VkPhysicalDevice physical_device);
 
-bool check_physical_device_extension_support(physical_device_t physical_device) {
+bool check_physical_device_extension_support(PhysicalDevice physical_device) {
 
 	uint32_t num_available_extensions = 0;
 	vkEnumerateDeviceExtensionProperties(physical_device.handle, nullptr, &num_available_extensions, nullptr);
@@ -90,14 +90,14 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 	return true;
 }
 
-queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+QueueFamilyIndices query_queue_family_indices(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
 
 	uint32_t num_queue_families = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
 	VkQueueFamilyProperties *queue_families = malloc(num_queue_families * sizeof(VkQueueFamilyProperties));
 	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_families);
 
-	queue_family_indices_t queue_family_indices;
+	QueueFamilyIndices queue_family_indices;
 	queue_family_indices.graphics_family_ptr = nullptr;
 	queue_family_indices.present_family_ptr = nullptr;
 	queue_family_indices.transfer_family_ptr = nullptr;
@@ -139,7 +139,7 @@ queue_family_indices_t query_queue_family_indices(VkPhysicalDevice physical_devi
 	return queue_family_indices;
 }
 
-bool is_queue_family_indices_complete(queue_family_indices_t queue_family_indices) {
+bool is_queue_family_indices_complete(QueueFamilyIndices queue_family_indices) {
 	return queue_family_indices.graphics_family_ptr != nullptr 
 		&& queue_family_indices.present_family_ptr != nullptr 
 		&& queue_family_indices.transfer_family_ptr != nullptr
@@ -147,9 +147,9 @@ bool is_queue_family_indices_complete(queue_family_indices_t queue_family_indice
 }
 
 // Allocates on the heap, make sure to free the surface format and present mode arrays eventually.
-swapchain_support_details_t query_swapchain_support_details(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+SwapchainSupportDetails query_swapchain_support_details(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
 	
-	swapchain_support_details_t details;
+	SwapchainSupportDetails details;
 
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &details.capabilities);
 
@@ -176,7 +176,7 @@ swapchain_support_details_t query_swapchain_support_details(VkPhysicalDevice phy
 
 // Rates a physical device based on certain criteria. Returns the score.
 // A negative score means that the device is unsuitable for use.
-int rate_physical_device(physical_device_t physical_device) {
+int rate_physical_device(PhysicalDevice physical_device) {
 
 	int score = 0;
 
@@ -201,8 +201,8 @@ int rate_physical_device(physical_device_t physical_device) {
 	return score;
 }
 
-physical_device_t make_new_physical_device(void) {
-	return (physical_device_t){
+PhysicalDevice make_new_physical_device(void) {
+	return (PhysicalDevice){
 		.handle = VK_NULL_HANDLE,
 		.queue_family_indices.graphics_family_ptr = nullptr,
 		.queue_family_indices.present_family_ptr = nullptr,
@@ -215,14 +215,14 @@ physical_device_t make_new_physical_device(void) {
 	};
 }
 
-physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKHR surface) {
+PhysicalDevice select_physical_device(VkInstance vulkan_instance, VkSurfaceKHR surface) {
 
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting physical device...");
 
 	uint32_t num_physical_devices = 0;
 	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, nullptr);
 	if (num_physical_devices == 0) {
-		physical_device_t physical_device;
+		PhysicalDevice physical_device;
 		physical_device.handle = VK_NULL_HANDLE;
 		return physical_device;
 	}
@@ -230,12 +230,12 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 	VkPhysicalDevice *physical_devices = malloc(num_physical_devices * sizeof(VkPhysicalDevice));
 	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, physical_devices);
 
-	physical_device_t selected_physical_device = make_new_physical_device();
+	PhysicalDevice selected_physical_device = make_new_physical_device();
 	int selected_score = 0;
 
 	for (uint32_t i = 0; i < num_physical_devices; ++i) {
 	
-		physical_device_t physical_device = make_new_physical_device();
+		PhysicalDevice physical_device = make_new_physical_device();
 		physical_device.handle = physical_devices[i];
 		vkGetPhysicalDeviceProperties(physical_device.handle, &physical_device.properties);
 
@@ -278,7 +278,7 @@ physical_device_t select_physical_device(VkInstance vulkan_instance, VkSurfaceKH
 	return selected_physical_device;
 }
 
-void destroy_physical_device(physical_device_t physical_device) {
+void destroy_physical_device(PhysicalDevice physical_device) {
 	free(physical_device.queue_family_indices.graphics_family_ptr);
 	free(physical_device.queue_family_indices.present_family_ptr);
 	free(physical_device.queue_family_indices.transfer_family_ptr);

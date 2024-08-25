@@ -9,7 +9,7 @@
 
 #define clamp(x, min, max) (x > min ? (x < max ? x : max) : min)
 
-VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_support_details) {
+VkSurfaceFormatKHR choose_surface_format(SwapchainSupportDetails swapchain_support_details) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting surface format for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.num_formats; ++i) {
@@ -27,7 +27,7 @@ VkSurfaceFormatKHR choose_surface_format(swapchain_support_details_t swapchain_s
 	return undefined_format;
 }
 
-VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_support_details) {
+VkPresentModeKHR choose_present_mode(SwapchainSupportDetails swapchain_support_details) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting presentation mode for swapchain...");
 
 	for (size_t i = 0; i < swapchain_support_details.num_present_modes; ++i) {
@@ -39,7 +39,7 @@ VkPresentModeKHR choose_present_mode(swapchain_support_details_t swapchain_suppo
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, GLFWwindow *window) {
+VkExtent2D choose_extent(SwapchainSupportDetails swapchain_support_details, GLFWwindow *window) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting extent for swapchain...");
 
 	if (swapchain_support_details.capabilities.currentExtent.width != UINT32_MAX) {
@@ -56,7 +56,7 @@ VkExtent2D choose_extent(swapchain_support_details_t swapchain_support_details, 
 	return actualExtent;
 }
 
-Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle) {
+Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, PhysicalDevice physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating swapchain...");
 
 	Swapchain swapchain;

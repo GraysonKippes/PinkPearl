@@ -6,7 +6,6 @@
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
-#include "image.h"
 
 /* -- TYPE DEFINITIONS -- */
 

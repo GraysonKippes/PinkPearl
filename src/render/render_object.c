@@ -10,6 +10,11 @@
 
 #include "area_render_state.h"
 
+/* Render Object
+ * quadHandles: array<int>
+ * 
+*/
+
 const int renderHandleInvalid = -1;
 
 static Heap inactiveRenderHandles = { };
@@ -87,63 +92,6 @@ void unloadRenderObject(int *const pRenderHandle) {
 
 bool validateRenderObjectHandle(const int renderHandle) {
 	return renderHandle >= 0 && renderHandle < (int)numRenderObjectSlots;
-}
-
-int renderObjectLoadQuad(const int renderObjectHandle, const BoxF quadDimensions, const Vector3D quadPosition, const TextureState textureState) {
-	if (!validateRenderObjectHandle(renderObjectHandle)) {
-		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object quad: render object handle (%i) is invalid.", renderObjectHandle);
-		return -1;
-	}
-	
-	int quadIndex = -1;
-	for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
-		if (!validateQuadHandle(renderObjectQuadHandles[renderObjectHandle][i])) {
-			quadIndex = i;
-		}
-	}
-	
-	if (!validateRenderObjectQuadIndex(quadIndex)) {
-		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object quad: failed to find space in render object's quad array.");
-		return quadIndex;
-	}
-	
-	Vector4F position = {
-		.x = (float)quadPosition.x,
-		.y = (float)quadPosition.y,
-		.z = (float)quadPosition.z,
-		.w = 1.0F
-	};
-	
-	int quadHandle = loadQuad(quadDimensions, position, textureState);
-	if (!validateQuadHandle(quadHandle)) {
-		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object quad: failed to load quad.");
-		return -1;
-	}
-	renderObjectQuadHandles[renderObjectHandle][quadIndex] = quadHandle;
-	
-	return quadIndex;
-}
-
-void renderObjectUnloadQuad(const int renderObjectHandle, const int quadIndex) {
-	if (!validateRenderObjectHandle(renderObjectHandle)) {
-		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error unloading render object quad: render object handle (%i) is invalid.", renderObjectHandle);
-		return;
-	} else if (!validateRenderObjectQuadIndex(quadIndex)) {
-		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error unloading render object quad: quad index (%i) is invalid.", quadIndex);
-		return;
-	}
-	unloadQuad(&renderObjectQuadHandles[renderObjectHandle][quadIndex]);
-}
-
-bool renderObjectQuadExists(const int renderObjectHandle, const int quadIndex) {
-	if (!validateRenderObjectHandle(renderObjectHandle)) {
-		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error checking render object quad's existence: render object handle (%i) is invalid.", renderObjectHandle);
-		return false;
-	} else if (!validateRenderObjectQuadIndex(quadIndex)) {
-		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error checking render object quad's existence: quad index (%i) is invalid.", quadIndex);
-		return false;
-	}
-	return validateQuadHandle(renderObjectQuadHandles[renderObjectHandle][quadIndex]);
 }
 
 bool validateRenderObjectQuadIndex(const int quadIndex) {

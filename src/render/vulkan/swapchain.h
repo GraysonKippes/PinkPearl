@@ -22,7 +22,7 @@ typedef struct Swapchain {
 
 } Swapchain;
 
-Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, physical_device_t physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle);
+Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, PhysicalDevice physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle);
 
 void deleteSwapchain(VkDevice device, Swapchain swapchain);
 

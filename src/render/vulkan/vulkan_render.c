@@ -26,16 +26,17 @@
 
 typedef struct DrawData {
 	// Indirect draw command data
-	uint32_t index_count;
-	uint32_t instance_count;
-	uint32_t first_index;
-	int32_t vertex_offset;
-	uint32_t first_instance;
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	int32_t vertexOffset;
+	uint32_t firstInstance;
 	// Additional draw info
 	int32_t quadHandle;
-	uint32_t image_index;
+	uint32_t imageIndex;
 } DrawData;
 
+// Array of draw datas which are uploaded to the GPU.
 static uint32_t drawDataCount = 0;
 static DrawData drawDatas[VK_CONF_MAX_NUM_QUADS];
 
@@ -94,7 +95,7 @@ void initTextureDescriptors(void) {
 	VkDescriptorImageInfo descriptorImageInfos[VK_CONF_MAX_NUM_QUADS];
 	for (int i = 0; i < vkConfMaxNumQuads; ++i) {
 		descriptorImageInfos[i] = (VkDescriptorImageInfo){
-			.sampler = imageSamplerDefault,
+			.sampler = samplerDefault.vkSampler,
 			.imageView = texture.image.vkImageView,
 			.imageLayout = texture.image.usage.imageLayout
 		};
@@ -276,13 +277,13 @@ static bool uploadQuadMesh(const int quadHandle, const BoxF quadDimensions) {
 
 static DrawData makeDrawData(const int quadHandle, const unsigned int imageIndex) {
 	return (DrawData){
-		.index_count = num_indices_per_rect,
-		.instance_count = 1,
-		.first_index = 0,
-		.vertex_offset = num_vertices_per_rect * quadHandle,
-		.first_instance = 0,
+		.indexCount = num_indices_per_rect,
+		.instanceCount = 1,
+		.firstIndex = 0,
+		.vertexOffset = num_vertices_per_rect * quadHandle,
+		.firstInstance = 0,
 		.quadHandle = quadHandle,
-		.image_index = imageIndex
+		.imageIndex = imageIndex
 	};
 }
 
@@ -372,7 +373,7 @@ static void updateTextureDescriptor(const int quadHandle, const int textureHandl
 	
 	// Replace malloc with a better suited allocation, perhaps an arena?
 	VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
-	*pDescriptorImageInfo = makeDescriptorImageInfo(imageSamplerDefault, texture.image.vkImageView, texture.image.usage.imageLayout);
+	*pDescriptorImageInfo = makeDescriptorImageInfo(samplerDefault.vkSampler, texture.image.vkImageView, texture.image.usage.imageLayout);
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
 		writeDescriptorSets[i] = (VkWriteDescriptorSet){
@@ -454,8 +455,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	vkResetFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready);
 	commandBufferReset(&frame_array.frames[frame_array.current_frame].commandBuffer);
 
-	uint32_t image_index = 0;
-	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore, VK_NULL_HANDLE, &image_index);
+	uint32_t imageIndex = 0;
+	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore, VK_NULL_HANDLE, &imageIndex);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return;
 	}
@@ -517,7 +518,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 		.pNext = nullptr,
 		.renderPass = renderPass,
-		.framebuffer = swapchain.framebuffers[image_index],
+		.framebuffer = swapchain.framebuffers[imageIndex],
 		.renderArea.offset.x = 0,
 		.renderArea.offset.y = 0,
 		.renderArea.extent = swapchain.extent,
@@ -592,7 +593,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		.pWaitSemaphores = &frame_array.frames[frame_array.current_frame].semaphore_present_ready.semaphore,
 		.swapchainCount = 1,
 		.pSwapchains = &swapchain.handle,
-		.pImageIndices = &image_index,
+		.pImageIndices = &imageIndex,
 		.pResults = nullptr
 	};
 

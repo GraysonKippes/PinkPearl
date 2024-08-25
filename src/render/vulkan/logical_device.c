@@ -8,7 +8,7 @@
 #include "util/string_array.h"
 
 // Returns a pointer-array that must be freed by the caller.
-VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_family_indices, uint32_t *num_queue_create_infos) {
+VkDeviceQueueCreateInfo *make_queue_create_infos(QueueFamilyIndices queue_family_indices, uint32_t *num_queue_create_infos) {
 
 	// Pack the queue family indices into an array for easy iteration.
 	uint32_t indices_arr[NUM_QUEUES];
@@ -52,7 +52,7 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(queue_family_indices_t queue_fa
 	return queue_create_infos;
 }
 
-void create_device(vulkan_instance_t vulkan_instance, physical_device_t physical_device, VkDevice *device_ptr) {
+void create_device(vulkan_instance_t vulkan_instance, PhysicalDevice physical_device, VkDevice *device_ptr) {
 
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating logical device...");
 

@@ -16,7 +16,6 @@
 #include "CommandBuffer.h"
 #include "descriptor.h"
 #include "GraphicsPipeline.h"
-#include "image.h"
 #include "logical_device.h"
 #include "queue.h"
 #include "Shader.h"
@@ -35,7 +34,7 @@ static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 
 VkSurfaceKHR surface = VK_NULL_HANDLE;
 
-physical_device_t physical_device = { };
+PhysicalDevice physical_device = { };
 
 memory_type_set_t memory_type_set = { };
 
@@ -49,7 +48,9 @@ Pipeline graphicsPipelineDebug = { };
 
 VkRenderPass renderPass = VK_NULL_HANDLE;
 
-VkSampler imageSamplerDefault = VK_NULL_HANDLE;
+//VkSampler imageSamplerDefault = VK_NULL_HANDLE;
+
+Sampler samplerDefault = { };
 
 /* -- Queues -- */
 
@@ -231,7 +232,9 @@ void create_vulkan_objects(void) {
 	
 	create_framebuffers(device, renderPass, &swapchain);
 
-	create_sampler(physical_device, device, &imageSamplerDefault);
+	samplerDefault = createSampler(device, physical_device);
+
+	//create_sampler(physical_device, device, &imageSamplerDefault);
 	
 	const FrameArrayCreateInfo frameArrayCreateInfo = {
 		.num_frames = 2,
@@ -252,7 +255,9 @@ void destroy_vulkan_objects(void) {
 
 	deleteFrameArray(&frame_array);
 
-	vkDestroySampler(device, imageSamplerDefault, nullptr);
+	//vkDestroySampler(device, imageSamplerDefault, nullptr);
+	
+	deleteSampler(&samplerDefault);
 
 	deletePipeline(&graphicsPipeline);
 	
