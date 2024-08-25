@@ -94,27 +94,36 @@ void initTextureDescriptors(void) {
 	
 	VkDescriptorImageInfo descriptorImageInfos[VK_CONF_MAX_NUM_QUADS];
 	for (int i = 0; i < vkConfMaxNumQuads; ++i) {
-		descriptorImageInfos[i] = (VkDescriptorImageInfo){
-			.sampler = samplerDefault.vkSampler,
-			.imageView = texture.image.vkImageView,
-			.imageLayout = texture.image.usage.imageLayout
-		};
+		descriptorImageInfos[i] = makeDescriptorImageInfo2(texture.image);
 	}
 	
+	VkDescriptorImageInfo descriptorSamplerInfo = makeDescriptorSamplerInfo(samplerDefault);
+	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		const VkWriteDescriptorSet descriptorWrite = {
+		
+		const VkWriteDescriptorSet descriptorWrites[2] = {{
 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
 			.dstBinding = 2,
 			.dstArrayElement = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 			.descriptorCount = (uint32_t)vkConfMaxNumQuads,
 			.pBufferInfo = nullptr,
 			.pImageInfo = descriptorImageInfos,
 			.pTexelBufferView = nullptr
-		};
+		}, {
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
+			.dstBinding = 3,
+			.dstArrayElement = 0,
+			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+			.descriptorCount = 1,
+			.pBufferInfo = nullptr,
+			.pImageInfo = &descriptorSamplerInfo,
+			.pTexelBufferView = nullptr
+		}};
 		
-		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+		vkUpdateDescriptorSets(device, 2, descriptorWrites, 0, nullptr);
 	}
 }
 
@@ -373,7 +382,7 @@ static void updateTextureDescriptor(const int quadHandle, const int textureHandl
 	
 	// Replace malloc with a better suited allocation, perhaps an arena?
 	VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
-	*pDescriptorImageInfo = makeDescriptorImageInfo(samplerDefault.vkSampler, texture.image.vkImageView, texture.image.usage.imageLayout);
+	*pDescriptorImageInfo = makeDescriptorImageInfo2(texture.image);
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
 		writeDescriptorSets[i] = (VkWriteDescriptorSet){
@@ -381,7 +390,7 @@ static void updateTextureDescriptor(const int quadHandle, const int textureHandl
 			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
 			.dstBinding = 2,
 			.dstArrayElement = (uint32_t)quadHandle,
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 			.descriptorCount = 1,
 			.pBufferInfo = nullptr,
 			.pImageInfo = pDescriptorImageInfo,
@@ -467,7 +476,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
 	computeMatrices(deltaTime, projectionBounds, cameraPosition, quadTransforms);
 
-	VkWriteDescriptorSet descriptor_writes[3] = { { 0 } };
+	VkWriteDescriptorSet descriptor_writes[3] = { { } };
 
 	const VkDescriptorBufferInfo draw_data_buffer_info = buffer_partition_descriptor_info(global_draw_data_buffer_partition, 1);
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -494,7 +503,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 3);
 	descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[2].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
-	descriptor_writes[2].dstBinding = 3;
+	descriptor_writes[2].dstBinding = 4;
 	descriptor_writes[2].dstArrayElement = 0;
 	descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptor_writes[2].descriptorCount = 1;

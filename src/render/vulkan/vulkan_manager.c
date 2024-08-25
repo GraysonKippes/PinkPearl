@@ -48,8 +48,6 @@ Pipeline graphicsPipelineDebug = { };
 
 VkRenderPass renderPass = VK_NULL_HANDLE;
 
-//VkSampler imageSamplerDefault = VK_NULL_HANDLE;
-
 Sampler samplerDefault = { };
 
 /* -- Queues -- */
@@ -78,15 +76,16 @@ buffer_partition_t global_draw_data_buffer_partition;
 
 /* -- Graphics Pipeline Descriptor Set Layout -- */
 
-static const DescriptorBinding graphicsPipelineDescriptorBindings[4] = {
+static const DescriptorBinding graphicsPipelineDescriptorBindings[5] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },	// Draw data
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },	// Matrix buffer
-	{ .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .count = VK_CONF_MAX_NUM_QUADS, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Texture array
+	{ .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .count = VK_CONF_MAX_NUM_QUADS, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Texture array
+	{ .type = VK_DESCRIPTOR_TYPE_SAMPLER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Sampler
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }	// Lighting
 };
 
 static const DescriptorSetLayout graphicsPipelineDescriptorSetLayout = {
-	.num_bindings = 4,
+	.num_bindings = 5,
 	.bindings = (DescriptorBinding *const)graphicsPipelineDescriptorBindings
 };
 

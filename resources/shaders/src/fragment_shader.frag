@@ -19,7 +19,8 @@ layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
 	DrawData draw_infos[NUM_RENDER_OBJECTS];
 } uDrawData;
 
-layout(set = 0, binding = 2) uniform sampler2DArray[NUM_RENDER_OBJECTS] texture_samplers;
+layout(set = 0, binding = 2) uniform texture2DArray[NUM_RENDER_OBJECTS] textures;
+layout(set = 0, binding = 3) uniform sampler textureSampler;
 
 struct ambient_light_t {
 	vec3 color;
@@ -32,7 +33,7 @@ struct point_light_t {
 	float intensity;
 };
 
-layout(scalar, set = 0, binding = 3) readonly uniform lighting_data_t {
+layout(scalar, set = 0, binding = 4) readonly uniform lighting_data_t {
 
 	ambient_light_t ambient_lighting;
 
@@ -64,7 +65,7 @@ void main() {
 	texel_position.y = floor(in_position.y * 16.0) / 16.0;
 
 	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.imageIndex));
-	out_color = texture(texture_samplers[draw_info.quadID], texture_coordinates) * vec4(in_color, 1.0);
+	out_color = texture(sampler2DArray(textures[draw_info.quadID], textureSampler), texture_coordinates) * vec4(in_color, 1.0);
 	
 	/* Apply lighting
 	out_color.rgb *= (lighting_data.ambient_lighting.color * lighting_data.ambient_lighting.intensity);

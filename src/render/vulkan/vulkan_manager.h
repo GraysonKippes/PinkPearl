@@ -28,7 +28,6 @@ extern VkDevice device;
 extern Swapchain swapchain;
 extern Pipeline graphicsPipeline;
 extern VkRenderPass renderPass;
-//extern VkSampler imageSamplerDefault;
 extern Sampler samplerDefault;
 
 /* -- Queues -- */

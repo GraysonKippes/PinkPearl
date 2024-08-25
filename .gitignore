@@ -15,6 +15,7 @@ resources/assets/
 resources/data/
 
 # Misc files
+*.spv
 *.bak
 *.json
 *.cppcheck

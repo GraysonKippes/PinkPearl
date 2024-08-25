@@ -147,8 +147,6 @@ VkDescriptorBufferInfo makeDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize of
 	return info;
 }
 
-const VkSampler no_sampler = VK_NULL_HANDLE;
-
 VkDescriptorImageInfo makeDescriptorImageInfo(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout) {
 
 	VkDescriptorImageInfo info = { 0 };
@@ -157,4 +155,20 @@ VkDescriptorImageInfo makeDescriptorImageInfo(VkSampler sampler, VkImageView ima
 	info.imageLayout = image_layout;
 
 	return info;
+}
+
+VkDescriptorImageInfo makeDescriptorImageInfo2(const Image image) {
+	return (VkDescriptorImageInfo){
+		.sampler = VK_NULL_HANDLE,
+		.imageView = image.vkImageView,
+		.imageLayout = image.usage.imageLayout
+	};
+}
+
+VkDescriptorImageInfo makeDescriptorSamplerInfo(const Sampler sampler) {
+	return (VkDescriptorImageInfo){
+		.sampler = sampler.vkSampler,
+		.imageView = VK_NULL_HANDLE,
+		.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	};
 }

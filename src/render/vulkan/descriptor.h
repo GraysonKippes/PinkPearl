@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
+#include "texture.h"
 
 /* -- TYPE DEFINITIONS -- */
 
@@ -50,10 +51,6 @@ DescriptorSet allocateDescriptorSet(const DescriptorPool descriptorPool);
 
 void descriptorSetPushWrite(DescriptorSet *const pDescriptorSet, const VkWriteDescriptorSet descriptorSetWrite);
 
-
-
-extern const VkSampler no_sampler;
-
 /* -- FUNCTION DECLARATIONS -- */
 
 void create_descriptor_set_layout(VkDevice vkDevice, DescriptorSetLayout descriptorSetLayout, VkDescriptorSetLayout *pDescriptorSetLayout);
@@ -68,7 +65,11 @@ void allocate_descriptor_sets(VkDevice vkDevice, DescriptorPool descriptor_pool,
 VkDescriptorBufferInfo makeDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
 
 // Convenience function. Makes and returns a VkDescriptorImageInfo struct with the specified parameters.
-// Pass VK_NULL_HANDLE for the sampler if the image in question is not going to be sampled.
+// Pass VK_NULL_HANDLE for the sampler if the image will not be sampled.
 VkDescriptorImageInfo makeDescriptorImageInfo(const VkSampler sampler, const VkImageView imageView, const VkImageLayout imageLayout);
+
+VkDescriptorImageInfo makeDescriptorImageInfo2(const Image image);
+
+VkDescriptorImageInfo makeDescriptorSamplerInfo(const Sampler sampler);
 
 #endif	// DESCRIPTOR_H
