@@ -94,7 +94,7 @@ void initTextureDescriptors(void) {
 	
 	VkDescriptorImageInfo descriptorImageInfos[VK_CONF_MAX_NUM_QUADS];
 	for (int i = 0; i < vkConfMaxNumQuads; ++i) {
-		descriptorImageInfos[i] = makeDescriptorImageInfo2(texture.image);
+		descriptorImageInfos[i] = makeDescriptorImageInfo(texture.image);
 	}
 	
 	VkDescriptorImageInfo descriptorSamplerInfo = makeDescriptorSamplerInfo(samplerDefault);
@@ -382,7 +382,7 @@ static void updateTextureDescriptor(const int quadHandle, const int textureHandl
 	
 	// Replace malloc with a better suited allocation, perhaps an arena?
 	VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
-	*pDescriptorImageInfo = makeDescriptorImageInfo2(texture.image);
+	*pDescriptorImageInfo = makeDescriptorImageInfo(texture.image);
 	
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
 		writeDescriptorSets[i] = (VkWriteDescriptorSet){

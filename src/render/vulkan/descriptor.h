@@ -61,15 +61,13 @@ void destroy_descriptor_pool(VkDevice vkDevice, DescriptorPool descriptorPool);
 
 void allocate_descriptor_sets(VkDevice vkDevice, DescriptorPool descriptor_pool, uint32_t num_descriptor_sets, VkDescriptorSet *descriptor_sets);
 
-// Convenience function. Makes and returns a VkDescriptorBufferInfo struct with the specified parameters.
+// Returns a VkDescriptorBufferInfo struct with the specified parameters.
 VkDescriptorBufferInfo makeDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
 
-// Convenience function. Makes and returns a VkDescriptorImageInfo struct with the specified parameters.
-// Pass VK_NULL_HANDLE for the sampler if the image will not be sampled.
-VkDescriptorImageInfo makeDescriptorImageInfo(const VkSampler sampler, const VkImageView imageView, const VkImageLayout imageLayout);
+// Returns a VkDescriptorImageInfo struct with the view and layout of the specified image.
+VkDescriptorImageInfo makeDescriptorImageInfo(const Image image);
 
-VkDescriptorImageInfo makeDescriptorImageInfo2(const Image image);
-
+// Returns a VkDescriptorImageInfo struct for the specified sampler.
 VkDescriptorImageInfo makeDescriptorSamplerInfo(const Sampler sampler);
 
 #endif	// DESCRIPTOR_H

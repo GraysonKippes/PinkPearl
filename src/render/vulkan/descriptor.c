@@ -147,17 +147,7 @@ VkDescriptorBufferInfo makeDescriptorBufferInfo(VkBuffer buffer, VkDeviceSize of
 	return info;
 }
 
-VkDescriptorImageInfo makeDescriptorImageInfo(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout) {
-
-	VkDescriptorImageInfo info = { 0 };
-	info.sampler = sampler;
-	info.imageView = image_view;
-	info.imageLayout = image_layout;
-
-	return info;
-}
-
-VkDescriptorImageInfo makeDescriptorImageInfo2(const Image image) {
+VkDescriptorImageInfo makeDescriptorImageInfo(const Image image) {
 	return (VkDescriptorImageInfo){
 		.sampler = VK_NULL_HANDLE,
 		.imageView = image.vkImageView,

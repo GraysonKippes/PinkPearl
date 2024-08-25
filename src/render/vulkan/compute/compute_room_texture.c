@@ -189,8 +189,8 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	}
 
 	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 1);
-	const VkDescriptorImageInfo tilemapTexture_info = makeDescriptorImageInfo(VK_NULL_HANDLE, tilemapTexture.image.vkImageView, tilemapTexture.image.usage.imageLayout);
-	const VkDescriptorImageInfo room_texture_storage_info = makeDescriptorImageInfo(samplerDefault.vkSampler, transferImage.vkImageView, transferImage.usage.imageLayout);
+	const VkDescriptorImageInfo tilemapTexture_info = makeDescriptorImageInfo(tilemapTexture.image);
+	const VkDescriptorImageInfo room_texture_storage_info = makeDescriptorImageInfo(transferImage);
 	const VkDescriptorImageInfo storage_image_infos[2] = { tilemapTexture_info, room_texture_storage_info };
 
 	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
