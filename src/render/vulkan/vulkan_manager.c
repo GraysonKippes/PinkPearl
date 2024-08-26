@@ -185,7 +185,7 @@ void create_vulkan_objects(void) {
 
 	windowSurface = createWindowSurface(vulkan_instance);
 
-	physical_device = select_physical_device(vulkan_instance.handle, windowSurface.vkSurface);
+	physical_device = select_physical_device(vulkan_instance, windowSurface);
 	memory_type_set = select_memory_types(physical_device.handle);
 
 	create_device(vulkan_instance, physical_device, &device);

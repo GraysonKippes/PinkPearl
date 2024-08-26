@@ -7,6 +7,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "vulkan_instance.h"
+
 #include "util/string_array.h"
 
 #define NUM_QUEUES 4
@@ -56,7 +58,7 @@ typedef struct PhysicalDevice {
 
 
 // Selects a physical device from all the physical devices available on the user's machine.
-PhysicalDevice select_physical_device(VkInstance vk_instance, VkSurfaceKHR surface);
+PhysicalDevice select_physical_device(const VulkanInstance vulkanInstance, const WindowSurface windowSurface);
 
 // Frees all the arrays inside the physical device struct.
 void destroy_physical_device(PhysicalDevice physical_device);

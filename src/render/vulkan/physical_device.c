@@ -5,20 +5,12 @@
 #include <string.h>
 
 #include "log/Logger.h"
-#include "util/bit.h"
-
-
 
 static const uint32_t num_device_extensions = 1;
 
 static const char *device_extensions[1] = {
-	
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
-
-
-
-void list_physical_device_memories(VkPhysicalDevice physical_device);
 
 bool check_physical_device_extension_support(PhysicalDevice physical_device) {
 
@@ -90,7 +82,7 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, str
 	return true;
 }
 
-QueueFamilyIndices query_queue_family_indices(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+static QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice physical_device, WindowSurface windowSurface) {
 
 	uint32_t num_queue_families = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
@@ -109,28 +101,29 @@ QueueFamilyIndices query_queue_family_indices(VkPhysicalDevice physical_device, 
 
 		VkQueueFamilyProperties queue_family = queue_families[i];
 
-		VkBool32 graphics_support = TEST_MASK(queue_family.queueFlags, VK_QUEUE_GRAPHICS_BIT);
-		VkBool32 present_support = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
-		VkBool32 transfer_support = TEST_MASK(queue_family.queueFlags, VK_QUEUE_TRANSFER_BIT);
-		VkBool32 compute_support = TEST_MASK(queue_family.queueFlags, VK_QUEUE_COMPUTE_BIT);
+		VkBool32 graphicsSupport = queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+		VkBool32 transferSupport = queue_family.queueFlags & VK_QUEUE_TRANSFER_BIT;
+		VkBool32 computeSupport = queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT;
+		
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, windowSurface.vkSurface, &presentSupport);
 
-		if ((queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.graphics_family_ptr == nullptr) {
+		if (graphicsSupport && queue_family_indices.graphics_family_ptr == nullptr) {
 			queue_family_indices.graphics_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.graphics_family_ptr = i;
 		}
 
-		if (present_support && queue_family_indices.present_family_ptr == nullptr) {
+		if (presentSupport && queue_family_indices.present_family_ptr == nullptr) {
 			queue_family_indices.present_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.present_family_ptr = i;
 		}
 
-		if ((queue_family.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.transfer_family_ptr == nullptr) {
+		if (transferSupport && !(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_indices.transfer_family_ptr == nullptr) {
 			queue_family_indices.transfer_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.transfer_family_ptr = i;
 		}
 
-		if ((queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) && queue_family_indices.compute_family_ptr == nullptr) {
+		if (computeSupport && queue_family_indices.compute_family_ptr == nullptr) {
 			queue_family_indices.compute_family_ptr = malloc(sizeof(uint32_t));
 			*queue_family_indices.compute_family_ptr = i;
 		}
@@ -147,31 +140,29 @@ bool is_queue_family_indices_complete(QueueFamilyIndices queue_family_indices) {
 }
 
 // Allocates on the heap, make sure to free the surface format and present mode arrays eventually.
-SwapchainSupportDetails query_swapchain_support_details(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+static SwapchainSupportDetails getSwapchainSupportDetails(VkPhysicalDevice physical_device, WindowSurface windowSurface) {
 	
-	SwapchainSupportDetails details;
+	SwapchainSupportDetails details = { };
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, windowSurface.vkSurface, &details.capabilities);
 
 	uint32_t num_formats = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &num_formats, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, windowSurface.vkSurface, &num_formats, nullptr);
 	if (num_formats != 0) {
 		details.num_formats = num_formats;
 		details.formats = malloc(num_formats * sizeof(VkSurfaceFormatKHR));
-		vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &num_formats, details.formats);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, windowSurface.vkSurface, &num_formats, details.formats);
 	}
 
 	uint32_t num_present_modes = 0;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &num_present_modes, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, windowSurface.vkSurface, &num_present_modes, nullptr);
 	if (num_present_modes != 0) {
 		details.num_present_modes = num_present_modes;
 		details.present_modes = malloc(num_present_modes * sizeof(VkPresentModeKHR));
-		vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &num_present_modes, details.present_modes);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, windowSurface.vkSurface, &num_present_modes, details.present_modes);
 	}
 
 	return details;
-	
-
 }
 
 // Rates a physical device based on certain criteria. Returns the score.
@@ -215,12 +206,11 @@ PhysicalDevice make_new_physical_device(void) {
 	};
 }
 
-PhysicalDevice select_physical_device(VkInstance vulkan_instance, VkSurfaceKHR surface) {
-
+PhysicalDevice select_physical_device(const VulkanInstance vulkanInstance, const WindowSurface windowSurface) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting physical device...");
 
 	uint32_t num_physical_devices = 0;
-	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, nullptr);
+	vkEnumeratePhysicalDevices(vulkanInstance.handle, &num_physical_devices, nullptr);
 	if (num_physical_devices == 0) {
 		PhysicalDevice physical_device;
 		physical_device.handle = VK_NULL_HANDLE;
@@ -228,7 +218,7 @@ PhysicalDevice select_physical_device(VkInstance vulkan_instance, VkSurfaceKHR s
 	}
 
 	VkPhysicalDevice *physical_devices = malloc(num_physical_devices * sizeof(VkPhysicalDevice));
-	vkEnumeratePhysicalDevices(vulkan_instance, &num_physical_devices, physical_devices);
+	vkEnumeratePhysicalDevices(vulkanInstance.handle, &num_physical_devices, physical_devices);
 
 	PhysicalDevice selected_physical_device = make_new_physical_device();
 	int selected_score = 0;
@@ -239,13 +229,11 @@ PhysicalDevice select_physical_device(VkInstance vulkan_instance, VkSurfaceKHR s
 		physical_device.handle = physical_devices[i];
 		vkGetPhysicalDeviceProperties(physical_device.handle, &physical_device.properties);
 
-		logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Rating physical device: %s", physical_device.properties.deviceName);
-
-		list_physical_device_memories(physical_device.handle);
+		//logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Rating physical device: %s", physical_device.properties.deviceName);
 
 		vkGetPhysicalDeviceFeatures(physical_device.handle, &physical_device.features);
-		physical_device.queue_family_indices = query_queue_family_indices(physical_device.handle, surface);
-		physical_device.swapchain_support_details = query_swapchain_support_details(physical_device.handle, surface);
+		physical_device.queue_family_indices = getQueueFamilyIndices(physical_device.handle, windowSurface);
+		physical_device.swapchain_support_details = getSwapchainSupportDetails(physical_device.handle, windowSurface);
 		
 		physical_device.extension_names.num_strings = num_device_extensions;
 		physical_device.extension_names.strings = device_extensions;
@@ -303,25 +291,4 @@ bool find_physical_device_memory_type(VkPhysicalDevice physical_device, uint32_t
 	}
 
 	return false;
-}
-
-// Diagnostic
-void list_physical_device_memories(VkPhysicalDevice physical_device) {
-
-	VkPhysicalDeviceMemoryProperties memory_properties;
-	vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
-
-	for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
-
-		VkMemoryType memory_type = memory_properties.memoryTypes[i];
-
-		uint32_t heap_index = memory_type.heapIndex;
-		VkDeviceSize heap_size = memory_properties.memoryHeaps[heap_index].size;
-		bool heap_device_local = (memory_properties.memoryHeaps[heap_index].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) >= 1;
-
-		bool device_local = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) >= 1;
-		bool host_visible = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) >= 1;
-		bool host_coherent = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) >= 1;
-		bool host_cached = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) >= 1;
-	}
 }
