@@ -7,20 +7,36 @@
 
 #include "util/string_array.h"
 
-typedef struct vulkan_instance_t {
+/* -- VULKAN INSTANCE -- */
+
+typedef struct VulkanInstance {
 
 	VkInstance handle;
 
 	string_array_t layer_names;
 
-} vulkan_instance_t;
+} VulkanInstance;
 
-vulkan_instance_t create_vulkan_instance(void);
+VulkanInstance create_vulkan_instance(void);
 
-void destroy_vulkan_instance(vulkan_instance_t vulkan_instance);
+void destroy_vulkan_instance(VulkanInstance vulkan_instance);
 
 void setup_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT *messenger_ptr);
 
 void destroy_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEXT messenger);
+
+/* -- WINDOW SURFACE -- */
+
+typedef struct WindowSurface {
+	
+	VkSurfaceKHR vkSurface;
+	
+	VkInstance vkInstance;
+	
+} WindowSurface;
+
+WindowSurface createWindowSurface(const VulkanInstance vulkanInstance);
+
+void deleteWindowSurface(WindowSurface *const pWindowSurface);
 
 #endif	// VULKAN_INSTANCE_H

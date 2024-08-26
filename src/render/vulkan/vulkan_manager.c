@@ -20,7 +20,6 @@
 #include "queue.h"
 #include "Shader.h"
 #include "vertex_input.h"
-#include "vulkan_instance.h"
 
 /* -- Vulkan Module Configuration -- */
 
@@ -28,11 +27,11 @@ const int vkConfMaxNumQuads = VK_CONF_MAX_NUM_QUADS;
 
 /* -- Vulkan Objects -- */
 
-static vulkan_instance_t vulkan_instance = { };
+static VulkanInstance vulkan_instance = { };
 
 static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 
-VkSurfaceKHR surface = VK_NULL_HANDLE;
+WindowSurface windowSurface = { };
 
 PhysicalDevice physical_device = { };
 
@@ -90,16 +89,6 @@ static const DescriptorSetLayout graphicsPipelineDescriptorSetLayout = {
 };
 
 /* -- Function Definitions -- */
-
-static void create_window_surface(void) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating window surface...");
-	VkResult result = glfwCreateWindowSurface(vulkan_instance.handle, get_application_window(), nullptr, &surface);
-	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Window surface creation failed (error code: %i).", result);
-		// TODO - do not use exit() here.
-		exit(1);
-	}
-}
 
 static void create_global_staging_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global staging buffer...");
@@ -194,9 +183,9 @@ void create_vulkan_objects(void) {
 		setup_debug_messenger(vulkan_instance.handle, &debug_messenger);
 	}
 
-	create_window_surface();
+	windowSurface = createWindowSurface(vulkan_instance);
 
-	physical_device = select_physical_device(vulkan_instance.handle, surface);
+	physical_device = select_physical_device(vulkan_instance.handle, windowSurface.vkSurface);
 	memory_type_set = select_memory_types(physical_device.handle);
 
 	create_device(vulkan_instance, physical_device, &device);
@@ -215,7 +204,7 @@ void create_vulkan_objects(void) {
 	commandPoolTransfer = createCommandPool(device, *physical_device.queue_family_indices.transfer_family_ptr, true, true);
 	commandPoolCompute = createCommandPool(device, *physical_device.queue_family_indices.compute_family_ptr, true, false);
 
-	swapchain = createSwapchain(get_application_window(), surface, physical_device, device, VK_NULL_HANDLE);
+	swapchain = createSwapchain(get_application_window(), windowSurface.vkSurface, physical_device, device, VK_NULL_HANDLE);
 	
 	renderPass = createRenderPass(device, swapchain.image_format);
 	
@@ -232,8 +221,6 @@ void create_vulkan_objects(void) {
 	create_framebuffers(device, renderPass, &swapchain);
 
 	samplerDefault = createSampler(device, physical_device);
-
-	//create_sampler(physical_device, device, &imageSamplerDefault);
 	
 	const FrameArrayCreateInfo frameArrayCreateInfo = {
 		.num_frames = 2,
@@ -253,8 +240,6 @@ void destroy_vulkan_objects(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroying Vulkan objects...");
 
 	deleteFrameArray(&frame_array);
-
-	//vkDestroySampler(device, imageSamplerDefault, nullptr);
 	
 	deleteSampler(&samplerDefault);
 
@@ -274,7 +259,10 @@ void destroy_vulkan_objects(void) {
 	destroy_buffer_partition(&global_draw_data_buffer_partition);
 
 	vkDestroyDevice(device, nullptr);
-	vkDestroySurfaceKHR(vulkan_instance.handle, surface, nullptr);
+	
+	deleteWindowSurface(&windowSurface);
+	
+	//vkDestroySurfaceKHR(vulkan_instance.handle, surface, nullptr);
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	

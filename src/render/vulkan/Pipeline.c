@@ -12,10 +12,10 @@ bool validatePipeline(const Pipeline pipeline) {
 
 bool deletePipeline(Pipeline *const pPipeline) {
 	if (!pPipeline) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error destroying pipeline: pointer to pipeline object is null.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting pipeline: pointer to pipeline object is null.");
 		return false;
 	} else if (!validatePipeline(*pPipeline)) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error destroying pipeline: pipeline object is invalid.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting pipeline: pipeline object is invalid.");
 		return false;
 	}
 	

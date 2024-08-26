@@ -52,7 +52,7 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(QueueFamilyIndices queue_family
 	return queue_create_infos;
 }
 
-void create_device(vulkan_instance_t vulkan_instance, PhysicalDevice physical_device, VkDevice *device_ptr) {
+void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_device, VkDevice *device_ptr) {
 
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating logical device...");
 

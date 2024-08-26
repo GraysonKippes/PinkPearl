@@ -10,6 +10,7 @@
 #include "Pipeline.h"
 #include "swapchain.h"
 #include "texture.h"
+#include "vulkan_instance.h"
 
 #include "render/render_config.h"
 
@@ -21,7 +22,7 @@ extern const int vkConfMaxNumQuads;
 
 /* -- Core State -- */
 
-extern VkSurfaceKHR surface;
+extern WindowSurface windowSurface;
 extern PhysicalDevice physical_device;
 extern memory_type_set_t memory_type_set;
 extern VkDevice device;

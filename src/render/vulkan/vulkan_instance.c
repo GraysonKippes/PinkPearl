@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "debug.h"
+#include "glfw/glfw_manager.h"
 #include "log/Logger.h"
 
 #define NUM_VALIDATION_LAYERS 1
@@ -83,11 +84,11 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 	return true;
 }
 
-vulkan_instance_t create_vulkan_instance(void) {
+VulkanInstance create_vulkan_instance(void) {
 
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating Vulkan instance...");
 
-	vulkan_instance_t vulkan_instance = { 0 };
+	VulkanInstance vulkan_instance = { 0 };
 
 	VkApplicationInfo app_info = {0};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -183,7 +184,7 @@ vulkan_instance_t create_vulkan_instance(void) {
 	return vulkan_instance;
 }
 
-void destroy_vulkan_instance(vulkan_instance_t vulkan_instance) {
+void destroy_vulkan_instance(VulkanInstance vulkan_instance) {
 	vkDestroyInstance(vulkan_instance.handle, nullptr);
 }
 
@@ -240,4 +241,28 @@ void destroy_debug_messenger(VkInstance vulkan_instance, VkDebugUtilsMessengerEX
 	if (debug_enabled && messenger != VK_NULL_HANDLE) {
 		DestroyDebugUtilsMessengerEXT(vulkan_instance, messenger, nullptr);
 	}
+}
+
+WindowSurface createWindowSurface(const VulkanInstance vulkanInstance) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating window surface...");
+	
+	VkSurfaceKHR vkSurface;
+	const VkResult result = glfwCreateWindowSurface(vulkanInstance.handle, get_application_window(), nullptr, &vkSurface);
+	if (result != VK_SUCCESS) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating window surface: surface creation failed (error code: %i).", result);
+		return (WindowSurface){ .vkSurface = VK_NULL_HANDLE, .vkInstance = VK_NULL_HANDLE };
+	}
+	
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created window surface.");
+	return (WindowSurface){ .vkSurface = vkSurface, .vkInstance = vulkanInstance.handle };
+}
+
+void deleteWindowSurface(WindowSurface *const pWindowSurface) {
+	if (!pWindowSurface) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting window surface: pointer to window surface object is null.");
+	}
+	
+	vkDestroySurfaceKHR(pWindowSurface->vkInstance, pWindowSurface->vkSurface, nullptr);
+	pWindowSurface->vkSurface = VK_NULL_HANDLE;
+	pWindowSurface->vkInstance = VK_NULL_HANDLE;
 }
