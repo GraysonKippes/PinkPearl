@@ -4,14 +4,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef struct string_array_t {
+typedef struct StringArray {
 
 	size_t num_strings;
 
 	const char **strings;
 
-} string_array_t;
+} StringArray;
 
-bool is_string_array_empty(string_array_t string_array);
+bool is_string_array_empty(StringArray string_array);
 
 #endif	// STRING_ARRAY_H

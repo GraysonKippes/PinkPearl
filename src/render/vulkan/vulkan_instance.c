@@ -42,7 +42,6 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 /* -- Function Definitions -- */
 
 bool check_validation_layer_support(uint32_t num_required_layers, const char *required_layers[]) {
-
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Checking validation layer support...");
 
 	uint32_t num_available_layers = 0;
@@ -85,7 +84,6 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 }
 
 VulkanInstance create_vulkan_instance(void) {
-
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating Vulkan instance...");
 
 	VulkanInstance vulkan_instance = { 0 };

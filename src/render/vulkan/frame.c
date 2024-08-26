@@ -44,8 +44,8 @@ static Frame createFrame(PhysicalDevice physical_device, VkDevice device, Comman
 	frame.descriptorSet = allocateDescriptorSet(descriptorPool);
 
 	uint32_t queue_family_indices[2] = {
-		*physical_device.queue_family_indices.graphics_family_ptr,
-		*physical_device.queue_family_indices.transfer_family_ptr
+		*physical_device.queueFamilyIndices.graphics_family_ptr,
+		*physical_device.queueFamilyIndices.transfer_family_ptr
 	};
 
 	const VkBufferCreateInfo vertex_buffer_create_info = {

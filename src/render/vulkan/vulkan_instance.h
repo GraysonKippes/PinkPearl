@@ -13,7 +13,7 @@ typedef struct VulkanInstance {
 
 	VkInstance handle;
 
-	string_array_t layer_names;
+	StringArray layer_names;
 
 } VulkanInstance;
 

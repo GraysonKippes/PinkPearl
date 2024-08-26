@@ -25,6 +25,7 @@ target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall 
 	-Werror=array-parameter
 	-Werror=endif-labels
 	-Werror=enum-conversion
+	-Werror=free-nonheap-object
 	-Wno-switch
 )
 

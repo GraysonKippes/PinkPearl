@@ -94,7 +94,7 @@ static void create_global_staging_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global staging buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
-		.physical_device = physical_device.handle,
+		.physical_device = physical_device.vkPhysicalDevice,
 		.device = device,
 		.buffer_type = BUFFER_TYPE_STAGING,
 		.memory_type_set = memory_type_set,
@@ -115,7 +115,7 @@ static void create_global_uniform_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global uniform buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
-		.physical_device = physical_device.handle,
+		.physical_device = physical_device.vkPhysicalDevice,
 		.device = device,
 		.buffer_type = BUFFER_TYPE_UNIFORM,
 		.memory_type_set = memory_type_set,
@@ -137,7 +137,7 @@ static void create_global_storage_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global storage buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
-		.physical_device = physical_device.handle,
+		.physical_device = physical_device.vkPhysicalDevice,
 		.device = device,
 		.buffer_type = BUFFER_TYPE_STORAGE,
 		.memory_type_set = memory_type_set,
@@ -158,7 +158,7 @@ static void create_global_draw_data_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global draw data buffer...");
 
 	const buffer_partition_create_info_t buffer_partition_create_info = {
-		.physical_device = physical_device.handle,
+		.physical_device = physical_device.vkPhysicalDevice,
 		.device = device,
 		.buffer_type = BUFFER_TYPE_DRAW_DATA,
 		.memory_type_set = memory_type_set,
@@ -186,7 +186,7 @@ void create_vulkan_objects(void) {
 	windowSurface = createWindowSurface(vulkan_instance);
 
 	physical_device = select_physical_device(vulkan_instance, windowSurface);
-	memory_type_set = select_memory_types(physical_device.handle);
+	memory_type_set = select_memory_types(physical_device.vkPhysicalDevice);
 
 	create_device(vulkan_instance, physical_device, &device);
 
@@ -195,14 +195,14 @@ void create_vulkan_objects(void) {
 	create_global_storage_buffer();
 	create_global_draw_data_buffer();
 
-	vkGetDeviceQueue(device, *physical_device.queue_family_indices.graphics_family_ptr, 0, &queueGraphics);
-	vkGetDeviceQueue(device, *physical_device.queue_family_indices.present_family_ptr, 0, &queuePresent);
-	vkGetDeviceQueue(device, *physical_device.queue_family_indices.transfer_family_ptr, 0, &queueTransfer);
-	vkGetDeviceQueue(device, *physical_device.queue_family_indices.compute_family_ptr, 0, &queueCompute);
+	vkGetDeviceQueue(device, *physical_device.queueFamilyIndices.graphics_family_ptr, 0, &queueGraphics);
+	vkGetDeviceQueue(device, *physical_device.queueFamilyIndices.present_family_ptr, 0, &queuePresent);
+	vkGetDeviceQueue(device, *physical_device.queueFamilyIndices.transfer_family_ptr, 0, &queueTransfer);
+	vkGetDeviceQueue(device, *physical_device.queueFamilyIndices.compute_family_ptr, 0, &queueCompute);
 
-	commandPoolGraphics = createCommandPool(device, *physical_device.queue_family_indices.graphics_family_ptr, false, true);
-	commandPoolTransfer = createCommandPool(device, *physical_device.queue_family_indices.transfer_family_ptr, true, true);
-	commandPoolCompute = createCommandPool(device, *physical_device.queue_family_indices.compute_family_ptr, true, false);
+	commandPoolGraphics = createCommandPool(device, *physical_device.queueFamilyIndices.graphics_family_ptr, false, true);
+	commandPoolTransfer = createCommandPool(device, *physical_device.queueFamilyIndices.transfer_family_ptr, true, true);
+	commandPoolCompute = createCommandPool(device, *physical_device.queueFamilyIndices.compute_family_ptr, true, false);
 
 	swapchain = createSwapchain(get_application_window(), windowSurface.vkSurface, physical_device, device, VK_NULL_HANDLE);
 	
@@ -262,7 +262,8 @@ void destroy_vulkan_objects(void) {
 	
 	deleteWindowSurface(&windowSurface);
 	
-	//vkDestroySurfaceKHR(vulkan_instance.handle, surface, nullptr);
+	deletePhysicalDevice(&physical_device);
+	
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	

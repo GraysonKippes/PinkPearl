@@ -139,14 +139,14 @@ static VkImageUsageFlags getTextureImageUsage(const TextureCreateInfo textureCre
 
 static VkImage createTextureImage(const Texture texture, const TextureCreateInfo textureCreateInfo) {
 
-	uint32_t queue_family_indices[2];
+	uint32_t queueFamilyIndices[2];
 	if (textureCreateInfo.isTilemap) {
-		queue_family_indices[0] = *physical_device.queue_family_indices.transfer_family_ptr;
-		queue_family_indices[1] = *physical_device.queue_family_indices.compute_family_ptr;
+		queueFamilyIndices[0] = *physical_device.queueFamilyIndices.transfer_family_ptr;
+		queueFamilyIndices[1] = *physical_device.queueFamilyIndices.compute_family_ptr;
 	}
 	else {
-		queue_family_indices[0] = *physical_device.queue_family_indices.graphics_family_ptr;
-		queue_family_indices[1] = *physical_device.queue_family_indices.transfer_family_ptr;
+		queueFamilyIndices[0] = *physical_device.queueFamilyIndices.graphics_family_ptr;
+		queueFamilyIndices[1] = *physical_device.queueFamilyIndices.transfer_family_ptr;
 	}
 
 	const VkImageCreateInfo imageCreateInfo = {
@@ -165,7 +165,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 		.usage = getTextureImageUsage(textureCreateInfo),
 		.sharingMode = VK_SHARING_MODE_CONCURRENT,
 		.queueFamilyIndexCount = 2,
-		.pQueueFamilyIndices = queue_family_indices,
+		.pQueueFamilyIndices = queueFamilyIndices,
 		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	};
 

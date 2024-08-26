@@ -9,11 +9,11 @@
 
 #define clamp(x, min, max) (x > min ? (x < max ? x : max) : min)
 
-VkSurfaceFormatKHR choose_surface_format(SwapchainSupportDetails swapchain_support_details) {
+VkSurfaceFormatKHR choose_surface_format(SwapchainSupportDetails swapchainSupportDetails) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting surface format for swapchain...");
 
-	for (size_t i = 0; i < swapchain_support_details.num_formats; ++i) {
-		VkSurfaceFormatKHR format = swapchain_support_details.formats[i];
+	for (size_t i = 0; i < swapchainSupportDetails.num_formats; ++i) {
+		VkSurfaceFormatKHR format = swapchainSupportDetails.formats[i];
 		if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			return format;
 	}
@@ -27,11 +27,11 @@ VkSurfaceFormatKHR choose_surface_format(SwapchainSupportDetails swapchain_suppo
 	return undefined_format;
 }
 
-VkPresentModeKHR choose_present_mode(SwapchainSupportDetails swapchain_support_details) {
+VkPresentModeKHR choose_present_mode(SwapchainSupportDetails swapchainSupportDetails) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting presentation mode for swapchain...");
 
-	for (size_t i = 0; i < swapchain_support_details.num_present_modes; ++i) {
-		VkPresentModeKHR present_mode = swapchain_support_details.present_modes[i];
+	for (size_t i = 0; i < swapchainSupportDetails.num_present_modes; ++i) {
+		VkPresentModeKHR present_mode = swapchainSupportDetails.present_modes[i];
 		if (present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
 			return present_mode;
 	}
@@ -39,19 +39,19 @@ VkPresentModeKHR choose_present_mode(SwapchainSupportDetails swapchain_support_d
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D choose_extent(SwapchainSupportDetails swapchain_support_details, GLFWwindow *window) {
+VkExtent2D choose_extent(SwapchainSupportDetails swapchainSupportDetails, GLFWwindow *window) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting extent for swapchain...");
 
-	if (swapchain_support_details.capabilities.currentExtent.width != UINT32_MAX) {
-		return swapchain_support_details.capabilities.currentExtent;
+	if (swapchainSupportDetails.capabilities.currentExtent.width != UINT32_MAX) {
+		return swapchainSupportDetails.capabilities.currentExtent;
 	}
 	
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(window, &width, &height);
 
 	VkExtent2D actualExtent = { (uint32_t)width, (uint32_t)height };
-	actualExtent.width = clamp(actualExtent.width, swapchain_support_details.capabilities.minImageExtent.width, swapchain_support_details.capabilities.maxImageExtent.width);
-	actualExtent.height = clamp(actualExtent.height, swapchain_support_details.capabilities.minImageExtent.height, swapchain_support_details.capabilities.maxImageExtent.height);
+	actualExtent.width = clamp(actualExtent.width, swapchainSupportDetails.capabilities.minImageExtent.width, swapchainSupportDetails.capabilities.maxImageExtent.width);
+	actualExtent.height = clamp(actualExtent.height, swapchainSupportDetails.capabilities.minImageExtent.height, swapchainSupportDetails.capabilities.maxImageExtent.height);
 
 	return actualExtent;
 }
@@ -61,15 +61,15 @@ Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, PhysicalDevi
 
 	Swapchain swapchain;
 
-	VkSurfaceFormatKHR surface_format = choose_surface_format(physical_device.swapchain_support_details);
+	VkSurfaceFormatKHR surface_format = choose_surface_format(physical_device.swapchainSupportDetails);
 	swapchain.image_format = surface_format.format;
-	VkPresentModeKHR present_mode = choose_present_mode(physical_device.swapchain_support_details);
-	swapchain.extent = choose_extent(physical_device.swapchain_support_details, window);
+	VkPresentModeKHR present_mode = choose_present_mode(physical_device.swapchainSupportDetails);
+	swapchain.extent = choose_extent(physical_device.swapchainSupportDetails, window);
 
 	// Requested number of images in swap chain.
-	uint32_t num_images = physical_device.swapchain_support_details.capabilities.minImageCount + 1;
-	if (physical_device.swapchain_support_details.capabilities.maxImageCount > 0 && num_images > physical_device.swapchain_support_details.capabilities.maxImageCount)
-		num_images = physical_device.swapchain_support_details.capabilities.maxImageCount;
+	uint32_t num_images = physical_device.swapchainSupportDetails.capabilities.minImageCount + 1;
+	if (physical_device.swapchainSupportDetails.capabilities.maxImageCount > 0 && num_images > physical_device.swapchainSupportDetails.capabilities.maxImageCount)
+		num_images = physical_device.swapchainSupportDetails.capabilities.maxImageCount;
 
 	VkSwapchainCreateInfoKHR create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -83,11 +83,11 @@ Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, PhysicalDevi
 	create_info.imageArrayLayers = 1;
 	create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	uint32_t queue_family_indices[] = { *physical_device.queue_family_indices.graphics_family_ptr, *physical_device.queue_family_indices.present_family_ptr };
-	if (queue_family_indices[0] != queue_family_indices[1]) {
+	uint32_t queueFamilyIndices[] = { *physical_device.queueFamilyIndices.graphics_family_ptr, *physical_device.queueFamilyIndices.present_family_ptr };
+	if (queueFamilyIndices[0] != queueFamilyIndices[1]) {
 		create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		create_info.queueFamilyIndexCount = 2;
-		create_info.pQueueFamilyIndices = queue_family_indices;
+		create_info.pQueueFamilyIndices = queueFamilyIndices;
 	}
 	else {
 		create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -95,7 +95,7 @@ Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, PhysicalDevi
 		create_info.pQueueFamilyIndices = nullptr;
 	}
 
-	create_info.preTransform = physical_device.swapchain_support_details.capabilities.currentTransform;
+	create_info.preTransform = physical_device.swapchainSupportDetails.capabilities.currentTransform;
 	create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	create_info.presentMode = present_mode;
 	create_info.clipped = VK_TRUE;

@@ -46,18 +46,18 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(QueueFamilyIndices queue_family
 		queue_create_infos[i].pQueuePriorities = &queue_priority;
 	}
 
-	if (num_queue_create_infos)
+	if (num_queue_create_infos) {
 		*num_queue_create_infos = num_unique_queue_families;
+	}
 
 	return queue_create_infos;
 }
 
 void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_device, VkDevice *device_ptr) {
-
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating logical device...");
 
 	uint32_t num_queue_create_infos = 0;
-	VkDeviceQueueCreateInfo *queue_create_infos = make_queue_create_infos(physical_device.queue_family_indices, &num_queue_create_infos);
+	VkDeviceQueueCreateInfo *queue_create_infos = make_queue_create_infos(physical_device.queueFamilyIndices, &num_queue_create_infos);
 
 	VkPhysicalDeviceVulkan13Features device_vk13_features = { VK_FALSE };
 	device_vk13_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -86,11 +86,11 @@ void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_devic
 	VkPhysicalDeviceFeatures2 device_features = { 
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
 		.pNext = &device_vk11_features,
-		.features = (VkPhysicalDeviceFeatures){ 0 }
+		.features = (VkPhysicalDeviceFeatures){ }
 	};
 	device_features.features.samplerAnisotropy = VK_TRUE;
 	
-	VkDeviceCreateInfo create_info = {
+	VkDeviceCreateInfo createInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.pNext = &device_features,
 		.flags = 0,
@@ -98,31 +98,31 @@ void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_devic
 		.pQueueCreateInfos = queue_create_infos,
 		.enabledLayerCount = 0,
 		.ppEnabledLayerNames = nullptr,
-		.enabledExtensionCount = physical_device.extension_names.num_strings,
-		.ppEnabledExtensionNames = physical_device.extension_names.strings,
+		.enabledExtensionCount = physical_device.extensionNames.num_strings,
+		.ppEnabledExtensionNames = physical_device.extensionNames.strings,
 		.pEnabledFeatures = nullptr
 	};
 
 	// Compatibility
 	if (debug_enabled) {
-		if (!check_device_validation_layer_support(physical_device.handle, vulkan_instance.layer_names)) {
+		if (!check_device_validation_layer_support(physical_device.vkPhysicalDevice, vulkan_instance.layer_names)) {
 			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Required validation layers not supported by device.");
-			create_info.enabledLayerCount = 0;
-			create_info.ppEnabledLayerNames = nullptr;
+			createInfo.enabledLayerCount = 0;
+			createInfo.ppEnabledLayerNames = nullptr;
 		}
 		else {
-			create_info.enabledLayerCount = vulkan_instance.layer_names.num_strings;
-			create_info.ppEnabledLayerNames = vulkan_instance.layer_names.strings;
+			createInfo.enabledLayerCount = vulkan_instance.layer_names.num_strings;
+			createInfo.ppEnabledLayerNames = vulkan_instance.layer_names.strings;
 		}
 	}
 	else {
-		create_info.enabledLayerCount = 0;
-		create_info.ppEnabledLayerNames = nullptr;
+		createInfo.enabledLayerCount = 0;
+		createInfo.ppEnabledLayerNames = nullptr;
 	}
 
-	VkResult result = vkCreateDevice(physical_device.handle, &create_info, nullptr, device_ptr);
+	VkResult result = vkCreateDevice(physical_device.vkPhysicalDevice, &createInfo, nullptr, device_ptr);
 	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Logical device creation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating logical device: logical device creation failed (error code: %i).", result);
 		exit(1); // TODO - better error handling
 	}
 

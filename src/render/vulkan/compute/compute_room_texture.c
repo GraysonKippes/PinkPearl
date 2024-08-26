@@ -60,8 +60,8 @@ static void createTransferImage(const VkDevice vkDevice) {
 	const queue_family_set_t queueFamilyIndexSet = {
 		.num_queue_families = 2,
 		.queue_families = (uint32_t[2]){
-			*physical_device.queue_family_indices.transfer_family_ptr,
-			*physical_device.queue_family_indices.compute_family_ptr,
+			*physical_device.queueFamilyIndices.transfer_family_ptr,
+			*physical_device.queueFamilyIndices.compute_family_ptr,
 		}
 	};
 	
