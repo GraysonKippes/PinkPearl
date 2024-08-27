@@ -59,40 +59,41 @@ void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_devic
 	uint32_t num_queue_create_infos = 0;
 	VkDeviceQueueCreateInfo *queue_create_infos = make_queue_create_infos(physical_device.queueFamilyIndices, &num_queue_create_infos);
 
-	VkPhysicalDeviceVulkan13Features device_vk13_features = { VK_FALSE };
-	device_vk13_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	device_vk13_features.pNext = nullptr;
-	device_vk13_features.synchronization2 = VK_TRUE;
+	VkPhysicalDeviceVulkan13Features features13 = { VK_FALSE };
+	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	features13.pNext = nullptr;
+	features13.synchronization2 = VK_TRUE;
+	features13.dynamicRendering = VK_TRUE;
 
-	VkPhysicalDeviceVulkan12Features device_vk12_features = { VK_FALSE };
-	device_vk12_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-	device_vk12_features.pNext = &device_vk13_features;
-	device_vk12_features.drawIndirectCount = VK_TRUE;
-	device_vk12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-	device_vk12_features.descriptorIndexing = VK_TRUE;
-	device_vk12_features.descriptorBindingPartiallyBound = VK_TRUE;
-	device_vk12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
-	device_vk12_features.runtimeDescriptorArray = VK_TRUE;
-	device_vk12_features.scalarBlockLayout = VK_TRUE;
-	device_vk12_features.timelineSemaphore = VK_TRUE;
+	VkPhysicalDeviceVulkan12Features features12 = { VK_FALSE };
+	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	features12.pNext = &features13;
+	features12.drawIndirectCount = VK_TRUE;
+	features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	features12.descriptorIndexing = VK_TRUE;
+	features12.descriptorBindingPartiallyBound = VK_TRUE;
+	features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
+	features12.runtimeDescriptorArray = VK_TRUE;
+	features12.scalarBlockLayout = VK_TRUE;
+	features12.timelineSemaphore = VK_TRUE;
 	
-	VkPhysicalDeviceVulkan11Features device_vk11_features = { VK_FALSE };
-	device_vk11_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-	device_vk11_features.pNext = &device_vk12_features;
-	device_vk11_features.storageBuffer16BitAccess = VK_TRUE;
-	device_vk11_features.uniformAndStorageBuffer16BitAccess = VK_TRUE;
-	device_vk11_features.shaderDrawParameters = VK_TRUE;
+	VkPhysicalDeviceVulkan11Features features11 = { VK_FALSE };
+	features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	features11.pNext = &features12;
+	features11.storageBuffer16BitAccess = VK_TRUE;
+	features11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
+	features11.shaderDrawParameters = VK_TRUE;
 
-	VkPhysicalDeviceFeatures2 device_features = { 
+	VkPhysicalDeviceFeatures2 features = { 
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-		.pNext = &device_vk11_features,
+		.pNext = &features11,
 		.features = (VkPhysicalDeviceFeatures){ }
 	};
-	device_features.features.samplerAnisotropy = VK_TRUE;
+	features.features.samplerAnisotropy = VK_TRUE;
 	
 	VkDeviceCreateInfo createInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-		.pNext = &device_features,
+		.pNext = &features,
 		.flags = 0,
 		.queueCreateInfoCount = num_queue_create_infos,
 		.pQueueCreateInfos = queue_create_infos,

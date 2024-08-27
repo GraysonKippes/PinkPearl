@@ -6,12 +6,13 @@
 
 #include "log/Logger.h"
 
-#define DEVICE_EXTENSION_COUNT 1
+#define DEVICE_EXTENSION_COUNT 2
 
 static const uint32_t deviceExtensionCount = DEVICE_EXTENSION_COUNT;
 
 static const char *pDeviceExtensionNames[DEVICE_EXTENSION_COUNT] = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 };
 
 static const PhysicalDevice nullPhysicalDevice = {
@@ -204,8 +205,6 @@ int rate_physical_device(PhysicalDevice physical_device) {
 
 PhysicalDevice select_physical_device(const VulkanInstance vulkanInstance, const WindowSurface windowSurface) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Selecting physical device...");
-
-	
 
 	uint32_t physicalDeviceCount = 0;
 	vkEnumeratePhysicalDevices(vulkanInstance.handle, &physicalDeviceCount, nullptr);

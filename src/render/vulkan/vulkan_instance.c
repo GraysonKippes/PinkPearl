@@ -86,16 +86,7 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 VulkanInstance create_vulkan_instance(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating Vulkan instance...");
 
-	VulkanInstance vulkan_instance = { 0 };
-
-	VkApplicationInfo app_info = {0};
-	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	app_info.pNext = nullptr;
-	app_info.pApplicationName = APP_NAME;	// TODO - link to project config
-	app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-	app_info.pEngineName = "No Engine";
-	app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-	app_info.apiVersion = VK_API_VERSION_1_3;
+	VulkanInstance vulkan_instance = { };
 
 	// Query the extensions required by GLFW for Vulkan.
 	uint32_t num_glfw_extensions = 0;
@@ -137,13 +128,24 @@ VulkanInstance create_vulkan_instance(void) {
 		logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Enabling Vulkan extension \"%s\".", extensions[i]);
 	}
 
-	VkInstanceCreateInfo create_info = {0};
-	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	create_info.pNext = nullptr;
-	create_info.flags = 0;
-	create_info.pApplicationInfo = &app_info;
-	create_info.enabledExtensionCount = num_extensions;
-	create_info.ppEnabledExtensionNames = (const char **)extensions;
+	const VkApplicationInfo applicationInfo = {
+		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		.pNext = nullptr,
+		.pApplicationName = APP_NAME,	// TODO - link to project config
+		.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
+		.pEngineName = "No Engine",
+		.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
+		.apiVersion = VK_API_VERSION_1_3
+	};
+	
+	VkInstanceCreateInfo create_info = {
+		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.pApplicationInfo = &applicationInfo,
+		.enabledExtensionCount = num_extensions,
+		.ppEnabledExtensionNames = (const char **)extensions
+	};
 
 	// If debug mode is enabled, enable the validation layers.
 	if (debug_enabled) {

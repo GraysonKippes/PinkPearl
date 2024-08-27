@@ -149,9 +149,19 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 	VkPipelineColorBlendAttachmentState color_blend_attachment = makePipelineColorBlendAttachmentState();
 	VkPipelineColorBlendStateCreateInfo color_blending = makePipelineColorBlendStateCreateInfo(&color_blend_attachment);
 
+	const VkPipelineRenderingCreateInfo renderingInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+		.pNext = nullptr,
+		.viewMask = 0,
+		.colorAttachmentCount = 1,
+		.pColorAttachmentFormats = &swapchain.image_format,
+		.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
+		.stencilAttachmentFormat = VK_FORMAT_UNDEFINED
+	};
+
 	const VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-		.pNext = nullptr,
+		.pNext = &renderingInfo,
 		.flags = 0,
 		.stageCount = shaderModuleCount,
 		.pStages = shaderStateCreateInfos,
@@ -164,7 +174,7 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 		.pColorBlendState = &color_blending,
 		.pDynamicState = nullptr,
 		.layout = pipeline.vkPipelineLayout,
-		.renderPass = renderPass,
+		.renderPass = VK_NULL_HANDLE,
 		.subpass = 0,
 		.basePipelineHandle = VK_NULL_HANDLE,
 		.basePipelineIndex= -1
