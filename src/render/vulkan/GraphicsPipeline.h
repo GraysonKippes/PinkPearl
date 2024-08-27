@@ -6,7 +6,7 @@
 #include "descriptor.h"
 #include "Pipeline.h"
 #include "Shader.h"
-#include "swapchain.h"
+#include "Swapchain.h"
 
 Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapchain, const DescriptorSetLayout descriptorSetLayout,
 		const VkPrimitiveTopology topology, const VkPolygonMode polygonMode,

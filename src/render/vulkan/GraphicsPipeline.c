@@ -59,8 +59,8 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 		.pVertexAttributeDescriptions = attribute_descriptions
 	};
 
-	VkViewport viewport = make_viewport(swapchain.extent);
-	VkRect2D scissor = make_scissor(swapchain.extent);
+	VkViewport viewport = makeViewport(swapchain.extent);
+	VkRect2D scissor = makeScissor(swapchain.extent);
 
 	VkPipelineInputAssemblyStateCreateInfo input_assembly = makePipelineInputAssemblyStateCreateInfo(topology);
 	VkPipelineViewportStateCreateInfo viewport_state = makePipelineViewportStateCreateInfo(&viewport, &scissor);

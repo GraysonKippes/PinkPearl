@@ -86,8 +86,8 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/physical_device.c
 	src/render/vulkan/Pipeline.c
 	src/render/vulkan/queue.c
-	src/render/vulkan/shader.c
-	src/render/vulkan/swapchain.c
+	src/render/vulkan/Shader.c
+	src/render/vulkan/Swapchain.c
 	src/render/vulkan/synchronization.c
 	src/render/vulkan/texture.c
 	src/render/vulkan/texture_loader.c

@@ -152,8 +152,6 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 		deallocate((void **)&bufImgCopies);
 	} vkEndCommandBuffer(transferCommandBuffer);
 
-	const VkPipelineStageFlags transfer_stage_flags[1] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
-
 	{	// Second submit
 		const VkSubmitInfo submitInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,

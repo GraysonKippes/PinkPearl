@@ -200,7 +200,7 @@ void create_vulkan_objects(void) {
 	commandPoolTransfer = createCommandPool(device, *physical_device.queueFamilyIndices.transfer_family_ptr, true, true);
 	commandPoolCompute = createCommandPool(device, *physical_device.queueFamilyIndices.compute_family_ptr, true, false);
 
-	swapchain = createSwapchain(get_application_window(), windowSurface.vkSurface, physical_device, device, VK_NULL_HANDLE);
+	swapchain = createSwapchain(get_application_window(), windowSurface, physical_device, device, VK_NULL_HANDLE);
 	
 	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, VERTEX_SHADER_NAME);
 	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, FRAGMENT_SHADER_NAME);
@@ -237,7 +237,7 @@ void destroy_vulkan_objects(void) {
 
 	deletePipeline(&graphicsPipeline);
 	
-	deleteSwapchain(device, swapchain);
+	deleteSwapchain(&swapchain);
 	
 	deleteCommandPool(&commandPoolGraphics);
 	deleteCommandPool(&commandPoolTransfer);

@@ -7,10 +7,13 @@
 #include <GLFW/glfw3.h>
 
 #include "physical_device.h"
+#include "vulkan_instance.h"
 
 typedef struct Swapchain {
 	
-	VkSwapchainKHR handle;
+	VkSwapchainKHR vkSwapchain;
+	
+	VkDevice vkDevice;
 
 	VkFormat image_format;
 	VkExtent2D extent;
@@ -21,14 +24,12 @@ typedef struct Swapchain {
 
 } Swapchain;
 
-Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, PhysicalDevice physical_device, VkDevice device, VkSwapchainKHR old_swapchain_handle);
+Swapchain createSwapchain(GLFWwindow *const pWindow, const WindowSurface windowSurface, const PhysicalDevice physicalDevice, const VkDevice vkDevice, const VkSwapchainKHR old_swapchain_handle);
 
-void deleteSwapchain(VkDevice device, Swapchain swapchain);
+void deleteSwapchain(Swapchain *const pSwapchain);
 
-void create_framebuffers(VkDevice device, VkRenderPass render_pass, Swapchain *swapchain_ptr);
+VkViewport makeViewport(const VkExtent2D extent);
 
-VkViewport make_viewport(VkExtent2D extent);
-
-VkRect2D make_scissor(VkExtent2D extent);
+VkRect2D makeScissor(const VkExtent2D extent);
 
 #endif	// SWAPCHAIN_H

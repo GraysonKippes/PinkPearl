@@ -465,7 +465,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	commandBufferReset(&frame_array.frames[frame_array.current_frame].commandBuffer);
 
 	uint32_t imageIndex = 0;
-	const VkResult result = vkAcquireNextImageKHR(device, swapchain.handle, UINT64_MAX, frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore, VK_NULL_HANDLE, &imageIndex);
+	const VkResult result = vkAcquireNextImageKHR(device, swapchain.vkSwapchain, UINT64_MAX, frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore, VK_NULL_HANDLE, &imageIndex);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		return;
 	}
@@ -680,7 +680,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &frame_array.frames[frame_array.current_frame].semaphore_present_ready.semaphore,
 		.swapchainCount = 1,
-		.pSwapchains = &swapchain.handle,
+		.pSwapchains = &swapchain.vkSwapchain,
 		.pImageIndices = &imageIndex,
 		.pResults = nullptr
 	};
