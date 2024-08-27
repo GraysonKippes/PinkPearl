@@ -28,7 +28,6 @@ extern memory_type_set_t memory_type_set;
 extern VkDevice device;
 extern Swapchain swapchain;
 extern Pipeline graphicsPipeline;
-extern VkRenderPass renderPass;
 extern Sampler samplerDefault;
 
 /* -- Queues -- */

@@ -18,7 +18,6 @@ typedef struct Swapchain {
 	uint32_t num_images;
 	VkImage *images;
 	VkImageView *image_views;
-	VkFramebuffer *framebuffers;
 
 } Swapchain;
 

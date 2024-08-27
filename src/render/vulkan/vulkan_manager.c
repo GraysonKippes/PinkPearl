@@ -43,10 +43,6 @@ Swapchain swapchain = { };
 
 Pipeline graphicsPipeline = { };
 
-Pipeline graphicsPipelineDebug = { };
-
-VkRenderPass renderPass = VK_NULL_HANDLE;
-
 Sampler samplerDefault = { };
 
 /* -- Queues -- */
@@ -206,19 +202,15 @@ void create_vulkan_objects(void) {
 
 	swapchain = createSwapchain(get_application_window(), windowSurface.vkSurface, physical_device, device, VK_NULL_HANDLE);
 	
-	renderPass = createRenderPass(device, swapchain.image_format);
-	
 	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, VERTEX_SHADER_NAME);
 	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, FRAGMENT_SHADER_NAME);
 	
-	graphicsPipeline = createGraphicsPipeline(device, swapchain, renderPass, graphicsPipelineDescriptorSetLayout,
+	graphicsPipeline = createGraphicsPipeline(device, swapchain, graphicsPipelineDescriptorSetLayout,
 			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL,
 			2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
 	
 	destroyShaderModule(&vertexShaderModule);
 	destroyShaderModule(&fragmentShaderModule);
-	
-	create_framebuffers(device, renderPass, &swapchain);
 
 	samplerDefault = createSampler(device, physical_device);
 	
@@ -244,8 +236,6 @@ void destroy_vulkan_objects(void) {
 	deleteSampler(&samplerDefault);
 
 	deletePipeline(&graphicsPipeline);
-	
-	vkDestroyRenderPass(device, renderPass, nullptr);
 	
 	deleteSwapchain(device, swapchain);
 	

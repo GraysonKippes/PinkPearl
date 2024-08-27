@@ -150,43 +150,16 @@ Swapchain createSwapchain(GLFWwindow *window, VkSurfaceKHR surface, PhysicalDevi
 	return swapchain;
 }
 
-void create_framebuffers(const VkDevice device, const VkRenderPass renderPass, Swapchain *const pSwapchain) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating framebuffers for swapchain...");
-
-	pSwapchain->framebuffers = malloc(pSwapchain->num_images * sizeof(VkFramebuffer));
-	for (uint32_t i = 0; i < pSwapchain->num_images; ++i) {
-
-		const VkFramebufferCreateInfo createInfo = {
-			 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-			 .pNext = nullptr,
-			 .flags = 0,
-			 .renderPass = renderPass,
-			 .attachmentCount = 1,
-			 .pAttachments = &pSwapchain->image_views[i],
-			 .width = pSwapchain->extent.width,
-			 .height = pSwapchain->extent.height,
-			 .layers = 1
-		};
-
-		const VkResult result = vkCreateFramebuffer(device, &createInfo, nullptr, &pSwapchain->framebuffers[i]);
-		if (result != VK_SUCCESS) {
-			logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Framebuffer creation for swapchain failed (error code: %i).", result);
-		}
-	}
-}
-
 void deleteSwapchain(VkDevice device, Swapchain swapchain) {
 
 	for (size_t i = 0; i < swapchain.num_images; ++i) {
 		vkDestroyImageView(device, swapchain.image_views[i], nullptr);
-		vkDestroyFramebuffer(device, swapchain.framebuffers[i], nullptr);
 	}
 
 	vkDestroySwapchainKHR(device, swapchain.handle, nullptr);
 
 	free(swapchain.images);
 	free(swapchain.image_views);
-	free(swapchain.framebuffers);
 }
 
 VkViewport make_viewport(VkExtent2D extent) {
