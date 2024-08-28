@@ -36,7 +36,7 @@ static ShaderBytecode read_shader_file(const char *const pPath) {
 
 	FILE *file = fopen(pPath, "rb");
 	if (file == nullptr) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: could not open file.");
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: could not open file \"%s\".", pPath);
 		return shader_bytecode;
 	}
 	

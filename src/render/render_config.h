@@ -37,8 +37,8 @@ extern const uint32_t numRoomLayers;
 // By default, this is 16, for a 16x16 texture.
 extern const uint32_t tile_texel_length;
 
-#define VERTEX_SHADER_NAME 				"vertex_shader.spv"
-#define FRAGMENT_SHADER_NAME 			"fragment_shader.spv"
+#define VERTEX_SHADER_NAME 				"VertexShader.spv"
+#define FRAGMENT_SHADER_NAME 			"FragmentShader.spv"
 #define COMPUTE_MATRICES_SHADER_NAME 	"compute_matrices.spv"
 #define AREA_MESH_SHADER_NAME			"area_mesh.spv"
 #define ROOM_TEXTURE_SHADER_NAME 		"room_texture.spv"

@@ -43,6 +43,8 @@ Swapchain swapchain = { };
 
 Pipeline graphicsPipeline = { };
 
+Pipeline graphicsPipelineDebug = { };
+
 Sampler samplerDefault = { };
 
 /* -- Queues -- */
@@ -208,6 +210,10 @@ void create_vulkan_objects(void) {
 	graphicsPipeline = createGraphicsPipeline(device, swapchain, graphicsPipelineDescriptorSetLayout,
 			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL,
 			2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
+			
+	graphicsPipelineDebug = createGraphicsPipeline(device, swapchain, graphicsPipelineDescriptorSetLayout,
+			VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_POLYGON_MODE_FILL,
+			2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
 	
 	destroyShaderModule(&vertexShaderModule);
 	destroyShaderModule(&fragmentShaderModule);
@@ -236,6 +242,7 @@ void destroy_vulkan_objects(void) {
 	deleteSampler(&samplerDefault);
 
 	deletePipeline(&graphicsPipeline);
+	deletePipeline(&graphicsPipelineDebug);
 	
 	deleteSwapchain(&swapchain);
 	
