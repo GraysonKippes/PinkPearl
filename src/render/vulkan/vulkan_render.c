@@ -517,26 +517,13 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	commandBufferBegin(&frame_array.frames[frame_array.current_frame].commandBuffer, false); {
 		
-		const VkImageMemoryBarrier2 swapchainTransitionBarrier1 = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-			.pNext = nullptr,
-			.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-			.srcAccessMask = VK_ACCESS_2_NONE,
-			.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-			.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapchain.images[imageIndex],
-			.subresourceRange = (VkImageSubresourceRange){
-				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-				.baseMipLevel = 0,
-				.levelCount = 1,
-				.baseArrayLayer = 0,
-				.layerCount = 1
-			}
+		static const ImageSubresourceRange imageSubresourceRange = {
+			.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.baseArrayLayer = 0,
+			.arrayLayerCount = 1
 		};
+		
+		const VkImageMemoryBarrier2 swapchainTransitionBarrier1 = makeImageTransitionBarrier(swapchain.pImages[imageIndex], imageSubresourceRange, imageUsageColorAttachment);
 		
 		const VkDependencyInfo dependencyInfo1 = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -555,7 +542,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		const VkRenderingAttachmentInfo attachmentInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 			.pNext = nullptr,
-			.imageView = swapchain.image_views[imageIndex],
+			.imageView = swapchain.pImages[imageIndex].vkImageView,
 			.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.resolveMode = VK_RESOLVE_MODE_NONE,
 			.resolveImageView = VK_NULL_HANDLE,
@@ -569,7 +556,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 			.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 			.pNext = nullptr,
 			.flags = 0,
-			.renderArea = (VkRect2D){ { 0, 0 }, swapchain.extent },
+			.renderArea = (VkRect2D){ { 0, 0 }, swapchain.imageExtent },
 			.layerCount = 1,
 			.viewMask = 0,
 			.colorAttachmentCount = 1,
@@ -593,26 +580,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		vkCmdEndRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer);
 		
-		const VkImageMemoryBarrier2 swapchainTransitionBarrier2 = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-			.pNext = nullptr,
-			.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-			.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-			.dstStageMask = VK_PIPELINE_STAGE_2_NONE,
-			.dstAccessMask = VK_ACCESS_2_NONE,
-			.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapchain.images[imageIndex],
-			.subresourceRange = (VkImageSubresourceRange){
-				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-				.baseMipLevel = 0,
-				.levelCount = 1,
-				.baseArrayLayer = 0,
-				.layerCount = 1
-			}
-		};
+		const VkImageMemoryBarrier2 swapchainTransitionBarrier2 = makeImageTransitionBarrier(swapchain.pImages[imageIndex], imageSubresourceRange, imageUsagePresent);
 		
 		const VkDependencyInfo dependencyInfo2 = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,

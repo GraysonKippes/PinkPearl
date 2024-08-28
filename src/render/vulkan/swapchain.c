@@ -23,14 +23,13 @@ Swapchain createSwapchain(GLFWwindow *const pWindow, const WindowSurface windowS
 	Swapchain swapchain = { };
 
 	VkSurfaceFormatKHR surface_format = selectSurfaceFormat(physicalDevice.swapchainSupportDetails);
-	swapchain.image_format = surface_format.format;
 	VkPresentModeKHR present_mode = selectPresentMode(physicalDevice.swapchainSupportDetails);
-	swapchain.extent = selectExtent(physicalDevice.swapchainSupportDetails, pWindow);
+	swapchain.imageExtent = selectExtent(physicalDevice.swapchainSupportDetails, pWindow);
 
 	// Requested number of images in swapchain.
-	uint32_t num_images = physicalDevice.swapchainSupportDetails.capabilities.minImageCount + 1;
-	if (physicalDevice.swapchainSupportDetails.capabilities.maxImageCount > 0 && num_images > physicalDevice.swapchainSupportDetails.capabilities.maxImageCount) {
-		num_images = physicalDevice.swapchainSupportDetails.capabilities.maxImageCount;
+	uint32_t imageCount = physicalDevice.swapchainSupportDetails.capabilities.minImageCount + 1;
+	if (physicalDevice.swapchainSupportDetails.capabilities.maxImageCount > 0 && imageCount > physicalDevice.swapchainSupportDetails.capabilities.maxImageCount) {
+		imageCount = physicalDevice.swapchainSupportDetails.capabilities.maxImageCount;
 	}
 
 	VkSwapchainCreateInfoKHR swapchainCreateInfo = {
@@ -38,10 +37,10 @@ Swapchain createSwapchain(GLFWwindow *const pWindow, const WindowSurface windowS
 		.pNext = nullptr,
 		.flags = 0,
 		.surface = windowSurface.vkSurface,
-		.minImageCount = num_images,
+		.minImageCount = imageCount,
 		.imageFormat = surface_format.format,
 		.imageColorSpace = surface_format.colorSpace,
-		.imageExtent = swapchain.extent,
+		.imageExtent = swapchain.imageExtent,
 		.imageArrayLayers = 1,
 		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		.preTransform = physicalDevice.swapchainSupportDetails.capabilities.currentTransform,
@@ -62,9 +61,9 @@ Swapchain createSwapchain(GLFWwindow *const pWindow, const WindowSurface windowS
 		swapchainCreateInfo.pQueueFamilyIndices = nullptr;
 	}
 
-	const VkResult swapchain_creation_result = vkCreateSwapchainKHR(vkDevice, &swapchainCreateInfo, nullptr, &swapchain.vkSwapchain);
-	if (swapchain_creation_result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating swapchain: swapchain creation failed (error code: %i).", swapchain_creation_result);
+	const VkResult vkSwapchainCreateResult = vkCreateSwapchainKHR(vkDevice, &swapchainCreateInfo, nullptr, &swapchain.vkSwapchain);
+	if (vkSwapchainCreateResult != VK_SUCCESS) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating swapchain: swapchain creation failed (error code: %i).", vkSwapchainCreateResult);
 		return swapchain;
 	}
 
@@ -72,25 +71,24 @@ Swapchain createSwapchain(GLFWwindow *const pWindow, const WindowSurface windowS
 	
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Retrieving images for swapchain...");
 
-	vkGetSwapchainImagesKHR(vkDevice, swapchain.vkSwapchain, &num_images, nullptr);
-	swapchain.num_images = num_images;
-	swapchain.images = malloc(swapchain.num_images * sizeof(VkImage));
-	vkGetSwapchainImagesKHR(vkDevice, swapchain.vkSwapchain, &num_images, swapchain.images);
-
+	vkGetSwapchainImagesKHR(vkDevice, swapchain.vkSwapchain, &imageCount, nullptr);
+	VkImage vkImages[imageCount];
+	vkGetSwapchainImagesKHR(vkDevice, swapchain.vkSwapchain, &imageCount, vkImages);
+	
 	// Create image views
 
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating image views for swapchain...");
 
-	swapchain.image_views = malloc(swapchain.num_images * sizeof(VkImageView));
-	for (size_t i = 0; i < swapchain.num_images; ++i) {
+	VkImageView vkImageViews[imageCount];
+	for (size_t imageIndex = 0; imageIndex < imageCount; ++imageIndex) {
 
 		const VkImageViewCreateInfo imageViewCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
-			.image = swapchain.images[i],
+			.image = vkImages[imageIndex],
 			.viewType = VK_IMAGE_VIEW_TYPE_2D,
-			.format = swapchain.image_format,
+			.format = surface_format.format,
 			.components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
 			.components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
 			.components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -102,13 +100,35 @@ Swapchain createSwapchain(GLFWwindow *const pWindow, const WindowSurface windowS
 			.subresourceRange.layerCount = 1
 		};
 
-		VkResult imageViewCreateResult = vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &swapchain.image_views[i]);
+		const VkResult imageViewCreateResult = vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &vkImageViews[imageIndex]);
 		if (imageViewCreateResult != VK_SUCCESS) {
 			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating swapchain: image view creation for swapchain failed (error code: %i).", imageViewCreateResult);
 			return swapchain;
 		}
 	}
 	
+	swapchain.pImages = malloc(imageCount * sizeof(Image));
+	if (!swapchain.pImages) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating swapchain: failed to allocate array of images.");
+		return swapchain;
+	}
+	
+	for (uint32_t imageIndex = 0; imageIndex < imageCount; ++imageIndex) {
+		swapchain.pImages[imageIndex] = (Image){
+			.usage = imageUsageUndefined,
+			.extent = (Extent){
+				.width = swapchain.imageExtent.width,
+				.length = swapchain.imageExtent.height
+			},
+			.vkImage = vkImages[imageIndex],
+			.vkImageView = vkImageViews[imageIndex],
+			.vkFormat = surface_format.format,
+			.vkDevice = vkDevice
+		};
+	}
+	
+	swapchain.imageCount = imageCount;
+	swapchain.imageFormat = surface_format.format;
 	swapchain.vkDevice = vkDevice;
 
 	return swapchain;
@@ -120,20 +140,18 @@ void deleteSwapchain(Swapchain *const pSwapchain) {
 		return;
 	}
 
-	for (size_t i = 0; i < swapchain.num_images; ++i) {
-		vkDestroyImageView(pSwapchain->vkDevice, pSwapchain->image_views[i], nullptr);
+	for (size_t imageIndex = 0; imageIndex < pSwapchain->imageCount; ++imageIndex) {
+		vkDestroyImageView(pSwapchain->vkDevice, pSwapchain->pImages[imageIndex].vkImageView, nullptr);
 	}
 	vkDestroySwapchainKHR(pSwapchain->vkDevice, pSwapchain->vkSwapchain, nullptr);
-	free(pSwapchain->images);
-	free(pSwapchain->image_views);
+	free(pSwapchain->pImages);
 	
+	pSwapchain->imageCount = 0;
+	pSwapchain->pImages = nullptr;
+	pSwapchain->imageFormat = VK_FORMAT_UNDEFINED;
+	pSwapchain->imageExtent = (VkExtent2D){ 0, 0 };
 	pSwapchain->vkSwapchain = VK_NULL_HANDLE;
 	pSwapchain->vkDevice = VK_NULL_HANDLE;
-	pSwapchain->image_format = VK_FORMAT_UNDEFINED;
-	pSwapchain->extent = (VkExtent2D){ 0, 0 };
-	pSwapchain->num_images = 0;
-	pSwapchain->images = nullptr;
-	pSwapchain->image_views = nullptr;
 }
 
 VkViewport makeViewport(const VkExtent2D extent) {

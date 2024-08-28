@@ -48,10 +48,22 @@ const ImageUsage imageUsageSampled = {
 	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 };
 
+const ImageUsage imageUsageColorAttachment = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+	.memoryAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+	.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+};
+
 const ImageUsage imageUsageDepthAttachment = {
 	.pipelineStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
 	.memoryAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
 	.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+};
+
+const ImageUsage imageUsagePresent = {
+	.pipelineStageMask = VK_PIPELINE_STAGE_2_NONE,
+	.memoryAccessMask = VK_ACCESS_2_NONE,
+	.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 };
 
 bool validateImage(const Image image) {

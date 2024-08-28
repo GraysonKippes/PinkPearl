@@ -59,8 +59,8 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 		.pVertexAttributeDescriptions = attribute_descriptions
 	};
 
-	VkViewport viewport = makeViewport(swapchain.extent);
-	VkRect2D scissor = makeScissor(swapchain.extent);
+	VkViewport viewport = makeViewport(swapchain.imageExtent);
+	VkRect2D scissor = makeScissor(swapchain.imageExtent);
 
 	VkPipelineInputAssemblyStateCreateInfo input_assembly = makePipelineInputAssemblyStateCreateInfo(topology);
 	VkPipelineViewportStateCreateInfo viewport_state = makePipelineViewportStateCreateInfo(&viewport, &scissor);
@@ -74,7 +74,7 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 		.pNext = nullptr,
 		.viewMask = 0,
 		.colorAttachmentCount = 1,
-		.pColorAttachmentFormats = &swapchain.image_format,
+		.pColorAttachmentFormats = &swapchain.imageFormat,
 		.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
 		.stencilAttachmentFormat = VK_FORMAT_UNDEFINED
 	};

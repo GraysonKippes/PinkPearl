@@ -60,12 +60,22 @@ bool weaklyValidateImage(const Image image);
 bool deleteImage(Image *const pImage);
 
 extern const ImageUsage imageUsageUndefined;
+
 extern const ImageUsage imageUsageTransferSource;
+
 extern const ImageUsage imageUsageTransferDestination;
+
 extern const ImageUsage imageUsageComputeRead;
+
 extern const ImageUsage imageUsageComputeWrite;
+
 extern const ImageUsage imageUsageSampled;
+
+extern const ImageUsage imageUsageColorAttachment;
+
 extern const ImageUsage imageUsageDepthAttachment;
+
+extern const ImageUsage imageUsagePresent;
 
 /* -- TEXTURE OBJECT and FUNCTIONALITY -- */
 
