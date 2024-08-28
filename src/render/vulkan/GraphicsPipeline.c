@@ -11,6 +11,8 @@
 #include "vertex_input.h"
 #include "vulkan_manager.h"
 
+static const uint32_t attributeSizes[VERTEX_INPUT_NUM_ATTRIBUTES] = { 3, 2, 3 };
+
 /* -- FUNCTION DECLARATIONS -- */
 
 static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(const VkPrimitiveTopology topology);
@@ -24,6 +26,10 @@ static VkPipelineMultisampleStateCreateInfo makePipelineMultisampleStateCreateIn
 static VkPipelineColorBlendAttachmentState makePipelineColorBlendAttachmentState(void);
 
 static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendAttachmentState *const pAttachmentState);
+
+static VkVertexInputBindingDescription makeVertexInputBindingDescription(const uint32_t elementStride);
+
+static void makeVertexInputAttributeDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount]);
 
 /* -- FUNCTION DEFINITIONS -- */
 
@@ -44,10 +50,11 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 
 	pipeline.vkPipelineLayout = createPipelineLayout(vkDevice, pipeline.vkDescriptorSetLayout);
 
-	VkVertexInputBindingDescription binding_description = get_binding_description();
+	VkVertexInputBindingDescription binding_description = makeVertexInputBindingDescription(vertex_input_element_stride);
 
-	VkVertexInputAttributeDescription attribute_descriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { 0 } };
-	get_attribute_descriptions(attribute_descriptions);
+	VkVertexInputAttributeDescription attributeDescriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { } };
+	makeVertexInputAttributeDescriptions(vertex_input_num_attributes, attributeSizes, attributeDescriptions);
+	//get_attribute_descriptions(attribute_descriptions);
 
 	const VkPipelineVertexInputStateCreateInfo vertex_input_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -56,7 +63,7 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 		.vertexBindingDescriptionCount = 1,
 		.pVertexBindingDescriptions = &binding_description,
 		.vertexAttributeDescriptionCount = vertex_input_num_attributes,
-		.pVertexAttributeDescriptions = attribute_descriptions
+		.pVertexAttributeDescriptions = attributeDescriptions
 	};
 
 	VkViewport viewport = makeViewport(swapchain.imageExtent);
@@ -187,4 +194,33 @@ static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo
 		.pAttachments = pAttachmentState,
 		.blendConstants = { 0.0F, 0.0F, 0.0F, 0.0F }
 	};
+}
+
+static VkVertexInputBindingDescription makeVertexInputBindingDescription(const uint32_t elementStride) {
+	return (VkVertexInputBindingDescription){
+		.binding = 0,
+		.stride = elementStride * sizeof(float),
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+	};
+}
+
+static void makeVertexInputAttributeDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount]) {
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i < attributeCount; ++i) {
+		
+		VkFormat format = VK_FORMAT_UNDEFINED;
+		switch (attributeSizes[i]) {
+			case 1: format = VK_FORMAT_R32_SFLOAT; break;
+			case 2: format = VK_FORMAT_R32G32_SFLOAT; break;
+			case 3: format = VK_FORMAT_R32G32B32_SFLOAT; break;
+			case 4: format = VK_FORMAT_R32G32B32A32_SFLOAT; break;
+		}
+		
+		attributeDescriptions[i].binding = 0;
+		attributeDescriptions[i].location = i;
+		attributeDescriptions[i].format = format;
+		attributeDescriptions[i].offset = offset;
+		
+		offset += attributeSizes[i] * sizeof(float);
+	}
 }
