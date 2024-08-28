@@ -54,7 +54,6 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 
 	VkVertexInputAttributeDescription attributeDescriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { } };
 	makeVertexInputAttributeDescriptions(vertex_input_num_attributes, attributeSizes, attributeDescriptions);
-	//get_attribute_descriptions(attribute_descriptions);
 
 	const VkPipelineVertexInputStateCreateInfo vertex_input_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,

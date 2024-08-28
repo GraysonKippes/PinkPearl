@@ -106,6 +106,25 @@ void commandBufferEnd(CommandBuffer *const pCommandBuffer) {
 	pCommandBuffer->recording = false;
 }
 
+void commandBufferBindPipeline(CommandBuffer *const pCommandBuffer, const Pipeline pipeline) {
+	if (!pCommandBuffer) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding pipeline: pointer to command buffer object is null.");
+		return;
+	}
+	
+	VkPipelineBindPoint pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	switch (pipeline.type) {
+		case PIPELINE_TYPE_GRAPHICS:
+			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			break;
+		case PIPELINE_TYPE_COMPUTE:
+			pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+			break;
+	}
+	
+	vkCmdBindPipeline(pCommandBuffer->vkCommandBuffer, pipelineBindPoint, pipeline.vkPipeline);
+}
+
 void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const Pipeline pipeline) {
 	if (!pCommandBuffer || !pDescriptorSet) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: null pointer(s) detected.");
@@ -176,21 +195,6 @@ void cmdBufBegin(const VkCommandBuffer cmdBuf, const bool singleSubmit) {
 		.pInheritanceInfo = nullptr
 	};
 	vkBeginCommandBuffer(cmdBuf, &cmdBufBeginInfo);
-}
-
-void begin_render_pass(VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkExtent2D extent, VkClearValue *clear_value) {
-
-	VkRenderPassBeginInfo render_pass_info = { 0 };
-	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	render_pass_info.renderPass = render_pass;
-	render_pass_info.framebuffer = framebuffer;
-	render_pass_info.renderArea.offset.x = 0;
-	render_pass_info.renderArea.offset.y = 0;
-	render_pass_info.renderArea.extent = extent;
-	render_pass_info.clearValueCount = 1;
-	render_pass_info.pClearValues = clear_value;
-
-	vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer command_buffer) {

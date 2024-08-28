@@ -567,11 +567,11 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		vkCmdBeginRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &renderingInfo);
 		
-		vkCmdBindPipeline(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.vkPipeline);
+		commandBufferBindPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipeline);
 		
 		commandBufferBindDescriptorSet(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
 		
-		const VkDeviceSize offsets[] = { 0 };
+		const VkDeviceSize offsets[1] = { 0 };
 		vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
 		vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
 		

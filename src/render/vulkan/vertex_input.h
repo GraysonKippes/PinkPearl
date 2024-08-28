@@ -1,10 +1,7 @@
 #ifndef VERTEX_INPUT_H
 #define VERTEX_INPUT_H
 
-#include <stddef.h>
 #include <stdint.h>
-
-#include <vulkan/vulkan.h>
 
 #define NUM_VERTICES_PER_QUAD 		4
 #define VERTEX_INPUT_NUM_ATTRIBUTES	3
