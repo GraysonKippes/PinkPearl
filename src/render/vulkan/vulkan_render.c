@@ -66,9 +66,6 @@ static void updateTextureDescriptor(const int quadHandle, const int textureHandl
 
 void createVulkanRenderObjects(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating Vulkan render objects...");
-
-	init_compute_matrices(device);
-	init_compute_room_texture(device);
 	
 	inactiveQuadIDs = newStack(vkConfMaxNumQuads, sizeof(int));
 	for (int quadHandle = vkConfMaxNumQuads - 1; quadHandle >= 0; --quadHandle) {

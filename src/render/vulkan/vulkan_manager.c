@@ -20,6 +20,8 @@
 #include "queue.h"
 #include "Shader.h"
 #include "vertex_input.h"
+#include "compute/compute_matrices.h"
+#include "compute/compute_room_texture.h"
 
 /* -- Vulkan Module Configuration -- */
 
@@ -232,6 +234,9 @@ void create_vulkan_objects(void) {
 		}
 	};
 	frame_array = createFrameArray(frameArrayCreateInfo);
+	
+	init_compute_matrices(device);
+	init_compute_room_texture(device);
 }
 
 void destroy_vulkan_objects(void) {

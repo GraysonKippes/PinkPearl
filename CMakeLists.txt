@@ -79,6 +79,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/CommandBuffer.c
 	src/render/vulkan/ComputePipeline.c
 	src/render/vulkan/Descriptor.c
+	src/render/vulkan/Draw.c
 	src/render/vulkan/frame.c
 	src/render/vulkan/GraphicsPipeline.c
 	src/render/vulkan/logical_device.c
