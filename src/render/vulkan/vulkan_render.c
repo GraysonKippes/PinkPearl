@@ -605,7 +605,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		.deviceMask = 0
 	};
 
-	VkSemaphoreSubmitInfo wait_semaphore_submit_infos[3] = { 0 };
+	VkSemaphoreSubmitInfo wait_semaphore_submit_infos[3] = { };
 	wait_semaphore_submit_infos[1] = make_timeline_semaphore_wait_submit_info(frame_array.frames[frame_array.current_frame].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT);
 
 	wait_semaphore_submit_infos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
@@ -622,7 +622,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	wait_semaphore_submit_infos[2].stageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
 	wait_semaphore_submit_infos[2].deviceIndex = 0;
 
-	VkSemaphoreSubmitInfo signal_semaphore_submit_infos[1] = { 0 };
+	VkSemaphoreSubmitInfo signal_semaphore_submit_infos[1] = { };
 	signal_semaphore_submit_infos[0] = make_timeline_semaphore_signal_submit_info(frame_array.frames[frame_array.current_frame].semaphore_render_finished, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT);
 	frame_array.frames[frame_array.current_frame].semaphore_render_finished.wait_counter += 1;
 

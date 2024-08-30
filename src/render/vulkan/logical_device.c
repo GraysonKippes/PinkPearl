@@ -84,12 +84,13 @@ void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_devic
 	features11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
 	features11.shaderDrawParameters = VK_TRUE;
 
-	VkPhysicalDeviceFeatures2 features = { 
+	const VkPhysicalDeviceFeatures2 features = { 
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
 		.pNext = &features11,
-		.features = (VkPhysicalDeviceFeatures){ }
+		.features = (VkPhysicalDeviceFeatures){ 
+			.samplerAnisotropy = VK_TRUE
+		}
 	};
-	features.features.samplerAnisotropy = VK_TRUE;
 	
 	VkDeviceCreateInfo createInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
