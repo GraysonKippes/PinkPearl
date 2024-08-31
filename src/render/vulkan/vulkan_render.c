@@ -49,7 +49,7 @@ Stack inactiveQuadIDs;
 uint32_t quadDrawDataIndices[VK_CONF_MAX_NUM_QUADS];
 
 // Transform of each quad.
-RenderTransform quadTransforms[VK_CONF_MAX_NUM_QUADS];
+ModelTransform quadTransforms[VK_CONF_MAX_NUM_QUADS];
 
 // Texture state of each quad.
 TextureState quadTextureStates[VK_CONF_MAX_NUM_QUADS];

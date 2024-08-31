@@ -23,9 +23,6 @@ static Frame createFrame(PhysicalDevice physical_device, VkDevice device, Comman
 		.vertex_buffer = VK_NULL_HANDLE,
 		.index_buffer = VK_NULL_HANDLE
 	};
-	
-	const VkDeviceSize index_buffer_size = numRenderObjectSlots * num_indices_per_rect;
-	const VkDeviceSize vertex_buffer_size = numRenderObjectSlots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float);
 
 	const VkFenceCreateInfo fence_create_info = {
 		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -52,7 +49,7 @@ static Frame createFrame(PhysicalDevice physical_device, VkDevice device, Comman
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.size = vertex_buffer_size,
+		.size = numRenderObjectSlots * num_vertices_per_rect * vertex_input_element_stride * sizeof(float),
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		.sharingMode = VK_SHARING_MODE_CONCURRENT,
 		.queueFamilyIndexCount = 2,
@@ -63,7 +60,7 @@ static Frame createFrame(PhysicalDevice physical_device, VkDevice device, Comman
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.size = index_buffer_size,
+		.size = numRenderObjectSlots * num_indices_per_rect,
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		.sharingMode = VK_SHARING_MODE_CONCURRENT,
 		.queueFamilyIndexCount = 2,
@@ -152,19 +149,20 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 	allocCmdBufs(frame_array.device, frameArrayCreateInfo.commandPool.vkCommandPool, 1, &cmdBuf);
 	cmdBufBegin(cmdBuf, true); {
 	
-		const uint16_t indices[6] = {
-			0, 1, 2,
-			2, 3, 0
+		static const VkDeviceSize indexCount = 14;
+		const uint16_t indices[14] = {
+			0, 1, 2, 2, 3, 0,
+			0, 1, 1, 2, 2, 3, 3, 0
 		};
 		
 		byte_t *mappedMemory = buffer_partition_map_memory(global_staging_buffer_partition, 0);
-		memcpy(mappedMemory, indices, 6 * sizeof(uint16_t));
+		memcpy(mappedMemory, indices, indexCount * sizeof(uint16_t));
 		buffer_partition_unmap_memory(global_staging_buffer_partition);
 	
 		const VkBufferCopy bufCpy = {
 			.srcOffset = 0,
 			.dstOffset = 0,
-			.size = 6 * sizeof(uint16_t)
+			.size = indexCount * sizeof(uint16_t)
 		};
 		
 		for (uint32_t i = 0; i < frame_array.num_frames; ++i) {

@@ -8,11 +8,11 @@ typedef struct RenderVector {
 	Vector4F previous;
 } RenderVector;
 
-typedef struct RenderTransform {
+typedef struct ModelTransform {
 	RenderVector translation;
 	RenderVector scaling;
 	RenderVector rotation;
-} RenderTransform;
+} ModelTransform;
 
 // Updates the render vector, setting the previous vector to what the vector was before the update.
 void renderVectorSet(RenderVector *const pRenderVector, const Vector4F newVector);
@@ -22,5 +22,7 @@ void renderVectorReset(RenderVector *const pRenderVector, const Vector4F newVect
 
 // Sets the previous vector to the current vector.
 void renderVectorSettle(RenderVector *const pRenderVector);
+
+ModelTransform makeModelTransform(const Vector4F translation, const Vector4F scaling, const Vector4F rotation);
 
 #endif	// RENDER_VECTOR_H

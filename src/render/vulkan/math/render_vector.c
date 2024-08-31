@@ -24,3 +24,11 @@ void renderVectorSettle(RenderVector *const pRenderVector) {
 	}
 	pRenderVector->previous = pRenderVector->current;
 }
+
+ModelTransform makeModelTransform(const Vector4F translation, const Vector4F scaling, const Vector4F rotation) {
+	return (ModelTransform){
+		.translation = (RenderVector){ translation },
+		.scaling = (RenderVector){ scaling },
+		.rotation = (RenderVector){ rotation }
+	};
+}
