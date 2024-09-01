@@ -10,8 +10,7 @@
 #include "render_config.h"
 #include "render_object.h"
 #include "vulkan/texture_manager.h"
-#include "vulkan/vulkan_manager.h"
-#include "vulkan/vulkan_render.h"
+#include "vulkan/VulkanManager.h"
 #include "vulkan/math/projection.h"
 #include "vulkan/math/vector4F.h"
 

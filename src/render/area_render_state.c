@@ -6,7 +6,6 @@
 
 #include "render_object.h"
 #include "vulkan/texture_manager.h"
-#include "vulkan/vulkan_render.h"
 #include "vulkan/compute/compute_room_texture.h"
 #include "vulkan/math/lerp.h"
 

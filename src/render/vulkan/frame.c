@@ -8,7 +8,7 @@
 
 #include "queue.h"
 #include "vertex_input.h"
-#include "vulkan_manager.h"
+#include "VulkanManager.h"
 
 static Frame createFrame(PhysicalDevice physical_device, VkDevice device, CommandPool commandPool, DescriptorPool descriptorPool) {
 

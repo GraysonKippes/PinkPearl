@@ -9,7 +9,7 @@
 #include "render/render_config.h"
 
 #include "vertex_input.h"
-#include "vulkan_manager.h"
+#include "VulkanManager.h"
 
 static const uint32_t attributeSizes[VERTEX_INPUT_NUM_ATTRIBUTES] = { 3, 2, 3 };
 

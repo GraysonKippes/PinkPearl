@@ -5,7 +5,7 @@
 
 #include "log/Logger.h"
 
-#include "vulkan_manager.h"
+#include "VulkanManager.h"
 
 #define clamp(x, min, max) (x > min ? (x < max ? x : max) : min)
 

@@ -10,7 +10,7 @@
 
 #include "buffer.h"
 #include "CommandBuffer.h"
-#include "vulkan_manager.h"
+#include "VulkanManager.h"
 
 const ImageUsage imageUsageUndefined = {
 	.pipelineStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,

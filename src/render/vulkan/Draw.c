@@ -8,7 +8,7 @@
 #include "texture_manager.h"
 #include "TextureState.h"
 #include "vertex_input.h"
-#include "vulkan_manager.h"
+#include "VulkanManager.h"
 
 typedef struct DrawInfo {
 	

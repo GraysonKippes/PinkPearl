@@ -12,7 +12,7 @@
 
 #include "buffer.h"
 #include "CommandBuffer.h"
-#include "vulkan_manager.h"
+#include "VulkanManager.h"
 
 #define TEXTURE_PATH (RESOURCE_PATH "assets/textures/")
 

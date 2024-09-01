@@ -8,7 +8,7 @@
 #include "../CommandBuffer.h"
 #include "../ComputePipeline.h"
 #include "../descriptor.h"
-#include "../vulkan_manager.h"
+#include "../VulkanManager.h"
 
 static const DescriptorBinding compute_matrices_bindings[2] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },

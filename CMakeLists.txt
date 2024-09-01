@@ -96,8 +96,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/TextureState.c
 	src/render/vulkan/vertex_input.c
 	src/render/vulkan/vulkan_instance.c
-	src/render/vulkan/vulkan_manager.c
-	src/render/vulkan/vulkan_render.c
+	src/render/vulkan/VulkanManager.c
 	src/render/vulkan/compute/compute_matrices.c
 	src/render/vulkan/compute/compute_room_texture.c
 	src/render/vulkan/math/lerp.c

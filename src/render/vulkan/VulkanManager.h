@@ -12,6 +12,7 @@
 #include "Swapchain.h"
 #include "texture.h"
 #include "vulkan_instance.h"
+#include "math/projection.h"
 
 #include "render/render_config.h"
 
@@ -67,5 +68,9 @@ void create_vulkan_objects(void);
 
 // Destroys the Vulkan objects created for the rendering system.
 void destroy_vulkan_objects(void);
+
+void initTextureDescriptors(void);
+
+void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds);
 
 #endif	// VULKAN_MANAGER_H

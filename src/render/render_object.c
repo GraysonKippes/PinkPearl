@@ -6,8 +6,7 @@
 
 #include "log/Logger.h"
 #include "vulkan/Draw.h"
-#include "vulkan/vulkan_manager.h"
-#include "vulkan/vulkan_render.h"
+#include "vulkan/VulkanManager.h"
 #include "vulkan/texture_manager.h"
 
 #include "area_render_state.h"

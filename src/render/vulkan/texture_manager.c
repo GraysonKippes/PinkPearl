@@ -17,7 +17,7 @@
 #include "CommandBuffer.h"
 #include "texture.h"
 #include "texture_loader.h"
-#include "vulkan_manager.h"
+#include "VulkanManager.h"
 #include "compute/compute_room_texture.h"
 
 #define TEXTURE_PATH (RESOURCE_PATH "assets/textures/")

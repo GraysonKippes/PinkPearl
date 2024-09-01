@@ -12,11 +12,13 @@
 #include "render/renderer.h"
 #include "util/Random.h"
 
+static const char appVersion[] = "Alpha 0.1";
+
 int main(void) {
 	
-	logMsg(loggerSystem, LOG_LEVEL_INFO, "Running Pink Pearl version %u.%u", PinkPearl_VERSION_MAJOR, PinkPearl_VERSION_MINOR);
+	logMsg(loggerSystem, LOG_LEVEL_INFO, "Running Pink Pearl version %s.", appVersion);
 	if (debug_enabled) {
-		logMsg(loggerSystem, LOG_LEVEL_WARNING, "Debug mode enabled.");
+		logMsg(loggerSystem, LOG_LEVEL_WARNING, "Debug mode is enabled.");
 	}
 
 	init_GLFW();
