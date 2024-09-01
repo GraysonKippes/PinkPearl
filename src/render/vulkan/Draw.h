@@ -12,9 +12,13 @@
 
 typedef struct ModelPool_T *ModelPool;
 
+extern const uint32_t drawCommandStride;
+
 void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, const uint32_t firstIndex, const uint32_t indexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool); 
 
 void deleteModelPool(ModelPool *const pModelPool);
+
+uint32_t modelPoolGetMaxModelCount(const ModelPool modelPool);
 
 void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const pMaxDrawCount, uint32_t *const pStride);
 

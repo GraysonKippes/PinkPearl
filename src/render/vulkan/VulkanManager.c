@@ -500,10 +500,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
 		
 		const uint32_t drawOffset = global_draw_data_buffer_partition.ranges[1].offset;
-		uint32_t maxDrawCount = 0;
-		uint32_t stride = 0;
-		modelPoolGetDrawCommandArguments(modelPoolMain, &maxDrawCount, &stride);
-		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, global_draw_data_buffer_partition.buffer, drawOffset, global_draw_data_buffer_partition.buffer, 0, maxDrawCount, stride);
+		const uint32_t maxDrawCount = modelPoolGetMaxModelCount(modelPoolMain);
+		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, global_draw_data_buffer_partition.buffer, drawOffset, global_draw_data_buffer_partition.buffer, 0, maxDrawCount, drawCommandStride);
 		
 		vkCmdEndRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer);
 		

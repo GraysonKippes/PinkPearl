@@ -77,6 +77,8 @@ struct ModelPool_T {
 	DrawInfo *pDrawInfos;
 };
 
+const uint32_t drawCommandStride = sizeof(DrawInfo);
+
 void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, const uint32_t firstIndex, const uint32_t indexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
 	
@@ -145,6 +147,10 @@ void deleteModelPool(ModelPool *const pModelPool) {
 	free((*pModelPool)->pDrawInfos);
 	free((*pModelPool));
 	*pModelPool = nullptr;
+}
+
+uint32_t modelPoolGetMaxModelCount(const ModelPool modelPool) {
+	return modelPool->maxModelCount;
 }
 
 void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const pMaxDrawCount, uint32_t *const pStride) {
