@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "TextureState.h"
 #include "vertex_input.h"
+#include "vulkan_manager.h"
 #include "math/render_vector.h"
 
 typedef struct DrawInfo {
@@ -20,7 +21,7 @@ typedef struct DrawInfo {
 	/* Additional draw parameters */
 	
 	// Indexes into global descriptor arrays.
-	int32_t modelID;
+	int32_t modelIndex;
 	
 	// Indexes into a texture array.
 	uint32_t imageIndex;
@@ -157,17 +158,15 @@ void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensio
 		return;
 	}
 	
-	// Reset model transform
-	// Load texture state
-	
-	ModelTransform modelTransform = makeModelTransform(position, zeroVector4F, zeroVector4F);
-	
+	// Reset model object fields.
+	modelPool->pModelTransforms[modelIndex] = makeModelTransform(position, zeroVector4F, zeroVector4F);
 	TextureState textureState = newTextureState(textureID);
+	modelPool->pTextureStates[modelIndex] = textureState;	
 	
-	// Generate mesh
-	// Upload mesh to vertex buffer(s)
+	/* Generate model's mesh and upload to vertex buffer(s) */
 	
-	const float vertices[NUM_VERTICES_PER_QUAD * VERTEX_INPUT_ELEMENT_STRIDE] = {
+	// Generate model's mesh.
+	const float mesh[NUM_VERTICES_PER_QUAD * VERTEX_INPUT_ELEMENT_STRIDE] = {
 		// Positions							Texture			Color
 		dimensions.x1, dimensions.y1, 0.0F,		0.0F, 1.0F,		1.0F, 1.0F, 1.0F,	// 0: Bottom-left
 		dimensions.x1, dimensions.y2, 0.0F,		0.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// 1: Top-left
@@ -175,11 +174,69 @@ void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensio
 		dimensions.x2, dimensions.y1, 0.0F,		1.0F, 1.0F,		1.0F, 1.0F, 1.0F	// 3: Bottom-right
 	};
 	
+	// Upload model's mesh to staging buffer.
+	// The offset of the mesh's vertices in the vertex buffer, in bytes.
+	const VkDeviceSize meshOffset = sizeof(mesh) * modelIndex + modelPool->firstVertex * vertex_input_element_stride * sizeof(float);	
+	unsigned char *const pMappedMemoryVertices = buffer_partition_map_memory(global_staging_buffer_partition, 0);
+	memcpy(&pMappedMemoryVertices[meshOffset], mesh, sizeof(mesh));
+	buffer_partition_unmap_memory(global_staging_buffer_partition);
 	
+	VkSemaphore waitSemaphores[NUM_FRAMES_IN_FLIGHT];
+	uint64_t waitSemaphoreValues[NUM_FRAMES_IN_FLIGHT];
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		waitSemaphores[i] = frame_array.frames[i].semaphore_buffers_ready.semaphore;
+		waitSemaphoreValues[i] = frame_array.frames[i].semaphore_buffers_ready.wait_counter;
+	}
 	
-	// Generate draw parameters
-	// Insert draw info into appropriate place into draw info array, depending on depth
-	// Upload new draw info array to buffer
+	const VkSemaphoreWaitInfo semaphoreWaitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.semaphoreCount = frame_array.num_frames,
+		.pSemaphores = waitSemaphores,
+		.pValues = waitSemaphoreValues
+	};
+	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
+	
+	static VkCommandBuffer cmdBufs[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
+	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
+	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
+	
+	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
+	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
+	VkSemaphoreSubmitInfo semaphoreSignalSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
+	VkSubmitInfo2 submitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
+	
+	const VkBufferCopy bufferCopy = {
+		.srcOffset = meshOffset,
+		.dstOffset = meshOffset,
+		.size = sizeof(mesh)
+	};
+	
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		cmdBufBegin(cmdBufs[i], true);
+		vkCmdCopyBuffer(cmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
+		vkEndCommandBuffer(cmdBufs[i]);
+		
+		cmdBufSubmitInfos[i] = make_command_buffer_submit_info(cmdBufs[i]);
+		semaphoreWaitSubmitInfos[i] = make_timeline_semaphore_wait_submit_info(frame_array.frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		semaphoreSignalSubmitInfos[i] = make_timeline_semaphore_signal_submit_info(frame_array.frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		frame_array.frames[i].semaphore_buffers_ready.wait_counter += 1;
+
+		submitInfos[i] = (VkSubmitInfo2){
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			.pNext = nullptr,
+			.waitSemaphoreInfoCount = 1,
+			.pWaitSemaphoreInfos = &semaphoreWaitSubmitInfos[i],
+			.commandBufferInfoCount = 1,
+			.pCommandBufferInfos = &cmdBufSubmitInfos[i],
+			.signalSemaphoreInfoCount = 1,
+			.pSignalSemaphoreInfos = &semaphoreSignalSubmitInfos[i]
+		};
+	}
+	vkQueueSubmit2(queueTransfer, frame_array.num_frames, submitInfos, VK_NULL_HANDLE);
+	
+	/* Create and insert new model's draw info struct */
 	
 	const DrawInfo drawInfo = {
 		.indexCount = modelPool->indexCount,
@@ -187,11 +244,38 @@ void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensio
 		.firstIndex = modelPool->firstIndex,
 		.vertexOffset = modelPool->firstVertex + modelPool->vertexCount * modelIndex,
 		.firstInstance = 0,
-		.modelID = modelIndex,
+		.modelIndex = modelIndex,
 		.imageIndex = 0
 	};
 	
+	uint32_t insertIndex = modelPool->drawInfoCount;
+	for (uint32_t i = 0; i < modelPool->drawInfoCount; ++i) {
+		const float otherZ = modelPool->pModelTransforms[modelPool->pDrawInfos[i].modelIndex].translation.current.z;
+		if (position.z > otherZ) {
+			insertIndex = i;
+			break;
+		}
+	}
 	
+	for (uint32_t i = modelPool->drawInfoCount; i > insertIndex; --i) {
+		modelPool->pDrawInfos[i] = modelPool->pDrawInfos[i - 1];
+		modelPool->pDrawInfoIndices[modelPool->pDrawInfos[i].modelIndex] = i;
+	}
+	
+	modelPool->pDrawInfos[insertIndex] = drawInfo;
+	modelPool->pDrawInfoIndices[modelIndex] = insertIndex;
+	modelPool->drawInfoCount += 1;
+	
+	// Upload new draw info array to buffer
+	
+	// TODO - cut the partition crap and just do one mapped memory.
+	unsigned char *const pDrawCountMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
+	memcpy(pDrawCountMappedMemory, &modelPool->drawInfoCount, sizeof(modelPool->drawInfoCount));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	
+	unsigned char *const pDrawInfosMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	memcpy(pDrawInfosMappedMemory, modelPool->pDrawInfos, modelPool->drawInfoCount * sizeof(*modelPool->pDrawInfos));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 	
 	*pModelHandle = (int)modelIndex;
 }
