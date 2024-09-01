@@ -124,11 +124,10 @@ static void create_global_uniform_buffer(void) {
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
 		.queue_family_indices = nullptr,
-		.num_partition_sizes = 4,
-		.partition_sizes = (VkDeviceSize[4]){
+		.num_partition_sizes = 3,
+		.partition_sizes = (VkDeviceSize[3]){
 			2096,	// Compute matrices
 			5120,	// Compute room texture
-			8200,	// Compute area mesh
 			1812	// Lighting data
 		}
 	};
@@ -146,11 +145,9 @@ static void create_global_storage_buffer(void) {
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
 		.queue_family_indices = nullptr,
-		.num_partition_sizes = 3,
-		.partition_sizes = (VkDeviceSize[3]){
-			4224,	// Compute matrices
-			81920,	// Area mesh data--vertices
-			12288	// Area mesh data--indices
+		.num_partition_sizes = 1,
+		.partition_sizes = (VkDeviceSize[1]){
+			4224	// Compute matrices
 		}
 	};
 	
@@ -375,7 +372,7 @@ static void uploadLightingData(void) {
 		.intensity = 1.0F
 	};
 	
-	byte_t *lighting_data_mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 3);
+	byte_t *lighting_data_mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 2);
 	memcpy(lighting_data_mapped_memory, &ambient_lighting, sizeof(ambient_lighting));
 	memcpy(&lighting_data_mapped_memory[16], &num_point_lights, sizeof(uint32_t));
 	memcpy(&lighting_data_mapped_memory[20], point_lights, numRenderObjectSlots * sizeof(point_light_t));
@@ -424,7 +421,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	descriptor_writes[1].pImageInfo = nullptr;
 	descriptor_writes[1].pTexelBufferView = nullptr;
 
-	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 3);
+	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 2);
 	descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[2].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
 	descriptor_writes[2].dstBinding = 4;
