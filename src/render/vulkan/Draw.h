@@ -11,7 +11,7 @@
 
 typedef struct ModelPool_T *ModelPool;
 
-void createModelPool(const uint32_t firstIndex, const uint32_t indexCount, const int32_t vertexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool); 
+void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, const uint32_t firstIndex, const uint32_t indexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool); 
 
 void deleteModelPool(ModelPool *const pModelPool);
 

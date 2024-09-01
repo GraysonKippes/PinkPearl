@@ -77,16 +77,17 @@ struct ModelPool_T {
 	DrawInfo *pDrawInfos;
 };
 
-void createModelPool(const uint32_t firstIndex, const uint32_t indexCount, const int32_t vertexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool) {
+void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, const uint32_t firstIndex, const uint32_t indexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool) {
 	
 	ModelPool modelPool = malloc(sizeof(struct ModelPool_T));
 	if (!modelPool) {
 		return;
 	}
 	
+	modelPool->firstVertex = firstVertex;
+	modelPool->vertexCount = vertexCount;
 	modelPool->firstIndex = firstIndex;
 	modelPool->indexCount = indexCount;
-	modelPool->vertexCount = vertexCount;
 	modelPool->maxModelCount = maxModelCount;
 	
 	modelPool->pSlotFlags = calloc(maxModelCount, sizeof(bool));

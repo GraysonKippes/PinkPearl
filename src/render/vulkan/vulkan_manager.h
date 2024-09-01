@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
+#include "Draw.h"
 #include "frame.h"
 #include "memory.h"
 #include "physical_device.h"
@@ -43,6 +44,8 @@ extern VkQueue queueCompute;
 extern CommandPool commandPoolGraphics;
 extern CommandPool commandPoolTransfer;
 extern CommandPool commandPoolCompute;
+
+extern ModelPool modelPoolMain;
 
 /* -- Global buffers -- */
 

@@ -73,6 +73,8 @@ buffer_partition_t global_uniform_buffer_partition;
 buffer_partition_t global_storage_buffer_partition;
 buffer_partition_t global_draw_data_buffer_partition;
 
+ModelPool modelPoolMain = nullptr;
+
 /* -- Graphics Pipeline Descriptor Set Layout -- */
 
 static const DescriptorBinding graphicsPipelineDescriptorBindings[5] = {
@@ -237,10 +239,14 @@ void create_vulkan_objects(void) {
 	
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
+	
+	createModelPool(0, 4, 0, 6, 256, &modelPoolMain);
 }
 
 void destroy_vulkan_objects(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroying Vulkan objects...");
+
+	deleteModelPool(&modelPoolMain);
 
 	deleteFrameArray(&frame_array);
 	
