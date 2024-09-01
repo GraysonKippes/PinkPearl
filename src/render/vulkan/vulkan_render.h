@@ -15,10 +15,6 @@
 
 // This file holds all functionality for drawing the scene with the Vulkan API.
 
-void createVulkanRenderObjects(void);
-
-void destroyVulkanRenderObjects(void);
-
 void initTextureDescriptors(void);
 
 void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds);

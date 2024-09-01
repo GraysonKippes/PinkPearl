@@ -19,6 +19,7 @@
 #include "logical_device.h"
 #include "queue.h"
 #include "Shader.h"
+#include "texture_manager.h"
 #include "vertex_input.h"
 #include "compute/compute_matrices.h"
 #include "compute/compute_room_texture.h"
@@ -169,7 +170,7 @@ static void create_global_draw_data_buffer(void) {
 		.num_partition_sizes = 2,
 		.partition_sizes = (VkDeviceSize[2]){
 			4,			// Indirect draw count
-			68 * 7 * 4	// Indirect draw data
+			256 * 7 * 4	// Indirect draw data
 		}
 	};
 	
@@ -245,6 +246,12 @@ void create_vulkan_objects(void) {
 
 void destroy_vulkan_objects(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroying Vulkan objects...");
+
+	vkDeviceWaitIdle(device);
+
+	terminate_compute_matrices();
+	terminate_compute_room_texture();
+	terminateTextureManager();
 
 	deleteModelPool(&modelPoolMain);
 
