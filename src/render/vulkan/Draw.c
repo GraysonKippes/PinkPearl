@@ -317,13 +317,28 @@ void unloadModel(ModelPool modelPool, int *const pModelHandle) {
 }
 
 void modelSetTranslation(ModelPool modelPool, const int modelHandle, const Vector4F translation) {
-	
+	renderVectorSet(&modelPool->pModelTransforms[modelHandle].translation, translation);
 }
 
 void modelSetScaling(ModelPool modelPool, const int modelHandle, const Vector4F scaling) {
-	
+	renderVectorSet(&modelPool->pModelTransforms[modelHandle].scaling, scaling);
 }
 
 void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F rotation) {
+	renderVectorSet(&modelPool->pModelTransforms[modelHandle].rotation, rotation);
+}
+
+TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle) {
+	return &modelPool->pTextureStates[modelHandle];
+}
+
+void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex) {
 	
+	const uint32_t modelIndex = (uint32_t)modelHandle;
+	const uint32_t drawInfoIndex = modelPool->pDrawInfoIndices[modelIndex];
+	modelPool->pDrawInfos[drawInfoIndex].imageIndex = (uint32_t)imageIndex;
+	
+	uint8_t *const drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	memcpy(&drawDataMappedMemory[drawInfoIndex * sizeof(DrawInfo)], &modelPool->pDrawInfos[drawInfoIndex], sizeof(DrawInfo));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 }

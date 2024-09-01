@@ -7,6 +7,8 @@
 #include "math/vector4F.h"
 #include "util/string.h"
 
+#include "TextureState.h"
+
 typedef struct ModelPool_T *ModelPool;
 
 void createModelPool(const uint32_t firstIndex, const uint32_t indexCount, const int32_t vertexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool); 
@@ -22,5 +24,11 @@ void modelSetTranslation(ModelPool modelPool, const int modelHandle, const Vecto
 void modelSetScaling(ModelPool modelPool, const int modelHandle, const Vector4F scaling);
 
 void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F rotation);
+
+[[deprecated]]
+TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle);
+
+[[deprecated]]
+void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex);
 
 #endif // DRAW_H
