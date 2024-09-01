@@ -282,11 +282,36 @@ void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensio
 
 void unloadModel(ModelPool modelPool, int *const pModelHandle) {
 	
-	uint32_t modelIndex = (uint32_t)*pModelHandle;
-	modelPool->pSlotFlags[modelIndex] = false;
-	
 	// Remove model's draw info from model pool's array of draw infos
 	// If any other draw infos are moved around, adjust their models' draw info indices
+	
+	// Get the index of the draw data associated with the quad.
+	const uint32_t modelIndex = (uint32_t)*pModelHandle;
+	const uint32_t drawInfoIndex = modelPool->pDrawInfoIndices[modelIndex];
+	if (drawInfoIndex >= modelPool->drawInfoCount) {
+		return;
+	}
+	
+	// Remove the draw data associated with the quad.
+	modelPool->drawInfoCount -= 1;
+	// Move each draw data ahead of the removed draw data forward one place.
+	for (uint32_t i = drawInfoIndex; i < modelPool->drawInfoCount; ++i) {
+		// i = index of the draw data after being moved forward one place.
+		// i + 1 = index of the draw data before being moved forward one place.
+		modelPool->pDrawInfos[i] = modelPool->pDrawInfos[i + 1];	// Copy the next draw data into this place.
+		modelPool->pDrawInfoIndices[modelPool->pDrawInfos[i].modelIndex] = i;
+	}
+	
+	// TODO - cut the partition crap and just do one mapped memory.
+	unsigned char *const pDrawCountMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
+	memcpy(pDrawCountMappedMemory, &modelPool->drawInfoCount, sizeof(modelPool->drawInfoCount));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	
+	unsigned char *const pDrawInfosMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
+	memcpy(pDrawInfosMappedMemory, modelPool->pDrawInfos, modelPool->drawInfoCount * sizeof(*modelPool->pDrawInfos));
+	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	
+	modelPool->pSlotFlags[modelIndex] = false;
 	
 	*pModelHandle = -1;
 }
