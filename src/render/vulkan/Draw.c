@@ -28,8 +28,6 @@ typedef struct DrawInfo {
 	
 } DrawInfo;
 
-static const uint32_t indirectDrawStride = sizeof(DrawInfo);
-
 // Holds data for a batch of models to be drawn with a single indirect draw call.
 // Controls how the parameters for the indirect draw call are generated.
 struct ModelPool_T {
@@ -141,6 +139,11 @@ void deleteModelPool(ModelPool *const pModelPool) {
 	free((*pModelPool)->pDrawInfos);
 	free((*pModelPool));
 	*pModelPool = nullptr;
+}
+
+void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const pMaxDrawCount, uint32_t *const pStride) {
+	*pMaxDrawCount = modelPool->maxModelCount;
+	*pStride = sizeof(DrawInfo);
 }
 
 void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensions, const String textureID, int *const pModelHandle) {

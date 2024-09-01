@@ -15,6 +15,8 @@ void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, con
 
 void deleteModelPool(ModelPool *const pModelPool);
 
+void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const pMaxDrawCount, uint32_t *const pStride);
+
 void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensions, const String textureID, int *const pModelHandle);
 
 void unloadModel(ModelPool modelPool, int *const pModelHandle);
@@ -25,10 +27,8 @@ void modelSetScaling(ModelPool modelPool, const int modelHandle, const Vector4F 
 
 void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F rotation);
 
-[[deprecated]]
+// TODO - replace these two functions with specific animation control functions
 TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle);
-
-[[deprecated]]
 void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex);
 
 #endif // DRAW_H
