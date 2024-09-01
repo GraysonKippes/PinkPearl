@@ -2,11 +2,13 @@
 
 #include <stdlib.h>
 
+#include "log/Logger.h"
+
 #include "frame.h"
+#include "texture_manager.h"
 #include "TextureState.h"
 #include "vertex_input.h"
 #include "vulkan_manager.h"
-#include "math/render_vector.h"
 
 typedef struct DrawInfo {
 	
@@ -76,8 +78,9 @@ struct ModelPool_T {
 };
 
 void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, const uint32_t firstIndex, const uint32_t indexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
 	
-	ModelPool modelPool = malloc(sizeof(struct ModelPool_T));
+	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
 	if (!modelPool) {
 		return;
 	}
@@ -87,6 +90,7 @@ void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, con
 	modelPool->firstIndex = firstIndex;
 	modelPool->indexCount = indexCount;
 	modelPool->maxModelCount = maxModelCount;
+	modelPool->drawInfoCount = 0;
 	
 	modelPool->pSlotFlags = calloc(maxModelCount, sizeof(bool));
 	if (!modelPool->pSlotFlags) {
@@ -129,6 +133,8 @@ void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, con
 	}
 	
 	*pOutModelPool = modelPool;
+	
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created model pool.");
 }
 
 void deleteModelPool(ModelPool *const pModelPool) {
@@ -147,12 +153,13 @@ void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const
 }
 
 void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensions, const String textureID, int *const pModelHandle) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading model...");
 	
 	// For simplicity's sake, just use a linear search to find the first available slot.
 	// TODO - maybe optimize this with a data structure?
 	uint32_t modelIndex = 0;
 	for (; modelIndex < modelPool->maxModelCount; ++modelIndex) {
-		if (modelPool->pSlotFlags[modelIndex]) {
+		if (!modelPool->pSlotFlags[modelIndex]) {
 			break;
 		}
 	}
@@ -281,7 +288,34 @@ void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensio
 	memcpy(pDrawInfosMappedMemory, modelPool->pDrawInfos, modelPool->drawInfoCount * sizeof(*modelPool->pDrawInfos));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
 	
+	// Update texture descriptor
+	
+	const Texture texture = getTexture(textureState.textureHandle);
+	VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
+	
+	// Replace malloc with a better suited allocation, perhaps an arena?
+	VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
+	*pDescriptorImageInfo = makeDescriptorImageInfo(texture.image);
+	
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		writeDescriptorSets[i] = (VkWriteDescriptorSet){
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
+			.dstBinding = 2,
+			.dstArrayElement = modelIndex,
+			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			.descriptorCount = 1,
+			.pBufferInfo = nullptr,
+			.pImageInfo = pDescriptorImageInfo,
+			.pTexelBufferView = nullptr
+		};
+		descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);
+	}
+	
+	modelPool->pSlotFlags[modelIndex] = true;
 	*pModelHandle = (int)modelIndex;
+	
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loaded model %i.", *pModelHandle);
 }
 
 void unloadModel(ModelPool modelPool, int *const pModelHandle) {
@@ -333,10 +367,12 @@ void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F
 }
 
 TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle) {
+	//logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Getting texture state from model %i...", modelHandle);
 	return &modelPool->pTextureStates[modelHandle];
 }
 
 void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex) {
+	//logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Updating draw info for model %i...", modelHandle);
 	
 	const uint32_t modelIndex = (uint32_t)modelHandle;
 	const uint32_t drawInfoIndex = modelPool->pDrawInfoIndices[modelIndex];
@@ -345,4 +381,8 @@ void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned i
 	uint8_t *const drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
 	memcpy(&drawDataMappedMemory[drawInfoIndex * sizeof(DrawInfo)], &modelPool->pDrawInfos[drawInfoIndex], sizeof(DrawInfo));
 	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+}
+
+ModelTransform *getModelTransforms(const ModelPool modelPool) {
+	return modelPool->pModelTransforms;
 }

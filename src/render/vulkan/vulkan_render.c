@@ -22,6 +22,30 @@
 #include "compute/compute_matrices.h"
 #include "compute/compute_room_texture.h"
 
+[[deprecated]]
+int loadQuad(const BoxF dimensions, const Vector4F position, const TextureState textureState);
+
+[[deprecated]]
+void unloadQuad(int *const pQuadHandle);
+
+[[deprecated]]
+bool validateQuadHandle(const int quadHandle);
+
+[[deprecated]]
+bool setQuadTranslation(const int quadHandle, const Vector4F translation);
+
+[[deprecated]]
+bool setQuadScaling(const int quadHandle, const Vector4F scaling);
+
+[[deprecated]]
+bool setQuadRotation(const int quadHandle, const Vector4F rotation);
+
+[[deprecated]]
+TextureState *getQuadTextureState(const int quadHandle);
+
+[[deprecated]]
+void updateDrawData(const int quadHandle, const unsigned int imageIndex);
+
 /* -- Draw Data -- */
 
 typedef struct DrawData {
@@ -471,7 +495,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	}
 
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
-	computeMatrices(deltaTime, projectionBounds, cameraPosition, quadTransforms);
+	computeMatrices(deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolMain));
 
 	VkWriteDescriptorSet descriptor_writes[3] = { { } };
 

@@ -5,6 +5,8 @@
 #include <DataStuff/Heap.h>
 
 #include "log/Logger.h"
+#include "vulkan/Draw.h"
+#include "vulkan/vulkan_manager.h"
 #include "vulkan/vulkan_render.h"
 #include "vulkan/texture_manager.h"
 
@@ -53,7 +55,7 @@ int loadRenderObject(const String textureID, const BoxF quadDimensions, const in
 		renderObjectQuadHandles[renderHandle][i] = -1;
 	}
 	
-	const TextureState quadTextureState = newTextureState(textureID);
+	//const TextureState quadTextureState = newTextureState(textureID);
 	for (int i = 0; i < numQuads; ++i) {
 		const Vector4F quadPosition = {
 			.x = (float)quadPositions[i].x,
@@ -62,11 +64,14 @@ int loadRenderObject(const String textureID, const BoxF quadDimensions, const in
 			.w = 1.0F
 		};
 		
-		const int quadHandle = loadQuad(quadDimensions, quadPosition, quadTextureState);
+		/*const int quadHandle = loadQuad(quadDimensions, quadPosition, quadTextureState);
 		if (!validateQuadHandle(quadHandle)) {
 			unloadRenderObject(&renderHandle);
 			return renderHandleInvalid;
-		}
+		}*/
+		
+		int quadHandle = -1;
+		loadModel(modelPoolMain, quadPosition, quadDimensions, textureID, &quadHandle);
 		renderObjectQuadHandles[renderHandle][i] = quadHandle;
 	}
 	
@@ -80,9 +85,15 @@ void unloadRenderObject(int *const pRenderHandle) {
 		return;
 	}
 	
-	for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
+	/*for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
 		if (validateQuadHandle(renderObjectQuadHandles[*pRenderHandle][i])) {
 			unloadQuad(&renderObjectQuadHandles[*pRenderHandle][i]);
+		}
+	}*/
+	
+	for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
+		if (renderObjectQuadHandles[*pRenderHandle][i] >= 0) {
+			unloadModel(modelPoolMain, &renderObjectQuadHandles[*pRenderHandle][i]);
 		}
 	}
 	
@@ -108,7 +119,9 @@ bool renderObjectSetPosition(const int renderHandle, const int quadIndex, const 
 		.z = (float)position.z,
 		.w = 1.0F
 	};
-	return setQuadTranslation(renderObjectQuadHandles[renderHandle][quadIndex], translation);
+	//return setQuadTranslation(renderObjectQuadHandles[renderHandle][quadIndex], translation);
+	modelSetTranslation(modelPoolMain, renderObjectQuadHandles[renderHandle][quadIndex], translation);
+	return true;
 }
 
 int renderObjectGetTextureHandle(const int renderHandle, const int quadIndex) {
@@ -116,8 +129,15 @@ int renderObjectGetTextureHandle(const int renderHandle, const int quadIndex) {
 		return -1;
 	}
 	
-	const int quadHandle = renderObjectQuadHandles[renderHandle][quadIndex];
+	/*const int quadHandle = renderObjectQuadHandles[renderHandle][quadIndex];
 	TextureState *const pTextureState = getQuadTextureState(quadHandle);
+	if (pTextureState) {
+		return pTextureState->textureHandle;
+	}
+	return -1;*/
+	
+	const int quadHandle = renderObjectQuadHandles[renderHandle][quadIndex];
+	TextureState *const pTextureState = modelGetTextureState(modelPoolMain, quadHandle);
 	if (pTextureState) {
 		return pTextureState->textureHandle;
 	}
@@ -131,14 +151,15 @@ bool renderObjectAnimate(const int renderHandle) {
 	
 	for (int i = 0; i < maxNumRenderObjectQuads; ++i) {
 		const int quadHandle = renderObjectQuadHandles[renderHandle][i];
-		if (!validateQuadHandle(quadHandle)) {
+		if (quadHandle < 0) {
 			continue;
 		}
 		
-		TextureState *const pTextureState = getQuadTextureState(quadHandle);
+		TextureState *const pTextureState = modelGetTextureState(modelPoolMain, quadHandle);
 		if (textureStateAnimate(pTextureState) == 2) {
 			const unsigned int imageIndex = pTextureState->startCell + pTextureState->currentFrame;
-			updateDrawData(quadHandle, imageIndex);
+			//updateDrawData(quadHandle, imageIndex);
+			updateDrawInfo(modelPoolMain, quadHandle, imageIndex);
 		}
 	}
 	
@@ -151,7 +172,7 @@ unsigned int renderObjectGetAnimation(const int renderHandle, const int quadInde
 	}
 	
 	const int quadHandle = renderObjectQuadHandles[renderHandle][quadIndex];
-	TextureState *const pTextureState = getQuadTextureState(quadHandle);
+	TextureState *const pTextureState = modelGetTextureState(modelPoolMain, quadHandle);
 	if (pTextureState) {
 		return pTextureState->currentAnimation;
 	}
@@ -164,13 +185,13 @@ bool renderObjectSetAnimation(const int renderHandle, const int quadIndex, const
 	}
 	
 	const int quadHandle = renderObjectQuadHandles[renderHandle][quadIndex];
-	TextureState *const pTextureState = getQuadTextureState(quadHandle);
+	TextureState *const pTextureState = modelGetTextureState(modelPoolMain, quadHandle);
 	if (pTextureState) {
 		if (!textureStateSetAnimation(pTextureState, nextAnimation)) {
 			return false;
 		}
 		const unsigned int imageIndex = pTextureState->startCell + pTextureState->currentFrame;
-		updateDrawData(quadHandle, imageIndex);
+		updateDrawInfo(modelPoolMain, quadHandle, imageIndex);
 		return true;
 	}
 	return false;

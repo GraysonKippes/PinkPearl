@@ -27,8 +27,8 @@ void renderVectorSettle(RenderVector *const pRenderVector) {
 
 ModelTransform makeModelTransform(const Vector4F translation, const Vector4F scaling, const Vector4F rotation) {
 	return (ModelTransform){
-		.translation = (RenderVector){ translation },
-		.scaling = (RenderVector){ scaling },
-		.rotation = (RenderVector){ rotation }
+		.translation = (RenderVector){ .current = translation, .previous = translation },
+		.scaling = (RenderVector){ .current = scaling, .previous = scaling },
+		.rotation = (RenderVector){ .current = rotation, .previous = rotation }
 	};
 }

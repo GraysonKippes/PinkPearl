@@ -8,6 +8,7 @@
 #include "util/string.h"
 
 #include "TextureState.h"
+#include "math/render_vector.h"
 
 typedef struct ModelPool_T *ModelPool;
 
@@ -27,8 +28,9 @@ void modelSetScaling(ModelPool modelPool, const int modelHandle, const Vector4F 
 
 void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F rotation);
 
-// TODO - replace these two functions with specific animation control functions
+// TODO - replace these two functions with specific control functions
 TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle);
 void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex);
+ModelTransform *getModelTransforms(const ModelPool modelPool);
 
 #endif // DRAW_H
