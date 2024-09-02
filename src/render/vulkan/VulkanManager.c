@@ -167,7 +167,7 @@ static void create_global_draw_data_buffer(void) {
 		.num_partition_sizes = 2,
 		.partition_sizes = (VkDeviceSize[2]){
 			4,			// Indirect draw count
-			256 * 7 * 4	// Indirect draw data
+			256 * drawCommandStride	// Indirect draw data
 		}
 	};
 	

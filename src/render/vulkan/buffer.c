@@ -15,79 +15,6 @@ const VkBufferUsageFlags buffer_usage_index = VK_BUFFER_USAGE_TRANSFER_DST_BIT |
 const VkMemoryPropertyFlags memory_properties_staging = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 const VkMemoryPropertyFlags memory_properties_local = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-buffer_t create_buffer(VkPhysicalDevice physical_device, VkDevice device, VkDeviceSize size, VkBufferUsageFlags buffer_usage, VkMemoryPropertyFlags memory_properties, queue_family_set_t queue_family_set) {
-
-	buffer_t buffer = { 0 };
-
-	buffer.size = size;
-	buffer.device = device;
-
-	VkBufferCreateInfo buffer_create_info = { 0 };
-	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffer_create_info.pNext = nullptr;
-	buffer_create_info.flags = 0;
-	buffer_create_info.size = buffer.size;
-	buffer_create_info.usage = buffer_usage;
-
-	if (is_queue_family_set_null(queue_family_set)) {
-		buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		buffer_create_info.queueFamilyIndexCount = 0;
-		buffer_create_info.pQueueFamilyIndices = nullptr;
-	}
-	else {
-		buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		buffer_create_info.queueFamilyIndexCount = queue_family_set.num_queue_families;
-		buffer_create_info.pQueueFamilyIndices = queue_family_set.queue_families;
-	}
-	
-	// TODO - error handling
-	VkResult result = vkCreateBuffer(buffer.device, &buffer_create_info, nullptr, &buffer.handle);
-	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Buffer creation failed. (Error code: %i)", result);
-		return buffer;
-	}
-
-	VkMemoryRequirements memory_requirements;
-	vkGetBufferMemoryRequirements(buffer.device, buffer.handle, &memory_requirements);
-
-	VkMemoryAllocateInfo allocate_info = { 0 };
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.pNext = nullptr;
-	allocate_info.allocationSize = memory_requirements.size;
-	if(!find_physical_device_memory_type(physical_device, memory_requirements.memoryTypeBits, memory_properties, &allocate_info.memoryTypeIndex)) {
-		// TODO - error handling
-	}
-
-	// TODO - error handling
-	vkAllocateMemory(buffer.device, &allocate_info, nullptr, &buffer.memory);
-	vkBindBufferMemory(buffer.device, buffer.handle, buffer.memory, 0);
-
-	return buffer;
-}
-
-void destroy_buffer(buffer_t *buffer_ptr) {
-
-	if (buffer_ptr == nullptr) {
-		return;
-	}
-
-	vkDestroyBuffer(buffer_ptr->device, buffer_ptr->handle, nullptr);
-	vkFreeMemory(buffer_ptr->device, buffer_ptr->memory, nullptr);
-
-	buffer_ptr->handle = VK_NULL_HANDLE;
-	buffer_ptr->memory = VK_NULL_HANDLE;
-	buffer_ptr->size = 0;
-	buffer_ptr->device = VK_NULL_HANDLE;
-}
-
-VkMemoryRequirements get_buffer_memory_requirements(buffer_t buffer) {
-
-	VkMemoryRequirements memory_requirements = { 0 };
-	vkGetBufferMemoryRequirements(buffer.device, buffer.handle, &memory_requirements);
-
-	return memory_requirements;
-}
-
 buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t buffer_partition_create_info) {
 	
 	buffer_partition_t buffer_partition = {
@@ -327,36 +254,4 @@ VkDescriptorBufferInfo buffer_partition_descriptor_info(const buffer_partition_t
 		.offset = buffer_partition.ranges[partition_index].offset,
 		.range = buffer_partition.ranges[partition_index].size
 	};
-}
-
-VkDeviceMemory allocate_device_memory(const VkDevice device, const VkDeviceSize size, const memory_type_index_t memory_type_index) {
-	
-	const VkMemoryAllocateInfo allocate_info = { 
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = nullptr,
-		.allocationSize = size,
-		.memoryTypeIndex = memory_type_index
-	};
-
-	VkDeviceMemory device_memory = VK_NULL_HANDLE;
-	vkAllocateMemory(device, &allocate_info, nullptr, &device_memory);
-	return device_memory;
-}
-
-void bind_buffer_to_memory(buffer_t buffer, VkDeviceMemory memory, VkDeviceSize offset) {
-	vkBindBufferMemory(buffer.device, buffer.handle, memory, offset);
-}
-
-void map_data_to_buffer(VkDevice device, buffer_t buffer, VkDeviceSize offset, VkDeviceSize size, void *data) {
-	void *mapped_data;
-	vkMapMemory(device, buffer.memory, offset, size, 0, &mapped_data);
-	memcpy(mapped_data, data, size);
-	vkUnmapMemory(device, buffer.memory);
-}
-
-void map_data_to_whole_buffer(VkDevice device, buffer_t buffer, void *data) {
-	void *mapped_data;
-	vkMapMemory(device, buffer.memory, 0, buffer.size, 0, &mapped_data);
-	memcpy(mapped_data, data, buffer.size);
-	vkUnmapMemory(device, buffer.memory);
 }
