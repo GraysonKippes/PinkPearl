@@ -110,8 +110,8 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 		return (FrameArray){ };
 	}
 	
-	memory_range_t vertex_buffer_memory_ranges[3];
-	memory_range_t index_buffer_memory_ranges[3];
+	MemoryRange vertex_buffer_memory_ranges[3];
+	MemoryRange index_buffer_memory_ranges[3];
 	VkDeviceSize total_vertex_memory_size = 0;
 	VkDeviceSize total_index_memory_size = 0;
 

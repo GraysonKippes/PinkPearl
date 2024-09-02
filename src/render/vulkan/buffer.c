@@ -15,9 +15,9 @@ const VkBufferUsageFlags buffer_usage_index = VK_BUFFER_USAGE_TRANSFER_DST_BIT |
 const VkMemoryPropertyFlags memory_properties_staging = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 const VkMemoryPropertyFlags memory_properties_local = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t buffer_partition_create_info) {
+BufferPartition create_buffer_partition(const BufferPartitionCreateInfo buffer_partition_create_info) {
 	
-	buffer_partition_t buffer_partition = {
+	BufferPartition buffer_partition = {
 		.buffer = VK_NULL_HANDLE,
 		.memory = VK_NULL_HANDLE,
 		.total_memory_size = 0,
@@ -32,7 +32,7 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 	}
 
 	buffer_partition.num_ranges = buffer_partition_create_info.num_partition_sizes;
-	if (!allocate((void **)&buffer_partition.ranges, buffer_partition.num_ranges, sizeof(memory_range_t))) {
+	if (!allocate((void **)&buffer_partition.ranges, buffer_partition.num_ranges, sizeof(MemoryRange))) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating buffer partition: failed to allocate partition ranges pointer-array.");
 		buffer_partition.num_ranges = 0;
 		return buffer_partition;
@@ -70,7 +70,7 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 		const VkDeviceSize partition_size = buffer_partition_create_info.partition_sizes[i];
 		buffer_partition.ranges[i].offset = buffer_partition.total_memory_size;
 		buffer_partition.ranges[i].size = partition_size;
-		buffer_partition.total_memory_size += align_offset(partition_size, offset_alignment);
+		buffer_partition.total_memory_size += alignOffset(partition_size, offset_alignment);
 	}
 
 	VkBufferUsageFlags buffer_usage_flags = 0;
@@ -134,7 +134,7 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 
 	vkGetBufferMemoryRequirements2(buffer_partition.device, &memory_requirements_info, &memory_requirements);
 
-	memory_type_index_t memory_type_index = 0;
+	uint32_t memory_type_index = 0;
 	switch (buffer_partition_create_info.buffer_type) {
 		case BUFFER_TYPE_STAGING:
 			memory_type_index = buffer_partition_create_info.memory_type_set.resource_staging;
@@ -188,7 +188,7 @@ buffer_partition_t create_buffer_partition(const buffer_partition_create_info_t 
 	return buffer_partition;
 }
 
-bool destroy_buffer_partition(buffer_partition_t *const buffer_partition_ptr) {
+bool destroy_buffer_partition(BufferPartition *const buffer_partition_ptr) {
 
 	if (buffer_partition_ptr == nullptr) {
 		return false;
@@ -210,7 +210,7 @@ bool destroy_buffer_partition(buffer_partition_t *const buffer_partition_ptr) {
 	return true;
 }
 
-byte_t *buffer_partition_map_memory(const buffer_partition_t buffer_partition, const uint32_t partition_index) {
+byte_t *buffer_partition_map_memory(const BufferPartition buffer_partition, const uint32_t partition_index) {
 
 	if (partition_index >= buffer_partition.num_ranges) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error mapping buffer partition memory: partition index (%u) is not less than number of partition ranges (%u).", partition_index, buffer_partition.num_ranges);
@@ -234,11 +234,11 @@ byte_t *buffer_partition_map_memory(const buffer_partition_t buffer_partition, c
 	return mapped_memory;
 }
 
-void buffer_partition_unmap_memory(const buffer_partition_t buffer_partition) {
+void buffer_partition_unmap_memory(const BufferPartition buffer_partition) {
 	vkUnmapMemory(buffer_partition.device, buffer_partition.memory);
 }
 
-VkDescriptorBufferInfo buffer_partition_descriptor_info(const buffer_partition_t buffer_partition, const uint32_t partition_index) {
+VkDescriptorBufferInfo buffer_partition_descriptor_info(const BufferPartition buffer_partition, const uint32_t partition_index) {
 
 	if (partition_index >= buffer_partition.num_ranges) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error making buffer partition descriptor info: partition index (%u) is not less than number of partition ranges (%u).", partition_index, buffer_partition.num_ranges);

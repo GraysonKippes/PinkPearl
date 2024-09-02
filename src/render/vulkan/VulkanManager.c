@@ -38,7 +38,7 @@ WindowSurface windowSurface = { };
 
 PhysicalDevice physical_device = { };
 
-memory_type_set_t memory_type_set = { };
+MemoryTypeIndexSet memory_type_set = { };
 
 VkDevice device = VK_NULL_HANDLE;
 
@@ -69,10 +69,10 @@ FrameArray frame_array = { };
 
 /* -- Global buffers -- */
 
-buffer_partition_t global_staging_buffer_partition;
-buffer_partition_t global_uniform_buffer_partition;
-buffer_partition_t global_storage_buffer_partition;
-buffer_partition_t global_draw_data_buffer_partition;
+BufferPartition global_staging_buffer_partition;
+BufferPartition global_uniform_buffer_partition;
+BufferPartition global_storage_buffer_partition;
+BufferPartition global_draw_data_buffer_partition;
 
 ModelPool modelPoolMain = nullptr;
 
@@ -96,7 +96,7 @@ static const DescriptorSetLayout graphicsPipelineDescriptorSetLayout = {
 static void create_global_staging_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global staging buffer...");
 
-	const buffer_partition_create_info_t buffer_partition_create_info = {
+	const BufferPartitionCreateInfo buffer_partition_create_info = {
 		.physical_device = physical_device.vkPhysicalDevice,
 		.device = device,
 		.buffer_type = BUFFER_TYPE_STAGING,
@@ -117,7 +117,7 @@ static void create_global_staging_buffer(void) {
 static void create_global_uniform_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global uniform buffer...");
 
-	const buffer_partition_create_info_t buffer_partition_create_info = {
+	const BufferPartitionCreateInfo buffer_partition_create_info = {
 		.physical_device = physical_device.vkPhysicalDevice,
 		.device = device,
 		.buffer_type = BUFFER_TYPE_UNIFORM,
@@ -138,7 +138,7 @@ static void create_global_uniform_buffer(void) {
 static void create_global_storage_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global storage buffer...");
 
-	const buffer_partition_create_info_t buffer_partition_create_info = {
+	const BufferPartitionCreateInfo buffer_partition_create_info = {
 		.physical_device = physical_device.vkPhysicalDevice,
 		.device = device,
 		.buffer_type = BUFFER_TYPE_STORAGE,
@@ -157,7 +157,7 @@ static void create_global_storage_buffer(void) {
 static void create_global_draw_data_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global draw data buffer...");
 
-	const buffer_partition_create_info_t buffer_partition_create_info = {
+	const BufferPartitionCreateInfo buffer_partition_create_info = {
 		.physical_device = physical_device.vkPhysicalDevice,
 		.device = device,
 		.buffer_type = BUFFER_TYPE_DRAW_DATA,

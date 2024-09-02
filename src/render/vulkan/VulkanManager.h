@@ -26,7 +26,7 @@ extern const int vkConfMaxNumQuads;
 
 extern WindowSurface windowSurface;
 extern PhysicalDevice physical_device;
-extern memory_type_set_t memory_type_set;
+extern MemoryTypeIndexSet memory_type_set;
 extern VkDevice device;
 extern Swapchain swapchain;
 extern Pipeline graphicsPipeline;
@@ -51,15 +51,15 @@ extern ModelPool modelPoolMain;
 /* -- Global buffers -- */
 
 // Used for staging data to GPU-only buffers (storage, vertex, index) and images.
-extern buffer_partition_t global_staging_buffer_partition;
+extern BufferPartition global_staging_buffer_partition;
 
 // Used for uniform data into both compute shaders and graphics (vertex, fragment) shaders.
-extern buffer_partition_t global_uniform_buffer_partition;
+extern BufferPartition global_uniform_buffer_partition;
 
 // Used for GPU-only bulk storage data.
-extern buffer_partition_t global_storage_buffer_partition;
+extern BufferPartition global_storage_buffer_partition;
 
-extern buffer_partition_t global_draw_data_buffer_partition;
+extern BufferPartition global_draw_data_buffer_partition;
 
 extern FrameArray frame_array;
 

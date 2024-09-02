@@ -5,7 +5,7 @@
 #include "log/Logger.h"
 #include "util/allocate.h"
 
-memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
+MemoryTypeIndexSet select_memory_types(VkPhysicalDevice physical_device) {
 
 	// TODO - redesign this whole function to be flexible with other types of GPUs.
 	// 	Currently it only really targets NVIDIA/AMD GPUs.
@@ -15,7 +15,7 @@ memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 	VkPhysicalDeviceMemoryProperties memory_properties;
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
 
-	memory_type_set_t memory_type_set = { 0 };
+	MemoryTypeIndexSet memory_type_set = { 0 };
 
 	for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
 
@@ -56,7 +56,7 @@ memory_type_set_t select_memory_types(VkPhysicalDevice physical_device) {
 	return memory_type_set;
 }
 
-VkDeviceSize align_offset(const VkDeviceSize offset, const VkDeviceSize alignment) {
+VkDeviceSize alignOffset(const VkDeviceSize offset, const VkDeviceSize alignment) {
 	const VkDeviceSize remainder = offset % alignment;
 	if (remainder != 0) {
 		return offset + (alignment - remainder);
