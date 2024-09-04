@@ -7,6 +7,7 @@
 #include "math/vector4F.h"
 #include "util/string.h"
 
+#include "Buffer2.h"
 #include "TextureState.h"
 #include "math/render_vector.h"
 
@@ -14,7 +15,10 @@ typedef struct ModelPool_T *ModelPool;
 
 extern const uint32_t drawCommandStride;
 
-void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, const uint32_t firstIndex, const uint32_t indexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool); 
+void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex, 
+		const uint32_t firstVertex, const uint32_t vertexCount, 
+		const uint32_t firstIndex, const uint32_t indexCount, 
+		const uint32_t maxModelCount, ModelPool *pOutModelPool);
 
 void deleteModelPool(ModelPool *const pModelPool);
 

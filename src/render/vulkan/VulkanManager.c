@@ -74,7 +74,10 @@ BufferPartition global_uniform_buffer_partition;
 BufferPartition global_storage_buffer_partition;
 BufferPartition global_draw_data_buffer_partition;
 
+Buffer bufferDrawInfo = nullptr;
+
 ModelPool modelPoolMain = nullptr;
+ModelPool modelPoolDebug = nullptr;
 
 /* -- Graphics Pipeline Descriptor Set Layout -- */
 
@@ -172,6 +175,22 @@ static void create_global_draw_data_buffer(void) {
 	};
 	
 	global_draw_data_buffer_partition = create_buffer_partition(buffer_partition_create_info);
+	
+	const BufferCreateInfo bufferCreateInfo = {
+		.physicalDevice = physical_device,
+		.vkDevice = device,
+		.bufferType = BUFFER_TYPE_DRAW_DATA,
+		.memoryTypeIndexSet = memory_type_set,
+		.queueFamilyIndexCount = 0,
+		.pQueueFamilyIndices = nullptr,
+		.subrangeCount = 2,
+		.pSubrangeSizes = (VkDeviceSize[2]){
+			4 + 256 * drawCommandStride,
+			4 + 256 * drawCommandStride
+		}
+	};
+	
+	createBuffer(bufferCreateInfo, &bufferDrawInfo);
 }
 
 void create_vulkan_objects(void) {
@@ -238,7 +257,8 @@ void create_vulkan_objects(void) {
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
 	
-	createModelPool(0, 4, 0, 6, 256, &modelPoolMain);
+	createModelPool(bufferDrawInfo, 0, 0, 4, 0, 6, 256, &modelPoolMain);
+	createModelPool(bufferDrawInfo, 1, 0, 4, 0, 6, 256, &modelPoolDebug);
 }
 
 void destroy_vulkan_objects(void) {
@@ -250,6 +270,7 @@ void destroy_vulkan_objects(void) {
 	terminate_compute_room_texture();
 	terminateTextureManager();
 
+	deleteModelPool(&modelPoolDebug);
 	deleteModelPool(&modelPoolMain);
 
 	deleteFrameArray(&frame_array);
@@ -264,6 +285,8 @@ void destroy_vulkan_objects(void) {
 	deleteCommandPool(&commandPoolGraphics);
 	deleteCommandPool(&commandPoolTransfer);
 	deleteCommandPool(&commandPoolCompute);
+
+	deleteBuffer(&bufferDrawInfo);
 
 	destroy_buffer_partition(&global_staging_buffer_partition);
 	destroy_buffer_partition(&global_uniform_buffer_partition);

@@ -1,6 +1,7 @@
 #include "Buffer2.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <vulkan/vulkan.h>
 
@@ -17,6 +18,10 @@ struct Buffer_T {
 	// The array of subranges or partitions of this buffer.
 	BufferSubrange *pSubranges;
 	
+	// The host-side memory mapped with the buffer memory.
+	// Must be null if the buffer is not host-visible.
+	unsigned char *pMappedMemory;
+	
 	VkBuffer vkBuffer;
 	
 	VkDeviceMemory vkDeviceMemory;
@@ -29,6 +34,7 @@ static const struct Buffer_T nullBufferT = {
 	.subrangeCount = 0,
 	.pSubrangeFlags = nullptr,
 	.pSubranges = nullptr,
+	.pMappedMemory = nullptr,
 	.vkBuffer = VK_NULL_HANDLE,
 	.vkDeviceMemory = VK_NULL_HANDLE,
 	.vkDevice = VK_NULL_HANDLE
@@ -102,6 +108,7 @@ void createBuffer(const BufferCreateInfo bufferCreateInfo, Buffer *const pOutBuf
 	// Generate subranges
 	VkDeviceSize totalBufferSize = 0;
 	for (int32_t subrangeIndex = 0; subrangeIndex < buffer->subrangeCount; ++subrangeIndex) {
+		buffer->pSubranges[subrangeIndex].owner = buffer;
 		buffer->pSubranges[subrangeIndex].index = subrangeIndex;
 		buffer->pSubranges[subrangeIndex].offset = totalBufferSize;
 		buffer->pSubranges[subrangeIndex].size = bufferCreateInfo.pSubrangeSizes[subrangeIndex];
@@ -157,18 +164,22 @@ void createBuffer(const BufferCreateInfo bufferCreateInfo, Buffer *const pOutBuf
 	vkGetBufferMemoryRequirements2(bufferCreateInfo.vkDevice, &vkMemoryRequirementsInfo, &vkMemoryRequirements);
 
 	uint32_t memoryTypeIndex = 0;
+	bool isHostVisible = false;
 	switch (bufferCreateInfo.bufferType) {
 		case BUFFER_TYPE_STAGING:
 			memoryTypeIndex = bufferCreateInfo.memoryTypeIndexSet.resource_staging;
+			isHostVisible = true;
 			break;
 		case BUFFER_TYPE_UNIFORM:
 			memoryTypeIndex = bufferCreateInfo.memoryTypeIndexSet.uniform_data;
+			isHostVisible = true;
 			break;
 		case BUFFER_TYPE_STORAGE:
 			memoryTypeIndex = bufferCreateInfo.memoryTypeIndexSet.graphics_resources;
 			break;
 		case BUFFER_TYPE_DRAW_DATA:
 			memoryTypeIndex = bufferCreateInfo.memoryTypeIndexSet.uniform_data;
+			isHostVisible = true;
 			break;
 	}
 
@@ -206,6 +217,10 @@ void createBuffer(const BufferCreateInfo bufferCreateInfo, Buffer *const pOutBuf
 	else if (vkBindBufferMemoryResult > 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning creating buffer partition: memory binding returned with warning (result code: %i).", vkBindBufferMemoryResult);
 	}
+	
+	if (isHostVisible) {
+		vkMapMemory(bufferCreateInfo.vkDevice, buffer->vkDeviceMemory, 0, VK_WHOLE_SIZE, 0, (void **)&buffer->pMappedMemory);
+	}
 
 	buffer->vkDevice = bufferCreateInfo.vkDevice;
 	*pOutBuffer = buffer;
@@ -223,6 +238,12 @@ void deleteBuffer(Buffer *const pBuffer) {
 		return;
 	}
 	
+	for (int32_t subrangeIndex = 0; subrangeIndex < buffer->subrangeCount; ++subrangeIndex) {
+		if (buffer->pSubrangeFlags[subrangeIndex]) {
+			logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning deleting buffer: subrange %i is currently borrowed.", subrangeIndex);
+		}
+	}
+	
 	free(buffer->pSubrangeFlags);
 	free(buffer->pSubranges);
 	vkDestroyBuffer(buffer->vkDevice, buffer->vkBuffer, nullptr);
@@ -238,12 +259,12 @@ void bufferBorrowSubrange(Buffer buffer, const int32_t subrangeIndex, BufferSubr
 	}
 	
 	if (subrangeIndex >= buffer->subrangeCount) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error borrowing buffer subrange: subrange index (%u) is not less than buffer's subrange count (%u).", subrangeIndex, buffer->subrangeCount);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error borrowing buffer subrange: subrange index (%i) is not less than buffer's subrange count (%i).", subrangeIndex, buffer->subrangeCount);
 		return;
 	}
 	
 	if (buffer->pSubrangeFlags[subrangeIndex]) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error borrowing buffer subrange: subrange %u is already being used.", subrangeIndex);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error borrowing buffer subrange: subrange %i is already being used.", subrangeIndex);
 		return;
 	}
 	
@@ -251,31 +272,63 @@ void bufferBorrowSubrange(Buffer buffer, const int32_t subrangeIndex, BufferSubr
 	buffer->pSubrangeFlags[subrangeIndex] = true;
 }
 
-void bufferReturnSubrange(Buffer buffer, BufferSubrange *const pSubrange) {
-	if (!buffer) {
+void bufferReturnSubrange(BufferSubrange *const pSubrange) {
+	if (!pSubrange->owner) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error returning buffer subrange: buffer object is null.");
 	}
 	
-	if (pSubrange->index >= buffer->subrangeCount) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error returning buffer subrange: subrange index (%u) is not less than buffer's subrange count (%u).", pSubrange->index, buffer->subrangeCount);
+	if (pSubrange->index >= pSubrange->owner->subrangeCount) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error returning buffer subrange: subrange index (%u) is not less than buffer's subrange count (%u).", pSubrange->index, pSubrange->owner->subrangeCount);
 		return;
 	}
 	
-	if (!buffer->pSubrangeFlags[pSubrange->index]) {
+	if (!pSubrange->owner->pSubrangeFlags[pSubrange->index]) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error returning buffer subrange: subrange %u was not borrowed.", pSubrange->index);
 		return;
 	}
 	
-	if (bufferSubrangeEquals(*pSubrange, buffer->pSubranges[pSubrange->index])) {
-		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning returning buffer subrange: subrange being returned does not match original subrange.", pSubrange->index);
-		return;
+	if (!bufferSubrangeEquals(*pSubrange, pSubrange->owner->pSubranges[pSubrange->index])) {
+		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning returning buffer subrange: subrange being returned does not match original subrange.");
 	}
 	
-	buffer->pSubrangeFlags[pSubrange->index] = false;
+	pSubrange->owner->pSubrangeFlags[pSubrange->index] = false;
 	*pSubrange = (BufferSubrange){
+		.owner = nullptr,
 		.index = -1,
 		.offset = 0,
 		.size = 0
+	};
+}
+
+void bufferCopyData(const BufferSubrange subrange, const VkDeviceSize dataOffset, const VkDeviceSize dataSize, const unsigned char *const pData) {
+	if (!pData) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error copying data to buffer: pData is null.");
+		return;
+	}
+	
+	if (!subrange.owner->pMappedMemory) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error copying data to buffer: buffer is not host-visible.");
+		return;
+	}
+	
+	if (dataOffset + dataSize >= subrange.size) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error copying data to buffer: data copy range cannot fit into buffer subrange.");
+		return;
+	}
+	
+	if (dataSize == 0) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error copying data to buffer: data size is zero.");
+		return;
+	}
+	
+	memcpy(&subrange.owner->pMappedMemory[subrange.offset], &pData[dataOffset], dataSize);
+}
+
+VkDescriptorBufferInfo makeDescriptorBufferInfo2(const BufferSubrange subrange) {
+	return (VkDescriptorBufferInfo){
+		.buffer = subrange.owner->vkBuffer,
+		.offset = subrange.offset,
+		.range = subrange.size
 	};
 }
 

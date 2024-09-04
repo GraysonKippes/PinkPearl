@@ -38,6 +38,9 @@ struct ModelPool_T {
 	// As a result, the positions of the first vertex and first index for a particular model pool in the vertex/index buffer(s) is constant
 	// 	and the position of a particular mesh can be calculated by multiplying the mesh size by its relative position in the mesh array.
 	
+	// Some part of some buffer to which to upload draw command parameters.
+	BufferSubrange drawInfoBuffer;
+	
 	// Each pool has its own sub-array of vertices within the vertex buffer(s); this is the position of the first element in that sub-array.
 	uint32_t firstVertex;
 	
@@ -79,7 +82,10 @@ struct ModelPool_T {
 
 const uint32_t drawCommandStride = sizeof(DrawInfo);
 
-void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, const uint32_t firstIndex, const uint32_t indexCount, const uint32_t maxModelCount, ModelPool *pOutModelPool) {
+void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex, 
+		const uint32_t firstVertex, const uint32_t vertexCount, 
+		const uint32_t firstIndex, const uint32_t indexCount, 
+		const uint32_t maxModelCount, ModelPool *pOutModelPool) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
 	
 	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
@@ -87,6 +93,7 @@ void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, con
 		return;
 	}
 	
+	bufferBorrowSubrange(buffer, bufferSubrangeIndex, &modelPool->drawInfoBuffer);
 	modelPool->firstVertex = firstVertex;
 	modelPool->vertexCount = vertexCount;
 	modelPool->firstIndex = firstIndex;
@@ -140,12 +147,16 @@ void createModelPool(const uint32_t firstVertex, const uint32_t vertexCount, con
 }
 
 void deleteModelPool(ModelPool *const pModelPool) {
+	
+	bufferReturnSubrange(&(*pModelPool)->drawInfoBuffer);
+	
 	free((*pModelPool)->pSlotFlags);
 	free((*pModelPool)->pDrawInfoIndices);
 	free((*pModelPool)->pModelTransforms);
 	free((*pModelPool)->pTextureStates);
 	free((*pModelPool)->pDrawInfos);
 	free((*pModelPool));
+	
 	*pModelPool = nullptr;
 }
 

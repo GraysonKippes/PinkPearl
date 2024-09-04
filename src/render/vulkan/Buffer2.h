@@ -11,10 +11,16 @@ typedef struct Buffer_T *Buffer;
 
 typedef struct BufferSubrange {
 	
+	// The buffer from which this subrange was borrowed.
+	Buffer owner;
+	
+	// The index of this subrange inside of the owner buffer.
 	int32_t index;
 	
+	// The offset into the buffer's memory.
 	VkDeviceSize offset;
 	
+	// The size of this subrange within the buffer's memory.
 	VkDeviceSize size;
 	
 } BufferSubrange;
@@ -35,8 +41,20 @@ typedef struct BufferCreateInfo {
 	
 } BufferCreateInfo;
 
+// Creates a new buffer with the properties specified in bufferCreateInfo.
 void createBuffer(const BufferCreateInfo bufferCreateInfo, Buffer *const pOutBuffer);
 
+// Deletes the specified buffer and resets the handle to null.
 void deleteBuffer(Buffer *const pBuffer);
+
+// "Borrows" a subrange or partition from the buffer, locking that subrange until it is returned.
+void bufferBorrowSubrange(Buffer buffer, const int32_t subrangeIndex, BufferSubrange *const pOutSubrange);
+
+// "Returns" a previously borrowed subrange to its owner, unlocking that subrange.
+void bufferReturnSubrange(BufferSubrange *const pSubrange);
+
+void bufferCopyData(const BufferSubrange subrange, const VkDeviceSize dataOffset, const VkDeviceSize dataSize, const unsigned char *const pData);
+
+VkDescriptorBufferInfo makeDescriptorBufferInfo2(const BufferSubrange subrange);
 
 #endif	// BUFFER_2_H
