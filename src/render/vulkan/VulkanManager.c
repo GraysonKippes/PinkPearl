@@ -241,7 +241,7 @@ void create_vulkan_objects(void) {
 	init_compute_room_texture(device);
 	
 	createModelPool(bufferDrawInfo, 0, 0, 4, 0, 6, 256, &modelPoolMain);
-	createModelPool(bufferDrawInfo, 1, 0, 4, 0, 6, 256, &modelPoolDebug);
+	createModelPool(bufferDrawInfo, 1, 256 * 4, 4, 6, 8, 256, &modelPoolDebug);
 }
 
 void destroy_vulkan_objects(void) {
