@@ -1,9 +1,9 @@
 #version 460
 #extension GL_EXT_scalar_block_layout : require
 
-#define NUM_RENDER_OBJECTS 256
+#define MAX_MODEL_COUNT 256
 
-struct DrawData {
+struct DrawInfo {
 	// Indirect draw info
 	uint indexCount;
 	uint instanceCount;
@@ -11,15 +11,16 @@ struct DrawData {
 	int vertexOffset;
 	uint firstInstance;
 	// Additional draw data
-	int quadID;
+	int modelIndex;
 	uint imageIndex;
 };
 
 layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
-	DrawData draw_infos[NUM_RENDER_OBJECTS];
+	uint drawCount;
+	DrawInfo drawInfos[MAX_MODEL_COUNT];
 } uDrawData;
 
-layout(set = 0, binding = 2) uniform texture2DArray[NUM_RENDER_OBJECTS] textures;
+layout(set = 0, binding = 2) uniform texture2DArray[MAX_MODEL_COUNT] textures;
 layout(set = 0, binding = 3) uniform sampler textureSampler;
 
 struct ambient_light_t {
@@ -38,7 +39,7 @@ layout(scalar, set = 0, binding = 4) readonly uniform lighting_data_t {
 	ambient_light_t ambient_lighting;
 
 	uint num_point_lights;
-	point_light_t point_lights[NUM_RENDER_OBJECTS];
+	point_light_t point_lights[MAX_MODEL_COUNT];
 	
 } lighting_data;
 
@@ -57,7 +58,7 @@ float calculate_attenuation(const vec3 src, const vec3 dst, const float coeffici
 
 void main() {
 
-	DrawData draw_info = uDrawData.draw_infos[in_draw_index];
+	DrawInfo draw_info = uDrawData.drawInfos[in_draw_index];
 
 	// Texel position
 	vec3 texel_position = in_position;
@@ -65,7 +66,7 @@ void main() {
 	texel_position.y = floor(in_position.y * 16.0) / 16.0;
 
 	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.imageIndex));
-	out_color = texture(sampler2DArray(textures[draw_info.quadID], textureSampler), texture_coordinates) * vec4(in_color, 1.0);
+	out_color = texture(sampler2DArray(textures[draw_info.modelIndex], textureSampler), texture_coordinates) * vec4(in_color, 1.0);
 	
 	/* Apply lighting
 	out_color.rgb *= (lighting_data.ambient_lighting.color * lighting_data.ambient_lighting.intensity);

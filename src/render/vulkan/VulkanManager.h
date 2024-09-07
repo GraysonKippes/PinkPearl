@@ -60,8 +60,6 @@ extern BufferPartition global_uniform_buffer_partition;
 // Used for GPU-only bulk storage data.
 extern BufferPartition global_storage_buffer_partition;
 
-extern BufferPartition global_draw_data_buffer_partition;
-
 extern FrameArray frame_array;
 
 // Creates all Vulkan objects needed for the rendering system.

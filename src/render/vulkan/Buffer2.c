@@ -253,6 +253,13 @@ void deleteBuffer(Buffer *const pBuffer) {
 	*pBuffer = nullptr;
 }
 
+VkBuffer bufferGetVkBuffer(const Buffer buffer) {
+	if (!buffer) {
+		return VK_NULL_HANDLE;
+	}
+	return buffer->vkBuffer;
+}
+
 void bufferBorrowSubrange(Buffer buffer, const int32_t subrangeIndex, BufferSubrange *const pOutSubrange) {
 	if (!buffer) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error borrowing buffer subrange: buffer object is null.");
@@ -300,7 +307,7 @@ void bufferReturnSubrange(BufferSubrange *const pSubrange) {
 	};
 }
 
-void bufferCopyData(const BufferSubrange subrange, const VkDeviceSize dataOffset, const VkDeviceSize dataSize, const unsigned char *const pData) {
+void bufferHostTransfer(const BufferSubrange subrange, const VkDeviceSize dataOffset, const VkDeviceSize dataSize, const void *const pData) {
 	if (!pData) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error copying data to buffer: pData is null.");
 		return;
@@ -321,7 +328,7 @@ void bufferCopyData(const BufferSubrange subrange, const VkDeviceSize dataOffset
 		return;
 	}
 	
-	memcpy(&subrange.owner->pMappedMemory[subrange.offset], &pData[dataOffset], dataSize);
+	memcpy(&subrange.owner->pMappedMemory[subrange.offset + dataOffset], pData, dataSize);
 }
 
 VkDescriptorBufferInfo makeDescriptorBufferInfo2(const BufferSubrange subrange) {

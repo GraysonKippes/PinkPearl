@@ -47,13 +47,15 @@ void createBuffer(const BufferCreateInfo bufferCreateInfo, Buffer *const pOutBuf
 // Deletes the specified buffer and resets the handle to null.
 void deleteBuffer(Buffer *const pBuffer);
 
+VkBuffer bufferGetVkBuffer(const Buffer buffer);
+
 // "Borrows" a subrange or partition from the buffer, locking that subrange until it is returned.
 void bufferBorrowSubrange(Buffer buffer, const int32_t subrangeIndex, BufferSubrange *const pOutSubrange);
 
 // "Returns" a previously borrowed subrange to its owner, unlocking that subrange.
 void bufferReturnSubrange(BufferSubrange *const pSubrange);
 
-void bufferCopyData(const BufferSubrange subrange, const VkDeviceSize dataOffset, const VkDeviceSize dataSize, const unsigned char *const pData);
+void bufferHostTransfer(const BufferSubrange subrange, const VkDeviceSize dataOffset, const VkDeviceSize dataSize, const void *const pData);
 
 VkDescriptorBufferInfo makeDescriptorBufferInfo2(const BufferSubrange subrange);
 

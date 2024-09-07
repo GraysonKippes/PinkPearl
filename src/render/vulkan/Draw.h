@@ -13,6 +13,8 @@
 
 typedef struct ModelPool_T *ModelPool;
 
+extern const uint32_t drawCountSize;
+
 extern const uint32_t drawCommandStride;
 
 void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex, 
@@ -23,6 +25,8 @@ void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex,
 void deleteModelPool(ModelPool *const pModelPool);
 
 uint32_t modelPoolGetMaxModelCount(const ModelPool modelPool);
+
+VkDescriptorBufferInfo modelPoolGetBufferDescriptorInfo(const ModelPool modelPool);
 
 void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const pMaxDrawCount, uint32_t *const pStride);
 

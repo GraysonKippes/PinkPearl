@@ -15,10 +15,10 @@ typedef struct DrawInfo {
 	/* Indirect draw command parameters */
 	
 	uint32_t indexCount;
-	uint32_t instanceCount;	// IGNORED
+	uint32_t instanceCount;	// Unused
 	uint32_t firstIndex;
 	int32_t vertexOffset;
-	uint32_t firstInstance;	// IGNORED
+	uint32_t firstInstance;	// Unused
 	
 	/* Additional draw parameters */
 	
@@ -79,6 +79,8 @@ struct ModelPool_T {
 	// DrawInfoIndex indexes into this array.
 	DrawInfo *pDrawInfos;
 };
+
+const uint32_t drawCountSize = sizeof(uint32_t);
 
 const uint32_t drawCommandStride = sizeof(DrawInfo);
 
@@ -162,6 +164,10 @@ void deleteModelPool(ModelPool *const pModelPool) {
 
 uint32_t modelPoolGetMaxModelCount(const ModelPool modelPool) {
 	return modelPool->maxModelCount;
+}
+
+VkDescriptorBufferInfo modelPoolGetBufferDescriptorInfo(const ModelPool modelPool) {
+	return makeDescriptorBufferInfo2(modelPool->drawInfoBuffer);
 }
 
 void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const pMaxDrawCount, uint32_t *const pStride) {
@@ -295,15 +301,8 @@ void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensio
 	modelPool->drawInfoCount += 1;
 	
 	// Upload new draw info array to buffer
-	
-	// TODO - cut the partition crap and just do one mapped memory.
-	unsigned char *const pDrawCountMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
-	memcpy(pDrawCountMappedMemory, &modelPool->drawInfoCount, sizeof(modelPool->drawInfoCount));
-	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
-	
-	unsigned char *const pDrawInfosMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(pDrawInfosMappedMemory, modelPool->pDrawInfos, modelPool->drawInfoCount * sizeof(*modelPool->pDrawInfos));
-	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	bufferHostTransfer(modelPool->drawInfoBuffer, 0, drawCountSize, &modelPool->drawInfoCount);
+	bufferHostTransfer(modelPool->drawInfoBuffer, drawCountSize, modelPool->drawInfoCount * sizeof(DrawInfo), modelPool->pDrawInfos);
 	
 	// Update texture descriptor
 	
@@ -357,14 +356,8 @@ void unloadModel(ModelPool modelPool, int *const pModelHandle) {
 		modelPool->pDrawInfoIndices[modelPool->pDrawInfos[i].modelIndex] = i;
 	}
 	
-	// TODO - cut the partition crap and just do one mapped memory.
-	unsigned char *const pDrawCountMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 0);
-	memcpy(pDrawCountMappedMemory, &modelPool->drawInfoCount, sizeof(modelPool->drawInfoCount));
-	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
-	
-	unsigned char *const pDrawInfosMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(pDrawInfosMappedMemory, modelPool->pDrawInfos, modelPool->drawInfoCount * sizeof(*modelPool->pDrawInfos));
-	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	bufferHostTransfer(modelPool->drawInfoBuffer, 0, drawCountSize, &modelPool->drawInfoCount);
+	bufferHostTransfer(modelPool->drawInfoBuffer, drawCountSize, modelPool->drawInfoCount * sizeof(DrawInfo), modelPool->pDrawInfos);
 	
 	modelPool->pSlotFlags[modelIndex] = false;
 	
@@ -384,20 +377,16 @@ void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F
 }
 
 TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle) {
-	//logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Getting texture state from model %i...", modelHandle);
 	return &modelPool->pTextureStates[modelHandle];
 }
 
 void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex) {
-	//logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Updating draw info for model %i...", modelHandle);
 	
 	const uint32_t modelIndex = (uint32_t)modelHandle;
 	const uint32_t drawInfoIndex = modelPool->pDrawInfoIndices[modelIndex];
 	modelPool->pDrawInfos[drawInfoIndex].imageIndex = (uint32_t)imageIndex;
 	
-	uint8_t *const drawDataMappedMemory = buffer_partition_map_memory(global_draw_data_buffer_partition, 1);
-	memcpy(&drawDataMappedMemory[drawInfoIndex * sizeof(DrawInfo)], &modelPool->pDrawInfos[drawInfoIndex], sizeof(DrawInfo));
-	buffer_partition_unmap_memory(global_draw_data_buffer_partition);
+	bufferHostTransfer(modelPool->drawInfoBuffer, drawCountSize + drawInfoIndex * sizeof(DrawInfo), sizeof(DrawInfo), &modelPool->pDrawInfos[drawInfoIndex]);
 }
 
 ModelTransform *getModelTransforms(const ModelPool modelPool) {

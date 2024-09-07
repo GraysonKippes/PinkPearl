@@ -1,7 +1,7 @@
 #version 460
 #extension GL_EXT_scalar_block_layout : require
 
-#define NUM_QUADS 256
+#define MAX_MODEL_COUNT 256
 
 struct DrawInfo {
 	// Indirect draw info
@@ -11,18 +11,19 @@ struct DrawInfo {
 	int vertexOffset;
 	uint firstInstance;
 	// Additional draw data
-	int quadID;
+	int modelIndex;
 	uint imageIndex;
 };
 
-layout(scalar, set = 0, binding = 0) readonly uniform DrawData {
-	DrawInfo draw_infos[NUM_QUADS];
-} drawData;
+layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
+	uint drawCount;
+	DrawInfo drawInfos[MAX_MODEL_COUNT];
+} uDrawData;
 
 layout(set = 0, binding = 1) readonly buffer MatrixBuffer {
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
-	mat4 modelMatrices[NUM_QUADS];
+	mat4 modelMatrices[MAX_MODEL_COUNT];
 } matrixBuffer;
 
 layout(location = 0) in vec3 in_position;
@@ -37,10 +38,10 @@ layout(location = 3) out uint out_draw_index;
 void main() {
 
 	out_draw_index = gl_DrawID;
-	DrawInfo draw_info = drawData.draw_infos[gl_DrawID];
+	DrawInfo draw_info = uDrawData.drawInfos[gl_DrawID];
 
 	mat4 modelMatrix = mat4(1.0);
-	modelMatrix = matrixBuffer.modelMatrices[draw_info.quadID];
+	modelMatrix = matrixBuffer.modelMatrices[draw_info.modelIndex];
 
 	vec4 homogenous_coordinates = vec4(in_position, 1.0);
 	gl_Position = matrixBuffer.projectionMatrix * matrixBuffer.viewMatrix * modelMatrix * homogenous_coordinates;

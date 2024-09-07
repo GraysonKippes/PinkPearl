@@ -72,7 +72,6 @@ FrameArray frame_array = { };
 BufferPartition global_staging_buffer_partition;
 BufferPartition global_uniform_buffer_partition;
 BufferPartition global_storage_buffer_partition;
-BufferPartition global_draw_data_buffer_partition;
 
 Buffer bufferDrawInfo = nullptr;
 
@@ -159,22 +158,6 @@ static void create_global_storage_buffer(void) {
 
 static void create_global_draw_data_buffer(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating global draw data buffer...");
-
-	const BufferPartitionCreateInfo buffer_partition_create_info = {
-		.physical_device = physical_device.vkPhysicalDevice,
-		.device = device,
-		.buffer_type = BUFFER_TYPE_DRAW_DATA,
-		.memory_type_set = memory_type_set,
-		.num_queue_family_indices = 0,
-		.queue_family_indices = nullptr,
-		.num_partition_sizes = 2,
-		.partition_sizes = (VkDeviceSize[2]){
-			4,			// Indirect draw count
-			256 * drawCommandStride	// Indirect draw data
-		}
-	};
-	
-	global_draw_data_buffer_partition = create_buffer_partition(buffer_partition_create_info);
 	
 	const BufferCreateInfo bufferCreateInfo = {
 		.physicalDevice = physical_device,
@@ -291,7 +274,6 @@ void destroy_vulkan_objects(void) {
 	destroy_buffer_partition(&global_staging_buffer_partition);
 	destroy_buffer_partition(&global_uniform_buffer_partition);
 	destroy_buffer_partition(&global_storage_buffer_partition);
-	destroy_buffer_partition(&global_draw_data_buffer_partition);
 
 	vkDestroyDevice(device, nullptr);
 	
@@ -422,7 +404,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	VkWriteDescriptorSet descriptor_writes[3] = { { } };
 
-	const VkDescriptorBufferInfo draw_data_buffer_info = buffer_partition_descriptor_info(global_draw_data_buffer_partition, 1);
+	const VkDescriptorBufferInfo draw_data_buffer_info = modelPoolGetBufferDescriptorInfo(modelPoolMain);
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[0].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
 	descriptor_writes[0].dstBinding = 0;
@@ -511,6 +493,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		vkCmdBeginRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &renderingInfo);
 		
+		// Resource binding
+		
 		commandBufferBindPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipeline);
 		
 		commandBufferBindDescriptorSet(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
@@ -519,9 +503,23 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
 		vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
 		
-		const uint32_t drawOffset = global_draw_data_buffer_partition.ranges[1].offset;
+		// Draw call
+		
+		//const uint32_t drawOffset = global_draw_data_buffer_partition.ranges[1].offset;
+		//const uint32_t maxDrawCount = modelPoolGetMaxModelCount(modelPoolMain);
+		/*vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+				global_draw_data_buffer_partition.buffer, drawOffset, 
+				global_draw_data_buffer_partition.buffer, 0, 
+				maxDrawCount, drawCommandStride);*/
+		
+		
+		const uint32_t drawOffset = drawCountSize;
+		const VkBuffer bufferDrawInfoHandle = bufferGetVkBuffer(bufferDrawInfo);
 		const uint32_t maxDrawCount = modelPoolGetMaxModelCount(modelPoolMain);
-		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, global_draw_data_buffer_partition.buffer, drawOffset, global_draw_data_buffer_partition.buffer, 0, maxDrawCount, drawCommandStride);
+		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+				bufferDrawInfoHandle, drawOffset, 
+				bufferDrawInfoHandle, 0, 
+				maxDrawCount, drawCommandStride);
 		
 		vkCmdEndRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer);
 		
