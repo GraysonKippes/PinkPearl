@@ -20,7 +20,8 @@ extern const uint32_t drawCommandStride;
 void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex, 
 		const uint32_t firstVertex, const uint32_t vertexCount, 
 		const uint32_t firstIndex, const uint32_t indexCount, 
-		const uint32_t maxModelCount, ModelPool *pOutModelPool);
+		const uint32_t firstDescriptorIndex, const uint32_t maxModelCount, 
+		ModelPool *pOutModelPool);
 
 void deleteModelPool(ModelPool *const pModelPool);
 

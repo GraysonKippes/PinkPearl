@@ -49,6 +49,8 @@ extern CommandPool commandPoolCompute;
 
 extern ModelPool modelPoolMain;
 
+extern ModelPool modelPoolDebug;
+
 /* -- Global buffers -- */
 
 // Used for staging data to GPU-only buffers (storage, vertex, index) and images.

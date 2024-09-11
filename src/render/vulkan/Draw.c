@@ -22,7 +22,7 @@ typedef struct DrawInfo {
 	
 	/* Additional draw parameters */
 	
-	// Indexes into global descriptor arrays.
+	// Indexes into a model pool's array of models.
 	int32_t modelIndex;
 	
 	// Indexes into a texture array.
@@ -52,6 +52,9 @@ struct ModelPool_T {
 	
 	// Number of indices of each model in this pool.
 	uint32_t indexCount;
+	
+	// The descriptor index of the first model in this pool. Offsets all descriptor/model indices.
+	uint32_t firstDescriptorIndex;
 	
 	// The maximum number of models.
 	uint32_t maxModelCount;
@@ -87,7 +90,8 @@ const uint32_t drawCommandStride = sizeof(DrawInfo);
 void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex, 
 		const uint32_t firstVertex, const uint32_t vertexCount, 
 		const uint32_t firstIndex, const uint32_t indexCount, 
-		const uint32_t maxModelCount, ModelPool *pOutModelPool) {
+		const uint32_t firstDescriptorIndex, const uint32_t maxModelCount, 
+		ModelPool *pOutModelPool) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
 	
 	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
@@ -100,6 +104,7 @@ void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex,
 	modelPool->vertexCount = vertexCount;
 	modelPool->firstIndex = firstIndex;
 	modelPool->indexCount = indexCount;
+	modelPool->firstDescriptorIndex = firstDescriptorIndex;
 	modelPool->maxModelCount = maxModelCount;
 	modelPool->drawInfoCount = 0;
 	

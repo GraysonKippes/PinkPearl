@@ -54,7 +54,6 @@ int loadRenderObject(const String textureID, const BoxF quadDimensions, const in
 		renderObjectQuadHandles[renderHandle][i] = -1;
 	}
 	
-	//const TextureState quadTextureState = newTextureState(textureID);
 	for (int i = 0; i < numQuads; ++i) {
 		const Vector4F quadPosition = {
 			.x = (float)quadPositions[i].x,
@@ -62,12 +61,6 @@ int loadRenderObject(const String textureID, const BoxF quadDimensions, const in
 			.z = (float)quadPositions[i].z,
 			.w = 1.0F
 		};
-		
-		/*const int quadHandle = loadQuad(quadDimensions, quadPosition, quadTextureState);
-		if (!validateQuadHandle(quadHandle)) {
-			unloadRenderObject(&renderHandle);
-			return renderHandleInvalid;
-		}*/
 		
 		int quadHandle = -1;
 		loadModel(modelPoolMain, quadPosition, quadDimensions, textureID, &quadHandle);

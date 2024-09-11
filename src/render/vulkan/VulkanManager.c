@@ -76,6 +76,7 @@ BufferPartition global_storage_buffer_partition;
 Buffer bufferDrawInfo = nullptr;
 
 ModelPool modelPoolMain = nullptr;
+
 ModelPool modelPoolDebug = nullptr;
 
 /* -- Graphics Pipeline Descriptor Set Layout -- */
@@ -240,8 +241,8 @@ void create_vulkan_objects(void) {
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
 	
-	createModelPool(bufferDrawInfo, 0, 0, 4, 0, 6, 256, &modelPoolMain);
-	createModelPool(bufferDrawInfo, 1, 256 * 4, 4, 6, 8, 256, &modelPoolDebug);
+	createModelPool(bufferDrawInfo, 0, 0, 4, 0, 6, 0, 256, &modelPoolMain);
+	createModelPool(bufferDrawInfo, 1, 256 * 4, 4, 6, 8, 256, 256, &modelPoolDebug);
 }
 
 void destroy_vulkan_objects(void) {
@@ -505,14 +506,6 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		// Draw call
 		
-		//const uint32_t drawOffset = global_draw_data_buffer_partition.ranges[1].offset;
-		//const uint32_t maxDrawCount = modelPoolGetMaxModelCount(modelPoolMain);
-		/*vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
-				global_draw_data_buffer_partition.buffer, drawOffset, 
-				global_draw_data_buffer_partition.buffer, 0, 
-				maxDrawCount, drawCommandStride);*/
-		
-		
 		const uint32_t drawOffset = drawCountSize;
 		const VkBuffer bufferDrawInfoHandle = bufferGetVkBuffer(bufferDrawInfo);
 		const uint32_t maxDrawCount = modelPoolGetMaxModelCount(modelPoolMain);
@@ -520,6 +513,15 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 				bufferDrawInfoHandle, drawOffset, 
 				bufferDrawInfoHandle, 0, 
 				maxDrawCount, drawCommandStride);
+		
+		commandBufferBindPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
+		
+		const uint32_t debugDrawOffset = maxDrawCount * drawCommandStride;
+		const uint32_t debugMaxDrawCount = modelPoolGetMaxModelCount(modelPoolDebug);
+		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+				bufferDrawInfoHandle, drawOffset + debugDrawOffset, 
+				bufferDrawInfoHandle, debugDrawOffset, 
+				debugMaxDrawCount, drawCommandStride);
 		
 		vkCmdEndRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer);
 		
