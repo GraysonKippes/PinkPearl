@@ -115,6 +115,86 @@ Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapcha
 	return pipeline;
 }
 
+Pipeline createGraphicsPipeline2(const GraphicsPipelineCreateInfo createInfo) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
+
+	Pipeline pipeline = { .type = PIPELINE_TYPE_GRAPHICS };
+
+	VkPipelineShaderStageCreateInfo shaderStateCreateInfos[createInfo.shaderModuleCount];
+	for (uint32_t i = 0; i < createInfo.shaderModuleCount; ++i) {
+		shaderStateCreateInfos[i] = makeShaderStageCreateInfo(createInfo.pShaderModules[i]);
+	}
+
+	create_descriptor_pool(createInfo.vkDevice, NUM_FRAMES_IN_FLIGHT, createInfo.descriptorSetLayout, &pipeline.vkDescriptorPool);
+	create_descriptor_set_layout(createInfo.vkDevice, createInfo.descriptorSetLayout, &pipeline.vkDescriptorSetLayout);
+
+	pipeline.vkPipelineLayout = createPipelineLayout2(createInfo.vkDevice, 1, &pipeline.vkDescriptorSetLayout, createInfo.pushConstantRangeCount, createInfo.pPushConstantRanges);
+
+	VkVertexInputBindingDescription binding_description = makeVertexInputBindingDescription(vertex_input_element_stride);
+
+	VkVertexInputAttributeDescription attributeDescriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { } };
+	makeVertexInputAttributeDescriptions(vertex_input_num_attributes, attributeSizes, attributeDescriptions);
+
+	const VkPipelineVertexInputStateCreateInfo vertex_input_info = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.vertexBindingDescriptionCount = 1,
+		.pVertexBindingDescriptions = &binding_description,
+		.vertexAttributeDescriptionCount = vertex_input_num_attributes,
+		.pVertexAttributeDescriptions = attributeDescriptions
+	};
+
+	VkViewport viewport = makeViewport(swapchain.imageExtent);
+	VkRect2D scissor = makeScissor(swapchain.imageExtent);
+
+	VkPipelineInputAssemblyStateCreateInfo input_assembly = makePipelineInputAssemblyStateCreateInfo(createInfo.topology);
+	VkPipelineViewportStateCreateInfo viewport_state = makePipelineViewportStateCreateInfo(&viewport, &scissor);
+	VkPipelineRasterizationStateCreateInfo rasterizer = makePipelineRasterizationStateCreateInfo(createInfo.polygonMode);
+	VkPipelineMultisampleStateCreateInfo multisampling = makePipelineMultisampleStateCreateInfo();
+	VkPipelineColorBlendAttachmentState color_blend_attachment = makePipelineColorBlendAttachmentState();
+	VkPipelineColorBlendStateCreateInfo color_blending = makePipelineColorBlendStateCreateInfo(&color_blend_attachment);
+
+	const VkPipelineRenderingCreateInfo renderingInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+		.pNext = nullptr,
+		.viewMask = 0,
+		.colorAttachmentCount = 1,
+		.pColorAttachmentFormats = &swapchain.imageFormat,
+		.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
+		.stencilAttachmentFormat = VK_FORMAT_UNDEFINED
+	};
+
+	const VkGraphicsPipelineCreateInfo vkGraphicsPipelineCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+		.pNext = &renderingInfo,
+		.flags = 0,
+		.stageCount = createInfo.shaderModuleCount,
+		.pStages = shaderStateCreateInfos,
+		.pVertexInputState = &vertex_input_info,
+		.pInputAssemblyState = &input_assembly,
+		.pViewportState = &viewport_state,
+		.pRasterizationState = &rasterizer,
+		.pMultisampleState = &multisampling,
+		.pDepthStencilState = nullptr,
+		.pColorBlendState = &color_blending,
+		.pDynamicState = nullptr,
+		.layout = pipeline.vkPipelineLayout,
+		.renderPass = VK_NULL_HANDLE,
+		.subpass = 0,
+		.basePipelineHandle = VK_NULL_HANDLE,
+		.basePipelineIndex= -1
+	};
+
+	const VkResult result = vkCreateGraphicsPipelines(createInfo.vkDevice, VK_NULL_HANDLE, 1, &vkGraphicsPipelineCreateInfo, nullptr, &pipeline.vkPipeline);
+	if (result != VK_SUCCESS) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Graphics pipeline creation failed (error code: %i).", result);
+	}
+	pipeline.vkDevice = createInfo.vkDevice;
+
+	return pipeline;
+}
+
 static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(const VkPrimitiveTopology topology) {
 	return (VkPipelineInputAssemblyStateCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,

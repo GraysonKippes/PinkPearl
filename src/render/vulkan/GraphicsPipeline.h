@@ -8,8 +8,26 @@
 #include "Shader.h"
 #include "Swapchain.h"
 
-Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapchain, const DescriptorSetLayout descriptorSetLayout,
-		const VkPrimitiveTopology topology, const VkPolygonMode polygonMode,
-		const uint32_t shaderModuleCount, const ShaderModule shaderModules[static const shaderModuleCount]);
+typedef struct GraphicsPipelineCreateInfo {
+	
+	VkDevice vkDevice;
+	
+	Swapchain swapchain;
+	
+	VkPrimitiveTopology topology;
+	VkPolygonMode polygonMode;
+	
+	// TODO - change to just array of descriptor bindings.
+	DescriptorSetLayout descriptorSetLayout;
+	
+	uint32_t shaderModuleCount;
+	ShaderModule *pShaderModules;
+	
+	uint32_t pushConstantRangeCount;
+	PushConstantRange *pPushConstantRanges;
+	
+} GraphicsPipelineCreateInfo;
+		
+Pipeline createGraphicsPipeline2(const GraphicsPipelineCreateInfo createInfo);
 
 #endif	// GRAPHICS_PIPELINE_H

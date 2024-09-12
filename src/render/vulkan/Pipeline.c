@@ -2,6 +2,8 @@
 
 #include "log/Logger.h"
 
+#include "memory.h"
+
 bool validatePipeline(const Pipeline pipeline) {
 	return pipeline.vkPipeline != VK_NULL_HANDLE
 		&& pipeline.vkPipelineLayout != VK_NULL_HANDLE
@@ -60,8 +62,19 @@ VkPipelineLayout createPipelineLayout(VkDevice vkDevice, VkDescriptorSetLayout v
 
 VkPipelineLayout createPipelineLayout2(const VkDevice vkDevice, 
 		const uint32_t vkDescriptorSetLayoutCount, const VkDescriptorSetLayout vkDescriptorSetLayouts[static const vkDescriptorSetLayoutCount],
-		const uint32_t vkPushConstantRangeCount, const VkPushConstantRange vkPushConstantRanges[static const vkPushConstantRangeCount]) {
+		const uint32_t pushConstantRangeCount, const PushConstantRange pushConstantRanges[static const pushConstantRangeCount]) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating pipeline layout...");
+
+	uint32_t offsetAccummulator = 0;
+	VkPushConstantRange vkPushConstantRanges[pushConstantRangeCount];
+	for (uint32_t i = 0; i < pushConstantRangeCount; ++i) {
+		vkPushConstantRanges[i] = (VkPushConstantRange){
+			.stageFlags = pushConstantRanges[i].shaderStageFlags,
+			.offset = offsetAccummulator,
+			.size = pushConstantRanges[i].size
+		};
+		offsetAccummulator += alignOffset(pushConstantRanges[i].size, 4);
+	}
 
 	const VkPipelineLayoutCreateInfo vkPipelineLayoutCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -69,7 +82,7 @@ VkPipelineLayout createPipelineLayout2(const VkDevice vkDevice,
 		.flags = 0,
 		.setLayoutCount = vkDescriptorSetLayoutCount,
 		.pSetLayouts = vkDescriptorSetLayouts,
-		.pushConstantRangeCount = vkPushConstantRangeCount,
+		.pushConstantRangeCount = pushConstantRangeCount,
 		.pPushConstantRanges = vkPushConstantRanges
 	};
 

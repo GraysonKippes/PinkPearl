@@ -212,13 +212,31 @@ void create_vulkan_objects(void) {
 	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, VERTEX_SHADER_NAME);
 	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, FRAGMENT_SHADER_NAME);
 	
-	graphicsPipeline = createGraphicsPipeline(device, swapchain, graphicsPipelineDescriptorSetLayout,
-			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_POLYGON_MODE_FILL,
-			2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
-			
-	graphicsPipelineDebug = createGraphicsPipeline(device, swapchain, graphicsPipelineDescriptorSetLayout,
-			VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_POLYGON_MODE_FILL,
-			2, (ShaderModule[]){vertexShaderModule, fragmentShaderModule});
+	GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {
+		.vkDevice = device,
+		.swapchain = swapchain,
+		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		.polygonMode = VK_POLYGON_MODE_FILL,
+		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
+		.shaderModuleCount = 2,
+		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
+		.pushConstantRangeCount = 0,
+		.pPushConstantRanges = nullptr
+	};
+	graphicsPipeline = createGraphicsPipeline2(graphicsPipelineCreateInfo);
+	
+	GraphicsPipelineCreateInfo graphicsPipelineDebugCreateInfo = {
+		.vkDevice = device,
+		.swapchain = swapchain,
+		.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+		.polygonMode = VK_POLYGON_MODE_FILL,
+		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
+		.shaderModuleCount = 2,
+		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
+		.pushConstantRangeCount = 0,
+		.pPushConstantRanges = nullptr
+	};
+	graphicsPipelineDebug = createGraphicsPipeline2(graphicsPipelineDebugCreateInfo);
 	
 	destroyShaderModule(&vertexShaderModule);
 	destroyShaderModule(&fragmentShaderModule);
