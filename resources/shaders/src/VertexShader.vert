@@ -41,11 +41,11 @@ layout(location = 3) out uint out_draw_index;
 
 void main() {
 
-	out_draw_index = gl_DrawID;
 	DrawInfo drawInfo = uDrawData.drawInfos[gl_DrawID];
-
+	uint descriptorIndex = drawInfo.modelIndex + pushConstants.descriptorIndexOffset;
+	
 	mat4 modelMatrix = mat4(1.0);
-	modelMatrix = matrixBuffer.modelMatrices[pushConstants.descriptorIndexOffset + drawInfo.modelIndex];
+	modelMatrix = matrixBuffer.modelMatrices[descriptorIndex];
 
 	vec4 homogenous_coordinates = vec4(in_position, 1.0);
 	gl_Position = matrixBuffer.projectionMatrix * matrixBuffer.viewMatrix * modelMatrix * homogenous_coordinates;
@@ -53,4 +53,5 @@ void main() {
 	out_position = vec3(modelMatrix * homogenous_coordinates);
 	out_tex_coord = in_tex_coord;
 	out_color = in_color;
+	out_draw_index = gl_DrawID;
 }

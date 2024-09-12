@@ -62,7 +62,11 @@ void initTextureManager(void) {
 	}
 	
 	TextureCreateInfo missingTextureCreateInfo = (TextureCreateInfo){
-		.textureID = newString(256, "missing"),
+		.textureID = (String){
+			.length = 7,
+			.capacity = 8,
+			.pBuffer = "missing"
+		},
 		.isLoaded = true,
 		.isTilemap = false,
 		.numCells.width = 1,
@@ -79,7 +83,6 @@ void initTextureManager(void) {
 		}
 	};
 	textureManagerLoadTexture(missingTextureCreateInfo);
-	deleteString(&missingTextureCreateInfo.textureID);
 
 	textureManagerInitialized = true;
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done loading textures.");
@@ -173,6 +176,8 @@ int findTexture(const String textureID) {
 			hashIndex %= (size_t)numTextures;
 		}
 	}
+	
+	logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error finding loaded texture: could not find texture \"%s\".", textureID.pBuffer);
 	return textureHandleMissing;
 }
 

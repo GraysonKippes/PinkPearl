@@ -79,6 +79,9 @@ ModelPool modelPoolMain = nullptr;
 
 ModelPool modelPoolDebug = nullptr;
 
+// TEST
+int testDebugModel = -1;
+
 /* -- Graphics Pipeline Descriptor Set Layout -- */
 
 static const DescriptorBinding graphicsPipelineDescriptorBindings[5] = {
@@ -355,6 +358,27 @@ void initTextureDescriptors(void) {
 	}
 }
 
+void createTestDebugModel() {
+	
+	const Vector4F testPosition = zeroVector4F;
+	
+	const BoxF testBox = {
+		.x1 = -0.5F,
+		.y1 = -0.5F,
+		.x2 = 0.5F,
+		.y2 = 0.5F
+	};
+	
+	const String testTextureID = {
+		.length = 7,
+		.capacity = 8,
+		.pBuffer = "missing"
+	};
+	
+	loadModel(modelPoolDebug, testPosition, testBox, testTextureID, &testDebugModel);
+	
+}
+
 static void uploadLightingData(void) {
 	
 	typedef struct ambient_light_t {
@@ -546,6 +570,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 				bufferDrawInfoHandle, drawOffset, 
 				bufferDrawInfoHandle, 0, 
 				maxDrawCount, drawCommandStride);
+		
+		// Debug drawing
 		
 		commandBufferBindPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
 		

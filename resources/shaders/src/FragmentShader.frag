@@ -63,7 +63,7 @@ float calculate_attenuation(const vec3 src, const vec3 dst, const float coeffici
 void main() {
 
 	DrawInfo drawInfo = uDrawData.drawInfos[in_draw_index];
-	uint descriptorIndex = drawInfo.modelIndex + pushConstants .descriptorIndexOffset;
+	uint descriptorIndex = drawInfo.modelIndex + pushConstants.descriptorIndexOffset;
 
 	// Texel position
 	vec3 texel_position = in_position;

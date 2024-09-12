@@ -72,6 +72,8 @@ void destroy_vulkan_objects(void);
 
 void initTextureDescriptors(void);
 
+void createTestDebugModel();
+
 void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds);
 
 #endif	// VULKAN_MANAGER_H

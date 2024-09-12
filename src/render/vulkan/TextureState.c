@@ -9,6 +9,7 @@
 #include "texture.h"
 #include "texture_manager.h"
 
+// TODO - change to const global variable
 TextureState nullTextureState(void) {
 	return (TextureState){
 		.textureHandle = textureHandleMissing,
@@ -22,18 +23,17 @@ TextureState nullTextureState(void) {
 }
 
 TextureState newTextureState(const String textureID) {
+	if (stringIsNull(textureID)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating texture state: given texture ID is nullptr.");
+		return nullTextureState();
+	}
 	
 	TextureState textureState = nullTextureState();
 	
-	if (stringIsNull(textureID)) {
-		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error finding loaded texture: given texture ID is nullptr.");
-		return textureState;
-	}
-	
 	textureState.textureHandle = findTexture(textureID);
 	if (!validateTextureHandle(textureState.textureHandle)) {
-		textureState.textureHandle = textureHandleMissing;
-		return textureState;
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating texture state: could not find texture \"%s\".", textureID.pBuffer);
+		return nullTextureState();
 	}
 	
 	Texture texture = getTexture(textureState.textureHandle);
@@ -50,7 +50,7 @@ bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned 
 	if (pTextureState == nullptr) {
 		return false;
 	} else if (nextAnimation >= pTextureState->numAnimations) {
-		logMsg(loggerRender, LOG_LEVEL_WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", pTextureState->currentAnimation, pTextureState->numAnimations);
+		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", pTextureState->currentAnimation, pTextureState->numAnimations);
 		return false;
 	}
 
@@ -67,7 +67,7 @@ bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned 
 }
 
 int textureStateAnimate(TextureState *const pTextureState) {
-	if (pTextureState == nullptr) {
+	if (!pTextureState) {
 		return 0;
 	}
 	

@@ -33,13 +33,18 @@ void descriptorSetPushWrite(DescriptorSet *const pDescriptorSet, const VkWriteDe
 	if (!pDescriptorSet) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error pushing descriptor set write: null pointer(s) detected.");
 		return;
-	} else if (pDescriptorSet->pendingWriteCount >= 8) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error pushing descriptor set write: maximum number of writes already pushed.");
-		return;
 	}
 	
-	pDescriptorSet->pPendingWrites[pDescriptorSet->pendingWriteCount] = descriptorSetWrite;
-	pDescriptorSet->pendingWriteCount += 1;
+	if (pDescriptorSet->bound) {
+		if (pDescriptorSet->pendingWriteCount >= 8) {
+			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error pushing descriptor set write: maximum number of writes already pushed.");
+			return;
+		}
+		pDescriptorSet->pPendingWrites[pDescriptorSet->pendingWriteCount] = descriptorSetWrite;
+		pDescriptorSet->pendingWriteCount += 1;
+	} else {
+		vkUpdateDescriptorSets(pDescriptorSet->vkDevice, 1, &descriptorSetWrite, 0, nullptr);
+	}
 }
 
 
