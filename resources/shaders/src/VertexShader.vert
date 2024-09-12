@@ -15,6 +15,10 @@ struct DrawInfo {
 	uint imageIndex;
 };
 
+layout(push_constant) uniform PushConstants {
+	uint descriptorIndexOffset;
+} pushConstants;
+
 layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
 	uint drawCount;
 	DrawInfo drawInfos[MAX_MODEL_COUNT];
@@ -38,10 +42,10 @@ layout(location = 3) out uint out_draw_index;
 void main() {
 
 	out_draw_index = gl_DrawID;
-	DrawInfo draw_info = uDrawData.drawInfos[gl_DrawID];
+	DrawInfo drawInfo = uDrawData.drawInfos[gl_DrawID];
 
 	mat4 modelMatrix = mat4(1.0);
-	modelMatrix = matrixBuffer.modelMatrices[draw_info.modelIndex];
+	modelMatrix = matrixBuffer.modelMatrices[pushConstants.descriptorIndexOffset + drawInfo.modelIndex];
 
 	vec4 homogenous_coordinates = vec4(in_position, 1.0);
 	gl_Position = matrixBuffer.projectionMatrix * matrixBuffer.viewMatrix * modelMatrix * homogenous_coordinates;

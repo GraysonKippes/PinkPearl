@@ -15,6 +15,10 @@ struct DrawInfo {
 	uint imageIndex;
 };
 
+layout(push_constant) uniform PushConstants {
+	uint descriptorIndexOffset;
+} pushConstants;
+
 layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
 	uint drawCount;
 	DrawInfo drawInfos[MAX_MODEL_COUNT];
@@ -58,15 +62,16 @@ float calculate_attenuation(const vec3 src, const vec3 dst, const float coeffici
 
 void main() {
 
-	DrawInfo draw_info = uDrawData.drawInfos[in_draw_index];
+	DrawInfo drawInfo = uDrawData.drawInfos[in_draw_index];
+	uint descriptorIndex = drawInfo.modelIndex + pushConstants .descriptorIndexOffset;
 
 	// Texel position
 	vec3 texel_position = in_position;
 	texel_position.x = floor(in_position.x * 16.0) / 16.0;
 	texel_position.y = floor(in_position.y * 16.0) / 16.0;
 
-	const vec3 texture_coordinates = vec3(in_tex_coord, float(draw_info.imageIndex));
-	out_color = texture(sampler2DArray(textures[draw_info.modelIndex], textureSampler), texture_coordinates) * vec4(in_color, 1.0);
+	const vec3 texture_coordinates = vec3(in_tex_coord, float(drawInfo.imageIndex));
+	out_color = texture(sampler2DArray(textures[descriptorIndex], textureSampler), texture_coordinates) * vec4(in_color, 1.0);
 	
 	/* Apply lighting
 	out_color.rgb *= (lighting_data.ambient_lighting.color * lighting_data.ambient_lighting.intensity);

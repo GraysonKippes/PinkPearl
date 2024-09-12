@@ -220,8 +220,13 @@ void create_vulkan_objects(void) {
 		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
 		.shaderModuleCount = 2,
 		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
-		.pushConstantRangeCount = 0,
-		.pPushConstantRanges = nullptr
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = (PushConstantRange[1]){
+			{
+				.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+				.size = 4
+			}
+		}
 	};
 	graphicsPipeline = createGraphicsPipeline2(graphicsPipelineCreateInfo);
 	
@@ -233,8 +238,13 @@ void create_vulkan_objects(void) {
 		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
 		.shaderModuleCount = 2,
 		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
-		.pushConstantRangeCount = 0,
-		.pPushConstantRanges = nullptr
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = (PushConstantRange[1]){
+			{
+				.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+				.size = 4
+			}
+		}
 	};
 	graphicsPipelineDebug = createGraphicsPipeline2(graphicsPipelineDebugCreateInfo);
 	
@@ -524,6 +534,11 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		// Draw call
 		
+		const uint32_t descriptorIndexOffsetMain = 0;
+		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+				0, 4, &descriptorIndexOffsetMain);
+		
 		const uint32_t drawOffset = drawCountSize;
 		const VkBuffer bufferDrawInfoHandle = bufferGetVkBuffer(bufferDrawInfo);
 		const uint32_t maxDrawCount = modelPoolGetMaxModelCount(modelPoolMain);
@@ -533,6 +548,11 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 				maxDrawCount, drawCommandStride);
 		
 		commandBufferBindPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
+		
+		const uint32_t descriptorIndexOffsetDebug = modelPoolGetMaxModelCount(modelPoolMain);
+		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+				0, 4, &descriptorIndexOffsetDebug);
 		
 		const uint32_t debugDrawOffset = maxDrawCount * drawCommandStride;
 		const uint32_t debugMaxDrawCount = modelPoolGetMaxModelCount(modelPoolDebug);
