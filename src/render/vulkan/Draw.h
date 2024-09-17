@@ -31,6 +31,8 @@ VkDescriptorBufferInfo modelPoolGetBufferDescriptorInfo(const ModelPool modelPoo
 
 void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const pMaxDrawCount, uint32_t *const pStride);
 
+VkDeviceSize modelPoolGetDrawInfoBufferOffset(const ModelPool modelPool);
+
 void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensions, const String textureID, int *const pModelHandle);
 
 void unloadModel(ModelPool modelPool, int *const pModelHandle);

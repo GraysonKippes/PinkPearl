@@ -15,11 +15,11 @@ static Frame createFrame(PhysicalDevice physical_device, VkDevice device, Comman
 	Frame frame = {
 		.commandBuffer = { },
 		.descriptorSet = { },
-		.semaphore_image_available = (binary_semaphore_t){ },
-		.semaphore_present_ready = (binary_semaphore_t){ },
-		.semaphore_render_finished = (timeline_semaphore_t){ },
+		.semaphore_image_available = (BinarySemaphore){ },
+		.semaphore_present_ready = (BinarySemaphore){ },
+		.semaphore_render_finished = (TimelineSemaphore){ },
 		.fence_frame_ready = VK_NULL_HANDLE,
-		.semaphore_buffers_ready = (timeline_semaphore_t){ },
+		.semaphore_buffers_ready = (TimelineSemaphore){ },
 		.vertex_buffer = VK_NULL_HANDLE,
 		.index_buffer = VK_NULL_HANDLE
 	};

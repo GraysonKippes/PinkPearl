@@ -2,9 +2,9 @@
 
 #include <stddef.h>
 
-binary_semaphore_t create_binary_semaphore(const VkDevice vk_device) {
+BinarySemaphore create_binary_semaphore(const VkDevice vk_device) {
 
-	binary_semaphore_t binary_semaphore = {
+	BinarySemaphore binary_semaphore = {
 		.semaphore = VK_NULL_HANDLE,
 		.device = vk_device
 	};
@@ -19,7 +19,7 @@ binary_semaphore_t create_binary_semaphore(const VkDevice vk_device) {
 	return binary_semaphore;
 }
 
-bool destroy_binary_semaphore(binary_semaphore_t *const binary_semaphore_ptr) {
+bool destroy_binary_semaphore(BinarySemaphore *const binary_semaphore_ptr) {
 
 	if (binary_semaphore_ptr == nullptr) {
 		return false;
@@ -32,7 +32,7 @@ bool destroy_binary_semaphore(binary_semaphore_t *const binary_semaphore_ptr) {
 	return true;
 }
 
-VkSemaphoreSubmitInfo make_binary_semaphore_wait_submit_info(const binary_semaphore_t binary_semaphore, const VkPipelineStageFlags2 stage_mask) {
+VkSemaphoreSubmitInfo make_binary_semaphore_wait_submit_info(const BinarySemaphore binary_semaphore, const VkPipelineStageFlags2 stage_mask) {
 	return (VkSemaphoreSubmitInfo){
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 		.pNext = nullptr,
@@ -43,7 +43,7 @@ VkSemaphoreSubmitInfo make_binary_semaphore_wait_submit_info(const binary_semaph
 	};
 }
 
-VkSemaphoreSubmitInfo make_binary_semaphore_signal_submit_info(const binary_semaphore_t binary_semaphore, const VkPipelineStageFlags2 stage_mask) {
+VkSemaphoreSubmitInfo make_binary_semaphore_signal_submit_info(const BinarySemaphore binary_semaphore, const VkPipelineStageFlags2 stage_mask) {
 	return (VkSemaphoreSubmitInfo){
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 		.pNext = nullptr,
@@ -54,9 +54,9 @@ VkSemaphoreSubmitInfo make_binary_semaphore_signal_submit_info(const binary_sema
 	};
 }
 
-timeline_semaphore_t create_timeline_semaphore(const VkDevice vk_device) {
+TimelineSemaphore create_timeline_semaphore(const VkDevice vk_device) {
 
-	timeline_semaphore_t timeline_semaphore = {
+	TimelineSemaphore timeline_semaphore = {
 		.semaphore = VK_NULL_HANDLE,
 		.wait_counter = 0,
 		.device = vk_device
@@ -79,7 +79,7 @@ timeline_semaphore_t create_timeline_semaphore(const VkDevice vk_device) {
 	return timeline_semaphore;
 }
 
-bool destroy_timeline_semaphore(timeline_semaphore_t *const timeline_semaphore_ptr) {
+bool destroy_timeline_semaphore(TimelineSemaphore *const timeline_semaphore_ptr) {
 
 	if (timeline_semaphore_ptr == nullptr) {
 		return false;
@@ -93,7 +93,7 @@ bool destroy_timeline_semaphore(timeline_semaphore_t *const timeline_semaphore_p
 	return true;
 }
 
-VkSemaphoreSubmitInfo make_timeline_semaphore_wait_submit_info(const timeline_semaphore_t timeline_semaphore, const VkPipelineStageFlags2 stage_mask) {
+VkSemaphoreSubmitInfo make_timeline_semaphore_wait_submit_info(const TimelineSemaphore timeline_semaphore, const VkPipelineStageFlags2 stage_mask) {
 	return (VkSemaphoreSubmitInfo){
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 		.pNext = nullptr,
@@ -104,7 +104,7 @@ VkSemaphoreSubmitInfo make_timeline_semaphore_wait_submit_info(const timeline_se
 	};
 }
 
-VkSemaphoreSubmitInfo make_timeline_semaphore_signal_submit_info(const timeline_semaphore_t timeline_semaphore, const VkPipelineStageFlags2 stage_mask) {
+VkSemaphoreSubmitInfo make_timeline_semaphore_signal_submit_info(const TimelineSemaphore timeline_semaphore, const VkPipelineStageFlags2 stage_mask) {
 	return (VkSemaphoreSubmitInfo){
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 		.pNext = nullptr,
@@ -115,7 +115,7 @@ VkSemaphoreSubmitInfo make_timeline_semaphore_signal_submit_info(const timeline_
 	};
 }
 
-void timeline_to_binary_semaphore_signal(const VkQueue queue, const timeline_semaphore_t timeline_semaphore, const binary_semaphore_t binary_semaphore) {
+void timeline_to_binary_semaphore_signal(const VkQueue queue, const TimelineSemaphore timeline_semaphore, const BinarySemaphore binary_semaphore) {
 
 	VkSemaphoreSubmitInfo wait_semaphore_submit_info = make_timeline_semaphore_wait_submit_info(timeline_semaphore, VK_PIPELINE_STAGE_2_NONE);
 	VkSemaphoreSubmitInfo signal_semaphore_submit_info = make_binary_semaphore_wait_submit_info(binary_semaphore, VK_PIPELINE_STAGE_2_NONE);

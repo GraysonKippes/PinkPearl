@@ -180,6 +180,10 @@ void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const
 	*pStride = sizeof(DrawInfo);
 }
 
+VkDeviceSize modelPoolGetDrawInfoBufferOffset(const ModelPool modelPool) {
+	return modelPool->drawInfoBuffer.offset;
+}
+
 void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensions, const String textureID, int *const pModelHandle) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading model...");
 	

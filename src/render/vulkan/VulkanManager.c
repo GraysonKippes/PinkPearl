@@ -153,7 +153,7 @@ static void create_global_storage_buffer(void) {
 		.queue_family_indices = nullptr,
 		.num_partition_sizes = 1,
 		.partition_sizes = (VkDeviceSize[1]){
-			4224	// Compute matrices
+			33024	// Compute matrices
 		}
 	};
 	
@@ -376,7 +376,6 @@ void createTestDebugModel() {
 	};
 	
 	loadModel(modelPoolDebug, testPosition, testBox, testTextureID, &testDebugModel);
-	
 }
 
 static void uploadLightingData(void) {
@@ -453,7 +452,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	}
 
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
-	computeMatrices(deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolMain));
+	computeMatrices(0, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolMain));
+	//computeMatrices(16512, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolDebug));
 
 	VkWriteDescriptorSet descriptor_writes[3] = { { } };
 
@@ -580,10 +580,10 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 				0, 4, &descriptorIndexOffsetDebug);
 		
-		const uint32_t debugDrawOffset = maxDrawCount * drawCommandStride;
+		const uint32_t debugDrawOffset = modelPoolGetDrawInfoBufferOffset(modelPoolDebug);
 		const uint32_t debugMaxDrawCount = modelPoolGetMaxModelCount(modelPoolDebug);
 		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
-				bufferDrawInfoHandle, drawOffset + debugDrawOffset, 
+				bufferDrawInfoHandle, debugDrawOffset + drawCountSize, 
 				bufferDrawInfoHandle, debugDrawOffset, 
 				debugMaxDrawCount, drawCommandStride);
 		
@@ -614,8 +614,9 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		.deviceMask = 0
 	};
 
-	VkSemaphoreSubmitInfo wait_semaphore_submit_infos[3] = { };
+	VkSemaphoreSubmitInfo wait_semaphore_submit_infos[3] = { { } };
 	wait_semaphore_submit_infos[1] = make_timeline_semaphore_wait_submit_info(frame_array.frames[frame_array.current_frame].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT);
+	wait_semaphore_submit_infos[2] = make_timeline_semaphore_wait_submit_info(computeMatricesSemaphore, VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT);
 
 	wait_semaphore_submit_infos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
 	wait_semaphore_submit_infos[0].pNext = nullptr;
@@ -624,12 +625,12 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	wait_semaphore_submit_infos[0].stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 	wait_semaphore_submit_infos[0].deviceIndex = 0;
 
-	wait_semaphore_submit_infos[2].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	/*wait_semaphore_submit_infos[2].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
 	wait_semaphore_submit_infos[2].pNext = nullptr;
 	wait_semaphore_submit_infos[2].semaphore = compute_matrices_semaphore;
 	wait_semaphore_submit_infos[2].value = 0;
 	wait_semaphore_submit_infos[2].stageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
-	wait_semaphore_submit_infos[2].deviceIndex = 0;
+	wait_semaphore_submit_infos[2].deviceIndex = 0;*/
 
 	VkSemaphoreSubmitInfo signal_semaphore_submit_infos[1] = { };
 	signal_semaphore_submit_infos[0] = make_timeline_semaphore_signal_submit_info(frame_array.frames[frame_array.current_frame].semaphore_render_finished, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT);

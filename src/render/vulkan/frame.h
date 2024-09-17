@@ -21,11 +21,11 @@ typedef struct Frame {
 	DescriptorSet descriptorSet;
 
 	// Signaled when the image for this frame is available.
-	binary_semaphore_t semaphore_image_available;
+	BinarySemaphore semaphore_image_available;
 
 	// Signaled when this frame is done being rendered and can be displayed to the surface.
-	binary_semaphore_t semaphore_present_ready;
-	timeline_semaphore_t semaphore_render_finished;
+	BinarySemaphore semaphore_present_ready;
+	TimelineSemaphore semaphore_render_finished;
 
 	// Signaled when this frame is done being presented.
 	VkFence fence_frame_ready;
@@ -34,7 +34,7 @@ typedef struct Frame {
 	// Unsignaled when there is a pending transfer operation;
 	// 	this can be either when a request is put in to update the buffer data, 
 	// 	OR when the request is being currently fulfilled.
-	timeline_semaphore_t semaphore_buffers_ready;
+	TimelineSemaphore semaphore_buffers_ready;
 
 	VkBuffer vertex_buffer;
 	VkBuffer index_buffer;

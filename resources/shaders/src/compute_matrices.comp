@@ -6,7 +6,7 @@
 
 // TODO - consider moving view and projection matrix computation to CPU.
 
-#define NUM_QUADS 256
+#define NUM_QUADS 512
 
 layout(local_size_x = NUM_QUADS) in;
 

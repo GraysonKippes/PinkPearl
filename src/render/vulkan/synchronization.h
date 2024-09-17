@@ -8,34 +8,34 @@
 
 /* -- BINARY SEMAPHORE -- */
 
-typedef struct binary_semaphore_t {
+typedef struct BinarySemaphore {
 	VkSemaphore semaphore;
 	VkDevice device;
-} binary_semaphore_t;
+} BinarySemaphore;
 
-binary_semaphore_t create_binary_semaphore(const VkDevice vk_device);
-bool destroy_binary_semaphore(binary_semaphore_t *const binary_semaphore_ptr);
+BinarySemaphore create_binary_semaphore(const VkDevice vk_device);
+bool destroy_binary_semaphore(BinarySemaphore *const binary_semaphore_ptr);
 
-VkSemaphoreSubmitInfo make_binary_semaphore_wait_submit_info(const binary_semaphore_t binary_semaphore, const VkPipelineStageFlags2 stage_mask);
-VkSemaphoreSubmitInfo make_binary_semaphore_signal_submit_info(const binary_semaphore_t binary_semaphore, const VkPipelineStageFlags2 stage_mask);
+VkSemaphoreSubmitInfo make_binary_semaphore_wait_submit_info(const BinarySemaphore binary_semaphore, const VkPipelineStageFlags2 stage_mask);
+VkSemaphoreSubmitInfo make_binary_semaphore_signal_submit_info(const BinarySemaphore binary_semaphore, const VkPipelineStageFlags2 stage_mask);
 
 /* -- TIMELINE SEMAPHORE -- */
 
-typedef struct timeline_semaphore_t {
+typedef struct TimelineSemaphore {
 
 	VkSemaphore semaphore;
 	uint64_t wait_counter;
 
 	VkDevice device;
 
-} timeline_semaphore_t;
+} TimelineSemaphore;
 
-timeline_semaphore_t create_timeline_semaphore(const VkDevice vk_device);
-bool destroy_timeline_semaphore(timeline_semaphore_t *const timeline_semaphore_ptr);
+TimelineSemaphore create_timeline_semaphore(const VkDevice vkDevice);
+bool destroy_timeline_semaphore(TimelineSemaphore *const pSemaphore);
 
-VkSemaphoreSubmitInfo make_timeline_semaphore_wait_submit_info(const timeline_semaphore_t timeline_semaphore, const VkPipelineStageFlags2 stage_mask);
-VkSemaphoreSubmitInfo make_timeline_semaphore_signal_submit_info(const timeline_semaphore_t timeline_semaphore, const VkPipelineStageFlags2 stage_mask);
+VkSemaphoreSubmitInfo make_timeline_semaphore_wait_submit_info(const TimelineSemaphore timeline_semaphore, const VkPipelineStageFlags2 stage_mask);
+VkSemaphoreSubmitInfo make_timeline_semaphore_signal_submit_info(const TimelineSemaphore timeline_semaphore, const VkPipelineStageFlags2 stage_mask);
 
-void timeline_to_binary_semaphore_signal(const VkQueue queue, const timeline_semaphore_t timeline_semaphore, const binary_semaphore_t binary_semaphore);
+void timeline_to_binary_semaphore_signal(const VkQueue queue, const TimelineSemaphore timeline_semaphore, const BinarySemaphore binary_semaphore);
 
 #endif	// SYNCHRONIZATION_H
