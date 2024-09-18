@@ -8,6 +8,21 @@
 #include "Shader.h"
 #include "Swapchain.h"
 
+typedef struct GraphicsPipeline {
+	
+	uint32_t vertexAttributeCount;
+	uint32_t *pVertexAttributeSizes;
+	
+	VkPipeline vkPipeline;
+	VkPipelineLayout vkPipelineLayout;
+	
+	VkDescriptorPool vkDescriptorPool;
+	VkDescriptorSetLayout vkDescriptorSetLayout;
+	
+	VkDevice vkDevice;
+	
+} GraphicsPipeline;
+
 typedef struct GraphicsPipelineCreateInfo {
 	
 	VkDevice vkDevice;

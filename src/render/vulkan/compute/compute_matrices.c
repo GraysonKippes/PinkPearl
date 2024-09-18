@@ -28,8 +28,6 @@ static VkDescriptorSet compute_matrices_descriptor_set = VK_NULL_HANDLE;
 
 TimelineSemaphore computeMatricesSemaphore = { };
 
-//VkSemaphore compute_matrices_semaphore = VK_NULL_HANDLE;
-
 static VkFence compute_matrices_fence = VK_NULL_HANDLE;
 
 // One camera matrix, one projection matrix, and one matrix for each render object slot.
@@ -65,22 +63,6 @@ bool init_compute_matrices(const VkDevice vkDevice) {
 	else if (descriptor_set_allocate_result > 0) {
 		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning initializing compute matrices pipeline: descriptor set allocation returned with warning (result code: %i).", descriptor_set_allocate_result);
 	}
-
-	/*const VkSemaphoreCreateInfo semaphore_create_info = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0
-	};
-
-	const VkResult semaphore_create_result = vkCreateSemaphore(vkDevice, &semaphore_create_info, nullptr, &compute_matrices_semaphore);
-	if (semaphore_create_result < 0) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing compute matrices pipeline: semaphore creation failed (result code: %i).", semaphore_create_result);
-		deletePipeline(&compute_matrices_pipeline);
-		return false;
-	}
-	else if (semaphore_create_result > 0) {
-		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning initializing compute matrices pipeline: semaphore creation returned with warning (result code: %i).", semaphore_create_result);
-	}*/
 
 	const VkFenceCreateInfo fence_create_info = {
 		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -201,18 +183,4 @@ void computeMatrices(const VkDeviceSize bufferOffset, const float deltaTime, con
 	};
 	
 	vkQueueSubmit2(queueCompute, 1, &submitInfo, compute_matrices_fence);
-
-	/*const VkSubmitInfo submit_info = {
-		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-		.pNext = nullptr,
-		.waitSemaphoreCount = 0,
-		.pWaitSemaphores = nullptr,
-		.pWaitDstStageMask = nullptr,
-		.commandBufferCount = 1,
-		.pCommandBuffers = &compute_matrices_command_buffer,
-		.signalSemaphoreCount = 1,
-		.pSignalSemaphores = &compute_matrices_semaphore
-	};
-
-	vkQueueSubmit(queueCompute, 1, &submit_info, compute_matrices_fence);*/
 }

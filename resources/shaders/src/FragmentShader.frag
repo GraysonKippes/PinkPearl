@@ -1,7 +1,7 @@
 #version 460
 #extension GL_EXT_scalar_block_layout : require
 
-#define MAX_MODEL_COUNT 256
+#define MAX_MODEL_COUNT 512
 
 struct DrawInfo {
 	// Indirect draw info

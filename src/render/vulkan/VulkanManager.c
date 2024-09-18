@@ -87,7 +87,7 @@ int testDebugModel = -1;
 static const DescriptorBinding graphicsPipelineDescriptorBindings[5] = {
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },	// Draw data
 	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },	// Matrix buffer
-	{ .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .count = VK_CONF_MAX_NUM_QUADS, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Texture array
+	{ .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .count = 512, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Texture array
 	{ .type = VK_DESCRIPTOR_TYPE_SAMPLER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Sampler
 	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }	// Lighting
 };
@@ -323,8 +323,8 @@ void initTextureDescriptors(void) {
 	
 	const Texture texture = getTexture(textureHandleMissing);
 	
-	VkDescriptorImageInfo descriptorImageInfos[VK_CONF_MAX_NUM_QUADS];
-	for (int i = 0; i < vkConfMaxNumQuads; ++i) {
+	VkDescriptorImageInfo descriptorImageInfos[512];
+	for (int i = 0; i < 512; ++i) {
 		descriptorImageInfos[i] = makeDescriptorImageInfo(texture.image);
 	}
 	
@@ -338,7 +338,7 @@ void initTextureDescriptors(void) {
 			.dstBinding = 2,
 			.dstArrayElement = 0,
 			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			.descriptorCount = (uint32_t)vkConfMaxNumQuads,
+			.descriptorCount = 512,
 			.pBufferInfo = nullptr,
 			.pImageInfo = descriptorImageInfos,
 			.pTexelBufferView = nullptr
@@ -453,7 +453,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
 	computeMatrices(0, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolMain));
-	//computeMatrices(16512, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolDebug));
+	computeMatrices(16512, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolDebug));
 
 	VkWriteDescriptorSet descriptor_writes[3] = { { } };
 
@@ -624,13 +624,6 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	wait_semaphore_submit_infos[0].value = 0;
 	wait_semaphore_submit_infos[0].stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 	wait_semaphore_submit_infos[0].deviceIndex = 0;
-
-	/*wait_semaphore_submit_infos[2].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	wait_semaphore_submit_infos[2].pNext = nullptr;
-	wait_semaphore_submit_infos[2].semaphore = compute_matrices_semaphore;
-	wait_semaphore_submit_infos[2].value = 0;
-	wait_semaphore_submit_infos[2].stageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
-	wait_semaphore_submit_infos[2].deviceIndex = 0;*/
 
 	VkSemaphoreSubmitInfo signal_semaphore_submit_infos[1] = { };
 	signal_semaphore_submit_infos[0] = make_timeline_semaphore_signal_submit_info(frame_array.frames[frame_array.current_frame].semaphore_render_finished, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT);

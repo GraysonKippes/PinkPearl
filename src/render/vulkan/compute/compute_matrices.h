@@ -11,8 +11,6 @@
 
 extern TimelineSemaphore computeMatricesSemaphore;
 
-//extern VkSemaphore compute_matrices_semaphore;
-
 extern const VkDeviceSize matrix_data_size;
 
 bool init_compute_matrices(const VkDevice vkDevice);
