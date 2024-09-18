@@ -125,6 +125,15 @@ void commandBufferBindPipeline(CommandBuffer *const pCommandBuffer, const Pipeli
 	vkCmdBindPipeline(pCommandBuffer->vkCommandBuffer, pipelineBindPoint, pipeline.vkPipeline);
 }
 
+void commandBufferBindGraphicsPipeline(CommandBuffer *const pCommandBuffer, const GraphicsPipeline pipeline) {
+	if (!pCommandBuffer) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding pipeline: pointer to command buffer object is null.");
+		return;
+	}
+	
+	vkCmdBindPipeline(pCommandBuffer->vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
+}
+
 void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const Pipeline pipeline) {
 	if (!pCommandBuffer || !pDescriptorSet) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: null pointer(s) detected.");
@@ -148,6 +157,24 @@ void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, Descrip
 	}
 	
 	vkCmdBindDescriptorSets(pCommandBuffer->vkCommandBuffer, pipelineBindPoint, pipeline.vkPipelineLayout, 0, 1, &pDescriptorSet->vkDescriptorSet, 0, nullptr);
+	pCommandBuffer->ppBoundDescriptorSets[pCommandBuffer->boundDescriptorSetCount] = pDescriptorSet;
+	pCommandBuffer->boundDescriptorSetCount += 1;
+	pDescriptorSet->bound = true;
+}
+
+void commandBufferBindDescriptorSet2(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const GraphicsPipeline pipeline) {
+	if (!pCommandBuffer || !pDescriptorSet) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: null pointer(s) detected.");
+		return;
+	} else if (!pCommandBuffer->recording) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: command buffer not currently recording.");
+		return;
+	} else if (pCommandBuffer->boundDescriptorSetCount >= 8) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: maximum number of descriptor sets already bound.");
+		return;
+	}
+	
+	vkCmdBindDescriptorSets(pCommandBuffer->vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipelineLayout, 0, 1, &pDescriptorSet->vkDescriptorSet, 0, nullptr);
 	pCommandBuffer->ppBoundDescriptorSets[pCommandBuffer->boundDescriptorSetCount] = pDescriptorSet;
 	pCommandBuffer->boundDescriptorSetCount += 1;
 	pDescriptorSet->bound = true;

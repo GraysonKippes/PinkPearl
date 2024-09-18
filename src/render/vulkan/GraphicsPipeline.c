@@ -27,16 +27,14 @@ static VkPipelineColorBlendAttachmentState makePipelineColorBlendAttachmentState
 
 static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendAttachmentState *const pAttachmentState);
 
-static VkVertexInputBindingDescription makeVertexInputBindingDescription(const uint32_t elementStride);
-
-static void makeVertexInputAttributeDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount]);
+static void makeVertexInputDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription);
 
 /* -- FUNCTION DEFINITIONS -- */
 
-Pipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createInfo) {
+GraphicsPipeline createGraphicsPipeline2(const GraphicsPipelineCreateInfo createInfo) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
-	Pipeline pipeline = { .type = PIPELINE_TYPE_GRAPHICS };
+	GraphicsPipeline pipeline = { };
 
 	VkPipelineShaderStageCreateInfo shaderStateCreateInfos[createInfo.shaderModuleCount];
 	for (uint32_t i = 0; i < createInfo.shaderModuleCount; ++i) {
@@ -48,23 +46,29 @@ Pipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createInfo) {
 
 	pipeline.vkPipelineLayout = createPipelineLayout2(createInfo.vkDevice, 1, &pipeline.vkDescriptorSetLayout, createInfo.pushConstantRangeCount, createInfo.pPushConstantRanges);
 
-	VkVertexInputBindingDescription binding_description = makeVertexInputBindingDescription(vertex_input_element_stride);
+	pipeline.pVertexAttributeSizes = malloc(createInfo.vertexAttributeCount * sizeof(uint32_t));
+	for (uint32_t i = 0; i < createInfo.vertexAttributeCount; ++i) {
+		pipeline.pVertexAttributeSizes[i] = createInfo.pVertexAttributeSizes[i];
+		pipeline.vertexElementStride += createInfo.pVertexAttributeSizes[i];
+	}
+	pipeline.vertexAttributeCount = createInfo.vertexAttributeCount;
 
+	VkVertexInputBindingDescription bindingDescription = { };
 	VkVertexInputAttributeDescription attributeDescriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { } };
-	makeVertexInputAttributeDescriptions(vertex_input_num_attributes, attributeSizes, attributeDescriptions);
+	makeVertexInputDescriptions(vertex_input_num_attributes, attributeSizes, attributeDescriptions, &bindingDescription);
 
 	const VkPipelineVertexInputStateCreateInfo vertex_input_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
 		.vertexBindingDescriptionCount = 1,
-		.pVertexBindingDescriptions = &binding_description,
+		.pVertexBindingDescriptions = &bindingDescription,
 		.vertexAttributeDescriptionCount = vertex_input_num_attributes,
 		.pVertexAttributeDescriptions = attributeDescriptions
 	};
 
-	VkViewport viewport = makeViewport(swapchain.imageExtent);
-	VkRect2D scissor = makeScissor(swapchain.imageExtent);
+	VkViewport viewport = makeViewport(createInfo.swapchain.imageExtent);
+	VkRect2D scissor = makeScissor(createInfo.swapchain.imageExtent);
 
 	VkPipelineInputAssemblyStateCreateInfo input_assembly = makePipelineInputAssemblyStateCreateInfo(createInfo.topology);
 	VkPipelineViewportStateCreateInfo viewport_state = makePipelineViewportStateCreateInfo(&viewport, &scissor);
@@ -78,7 +82,7 @@ Pipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createInfo) {
 		.pNext = nullptr,
 		.viewMask = 0,
 		.colorAttachmentCount = 1,
-		.pColorAttachmentFormats = &swapchain.imageFormat,
+		.pColorAttachmentFormats = &createInfo.swapchain.imageFormat,
 		.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
 		.stencilAttachmentFormat = VK_FORMAT_UNDEFINED
 	};
@@ -111,6 +115,32 @@ Pipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createInfo) {
 	pipeline.vkDevice = createInfo.vkDevice;
 
 	return pipeline;
+}
+
+void deleteGraphicsPipeline(GraphicsPipeline *const pPipeline) {
+	if (!pPipeline) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting pipeline: pointer to pipeline object is null.");
+		return;
+	}
+	
+	// Free the heap allocated objects.
+	free(pPipeline->pVertexAttributeSizes);
+	
+	// Destroy the Vulkan objects associated with the pipeline struct.
+	vkDestroyPipeline(pPipeline->vkDevice, pPipeline->vkPipeline, nullptr);
+	vkDestroyPipelineLayout(pPipeline->vkDevice, pPipeline->vkPipelineLayout, nullptr);
+	vkDestroyDescriptorPool(pPipeline->vkDevice, pPipeline->vkDescriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(pPipeline->vkDevice, pPipeline->vkDescriptorSetLayout, nullptr);
+	
+	// Nullify the objects inside the struct.
+	pPipeline->vertexAttributeCount = 0;
+	pPipeline->pVertexAttributeSizes = nullptr;
+	pPipeline->vertexElementStride = 0;
+	pPipeline->vkPipeline = VK_NULL_HANDLE;
+	pPipeline->vkPipelineLayout = VK_NULL_HANDLE;
+	pPipeline->vkDescriptorPool = VK_NULL_HANDLE;
+	pPipeline->vkDescriptorSetLayout = VK_NULL_HANDLE;
+	pPipeline->vkDevice = VK_NULL_HANDLE;
 }
 
 static VkPipelineInputAssemblyStateCreateInfo makePipelineInputAssemblyStateCreateInfo(const VkPrimitiveTopology topology) {
@@ -193,15 +223,7 @@ static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo
 	};
 }
 
-static VkVertexInputBindingDescription makeVertexInputBindingDescription(const uint32_t elementStride) {
-	return (VkVertexInputBindingDescription){
-		.binding = 0,
-		.stride = elementStride * sizeof(float),
-		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-	};
-}
-
-static void makeVertexInputAttributeDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount]) {
+static void makeVertexInputDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription) {
 	
 	uint32_t offset = 0;
 	for (uint32_t i = 0; i < attributeCount; ++i) {
@@ -227,4 +249,5 @@ static void makeVertexInputAttributeDescriptions(const uint32_t attributeCount, 
 		.stride = offset,
 		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 	};
+	*pBindingDescription = bindingDescription;
 }

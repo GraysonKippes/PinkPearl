@@ -6,9 +6,8 @@
 #include <vulkan/vulkan.h>
 
 #include "descriptor.h"
+#include "GraphicsPipeline.h"
 #include "Pipeline.h"
-
-
 
 typedef struct CommandPool {
 	
@@ -46,7 +45,11 @@ void commandBufferEnd(CommandBuffer *const pCommandBuffer);
 
 void commandBufferBindPipeline(CommandBuffer *const pCommandBuffer, const Pipeline pipeline);
 
+void commandBufferBindGraphicsPipeline(CommandBuffer *const pCommandBuffer, const GraphicsPipeline pipeline);
+
 void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const Pipeline pipeline);
+
+void commandBufferBindDescriptorSet2(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const GraphicsPipeline pipeline);
 
 void commandBufferReset(CommandBuffer *const pCommandBuffer);
 

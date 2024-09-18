@@ -34,7 +34,7 @@ static VulkanInstance vulkan_instance = { };
 
 static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 
-WindowSurface windowSurface = { };
+static WindowSurface windowSurface = { };
 
 PhysicalDevice physical_device = { };
 
@@ -42,13 +42,13 @@ MemoryTypeIndexSet memory_type_set = { };
 
 VkDevice device = VK_NULL_HANDLE;
 
-Swapchain swapchain = { };
+static Swapchain swapchain = { };
 
-Pipeline graphicsPipeline = { };
+static GraphicsPipeline graphicsPipeline = { };
 
-Pipeline graphicsPipelineDebug = { };
+static GraphicsPipeline graphicsPipelineDebug = { };
 
-Sampler samplerDefault = { };
+static Sampler samplerDefault = { };
 
 /* -- Queues -- */
 
@@ -220,6 +220,8 @@ void create_vulkan_objects(void) {
 		.swapchain = swapchain,
 		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.polygonMode = VK_POLYGON_MODE_FILL,
+		.vertexAttributeCount = 3,
+		.pVertexAttributeSizes = (uint32_t[3]){ 3, 2, 3 },
 		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
 		.shaderModuleCount = 2,
 		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
@@ -231,13 +233,15 @@ void create_vulkan_objects(void) {
 			}
 		}
 	};
-	graphicsPipeline = createGraphicsPipeline(graphicsPipelineCreateInfo);
+	graphicsPipeline = createGraphicsPipeline2(graphicsPipelineCreateInfo);
 	
 	GraphicsPipelineCreateInfo graphicsPipelineDebugCreateInfo = {
 		.vkDevice = device,
 		.swapchain = swapchain,
 		.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
 		.polygonMode = VK_POLYGON_MODE_FILL,
+		.vertexAttributeCount = 3,
+		.pVertexAttributeSizes = (uint32_t[3]){ 3, 2, 3 },
 		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
 		.shaderModuleCount = 2,
 		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
@@ -249,7 +253,7 @@ void create_vulkan_objects(void) {
 			}
 		}
 	};
-	graphicsPipelineDebug = createGraphicsPipeline(graphicsPipelineDebugCreateInfo);
+	graphicsPipelineDebug = createGraphicsPipeline2(graphicsPipelineDebugCreateInfo);
 	
 	destroyShaderModule(&vertexShaderModule);
 	destroyShaderModule(&fragmentShaderModule);
@@ -292,8 +296,8 @@ void destroy_vulkan_objects(void) {
 	
 	deleteSampler(&samplerDefault);
 
-	deletePipeline(&graphicsPipeline);
-	deletePipeline(&graphicsPipelineDebug);
+	deleteGraphicsPipeline(&graphicsPipeline);
+	deleteGraphicsPipeline(&graphicsPipelineDebug);
 	
 	deleteSwapchain(&swapchain);
 	
@@ -548,9 +552,9 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		// Resource binding
 		
-		commandBufferBindPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipeline);
+		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipeline);
 		
-		commandBufferBindDescriptorSet(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
+		commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
 		
 		const VkDeviceSize offsets[1] = { 0 };
 		vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
@@ -573,7 +577,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		// Debug drawing
 		
-		commandBufferBindPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
+		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
 		
 		const uint32_t descriptorIndexOffsetDebug = modelPoolGetMaxModelCount(modelPoolMain);
 		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
