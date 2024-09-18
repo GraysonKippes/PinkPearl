@@ -231,7 +231,7 @@ void create_vulkan_objects(void) {
 			}
 		}
 	};
-	graphicsPipeline = createGraphicsPipeline2(graphicsPipelineCreateInfo);
+	graphicsPipeline = createGraphicsPipeline(graphicsPipelineCreateInfo);
 	
 	GraphicsPipelineCreateInfo graphicsPipelineDebugCreateInfo = {
 		.vkDevice = device,
@@ -249,7 +249,7 @@ void create_vulkan_objects(void) {
 			}
 		}
 	};
-	graphicsPipelineDebug = createGraphicsPipeline2(graphicsPipelineDebugCreateInfo);
+	graphicsPipelineDebug = createGraphicsPipeline(graphicsPipelineDebugCreateInfo);
 	
 	destroyShaderModule(&vertexShaderModule);
 	destroyShaderModule(&fragmentShaderModule);

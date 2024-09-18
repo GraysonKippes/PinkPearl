@@ -10,6 +10,7 @@
 
 typedef struct GraphicsPipeline {
 	
+	// Array of vertex attributes, described by their element counts.
 	uint32_t vertexAttributeCount;
 	uint32_t *pVertexAttributeSizes;
 	
@@ -43,6 +44,6 @@ typedef struct GraphicsPipelineCreateInfo {
 	
 } GraphicsPipelineCreateInfo;
 		
-Pipeline createGraphicsPipeline2(const GraphicsPipelineCreateInfo createInfo);
+Pipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createInfo);
 
 #endif	// GRAPHICS_PIPELINE_H

@@ -33,89 +33,7 @@ static void makeVertexInputAttributeDescriptions(const uint32_t attributeCount, 
 
 /* -- FUNCTION DEFINITIONS -- */
 
-Pipeline createGraphicsPipeline(const VkDevice vkDevice, const Swapchain swapchain, const DescriptorSetLayout descriptorSetLayout,
-		const VkPrimitiveTopology topology, const VkPolygonMode polygonMode,
-		const uint32_t shaderModuleCount, const ShaderModule shaderModules[static const shaderModuleCount]) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
-
-	Pipeline pipeline = { .type = PIPELINE_TYPE_GRAPHICS };
-
-	VkPipelineShaderStageCreateInfo shaderStateCreateInfos[shaderModuleCount];
-	for (uint32_t i = 0; i < shaderModuleCount; ++i) {
-		shaderStateCreateInfos[i] = makeShaderStageCreateInfo(shaderModules[i]);
-	}
-
-	create_descriptor_pool(vkDevice, NUM_FRAMES_IN_FLIGHT, descriptorSetLayout, &pipeline.vkDescriptorPool);
-	create_descriptor_set_layout(vkDevice, descriptorSetLayout, &pipeline.vkDescriptorSetLayout);
-
-	pipeline.vkPipelineLayout = createPipelineLayout(vkDevice, pipeline.vkDescriptorSetLayout);
-
-	VkVertexInputBindingDescription binding_description = makeVertexInputBindingDescription(vertex_input_element_stride);
-
-	VkVertexInputAttributeDescription attributeDescriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { } };
-	makeVertexInputAttributeDescriptions(vertex_input_num_attributes, attributeSizes, attributeDescriptions);
-
-	const VkPipelineVertexInputStateCreateInfo vertex_input_info = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.vertexBindingDescriptionCount = 1,
-		.pVertexBindingDescriptions = &binding_description,
-		.vertexAttributeDescriptionCount = vertex_input_num_attributes,
-		.pVertexAttributeDescriptions = attributeDescriptions
-	};
-
-	VkViewport viewport = makeViewport(swapchain.imageExtent);
-	VkRect2D scissor = makeScissor(swapchain.imageExtent);
-
-	VkPipelineInputAssemblyStateCreateInfo input_assembly = makePipelineInputAssemblyStateCreateInfo(topology);
-	VkPipelineViewportStateCreateInfo viewport_state = makePipelineViewportStateCreateInfo(&viewport, &scissor);
-	VkPipelineRasterizationStateCreateInfo rasterizer = makePipelineRasterizationStateCreateInfo(polygonMode);
-	VkPipelineMultisampleStateCreateInfo multisampling = makePipelineMultisampleStateCreateInfo();
-	VkPipelineColorBlendAttachmentState color_blend_attachment = makePipelineColorBlendAttachmentState();
-	VkPipelineColorBlendStateCreateInfo color_blending = makePipelineColorBlendStateCreateInfo(&color_blend_attachment);
-
-	const VkPipelineRenderingCreateInfo renderingInfo = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-		.pNext = nullptr,
-		.viewMask = 0,
-		.colorAttachmentCount = 1,
-		.pColorAttachmentFormats = &swapchain.imageFormat,
-		.depthAttachmentFormat = VK_FORMAT_UNDEFINED,
-		.stencilAttachmentFormat = VK_FORMAT_UNDEFINED
-	};
-
-	const VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {
-		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-		.pNext = &renderingInfo,
-		.flags = 0,
-		.stageCount = shaderModuleCount,
-		.pStages = shaderStateCreateInfos,
-		.pVertexInputState = &vertex_input_info,
-		.pInputAssemblyState = &input_assembly,
-		.pViewportState = &viewport_state,
-		.pRasterizationState = &rasterizer,
-		.pMultisampleState = &multisampling,
-		.pDepthStencilState = nullptr,
-		.pColorBlendState = &color_blending,
-		.pDynamicState = nullptr,
-		.layout = pipeline.vkPipelineLayout,
-		.renderPass = VK_NULL_HANDLE,
-		.subpass = 0,
-		.basePipelineHandle = VK_NULL_HANDLE,
-		.basePipelineIndex= -1
-	};
-
-	const VkResult result = vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &pipeline.vkPipeline);
-	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Graphics pipeline creation failed (error code: %i).", result);
-	}
-	pipeline.vkDevice = vkDevice;
-
-	return pipeline;
-}
-
-Pipeline createGraphicsPipeline2(const GraphicsPipelineCreateInfo createInfo) {
+Pipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createInfo) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
 	Pipeline pipeline = { .type = PIPELINE_TYPE_GRAPHICS };
@@ -284,6 +202,7 @@ static VkVertexInputBindingDescription makeVertexInputBindingDescription(const u
 }
 
 static void makeVertexInputAttributeDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount]) {
+	
 	uint32_t offset = 0;
 	for (uint32_t i = 0; i < attributeCount; ++i) {
 		
@@ -302,4 +221,10 @@ static void makeVertexInputAttributeDescriptions(const uint32_t attributeCount, 
 		
 		offset += attributeSizes[i] * sizeof(float);
 	}
+	
+	const VkVertexInputBindingDescription bindingDescription = {
+		.binding = 0,
+		.stride = offset,
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+	};
 }
