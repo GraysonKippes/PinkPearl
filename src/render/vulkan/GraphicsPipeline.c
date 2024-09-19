@@ -11,7 +11,7 @@
 #include "vertex_input.h"
 #include "VulkanManager.h"
 
-static const uint32_t attributeSizes[VERTEX_INPUT_NUM_ATTRIBUTES] = { 3, 2, 3 };
+//static const uint32_t attributeSizes[VERTEX_INPUT_NUM_ATTRIBUTES] = { 3, 2, 3 };
 
 /* -- FUNCTION DECLARATIONS -- */
 
@@ -29,9 +29,11 @@ static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo
 
 static void makeVertexInputDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription);
 
+static void makeVertexInputDescriptions2(const uint32_t attributeCount, const uint32_t attributeFlags, VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription);
+
 /* -- FUNCTION DEFINITIONS -- */
 
-GraphicsPipeline createGraphicsPipeline2(const GraphicsPipelineCreateInfo createInfo) {
+GraphicsPipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createInfo) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
 	GraphicsPipeline pipeline = { };
@@ -55,7 +57,7 @@ GraphicsPipeline createGraphicsPipeline2(const GraphicsPipelineCreateInfo create
 
 	VkVertexInputBindingDescription bindingDescription = { };
 	VkVertexInputAttributeDescription attributeDescriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { } };
-	makeVertexInputDescriptions(vertex_input_num_attributes, attributeSizes, attributeDescriptions, &bindingDescription);
+	makeVertexInputDescriptions2(createInfo.vertexAttributeCount, createInfo.vertexAttributeFlags, attributeDescriptions, &bindingDescription);
 
 	const VkPipelineVertexInputStateCreateInfo vertex_input_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -242,6 +244,52 @@ static void makeVertexInputDescriptions(const uint32_t attributeCount, const uin
 		attributeDescriptions[i].offset = offset;
 		
 		offset += attributeSizes[i] * sizeof(float);
+	}
+	
+	const VkVertexInputBindingDescription bindingDescription = {
+		.binding = 0,
+		.stride = offset,
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+	};
+	*pBindingDescription = bindingDescription;
+}
+
+static void makeVertexInputDescriptions2(const uint32_t attributeCount, const uint32_t attributeFlags, VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription) {
+	
+	uint32_t counter = 0;
+	uint32_t offset = 0;
+	
+	if (attributeFlags & VERTEX_ATTRIBUTE_POSITION && counter < attributeCount) {
+		attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
+			.binding = 0,
+			.location = counter,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offset
+		};
+		offset += 3 * sizeof(float);
+		counter += 1;
+	}
+	
+	if (attributeFlags & VERTEX_ATTRIBUTE_TEXTURE_COORDINATES && counter < attributeCount) {
+		attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
+			.binding = 0,
+			.location = counter,
+			.format = VK_FORMAT_R32G32_SFLOAT,
+			.offset = offset
+		};
+		offset += 2 * sizeof(float);
+		counter += 1;
+	}
+	
+	if (attributeFlags & VERTEX_ATTRIBUTE_COLOR && counter < attributeCount) {
+		attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
+			.binding = 0,
+			.location = counter,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offset
+		};
+		offset += 3 * sizeof(float);
+		counter += 1;
 	}
 	
 	const VkVertexInputBindingDescription bindingDescription = {

@@ -1,6 +1,6 @@
 SLC = glslc
 
-shaders: compute_matrices room_texture VertexShader FragmentShader
+shaders: compute_matrices room_texture VertexShader FragmentShader VertexShaderLines FragmentShaderLines
 
 compute_matrices: src/compute_matrices.comp
 	$(SLC) $< -o compute_matrices.spv
@@ -13,3 +13,9 @@ VertexShader: src/VertexShader.vert
 
 FragmentShader: src/FragmentShader.frag
 	$(SLC) $< -o FragmentShader.spv
+
+VertexShaderLines: src/VertexShaderLines.vert
+	$(SLC) $< -o VertexShaderLines.spv
+
+FragmentShaderLines: src/FragmentShaderLines.frag
+	$(SLC) $< -o FragmentShaderLines.spv

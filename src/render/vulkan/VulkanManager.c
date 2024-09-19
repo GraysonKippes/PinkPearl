@@ -222,6 +222,7 @@ void create_vulkan_objects(void) {
 		.polygonMode = VK_POLYGON_MODE_FILL,
 		.vertexAttributeCount = 3,
 		.pVertexAttributeSizes = (uint32_t[3]){ 3, 2, 3 },
+		.vertexAttributeFlags = VERTEX_ATTRIBUTE_POSITION | VERTEX_ATTRIBUTE_TEXTURE_COORDINATES | VERTEX_ATTRIBUTE_COLOR,
 		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
 		.shaderModuleCount = 2,
 		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
@@ -233,7 +234,10 @@ void create_vulkan_objects(void) {
 			}
 		}
 	};
-	graphicsPipeline = createGraphicsPipeline2(graphicsPipelineCreateInfo);
+	graphicsPipeline = createGraphicsPipeline(graphicsPipelineCreateInfo);
+	
+	ShaderModule vertexShaderLinesModule = createShaderModule(device, SHADER_STAGE_VERTEX, "VertexShaderLines.spv");
+	ShaderModule fragmentShaderLinesModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, "FragmentShaderLines.spv");
 	
 	GraphicsPipelineCreateInfo graphicsPipelineDebugCreateInfo = {
 		.vkDevice = device,
@@ -242,7 +246,22 @@ void create_vulkan_objects(void) {
 		.polygonMode = VK_POLYGON_MODE_FILL,
 		.vertexAttributeCount = 3,
 		.pVertexAttributeSizes = (uint32_t[3]){ 3, 2, 3 },
+		.vertexAttributeFlags = VERTEX_ATTRIBUTE_POSITION | VERTEX_ATTRIBUTE_TEXTURE_COORDINATES | VERTEX_ATTRIBUTE_COLOR,
 		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
+		/*.descriptorSetLayout = (DescriptorSetLayout){ 
+			.num_bindings = 2,
+			.bindings = (DescriptorBinding[2]){
+				{ 
+					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 
+					.count = 1, 
+					.stages = VK_SHADER_STAGE_VERTEX_BIT 
+				}, { 
+					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 
+					.count = 1, 
+					.stages = VK_SHADER_STAGE_VERTEX_BIT 
+				}
+			}
+		},*/
 		.shaderModuleCount = 2,
 		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
 		.pushConstantRangeCount = 1,
@@ -253,10 +272,12 @@ void create_vulkan_objects(void) {
 			}
 		}
 	};
-	graphicsPipelineDebug = createGraphicsPipeline2(graphicsPipelineDebugCreateInfo);
+	graphicsPipelineDebug = createGraphicsPipeline(graphicsPipelineDebugCreateInfo);
 	
 	destroyShaderModule(&vertexShaderModule);
 	destroyShaderModule(&fragmentShaderModule);
+	destroyShaderModule(&vertexShaderLinesModule);
+	destroyShaderModule(&fragmentShaderLinesModule);
 
 	samplerDefault = createSampler(device, physical_device);
 	

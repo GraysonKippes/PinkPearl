@@ -41,6 +41,9 @@ struct ModelPool_T {
 	// Some part of some buffer to which to upload draw command parameters.
 	BufferSubrange drawInfoBuffer;
 	
+	// The graphics pipeline with which the models will be drawn.
+	GraphicsPipeline graphicsPipeline;
+	
 	// Each pool has its own sub-array of vertices within the vertex buffer(s); this is the position of the first element in that sub-array.
 	uint32_t firstVertex;
 	
@@ -139,6 +142,69 @@ void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex,
 	}
 	
 	modelPool->pDrawInfos = calloc(maxModelCount, sizeof(DrawInfo));
+	if (!modelPool->pTextureStates) {
+		free(modelPool->pSlotFlags);
+		free(modelPool->pDrawInfoIndices);
+		free(modelPool->pModelTransforms);
+		free(modelPool->pTextureStates);
+		free(modelPool);
+		return;
+	}
+	
+	*pOutModelPool = modelPool;
+	
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created model pool.");
+}
+
+void createModelPool2(const ModelPoolCreateInfo createInfo, ModelPool *pOutModelPool) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
+	
+	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
+	if (!modelPool) {
+		return;
+	}
+	
+	bufferBorrowSubrange(createInfo.buffer, createInfo.bufferSubrangeIndex, &modelPool->drawInfoBuffer);
+	modelPool->graphicsPipeline = createInfo.graphicsPipeline;
+	modelPool->firstVertex = createInfo.firstVertex;
+	modelPool->vertexCount = createInfo.vertexCount;
+	modelPool->firstIndex = createInfo.firstIndex;
+	modelPool->indexCount = createInfo.indexCount;
+	modelPool->firstDescriptorIndex = createInfo.firstDescriptorIndex;
+	modelPool->maxModelCount = createInfo.maxModelCount;
+	modelPool->drawInfoCount = 0;
+	
+	modelPool->pSlotFlags = calloc(createInfo.maxModelCount, sizeof(bool));
+	if (!modelPool->pSlotFlags) {
+		free(modelPool);
+		return;
+	}
+	
+	modelPool->pDrawInfoIndices = calloc(createInfo.maxModelCount, sizeof(uint32_t));
+	if (!modelPool->pDrawInfoIndices) {
+		free(modelPool->pSlotFlags);
+		free(modelPool);
+		return;
+	}
+	
+	modelPool->pModelTransforms = calloc(createInfo.maxModelCount, sizeof(ModelTransform));
+	if (!modelPool->pModelTransforms) {
+		free(modelPool->pSlotFlags);
+		free(modelPool->pDrawInfoIndices);
+		free(modelPool);
+		return;
+	}
+	
+	modelPool->pTextureStates = calloc(createInfo.maxModelCount, sizeof(TextureState));
+	if (!modelPool->pTextureStates) {
+		free(modelPool->pSlotFlags);
+		free(modelPool->pDrawInfoIndices);
+		free(modelPool->pModelTransforms);
+		free(modelPool);
+		return;
+	}
+	
+	modelPool->pDrawInfos = calloc(createInfo.maxModelCount, sizeof(DrawInfo));
 	if (!modelPool->pTextureStates) {
 		free(modelPool->pSlotFlags);
 		free(modelPool->pDrawInfoIndices);
