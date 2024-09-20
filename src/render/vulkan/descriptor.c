@@ -49,48 +49,45 @@ void descriptorSetPushWrite(DescriptorSet *const pDescriptorSet, const VkWriteDe
 
 
 
-void create_descriptor_set_layout(VkDevice device, DescriptorSetLayout descriptor_layout, VkDescriptorSetLayout *descriptor_set_layout_ptr) {
+void create_descriptor_set_layout(VkDevice device, DescriptorSetLayout descriptor_layout, VkDescriptorSetLayout *pDescriptorSetLayout) {
 
-	VkDescriptorSetLayoutBinding *descriptor_bindings = nullptr;
-
-	if (descriptor_layout.num_bindings > 0) {
-		descriptor_bindings = calloc(descriptor_layout.num_bindings, sizeof(VkDescriptorSetLayoutBinding));
-		if (descriptor_bindings == nullptr) {
-			return;
-		}
-	}
-
+	VkDescriptorSetLayoutBinding bindings[descriptor_layout.num_bindings];
+	VkDescriptorBindingFlags bindingFlags[descriptor_layout.num_bindings];
 	for (uint32_t i = 0; i < descriptor_layout.num_bindings; ++i) {
-		descriptor_bindings[i].binding = i;
-		descriptor_bindings[i].descriptorType = descriptor_layout.bindings[i].type;
-		descriptor_bindings[i].descriptorCount = descriptor_layout.bindings[i].count;
-		descriptor_bindings[i].stageFlags = descriptor_layout.bindings[i].stages;
+		bindings[i] = (VkDescriptorSetLayoutBinding){
+			.binding = i,
+			.descriptorType = descriptor_layout.bindings[i].type,
+			.descriptorCount = descriptor_layout.bindings[i].count,
+			.stageFlags = descriptor_layout.bindings[i].stages,
+			.pImmutableSamplers = nullptr
+		};
+		bindingFlags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 	}
 
-	VkDescriptorSetLayoutCreateInfo create_info = { };
-	create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	create_info.pNext = nullptr;
-	create_info.flags = 0;
-	create_info.bindingCount = descriptor_layout.num_bindings;
-	create_info.pBindings = descriptor_bindings;
+	const VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo = {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+		.pNext = nullptr,
+		.bindingCount = descriptor_layout.num_bindings,
+		.pBindingFlags = bindingFlags
+	};
 
-	VkResult result = vkCreateDescriptorSetLayout(device, &create_info, nullptr, descriptor_set_layout_ptr);
+	const VkDescriptorSetLayoutCreateInfo createInfo = {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.pNext = &bindingFlagsInfo,
+		.flags = 0,
+		.bindingCount = descriptor_layout.num_bindings,
+		.pBindings = bindings
+	};
+
+	VkResult result = vkCreateDescriptorSetLayout(device, &createInfo, nullptr, pDescriptorSetLayout);
 	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Descriptor set layout creation failed. (Error code: %i)", result);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Descriptor set layout creation failed. (Error code: %i)", result);
 	}
-
-	if (descriptor_bindings != nullptr)
-		free(descriptor_bindings);
 }
 
 void create_descriptor_pool(VkDevice device, uint32_t max_sets, DescriptorSetLayout descriptor_layout, VkDescriptorPool *descriptor_pool_ptr) {
 
-	VkDescriptorPoolSize *pool_sizes = calloc(descriptor_layout.num_bindings, sizeof(VkDescriptorPoolSize));
-	if (pool_sizes == nullptr) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Allocation of descriptor pool sizes array failed.");
-		return;
-	}
-	
+	VkDescriptorPoolSize pool_sizes[descriptor_layout.num_bindings];
 	for (uint32_t i = 0; i < descriptor_layout.num_bindings; ++i) {
 		pool_sizes[i].type = descriptor_layout.bindings[i].type;
 		pool_sizes[i].descriptorCount = descriptor_layout.bindings[i].count;
@@ -108,8 +105,6 @@ void create_descriptor_pool(VkDevice device, uint32_t max_sets, DescriptorSetLay
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Descriptor pool creation failed. (Error code: %i)", result);
 	}
-
-	free(pool_sizes);
 }
 
 void destroy_descriptor_pool(VkDevice device, DescriptorPool descriptor_pool) {

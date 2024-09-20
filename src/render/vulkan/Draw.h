@@ -76,9 +76,7 @@ typedef struct ModelLoadInfo {
 	
 } ModelLoadInfo;
 
-void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensions, const String textureID, int *const pModelHandle);
-
-void loadModel2(const ModelLoadInfo loadInfo, int *const pModelHandle);
+void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle);
 
 void unloadModel(ModelPool modelPool, int *const pModelHandle);
 

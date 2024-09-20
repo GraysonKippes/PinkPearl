@@ -42,7 +42,6 @@ GraphicsPipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createI
 
 	create_descriptor_pool(createInfo.vkDevice, NUM_FRAMES_IN_FLIGHT, createInfo.descriptorSetLayout, &pipeline.vkDescriptorPool);
 	create_descriptor_set_layout(createInfo.vkDevice, createInfo.descriptorSetLayout, &pipeline.vkDescriptorSetLayout);
-
 	pipeline.vkPipelineLayout = createPipelineLayout2(createInfo.vkDevice, 1, &pipeline.vkDescriptorSetLayout, createInfo.pushConstantRangeCount, createInfo.pPushConstantRanges);
 
 	// Find the number of vertex attributes by counting the number of bits in the vertex attribute type bitflags.

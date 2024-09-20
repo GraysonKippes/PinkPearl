@@ -7,7 +7,6 @@
 #include "frame.h"
 #include "texture_manager.h"
 #include "TextureState.h"
-#include "vertex_input.h"
 #include "VulkanManager.h"
 
 typedef struct DrawInfo {
@@ -184,173 +183,7 @@ VkDeviceSize modelPoolGetDrawInfoBufferOffset(const ModelPool modelPool) {
 	return modelPool->drawInfoBuffer.offset;
 }
 
-void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensions, const String textureID, int *const pModelHandle) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading model...");
-	
-	// For simplicity's sake, just use a linear search to find the first available slot.
-	// TODO - maybe optimize this with a data structure?
-	uint32_t modelIndex = 0;
-	for (; modelIndex < modelPool->maxModelCount; ++modelIndex) {
-		if (!modelPool->pSlotFlags[modelIndex]) {
-			break;
-		}
-	}
-	
-	if (modelIndex >= modelPool->maxModelCount) {
-		*pModelHandle = -1;
-		return;
-	}
-	
-	// Reset model object fields.
-	modelPool->pModelTransforms[modelIndex] = makeModelTransform(position, zeroVector4F, zeroVector4F);
-	TextureState textureState = newTextureState(textureID);
-	modelPool->pTextureStates[modelIndex] = textureState;	
-	
-	/* Generate model's mesh and upload to vertex buffer(s) */
-	
-	// Compute size of mesh
-	// Copy attributes into right spots
-	
-	static const VkDeviceSize numVerticesPerQuad = 4;
-	
-	
-	
-	// Generate model's mesh.
-	const float mesh[NUM_VERTICES_PER_QUAD * VERTEX_INPUT_ELEMENT_STRIDE] = {
-		// Positions							Texture			Color
-		dimensions.x1, dimensions.y1, 0.0F,		0.0F, 1.0F,		1.0F, 1.0F, 1.0F,	// 0: Bottom-left
-		dimensions.x1, dimensions.y2, 0.0F,		0.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// 1: Top-left
-		dimensions.x2, dimensions.y2, 0.0F,		1.0F, 0.0F,		1.0F, 1.0F, 1.0F,	// 2: Top-right
-		dimensions.x2, dimensions.y1, 0.0F,		1.0F, 1.0F,		1.0F, 1.0F, 1.0F	// 3: Bottom-right
-	};
-	
-	// Upload model's mesh to staging buffer.
-	// The offset of the mesh's vertices in the vertex buffer, in bytes.
-	const VkDeviceSize meshOffset = sizeof(mesh) * modelIndex + modelPool->firstVertex * vertex_input_element_stride * sizeof(float);	
-	unsigned char *const pMappedMemoryVertices = buffer_partition_map_memory(global_staging_buffer_partition, 0);
-	memcpy(&pMappedMemoryVertices[meshOffset], mesh, sizeof(mesh));
-	buffer_partition_unmap_memory(global_staging_buffer_partition);
-	
-	VkSemaphore waitSemaphores[NUM_FRAMES_IN_FLIGHT];
-	uint64_t waitSemaphoreValues[NUM_FRAMES_IN_FLIGHT];
-	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		waitSemaphores[i] = frame_array.frames[i].semaphore_buffers_ready.semaphore;
-		waitSemaphoreValues[i] = frame_array.frames[i].semaphore_buffers_ready.wait_counter;
-	}
-	
-	const VkSemaphoreWaitInfo semaphoreWaitInfo = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.semaphoreCount = frame_array.num_frames,
-		.pSemaphores = waitSemaphores,
-		.pValues = waitSemaphoreValues
-	};
-	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
-	
-	static VkCommandBuffer cmdBufs[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
-	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
-	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
-	
-	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
-	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
-	VkSemaphoreSubmitInfo semaphoreSignalSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
-	VkSubmitInfo2 submitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
-	
-	const VkBufferCopy bufferCopy = {
-		.srcOffset = meshOffset,
-		.dstOffset = meshOffset,
-		.size = sizeof(mesh)
-	};
-	
-	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		cmdBufBegin(cmdBufs[i], true);
-		vkCmdCopyBuffer(cmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
-		vkEndCommandBuffer(cmdBufs[i]);
-		
-		cmdBufSubmitInfos[i] = make_command_buffer_submit_info(cmdBufs[i]);
-		semaphoreWaitSubmitInfos[i] = make_timeline_semaphore_wait_submit_info(frame_array.frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
-		semaphoreSignalSubmitInfos[i] = make_timeline_semaphore_signal_submit_info(frame_array.frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
-		frame_array.frames[i].semaphore_buffers_ready.wait_counter += 1;
-
-		submitInfos[i] = (VkSubmitInfo2){
-			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-			.pNext = nullptr,
-			.waitSemaphoreInfoCount = 1,
-			.pWaitSemaphoreInfos = &semaphoreWaitSubmitInfos[i],
-			.commandBufferInfoCount = 1,
-			.pCommandBufferInfos = &cmdBufSubmitInfos[i],
-			.signalSemaphoreInfoCount = 1,
-			.pSignalSemaphoreInfos = &semaphoreSignalSubmitInfos[i]
-		};
-	}
-	vkQueueSubmit2(queueTransfer, frame_array.num_frames, submitInfos, VK_NULL_HANDLE);
-	
-	/* Create and insert new model's draw info struct */
-	
-	const DrawInfo drawInfo = {
-		.indexCount = modelPool->indexCount,
-		.instanceCount = 1,
-		.firstIndex = modelPool->firstIndex,
-		.vertexOffset = modelPool->firstVertex + modelPool->vertexCount * modelIndex,
-		.firstInstance = 0,
-		.modelIndex = modelIndex,
-		.imageIndex = 0
-	};
-	
-	uint32_t insertIndex = modelPool->drawInfoCount;
-	for (uint32_t i = 0; i < modelPool->drawInfoCount; ++i) {
-		const float otherZ = modelPool->pModelTransforms[modelPool->pDrawInfos[i].modelIndex].translation.current.z;
-		if (position.z > otherZ) {
-			insertIndex = i;
-			break;
-		}
-	}
-	
-	for (uint32_t i = modelPool->drawInfoCount; i > insertIndex; --i) {
-		modelPool->pDrawInfos[i] = modelPool->pDrawInfos[i - 1];
-		modelPool->pDrawInfoIndices[modelPool->pDrawInfos[i].modelIndex] = i;
-	}
-	
-	modelPool->pDrawInfos[insertIndex] = drawInfo;
-	modelPool->pDrawInfoIndices[modelIndex] = insertIndex;
-	modelPool->drawInfoCount += 1;
-	
-	// Upload new draw info array to buffer
-	bufferHostTransfer(modelPool->drawInfoBuffer, 0, drawCountSize, &modelPool->drawInfoCount);
-	bufferHostTransfer(modelPool->drawInfoBuffer, drawCountSize, modelPool->drawInfoCount * sizeof(DrawInfo), modelPool->pDrawInfos);
-	
-	// Update texture descriptor
-	
-	const Texture texture = getTexture(textureState.textureHandle);
-	VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
-	
-	// Replace malloc with a better suited allocation, perhaps an arena?
-	VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
-	*pDescriptorImageInfo = makeDescriptorImageInfo(texture.image);
-	
-	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		writeDescriptorSets[i] = (VkWriteDescriptorSet){
-			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
-			.dstBinding = 2,
-			.dstArrayElement = modelIndex,
-			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			.descriptorCount = 1,
-			.pBufferInfo = nullptr,
-			.pImageInfo = pDescriptorImageInfo,
-			.pTexelBufferView = nullptr
-		};
-		descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);
-	}
-	
-	modelPool->pSlotFlags[modelIndex] = true;
-	*pModelHandle = (int)modelIndex;
-	
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loaded model %i.", *pModelHandle);
-}
-
-void loadModel2(const ModelLoadInfo loadInfo, int *const pModelHandle) {
+void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading model...");
 	
 	// For simplicity's sake, just use a linear search to find the first available slot.
@@ -367,10 +200,7 @@ void loadModel2(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 		return;
 	}
 	
-	// Reset model object fields.
 	loadInfo.modelPool->pModelTransforms[modelIndex] = makeModelTransform(loadInfo.position, zeroVector4F, zeroVector4F);
-	TextureState textureState = newTextureState(loadInfo.textureID);
-	loadInfo.modelPool->pTextureStates[modelIndex] = textureState;	
 	
 	/* Generate model's mesh and upload to vertex buffer(s) */
 	
@@ -426,7 +256,7 @@ void loadModel2(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	
 	// Upload model's mesh to staging buffer.
 	// The offset of the mesh's vertices in the vertex buffer, in bytes.
-	const VkDeviceSize meshOffset = sizeof(mesh) * modelIndex + loadInfo.modelPool->firstVertex * vertex_input_element_stride * sizeof(float);	
+	const VkDeviceSize meshOffset = sizeof(mesh) * modelIndex + loadInfo.modelPool->firstVertex * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride * sizeof(float);	
 	unsigned char *const pMappedMemoryVertices = buffer_partition_map_memory(global_staging_buffer_partition, 0);
 	memcpy(&pMappedMemoryVertices[meshOffset], mesh, sizeof(mesh));
 	buffer_partition_unmap_memory(global_staging_buffer_partition);
@@ -521,27 +351,33 @@ void loadModel2(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	bufferHostTransfer(loadInfo.modelPool->drawInfoBuffer, drawCountSize, loadInfo.modelPool->drawInfoCount * sizeof(DrawInfo), loadInfo.modelPool->pDrawInfos);
 	
 	// Update texture descriptor
-	
-	const Texture texture = getTexture(textureState.textureHandle);
-	VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
-	
-	// Replace malloc with a better suited allocation, perhaps an arena?
-	VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
-	*pDescriptorImageInfo = makeDescriptorImageInfo(texture.image);
-	
-	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		writeDescriptorSets[i] = (VkWriteDescriptorSet){
-			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
-			.dstBinding = 2,
-			.dstArrayElement = modelIndex,
-			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			.descriptorCount = 1,
-			.pBufferInfo = nullptr,
-			.pImageInfo = pDescriptorImageInfo,
-			.pTexelBufferView = nullptr
-		};
-		descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);
+	// True if the model uses a texture, false otherwise.
+	const bool textureNeeded = loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset >= 0;
+	if (textureNeeded) {
+		TextureState textureState = newTextureState(loadInfo.textureID);
+		loadInfo.modelPool->pTextureStates[modelIndex] = textureState;
+		
+		const Texture texture = getTexture(textureState.textureHandle);
+		VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
+		
+		// Replace malloc with a better suited allocation, perhaps an arena?
+		VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
+		*pDescriptorImageInfo = makeDescriptorImageInfo(texture.image);
+		
+		for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+			writeDescriptorSets[i] = (VkWriteDescriptorSet){
+				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
+				.dstBinding = 2,
+				.dstArrayElement = modelIndex,
+				.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+				.descriptorCount = 1,
+				.pBufferInfo = nullptr,
+				.pImageInfo = pDescriptorImageInfo,
+				.pTexelBufferView = nullptr
+			};
+			descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);
+		}
 	}
 	
 	loadInfo.modelPool->pSlotFlags[modelIndex] = true;

@@ -242,9 +242,8 @@ void create_vulkan_objects(void) {
 		.swapchain = swapchain,
 		.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
 		.polygonMode = VK_POLYGON_MODE_FILL,
-		.vertexAttributeFlags = VERTEX_ATTRIBUTE_POSITION | VERTEX_ATTRIBUTE_TEXTURE_COORDINATES | VERTEX_ATTRIBUTE_COLOR,
-		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
-		/*.descriptorSetLayout = (DescriptorSetLayout){ 
+		.vertexAttributeFlags = VERTEX_ATTRIBUTE_POSITION | VERTEX_ATTRIBUTE_COLOR,
+		.descriptorSetLayout = (DescriptorSetLayout){ 
 			.num_bindings = 2,
 			.bindings = (DescriptorBinding[2]){
 				{ 
@@ -257,9 +256,9 @@ void create_vulkan_objects(void) {
 					.stages = VK_SHADER_STAGE_VERTEX_BIT 
 				}
 			}
-		},*/
+		},
 		.shaderModuleCount = 2,
-		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
+		.pShaderModules = (ShaderModule[2]){ vertexShaderLinesModule, fragmentShaderLinesModule },
 		.pushConstantRangeCount = 1,
 		.pPushConstantRanges = (PushConstantRange[1]){
 			{
@@ -285,6 +284,11 @@ void create_vulkan_objects(void) {
 		.descriptorPool = (DescriptorPool){
 			.handle = graphicsPipeline.vkDescriptorPool,
 			.layout = graphicsPipeline.vkDescriptorSetLayout,
+			.vkDevice = device
+		},
+		.descriptorPoolDebug = (DescriptorPool){
+			.handle = graphicsPipelineDebug.vkDescriptorPool,
+			.layout = graphicsPipelineDebug.vkDescriptorSetLayout,
 			.vkDevice = device
 		}
 	};
@@ -426,7 +430,7 @@ void createTestDebugModel() {
 		.textureID = testTextureID,
 		.color = (Vector4F){ 1.0F, 0.0F, 0.0F, 1.0F }
 	};
-	loadModel2(loadInfo, &testDebugModel);
+	loadModel(loadInfo, &testDebugModel);
 }
 
 static void uploadLightingData(void) {
@@ -600,7 +604,6 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		// Resource binding
 		
 		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipeline);
-		
 		commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
 		
 		const VkDeviceSize offsets[1] = { 0 };
@@ -625,6 +628,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		// Debug drawing
 		
 		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
+		commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSetDebug, graphicsPipelineDebug);
 		
 		const uint32_t descriptorIndexOffsetDebug = modelPoolGetMaxModelCount(modelPoolMain);
 		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 

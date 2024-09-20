@@ -63,7 +63,14 @@ int loadRenderObject(const String textureID, const BoxF quadDimensions, const in
 		};
 		
 		int quadHandle = -1;
-		loadModel(modelPoolMain, quadPosition, quadDimensions, textureID, &quadHandle);
+		const ModelLoadInfo modelLoadInfo = {
+			.modelPool = modelPoolMain,
+			.position = quadPosition,
+			.dimensions = quadDimensions,
+			.textureID = textureID,
+			.color = (Vector4F){ 1.0F, 1.0F, 1.0F, 1.0F }
+		};
+		loadModel(modelLoadInfo, &quadHandle);
 		renderObjectQuadHandles[renderHandle][i] = quadHandle;
 	}
 	

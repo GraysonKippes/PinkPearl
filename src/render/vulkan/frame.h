@@ -11,6 +11,9 @@
 #include "physical_device.h"
 #include "synchronization.h"
 
+// TODO - switch to a data-oriented design
+// 		- allow arbitrary creation of resources in array
+
 // The frame is a set of resources used in drawing a frame.
 // They are placed in a struct for easy duplication, so that multiple frames can be pipelined.
 
@@ -19,6 +22,8 @@ typedef struct Frame {
 	CommandBuffer commandBuffer;
 	
 	DescriptorSet descriptorSet;
+	
+	DescriptorSet descriptorSetDebug;
 
 	// Signaled when the image for this frame is available.
 	BinarySemaphore semaphore_image_available;
@@ -60,6 +65,7 @@ typedef struct FrameArrayCreateInfo {
 	
 	CommandPool commandPool;
 	DescriptorPool descriptorPool;
+	DescriptorPool descriptorPoolDebug;
 	
 } FrameArrayCreateInfo;
 

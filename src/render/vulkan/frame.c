@@ -10,7 +10,7 @@
 #include "vertex_input.h"
 #include "VulkanManager.h"
 
-static Frame createFrame(PhysicalDevice physical_device, VkDevice device, CommandPool commandPool, DescriptorPool descriptorPool) {
+static Frame createFrame(PhysicalDevice physical_device, VkDevice device, CommandPool commandPool, DescriptorPool descriptorPool, DescriptorPool descriptorPoolDebug) {
 
 	Frame frame = {
 		.commandBuffer = { },
@@ -39,6 +39,7 @@ static Frame createFrame(PhysicalDevice physical_device, VkDevice device, Comman
 
 	frame.commandBuffer = allocateCommandBuffer(commandPool);
 	frame.descriptorSet = allocateDescriptorSet(descriptorPool);
+	frame.descriptorSetDebug = allocateDescriptorSet(descriptorPoolDebug);
 
 	uint32_t queue_family_indices[2] = {
 		*physical_device.queueFamilyIndices.graphics_family_ptr,
@@ -116,7 +117,7 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 	VkDeviceSize total_index_memory_size = 0;
 
 	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		frame_array.frames[i] = createFrame(frameArrayCreateInfo.physical_device, frameArrayCreateInfo.vkDevice, frameArrayCreateInfo.commandPool, frameArrayCreateInfo.descriptorPool);
+		frame_array.frames[i] = createFrame(frameArrayCreateInfo.physical_device, frameArrayCreateInfo.vkDevice, frameArrayCreateInfo.commandPool, frameArrayCreateInfo.descriptorPool, frameArrayCreateInfo.descriptorPoolDebug);
 		
 		VkMemoryRequirements vertex_buffer_memory_requirements;
 		VkMemoryRequirements index_buffer_memory_requirements;
