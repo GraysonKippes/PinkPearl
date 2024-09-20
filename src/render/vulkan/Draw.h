@@ -44,6 +44,8 @@ void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex,
 		const uint32_t firstIndex, const uint32_t indexCount, 
 		const uint32_t firstDescriptorIndex, const uint32_t maxModelCount, 
 		ModelPool *pOutModelPool);
+		
+void createModelPool2(const ModelPoolCreateInfo createInfo, ModelPool *const pOutModelPool);
 
 void deleteModelPool(ModelPool *const pModelPool);
 

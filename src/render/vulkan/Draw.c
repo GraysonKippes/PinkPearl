@@ -156,7 +156,7 @@ void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex,
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created model pool.");
 }
 
-void createModelPool2(const ModelPoolCreateInfo createInfo, ModelPool *pOutModelPool) {
+void createModelPool2(const ModelPoolCreateInfo createInfo, ModelPool *const pOutModelPool) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
 	
 	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
@@ -273,6 +273,13 @@ void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensio
 	modelPool->pTextureStates[modelIndex] = textureState;	
 	
 	/* Generate model's mesh and upload to vertex buffer(s) */
+	
+	// Compute size of mesh
+	// Copy attributes into right spots
+	
+	static const VkDeviceSize numVerticesPerQuad = 4;
+	
+	
 	
 	// Generate model's mesh.
 	const float mesh[NUM_VERTICES_PER_QUAD * VERTEX_INPUT_ELEMENT_STRIDE] = {

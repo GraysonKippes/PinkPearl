@@ -220,8 +220,6 @@ void create_vulkan_objects(void) {
 		.swapchain = swapchain,
 		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.polygonMode = VK_POLYGON_MODE_FILL,
-		.vertexAttributeCount = 3,
-		.pVertexAttributeSizes = (uint32_t[3]){ 3, 2, 3 },
 		.vertexAttributeFlags = VERTEX_ATTRIBUTE_POSITION | VERTEX_ATTRIBUTE_TEXTURE_COORDINATES | VERTEX_ATTRIBUTE_COLOR,
 		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
 		.shaderModuleCount = 2,
@@ -244,8 +242,6 @@ void create_vulkan_objects(void) {
 		.swapchain = swapchain,
 		.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
 		.polygonMode = VK_POLYGON_MODE_FILL,
-		.vertexAttributeCount = 3,
-		.pVertexAttributeSizes = (uint32_t[3]){ 3, 2, 3 },
 		.vertexAttributeFlags = VERTEX_ATTRIBUTE_POSITION | VERTEX_ATTRIBUTE_TEXTURE_COORDINATES | VERTEX_ATTRIBUTE_COLOR,
 		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
 		/*.descriptorSetLayout = (DescriptorSetLayout){ 
@@ -297,8 +293,31 @@ void create_vulkan_objects(void) {
 	init_compute_matrices(device);
 	init_compute_room_texture(device);
 	
-	createModelPool(bufferDrawInfo, 0, 0, 4, 0, 6, 0, 256, &modelPoolMain);
-	createModelPool(bufferDrawInfo, 1, 256 * 4, 4, 6, 8, 256, 256, &modelPoolDebug);
+	const ModelPoolCreateInfo modelPoolMainCreateInfo = {
+		.buffer = bufferDrawInfo,
+		.bufferSubrangeIndex = 0,
+		.graphicsPipeline = graphicsPipeline,
+		.firstVertex = 0,
+		.vertexCount = 4,
+		.firstIndex = 0,
+		.indexCount = 6,
+		.firstDescriptorIndex = 0,
+		.maxModelCount = 256
+	};
+	createModelPool2(modelPoolMainCreateInfo, &modelPoolMain);
+	
+	const ModelPoolCreateInfo modelPoolDebugCreateInfo = {
+		.buffer = bufferDrawInfo,
+		.bufferSubrangeIndex = 1,
+		.graphicsPipeline = graphicsPipelineDebug,
+		.firstVertex = 256 * 4,
+		.vertexCount = 4,
+		.firstIndex = 6,
+		.indexCount = 8,
+		.firstDescriptorIndex = 256,
+		.maxModelCount = 256
+	};
+	createModelPool2(modelPoolDebugCreateInfo, &modelPoolDebug);
 }
 
 void destroy_vulkan_objects(void) {

@@ -10,21 +10,20 @@
 
 typedef struct GraphicsPipeline {
 	
-	// Array of vertex attributes, described by their element counts.
-	uint32_t vertexAttributeCount;
-	uint32_t *pVertexAttributeSizes;
+	// The element offset of the position vertex attribute.
+	// Used for building meshes to be rendered with this pipeline.
+	// This value is negative if this pipeline has no vertex attribute for position.
+	int32_t vertexAttributePositionOffset;
 	
-	// The number of elements in a single vertex, equal to the sum of all the attribute sizes.
-	uint32_t vertexElementStride;
+	// The element offset of the texture coordinates vertex attribute.
+	// Used for building meshes to be rendered with this pipeline.
+	// This value is negative if this pipeline has no vertex attribute for texture coordinates.
+	int32_t vertexAttributeTextureCoordinatesOffset;
 	
-	// The vertex attribute index for the color value of the vertex.
-	// If there is no vertex attribute for color, this will be negative.
-	int32_t vertexAttributeColor;
-	
-	// The vertex attribute index for the texture coordinates of the vertex.
-	// If there is no vertex attribute for texture coordinates, this will be negative.
-	// Also controls whether a texture is written to the descriptor set.
-	int32_t vertexAttributeTextureCoords;
+	// The element offset of the color vertex attribute.
+	// Used for building meshes to be rendered with this pipeline.
+	// This value is negative if this pipeline has no vertex attribute for color.
+	int32_t vertexAttributeColorOffset;
 	
 	VkPipeline vkPipeline;
 	VkPipelineLayout vkPipelineLayout;
@@ -50,10 +49,6 @@ typedef struct GraphicsPipelineCreateInfo {
 	
 	VkPrimitiveTopology topology;
 	VkPolygonMode polygonMode;
-	
-	// Array of vertex attributes, described by their element counts.
-	uint32_t vertexAttributeCount;
-	uint32_t *pVertexAttributeSizes;
 	
 	// Bitflags that control which vertex attributes the pipeline will have.
 	uint32_t vertexAttributeFlags;

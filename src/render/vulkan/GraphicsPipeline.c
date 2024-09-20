@@ -8,10 +8,7 @@
 #include "log/Logger.h"
 #include "render/render_config.h"
 
-#include "vertex_input.h"
 #include "VulkanManager.h"
-
-//static const uint32_t attributeSizes[VERTEX_INPUT_NUM_ATTRIBUTES] = { 3, 2, 3 };
 
 /* -- FUNCTION DECLARATIONS -- */
 
@@ -27,16 +24,16 @@ static VkPipelineColorBlendAttachmentState makePipelineColorBlendAttachmentState
 
 static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendAttachmentState *const pAttachmentState);
 
-static void makeVertexInputDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription);
-
-static void makeVertexInputDescriptions2(const uint32_t attributeCount, const uint32_t attributeFlags, VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription);
-
 /* -- FUNCTION DEFINITIONS -- */
 
 GraphicsPipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createInfo) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating graphics pipeline...");
 
-	GraphicsPipeline pipeline = { };
+	GraphicsPipeline pipeline = { 
+		.vertexAttributePositionOffset = -1,
+		.vertexAttributeTextureCoordinatesOffset = -1,
+		.vertexAttributeColorOffset = -1
+	};
 
 	VkPipelineShaderStageCreateInfo shaderStateCreateInfos[createInfo.shaderModuleCount];
 	for (uint32_t i = 0; i < createInfo.shaderModuleCount; ++i) {
@@ -48,24 +45,68 @@ GraphicsPipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createI
 
 	pipeline.vkPipelineLayout = createPipelineLayout2(createInfo.vkDevice, 1, &pipeline.vkDescriptorSetLayout, createInfo.pushConstantRangeCount, createInfo.pPushConstantRanges);
 
-	pipeline.pVertexAttributeSizes = malloc(createInfo.vertexAttributeCount * sizeof(uint32_t));
-	for (uint32_t i = 0; i < createInfo.vertexAttributeCount; ++i) {
-		pipeline.pVertexAttributeSizes[i] = createInfo.pVertexAttributeSizes[i];
-		pipeline.vertexElementStride += createInfo.pVertexAttributeSizes[i];
+	// Find the number of vertex attributes by counting the number of bits in the vertex attribute type bitflags.
+	uint32_t vertexAttributeCount = 0;
+	for (uint32_t i = 0; i < sizeof(createInfo.vertexAttributeFlags) * 8; ++i) {
+		vertexAttributeCount += (createInfo.vertexAttributeFlags >> i) & 1;
 	}
-	pipeline.vertexAttributeCount = createInfo.vertexAttributeCount;
-
+	VkVertexInputAttributeDescription attributeDescriptions[vertexAttributeCount] = { };
 	VkVertexInputBindingDescription bindingDescription = { };
-	VkVertexInputAttributeDescription attributeDescriptions[VERTEX_INPUT_NUM_ATTRIBUTES] = { { } };
-	makeVertexInputDescriptions2(createInfo.vertexAttributeCount, createInfo.vertexAttributeFlags, attributeDescriptions, &bindingDescription);
 
+	{	// Generate the vertex attribute descriptions and element offsets as well as the vertex binding description.
+		uint32_t counter = 0;	// The number of vertex attributes as they are added.
+		uint32_t offset = 0;	// The element offset of each attribute.
+		
+		if (createInfo.vertexAttributeFlags & VERTEX_ATTRIBUTE_POSITION && counter < vertexAttributeCount) {
+			attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
+				.binding = 0,
+				.location = counter,
+				.format = VK_FORMAT_R32G32B32_SFLOAT,
+				.offset = offset * sizeof(float)
+			};
+			pipeline.vertexAttributePositionOffset = offset;
+			offset += 3;
+			counter += 1;
+		}
+		
+		if (createInfo.vertexAttributeFlags & VERTEX_ATTRIBUTE_TEXTURE_COORDINATES && counter < vertexAttributeCount) {
+			attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
+				.binding = 0,
+				.location = counter,
+				.format = VK_FORMAT_R32G32_SFLOAT,
+				.offset = offset * sizeof(float)
+			};
+			pipeline.vertexAttributeTextureCoordinatesOffset = offset;
+			offset += 2;
+			counter += 1;
+		}
+		
+		if (createInfo.vertexAttributeFlags & VERTEX_ATTRIBUTE_COLOR && counter < vertexAttributeCount) {
+			attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
+				.binding = 0,
+				.location = counter,
+				.format = VK_FORMAT_R32G32B32_SFLOAT,
+				.offset = offset * sizeof(float)
+			};
+			pipeline.vertexAttributeColorOffset = offset;
+			offset += 3;
+			counter += 1;
+		}
+		
+		bindingDescription = (VkVertexInputBindingDescription){
+			.binding = 0,
+			.stride = offset * sizeof(float),
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+		};
+	}
+	
 	const VkPipelineVertexInputStateCreateInfo vertex_input_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
 		.vertexBindingDescriptionCount = 1,
 		.pVertexBindingDescriptions = &bindingDescription,
-		.vertexAttributeDescriptionCount = vertex_input_num_attributes,
+		.vertexAttributeDescriptionCount = vertexAttributeCount,
 		.pVertexAttributeDescriptions = attributeDescriptions
 	};
 
@@ -125,9 +166,6 @@ void deleteGraphicsPipeline(GraphicsPipeline *const pPipeline) {
 		return;
 	}
 	
-	// Free the heap allocated objects.
-	free(pPipeline->pVertexAttributeSizes);
-	
 	// Destroy the Vulkan objects associated with the pipeline struct.
 	vkDestroyPipeline(pPipeline->vkDevice, pPipeline->vkPipeline, nullptr);
 	vkDestroyPipelineLayout(pPipeline->vkDevice, pPipeline->vkPipelineLayout, nullptr);
@@ -135,9 +173,6 @@ void deleteGraphicsPipeline(GraphicsPipeline *const pPipeline) {
 	vkDestroyDescriptorSetLayout(pPipeline->vkDevice, pPipeline->vkDescriptorSetLayout, nullptr);
 	
 	// Nullify the objects inside the struct.
-	pPipeline->vertexAttributeCount = 0;
-	pPipeline->pVertexAttributeSizes = nullptr;
-	pPipeline->vertexElementStride = 0;
 	pPipeline->vkPipeline = VK_NULL_HANDLE;
 	pPipeline->vkPipelineLayout = VK_NULL_HANDLE;
 	pPipeline->vkDescriptorPool = VK_NULL_HANDLE;
@@ -223,79 +258,4 @@ static VkPipelineColorBlendStateCreateInfo makePipelineColorBlendStateCreateInfo
 		.pAttachments = pAttachmentState,
 		.blendConstants = { 0.0F, 0.0F, 0.0F, 0.0F }
 	};
-}
-
-static void makeVertexInputDescriptions(const uint32_t attributeCount, const uint32_t attributeSizes[static const attributeCount], VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription) {
-	
-	uint32_t offset = 0;
-	for (uint32_t i = 0; i < attributeCount; ++i) {
-		
-		VkFormat format = VK_FORMAT_UNDEFINED;
-		switch (attributeSizes[i]) {
-			case 1: format = VK_FORMAT_R32_SFLOAT; break;
-			case 2: format = VK_FORMAT_R32G32_SFLOAT; break;
-			case 3: format = VK_FORMAT_R32G32B32_SFLOAT; break;
-			case 4: format = VK_FORMAT_R32G32B32A32_SFLOAT; break;
-		}
-		
-		attributeDescriptions[i].binding = 0;
-		attributeDescriptions[i].location = i;
-		attributeDescriptions[i].format = format;
-		attributeDescriptions[i].offset = offset;
-		
-		offset += attributeSizes[i] * sizeof(float);
-	}
-	
-	const VkVertexInputBindingDescription bindingDescription = {
-		.binding = 0,
-		.stride = offset,
-		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-	};
-	*pBindingDescription = bindingDescription;
-}
-
-static void makeVertexInputDescriptions2(const uint32_t attributeCount, const uint32_t attributeFlags, VkVertexInputAttributeDescription attributeDescriptions[static const attributeCount], VkVertexInputBindingDescription *const pBindingDescription) {
-	
-	uint32_t counter = 0;
-	uint32_t offset = 0;
-	
-	if (attributeFlags & VERTEX_ATTRIBUTE_POSITION && counter < attributeCount) {
-		attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
-			.binding = 0,
-			.location = counter,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offset
-		};
-		offset += 3 * sizeof(float);
-		counter += 1;
-	}
-	
-	if (attributeFlags & VERTEX_ATTRIBUTE_TEXTURE_COORDINATES && counter < attributeCount) {
-		attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
-			.binding = 0,
-			.location = counter,
-			.format = VK_FORMAT_R32G32_SFLOAT,
-			.offset = offset
-		};
-		offset += 2 * sizeof(float);
-		counter += 1;
-	}
-	
-	if (attributeFlags & VERTEX_ATTRIBUTE_COLOR && counter < attributeCount) {
-		attributeDescriptions[counter] = (VkVertexInputAttributeDescription){
-			.binding = 0,
-			.location = counter,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offset
-		};
-		offset += 3 * sizeof(float);
-		counter += 1;
-	}
-	
-	const VkVertexInputBindingDescription bindingDescription = {
-		.binding = 0,
-		.stride = offset,
-		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-	};
-	*pBindingDescription = bindingDescription;
 }
