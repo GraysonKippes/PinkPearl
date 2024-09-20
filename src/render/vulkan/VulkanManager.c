@@ -304,7 +304,7 @@ void create_vulkan_objects(void) {
 		.firstDescriptorIndex = 0,
 		.maxModelCount = 256
 	};
-	createModelPool2(modelPoolMainCreateInfo, &modelPoolMain);
+	createModelPool(modelPoolMainCreateInfo, &modelPoolMain);
 	
 	const ModelPoolCreateInfo modelPoolDebugCreateInfo = {
 		.buffer = bufferDrawInfo,
@@ -317,7 +317,7 @@ void create_vulkan_objects(void) {
 		.firstDescriptorIndex = 256,
 		.maxModelCount = 256
 	};
-	createModelPool2(modelPoolDebugCreateInfo, &modelPoolDebug);
+	createModelPool(modelPoolDebugCreateInfo, &modelPoolDebug);
 }
 
 void destroy_vulkan_objects(void) {
@@ -419,7 +419,14 @@ void createTestDebugModel() {
 		.pBuffer = "missing"
 	};
 	
-	loadModel(modelPoolDebug, testPosition, testBox, testTextureID, &testDebugModel);
+	const ModelLoadInfo loadInfo = {
+		.modelPool = modelPoolDebug,
+		.position = testPosition,
+		.dimensions = testBox,
+		.textureID = testTextureID,
+		.color = (Vector4F){ 1.0F, 0.0F, 0.0F, 1.0F }
+	};
+	loadModel2(loadInfo, &testDebugModel);
 }
 
 static void uploadLightingData(void) {

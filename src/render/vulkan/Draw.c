@@ -90,73 +90,7 @@ const uint32_t drawCountSize = sizeof(uint32_t);
 
 const uint32_t drawCommandStride = sizeof(DrawInfo);
 
-void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex, 
-		const uint32_t firstVertex, const uint32_t vertexCount, 
-		const uint32_t firstIndex, const uint32_t indexCount, 
-		const uint32_t firstDescriptorIndex, const uint32_t maxModelCount, 
-		ModelPool *pOutModelPool) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
-	
-	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
-	if (!modelPool) {
-		return;
-	}
-	
-	bufferBorrowSubrange(buffer, bufferSubrangeIndex, &modelPool->drawInfoBuffer);
-	modelPool->firstVertex = firstVertex;
-	modelPool->vertexCount = vertexCount;
-	modelPool->firstIndex = firstIndex;
-	modelPool->indexCount = indexCount;
-	modelPool->firstDescriptorIndex = firstDescriptorIndex;
-	modelPool->maxModelCount = maxModelCount;
-	modelPool->drawInfoCount = 0;
-	
-	modelPool->pSlotFlags = calloc(maxModelCount, sizeof(bool));
-	if (!modelPool->pSlotFlags) {
-		free(modelPool);
-		return;
-	}
-	
-	modelPool->pDrawInfoIndices = calloc(maxModelCount, sizeof(uint32_t));
-	if (!modelPool->pDrawInfoIndices) {
-		free(modelPool->pSlotFlags);
-		free(modelPool);
-		return;
-	}
-	
-	modelPool->pModelTransforms = calloc(maxModelCount, sizeof(ModelTransform));
-	if (!modelPool->pModelTransforms) {
-		free(modelPool->pSlotFlags);
-		free(modelPool->pDrawInfoIndices);
-		free(modelPool);
-		return;
-	}
-	
-	modelPool->pTextureStates = calloc(maxModelCount, sizeof(TextureState));
-	if (!modelPool->pTextureStates) {
-		free(modelPool->pSlotFlags);
-		free(modelPool->pDrawInfoIndices);
-		free(modelPool->pModelTransforms);
-		free(modelPool);
-		return;
-	}
-	
-	modelPool->pDrawInfos = calloc(maxModelCount, sizeof(DrawInfo));
-	if (!modelPool->pTextureStates) {
-		free(modelPool->pSlotFlags);
-		free(modelPool->pDrawInfoIndices);
-		free(modelPool->pModelTransforms);
-		free(modelPool->pTextureStates);
-		free(modelPool);
-		return;
-	}
-	
-	*pOutModelPool = modelPool;
-	
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created model pool.");
-}
-
-void createModelPool2(const ModelPoolCreateInfo createInfo, ModelPool *const pOutModelPool) {
+void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOutModelPool) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
 	
 	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
@@ -411,6 +345,206 @@ void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensio
 	}
 	
 	modelPool->pSlotFlags[modelIndex] = true;
+	*pModelHandle = (int)modelIndex;
+	
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loaded model %i.", *pModelHandle);
+}
+
+void loadModel2(const ModelLoadInfo loadInfo, int *const pModelHandle) {
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loading model...");
+	
+	// For simplicity's sake, just use a linear search to find the first available slot.
+	// TODO - maybe optimize this with a data structure?
+	uint32_t modelIndex = 0;
+	for (; modelIndex < loadInfo.modelPool->maxModelCount; ++modelIndex) {
+		if (!loadInfo.modelPool->pSlotFlags[modelIndex]) {
+			break;
+		}
+	}
+	
+	if (modelIndex >= loadInfo.modelPool->maxModelCount) {
+		*pModelHandle = -1;
+		return;
+	}
+	
+	// Reset model object fields.
+	loadInfo.modelPool->pModelTransforms[modelIndex] = makeModelTransform(loadInfo.position, zeroVector4F, zeroVector4F);
+	TextureState textureState = newTextureState(loadInfo.textureID);
+	loadInfo.modelPool->pTextureStates[modelIndex] = textureState;	
+	
+	/* Generate model's mesh and upload to vertex buffer(s) */
+	
+	// Compute size of mesh
+	// Copy attributes into right spots
+	
+	static const VkDeviceSize numVerticesPerQuad = 4;
+	
+	float mesh[numVerticesPerQuad * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride];
+	
+	if (loadInfo.modelPool->graphicsPipeline.vertexAttributePositionOffset >= 0) {
+		uint32_t baseOffset = 0 * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributePositionOffset;
+		mesh[baseOffset + 0] = loadInfo.dimensions.x1;
+		mesh[baseOffset + 1] = loadInfo.dimensions.y1;
+		mesh[baseOffset + 2] = 0.0F;
+		baseOffset = 1 * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributePositionOffset;
+		mesh[baseOffset + 0] = loadInfo.dimensions.x1;
+		mesh[baseOffset + 1] = loadInfo.dimensions.y2;
+		mesh[baseOffset + 2] = 0.0F;
+		baseOffset = 2 * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributePositionOffset;
+		mesh[baseOffset + 0] = loadInfo.dimensions.x2;
+		mesh[baseOffset + 1] = loadInfo.dimensions.y2;
+		mesh[baseOffset + 2] = 0.0F;
+		baseOffset = 3 * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributePositionOffset;
+		mesh[baseOffset + 0] = loadInfo.dimensions.x2;
+		mesh[baseOffset + 1] = loadInfo.dimensions.y1;
+		mesh[baseOffset + 2] = 0.0F;
+	}
+	
+	if (loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset >= 0) {
+		uint32_t baseOffset = 0 * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset;
+		mesh[baseOffset + 0] = 0.0F;
+		mesh[baseOffset + 1] = 1.0F;
+		baseOffset = 1 * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset;
+		mesh[baseOffset + 0] = 0.0F;
+		mesh[baseOffset + 1] = 0.0F;
+		baseOffset = 2 * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset;
+		mesh[baseOffset + 0] = 1.0F;
+		mesh[baseOffset + 1] = 0.0F;
+		baseOffset = 3 * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset;
+		mesh[baseOffset + 0] = 1.0F;
+		mesh[baseOffset + 1] = 1.0F;
+	}
+	
+	if (loadInfo.modelPool->graphicsPipeline.vertexAttributeColorOffset >= 0) {
+		for (uint32_t i = 0; i < numVerticesPerQuad; ++i) {
+			uint32_t baseOffset = i * loadInfo.modelPool->graphicsPipeline.vertexInputElementStride + loadInfo.modelPool->graphicsPipeline.vertexAttributeColorOffset;
+			mesh[baseOffset + 0] = loadInfo.color.x;
+			mesh[baseOffset + 1] = loadInfo.color.y;
+			mesh[baseOffset + 2] = loadInfo.color.z;
+		}
+	}
+	
+	// Upload model's mesh to staging buffer.
+	// The offset of the mesh's vertices in the vertex buffer, in bytes.
+	const VkDeviceSize meshOffset = sizeof(mesh) * modelIndex + loadInfo.modelPool->firstVertex * vertex_input_element_stride * sizeof(float);	
+	unsigned char *const pMappedMemoryVertices = buffer_partition_map_memory(global_staging_buffer_partition, 0);
+	memcpy(&pMappedMemoryVertices[meshOffset], mesh, sizeof(mesh));
+	buffer_partition_unmap_memory(global_staging_buffer_partition);
+	
+	VkSemaphore waitSemaphores[NUM_FRAMES_IN_FLIGHT];
+	uint64_t waitSemaphoreValues[NUM_FRAMES_IN_FLIGHT];
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		waitSemaphores[i] = frame_array.frames[i].semaphore_buffers_ready.semaphore;
+		waitSemaphoreValues[i] = frame_array.frames[i].semaphore_buffers_ready.wait_counter;
+	}
+	
+	const VkSemaphoreWaitInfo semaphoreWaitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.semaphoreCount = frame_array.num_frames,
+		.pSemaphores = waitSemaphores,
+		.pValues = waitSemaphoreValues
+	};
+	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
+	
+	static VkCommandBuffer cmdBufs[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
+	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
+	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
+	
+	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
+	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
+	VkSemaphoreSubmitInfo semaphoreSignalSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
+	VkSubmitInfo2 submitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
+	
+	const VkBufferCopy bufferCopy = {
+		.srcOffset = meshOffset,
+		.dstOffset = meshOffset,
+		.size = sizeof(mesh)
+	};
+	
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		cmdBufBegin(cmdBufs[i], true);
+		vkCmdCopyBuffer(cmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
+		vkEndCommandBuffer(cmdBufs[i]);
+		
+		cmdBufSubmitInfos[i] = make_command_buffer_submit_info(cmdBufs[i]);
+		semaphoreWaitSubmitInfos[i] = make_timeline_semaphore_wait_submit_info(frame_array.frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		semaphoreSignalSubmitInfos[i] = make_timeline_semaphore_signal_submit_info(frame_array.frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+		frame_array.frames[i].semaphore_buffers_ready.wait_counter += 1;
+
+		submitInfos[i] = (VkSubmitInfo2){
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			.pNext = nullptr,
+			.waitSemaphoreInfoCount = 1,
+			.pWaitSemaphoreInfos = &semaphoreWaitSubmitInfos[i],
+			.commandBufferInfoCount = 1,
+			.pCommandBufferInfos = &cmdBufSubmitInfos[i],
+			.signalSemaphoreInfoCount = 1,
+			.pSignalSemaphoreInfos = &semaphoreSignalSubmitInfos[i]
+		};
+	}
+	vkQueueSubmit2(queueTransfer, frame_array.num_frames, submitInfos, VK_NULL_HANDLE);
+	
+	/* Create and insert new model's draw info struct */
+	
+	const DrawInfo drawInfo = {
+		.indexCount = loadInfo.modelPool->indexCount,
+		.instanceCount = 1,
+		.firstIndex = loadInfo.modelPool->firstIndex,
+		.vertexOffset = loadInfo.modelPool->firstVertex + loadInfo.modelPool->vertexCount * modelIndex,
+		.firstInstance = 0,
+		.modelIndex = modelIndex,
+		.imageIndex = 0
+	};
+	
+	uint32_t insertIndex = loadInfo.modelPool->drawInfoCount;
+	for (uint32_t i = 0; i < loadInfo.modelPool->drawInfoCount; ++i) {
+		const float otherZ = loadInfo.modelPool->pModelTransforms[loadInfo.modelPool->pDrawInfos[i].modelIndex].translation.current.z;
+		if (loadInfo.position.z > otherZ) {
+			insertIndex = i;
+			break;
+		}
+	}
+	
+	for (uint32_t i = loadInfo.modelPool->drawInfoCount; i > insertIndex; --i) {
+		loadInfo.modelPool->pDrawInfos[i] = loadInfo.modelPool->pDrawInfos[i - 1];
+		loadInfo.modelPool->pDrawInfoIndices[loadInfo.modelPool->pDrawInfos[i].modelIndex] = i;
+	}
+	
+	loadInfo.modelPool->pDrawInfos[insertIndex] = drawInfo;
+	loadInfo.modelPool->pDrawInfoIndices[modelIndex] = insertIndex;
+	loadInfo.modelPool->drawInfoCount += 1;
+	
+	// Upload new draw info array to buffer
+	bufferHostTransfer(loadInfo.modelPool->drawInfoBuffer, 0, drawCountSize, &loadInfo.modelPool->drawInfoCount);
+	bufferHostTransfer(loadInfo.modelPool->drawInfoBuffer, drawCountSize, loadInfo.modelPool->drawInfoCount * sizeof(DrawInfo), loadInfo.modelPool->pDrawInfos);
+	
+	// Update texture descriptor
+	
+	const Texture texture = getTexture(textureState.textureHandle);
+	VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
+	
+	// Replace malloc with a better suited allocation, perhaps an arena?
+	VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
+	*pDescriptorImageInfo = makeDescriptorImageInfo(texture.image);
+	
+	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+		writeDescriptorSets[i] = (VkWriteDescriptorSet){
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
+			.dstBinding = 2,
+			.dstArrayElement = modelIndex,
+			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			.descriptorCount = 1,
+			.pBufferInfo = nullptr,
+			.pImageInfo = pDescriptorImageInfo,
+			.pTexelBufferView = nullptr
+		};
+		descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);
+	}
+	
+	loadInfo.modelPool->pSlotFlags[modelIndex] = true;
 	*pModelHandle = (int)modelIndex;
 	
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Loaded model %i.", *pModelHandle);

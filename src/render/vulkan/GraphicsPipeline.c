@@ -98,6 +98,7 @@ GraphicsPipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createI
 			.stride = offset * sizeof(float),
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 		};
+		pipeline.vertexInputElementStride = offset;
 	}
 	
 	const VkPipelineVertexInputStateCreateInfo vertex_input_info = {

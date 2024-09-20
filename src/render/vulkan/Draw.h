@@ -38,14 +38,8 @@ typedef struct ModelPoolCreateInfo {
 	uint32_t maxModelCount;
 	
 } ModelPoolCreateInfo;
-
-void createModelPool(const Buffer buffer, const int32_t bufferSubrangeIndex, 
-		const uint32_t firstVertex, const uint32_t vertexCount, 
-		const uint32_t firstIndex, const uint32_t indexCount, 
-		const uint32_t firstDescriptorIndex, const uint32_t maxModelCount, 
-		ModelPool *pOutModelPool);
 		
-void createModelPool2(const ModelPoolCreateInfo createInfo, ModelPool *const pOutModelPool);
+void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOutModelPool);
 
 void deleteModelPool(ModelPool *const pModelPool);
 
@@ -59,7 +53,7 @@ VkDeviceSize modelPoolGetDrawInfoBufferOffset(const ModelPool modelPool);
 
 
 
-typedef struct ModelCreateInfo {
+typedef struct ModelLoadInfo {
 	
 	// Necessary parameters.
 	
@@ -74,17 +68,17 @@ typedef struct ModelCreateInfo {
 	
 	// Optional parameters, depending on which resources the model needs.
 	
-	// The color of the model if there is a color vertex attribute.
-	Vector4F color;
-	
 	// The ID of the texture to load for this model, if the model uses a texture.
 	String textureID;
 	
-} ModelCreateInfo;
+	// The color of the model if there is a color vertex attribute.
+	Vector4F color;
+	
+} ModelLoadInfo;
 
 void loadModel(ModelPool modelPool, const Vector4F position, const BoxF dimensions, const String textureID, int *const pModelHandle);
 
-void loadModel2(const ModelCreateInfo, int *const pModelHandle);
+void loadModel2(const ModelLoadInfo loadInfo, int *const pModelHandle);
 
 void unloadModel(ModelPool modelPool, int *const pModelHandle);
 

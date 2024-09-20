@@ -25,6 +25,10 @@ typedef struct GraphicsPipeline {
 	// This value is negative if this pipeline has no vertex attribute for color.
 	int32_t vertexAttributeColorOffset;
 	
+	// The number of elements in a single vertex.
+	// Used for building meshes to be rendered with this pipeline.
+	int32_t vertexInputElementStride;
+	
 	VkPipeline vkPipeline;
 	VkPipelineLayout vkPipelineLayout;
 	
