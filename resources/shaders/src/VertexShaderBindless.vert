@@ -15,16 +15,18 @@ struct DrawInfo {
 	uint imageIndex;
 };
 
-layout(set = 0, binding = 0) uniform texture2DArray sampledImages[];
+layout(set = 0, binding = 0) uniform sampler samplers[];
 
-layout(set = 0, binding = 1, rgba8ui) uniform uimage2DArray storageImages[];
+layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
 
-layout(set = 0, binding = 2) uniform U {
+layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
+
+layout(set = 0, binding = 3) uniform U {
 	uint drawCount;
 	DrawInfo drawInfos[MAX_MODEL_COUNT];
 } drawInfoBuffers[];
 
-layout(set = 0, binding = 3) buffer S {
+layout(set = 0, binding = 4) buffer S {
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
 	mat4 modelMatrices[MAX_MODEL_COUNT];

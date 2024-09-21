@@ -7,9 +7,10 @@
 // BINDLESS MANAGER
 
 // All the types of descriptors that will be created by the bindless descriptor manager.
-#define DESCRIPTOR_TYPE_COUNT 4
+#define DESCRIPTOR_TYPE_COUNT 5
 static const uint32_t descriptorTypeCount = DESCRIPTOR_TYPE_COUNT;
 static const VkDescriptorType descriptorTypes[DESCRIPTOR_TYPE_COUNT] = {
+	VK_DESCRIPTOR_TYPE_SAMPLER,
 	VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 	VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
 	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -17,33 +18,34 @@ static const VkDescriptorType descriptorTypes[DESCRIPTOR_TYPE_COUNT] = {
 };
 
 static const uint32_t maxDescriptorCounts[DESCRIPTOR_TYPE_COUNT] = {
+	4,		// Sampler descriptor count
 	256,	// Sampled image descriptor count
 	256,	// Storage image descriptor count
 	64,		// Uniform buffer descriptor count
 	64		// Storage buffer descriptor count
 };
 
+static uint32_t descriptorCounts[DESCRIPTOR_TYPE_COUNT] = {
+	0,		// Sampler descriptor count
+	0,      // Sampled image descriptor count
+	0,      // Storage image descriptor count
+	0,      // Uniform buffer descriptor count
+	0       // Storage buffer descriptor count
+};
+
 typedef enum DescriptorTypeBinding {
-	DESCRIPTOR_BINDING_SAMPLED_IMAGE = 0,
-	DESCRIPTOR_BINDING_STORAGE_IMAGE = 1,
-	DESCRIPTOR_BINDING_UNIFORM_BUFFER = 2,
-	DESCRIPTOR_BINDING_STORAGE_BUFFER = 3
+	DESCRIPTOR_BINDING_SAMPLER 			= 0,
+	DESCRIPTOR_BINDING_SAMPLED_IMAGE 	= 1,
+	DESCRIPTOR_BINDING_STORAGE_IMAGE 	= 2,
+	DESCRIPTOR_BINDING_UNIFORM_BUFFER 	= 3,
+	DESCRIPTOR_BINDING_STORAGE_BUFFER 	= 4
 } DescriptorTypeBinding;
-
-// The number of descriptors to allocate for each type.
-#define MAX_DESCRIPTOR_COUNT 4096
-static const uint32_t maxDescriptorCount = MAX_DESCRIPTOR_COUNT;
-
-static uint32_t descriptorSampledImageCount = 0;
-static uint32_t descriptorStorageImageCount = 0;
-static uint32_t descriptorUniformBufferCount = 0;
-static uint32_t descriptorStorageBufferCount = 0;
 
 const uint32_t descriptorHandleInvalid = UINT32_MAX;
 
-VkDescriptorSetLayout globalDescriptorSetLayout = VK_NULL_HANDLE;
-VkDescriptorPool globalDescriptorPool = VK_NULL_HANDLE;
-VkDescriptorSet globalDescriptorSet = VK_NULL_HANDLE;
+static VkDescriptorSetLayout globalDescriptorSetLayout = VK_NULL_HANDLE;
+static VkDescriptorPool globalDescriptorPool = VK_NULL_HANDLE;
+static VkDescriptorSet globalDescriptorSet = VK_NULL_HANDLE;
 
 void initDescriptorManager(const VkDevice vkDevice) {
 	
@@ -56,7 +58,7 @@ void initDescriptorManager(const VkDevice vkDevice) {
 		bindings[i] = (VkDescriptorSetLayoutBinding){
 			.binding = i,
 			.descriptorType = descriptorTypes[i],
-			.descriptorCount = maxDescriptorCount,
+			.descriptorCount = maxDescriptorCounts[i],
 			.stageFlags = VK_SHADER_STAGE_ALL,
 			.pImmutableSamplers = nullptr
 		};
@@ -90,7 +92,7 @@ void initDescriptorManager(const VkDevice vkDevice) {
 	for (uint32_t i = 0; i < descriptorTypeCount; ++i) {
 		poolSizes[i] = (VkDescriptorPoolSize){
 			.type = descriptorTypes[i],
-			.descriptorCount = maxDescriptorCount
+			.descriptorCount = maxDescriptorCounts[i]
 		};
 	}
 	
@@ -134,12 +136,14 @@ void terminateDescriptorManager(const VkDevice vkDevice) {
 
 uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image) {
 	
-	const uint32_t handle = descriptorSampledImageCount;
-	if (handle >= maxDescriptorCount) {
+	static const uint32_t descriptorBinding = DESCRIPTOR_BINDING_SAMPLED_IMAGE;
+	
+	const uint32_t handle = descriptorCounts[descriptorBinding];
+	if (handle >= maxDescriptorCounts[descriptorBinding]) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error uploading sampled image descriptor: no sampled image descriptors available.");
 		return descriptorHandleInvalid;
 	}
-	descriptorSampledImageCount += 1;
+	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorImageInfo descriptorImageInfo = {
 		.sampler = VK_NULL_HANDLE,
@@ -150,9 +154,9 @@ uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image) {
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
-		.dstBinding = (uint32_t)DESCRIPTOR_BINDING_SAMPLED_IMAGE,
+		.dstBinding = descriptorBinding,
 		.dstArrayElement = handle,
-		.descriptorType = descriptorTypes[DESCRIPTOR_BINDING_SAMPLED_IMAGE],
+		.descriptorType = descriptorTypes[descriptorBinding],
 		.descriptorCount = 1,
 		.pBufferInfo = nullptr,
 		.pImageInfo = &descriptorImageInfo,
@@ -166,12 +170,14 @@ uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image) {
 
 uint32_t uploadStorageImage(const VkDevice vkDevice, const Image image) {
 	
-	const uint32_t handle = descriptorStorageImageCount;
-	if (handle >= maxDescriptorCount) {
+	static const uint32_t descriptorBinding = DESCRIPTOR_BINDING_STORAGE_IMAGE;
+	
+	const uint32_t handle = descriptorCounts[descriptorBinding];
+	if (handle >= maxDescriptorCounts[descriptorBinding]) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error uploading storage image descriptor: no storage image descriptors available.");
 		return descriptorHandleInvalid;
 	}
-	descriptorStorageImageCount += 1;
+	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorImageInfo descriptorImageInfo = {
 		.sampler = VK_NULL_HANDLE,
@@ -182,9 +188,9 @@ uint32_t uploadStorageImage(const VkDevice vkDevice, const Image image) {
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
-		.dstBinding = (uint32_t)DESCRIPTOR_BINDING_STORAGE_IMAGE,
+		.dstBinding = descriptorBinding,
 		.dstArrayElement = handle,
-		.descriptorType = descriptorTypes[DESCRIPTOR_BINDING_STORAGE_IMAGE],
+		.descriptorType = descriptorTypes[descriptorBinding],
 		.descriptorCount = 1,
 		.pBufferInfo = nullptr,
 		.pImageInfo = &descriptorImageInfo,
@@ -198,21 +204,23 @@ uint32_t uploadStorageImage(const VkDevice vkDevice, const Image image) {
 
 uint32_t uploadUniformBuffer(const VkDevice vkDevice, const BufferPartition bufferPartition, const uint32_t partitionIndex) {
 	
-	const uint32_t handle = descriptorUniformBufferCount;
-	if (handle >= maxDescriptorCount) {
+	static const uint32_t descriptorBinding = DESCRIPTOR_BINDING_UNIFORM_BUFFER;
+	
+	const uint32_t handle = descriptorCounts[descriptorBinding];
+	if (handle >= maxDescriptorCounts[descriptorBinding]) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error uploading uniform buffer descriptor: no uniform buffer descriptors available.");
 		return descriptorHandleInvalid;
 	}
-	descriptorUniformBufferCount += 1;
+	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorBufferInfo descriptorBufferInfo = buffer_partition_descriptor_info(bufferPartition, partitionIndex);
 	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
-		.dstBinding = (uint32_t)DESCRIPTOR_BINDING_UNIFORM_BUFFER,
+		.dstBinding = descriptorBinding,
 		.dstArrayElement = handle,
-		.descriptorType = descriptorTypes[DESCRIPTOR_BINDING_UNIFORM_BUFFER],
+		.descriptorType = descriptorTypes[descriptorBinding],
 		.descriptorCount = 1,
 		.pBufferInfo = &descriptorBufferInfo,
 		.pImageInfo = nullptr,
@@ -226,21 +234,23 @@ uint32_t uploadUniformBuffer(const VkDevice vkDevice, const BufferPartition buff
 
 uint32_t uploadUniformBuffer2(const VkDevice vkDevice, const BufferSubrange bufferSubrange) {
 	
-	const uint32_t handle = descriptorUniformBufferCount;
-	if (handle >= maxDescriptorCount) {
+	static const uint32_t descriptorBinding = DESCRIPTOR_BINDING_UNIFORM_BUFFER;
+	
+	const uint32_t handle = descriptorCounts[descriptorBinding];
+	if (handle >= maxDescriptorCounts[descriptorBinding]) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error uploading uniform buffer descriptor: no uniform buffer descriptors available.");
 		return descriptorHandleInvalid;
 	}
-	descriptorUniformBufferCount += 1;
+	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorBufferInfo descriptorBufferInfo = makeDescriptorBufferInfo2(bufferSubrange);
 	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
-		.dstBinding = (uint32_t)DESCRIPTOR_BINDING_UNIFORM_BUFFER,
+		.dstBinding = descriptorBinding,
 		.dstArrayElement = handle,
-		.descriptorType = descriptorTypes[DESCRIPTOR_BINDING_UNIFORM_BUFFER],
+		.descriptorType = descriptorTypes[descriptorBinding],
 		.descriptorCount = 1,
 		.pBufferInfo = &descriptorBufferInfo,
 		.pImageInfo = nullptr,
@@ -254,21 +264,23 @@ uint32_t uploadUniformBuffer2(const VkDevice vkDevice, const BufferSubrange buff
 
 uint32_t uploadStorageBuffer(const VkDevice vkDevice, const BufferPartition bufferPartition, const uint32_t partitionIndex) {
 	
-	const uint32_t handle = descriptorStorageBufferCount;
-	if (handle >= maxDescriptorCount) {
+	static const uint32_t descriptorBinding = DESCRIPTOR_BINDING_STORAGE_BUFFER;
+	
+	const uint32_t handle = descriptorCounts[descriptorBinding];
+	if (handle >= maxDescriptorCounts[descriptorBinding]) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error uploading storage buffer descriptor: no storage buffer descriptors available.");
 		return descriptorHandleInvalid;
 	}
-	descriptorStorageBufferCount += 1;
+	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorBufferInfo descriptorBufferInfo = buffer_partition_descriptor_info(bufferPartition, partitionIndex);
 	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
-		.dstBinding = (uint32_t)DESCRIPTOR_BINDING_STORAGE_BUFFER,
+		.dstBinding = descriptorBinding,
 		.dstArrayElement = handle,
-		.descriptorType = descriptorTypes[DESCRIPTOR_BINDING_STORAGE_BUFFER],
+		.descriptorType = descriptorTypes[descriptorBinding],
 		.descriptorCount = 1,
 		.pBufferInfo = &descriptorBufferInfo,
 		.pImageInfo = nullptr,
@@ -282,21 +294,23 @@ uint32_t uploadStorageBuffer(const VkDevice vkDevice, const BufferPartition buff
 
 uint32_t uploadStorageBuffer2(const VkDevice vkDevice, const BufferSubrange bufferSubrange) {
 	
-	const uint32_t handle = descriptorStorageBufferCount;
-	if (handle >= maxDescriptorCount) {
+	static const uint32_t descriptorBinding = DESCRIPTOR_BINDING_STORAGE_BUFFER;
+	
+	const uint32_t handle = descriptorCounts[descriptorBinding];
+	if (handle >= maxDescriptorCounts[descriptorBinding]) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error uploading storage buffer descriptor: no storage buffer descriptors available.");
 		return descriptorHandleInvalid;
 	}
-	descriptorStorageBufferCount += 1;
+	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorBufferInfo descriptorBufferInfo = makeDescriptorBufferInfo2(bufferSubrange);
 	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
-		.dstBinding = (uint32_t)DESCRIPTOR_BINDING_STORAGE_BUFFER,
+		.dstBinding = descriptorBinding,
 		.dstArrayElement = handle,
-		.descriptorType = descriptorTypes[DESCRIPTOR_BINDING_STORAGE_BUFFER],
+		.descriptorType = descriptorTypes[descriptorBinding],
 		.descriptorCount = 1,
 		.pBufferInfo = &descriptorBufferInfo,
 		.pImageInfo = nullptr,
