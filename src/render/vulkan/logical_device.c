@@ -69,8 +69,15 @@ void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_devic
 	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 	features12.pNext = &features13;
 	features12.drawIndirectCount = VK_TRUE;
-	features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	features12.descriptorIndexing = VK_TRUE;
+	features12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+	features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	features12.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+	features12.shaderStorageImageArrayNonUniformIndexing = VK_TRUE;
+	features12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+	features12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+	features12.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE;
+	features12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
 	features12.descriptorBindingPartiallyBound = VK_TRUE;
 	features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
 	features12.runtimeDescriptorArray = VK_TRUE;

@@ -6,7 +6,22 @@
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
+#include "Buffer2.h"
 #include "texture.h"
+
+void initDescriptorManager(const VkDevice vkDevice);
+
+void terminateDescriptorManager(const VkDevice vkDevice);
+
+uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image);
+
+uint32_t uploadStorageImage(const VkDevice vkDevice, const Image image);
+
+uint32_t uploadUniformBuffer(const VkDevice vkDevice, const BufferPartition bufferPartition, const uint32_t partitionIndex);
+uint32_t uploadUniformBuffer2(const VkDevice vkDevice, const BufferSubrange bufferSubrange);
+
+uint32_t uploadStorageBuffer(const VkDevice vkDevice, const BufferPartition bufferPartition, const uint32_t partitionIndex);
+uint32_t uploadStorageBuffer2(const VkDevice vkDevice, const BufferSubrange bufferSubrange);
 
 /* -- TYPE DEFINITIONS -- */
 

@@ -195,6 +195,8 @@ void create_vulkan_objects(void) {
 	memory_type_set = select_memory_types(physical_device.vkPhysicalDevice);
 
 	create_device(vulkan_instance, physical_device, &device);
+	
+	initDescriptorManager(device);
 
 	create_global_staging_buffer();
 	create_global_uniform_buffer();
@@ -354,6 +356,8 @@ void destroy_vulkan_objects(void) {
 	destroy_buffer_partition(&global_staging_buffer_partition);
 	destroy_buffer_partition(&global_uniform_buffer_partition);
 	destroy_buffer_partition(&global_storage_buffer_partition);
+
+	terminateDescriptorManager(device);
 
 	vkDestroyDevice(device, nullptr);
 	
