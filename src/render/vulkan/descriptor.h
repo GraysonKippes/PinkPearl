@@ -10,7 +10,6 @@
 #include "texture.h"
 
 void initDescriptorManager(const VkDevice vkDevice);
-
 void terminateDescriptorManager(const VkDevice vkDevice);
 
 uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image);

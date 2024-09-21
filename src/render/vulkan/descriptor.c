@@ -16,6 +16,13 @@ static const VkDescriptorType descriptorTypes[DESCRIPTOR_TYPE_COUNT] = {
 	VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 };
 
+static const uint32_t maxDescriptorCounts[DESCRIPTOR_TYPE_COUNT] = {
+	256,	// Sampled image descriptor count
+	256,	// Storage image descriptor count
+	64,		// Uniform buffer descriptor count
+	64		// Storage buffer descriptor count
+};
+
 typedef enum DescriptorTypeBinding {
 	DESCRIPTOR_BINDING_SAMPLED_IMAGE = 0,
 	DESCRIPTOR_BINDING_STORAGE_IMAGE = 1,
@@ -300,6 +307,7 @@ uint32_t uploadStorageBuffer2(const VkDevice vkDevice, const BufferSubrange buff
 	
 	return handle;
 }
+
 
 
 
