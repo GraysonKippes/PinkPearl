@@ -4,6 +4,7 @@
 
 #include "log/Logger.h"
 
+#include "Descriptor.h"
 #include "frame.h"
 #include "texture_manager.h"
 #include "TextureState.h"
@@ -97,7 +98,6 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 		return;
 	}
 	
-	bufferBorrowSubrange(createInfo.buffer, createInfo.bufferSubrangeIndex, &modelPool->drawInfoBuffer);
 	modelPool->graphicsPipeline = createInfo.graphicsPipeline;
 	modelPool->firstVertex = createInfo.firstVertex;
 	modelPool->vertexCount = createInfo.vertexCount;
@@ -106,6 +106,9 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	modelPool->firstDescriptorIndex = createInfo.firstDescriptorIndex;
 	modelPool->maxModelCount = createInfo.maxModelCount;
 	modelPool->drawInfoCount = 0;
+	
+	bufferBorrowSubrange(createInfo.buffer, createInfo.bufferSubrangeIndex, &modelPool->drawInfoBuffer);
+	uploadUniformBuffer2(device, modelPool->drawInfoBuffer);
 	
 	modelPool->pSlotFlags = calloc(createInfo.maxModelCount, sizeof(bool));
 	if (!modelPool->pSlotFlags) {
@@ -354,11 +357,12 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	// True if the model uses a texture, false otherwise.
 	const bool textureNeeded = loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset >= 0;
 	if (textureNeeded) {
-		TextureState textureState = newTextureState(loadInfo.textureID);
+		const TextureState textureState = newTextureState(loadInfo.textureID);
 		loadInfo.modelPool->pTextureStates[modelIndex] = textureState;
-		
 		const Texture texture = getTexture(textureState.textureHandle);
-		VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
+		uploadSampledImage(device, texture.image);
+		
+		/*VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
 		
 		// Replace malloc with a better suited allocation, perhaps an arena?
 		VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
@@ -377,7 +381,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 				.pTexelBufferView = nullptr
 			};
 			descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);
-		}
+		}*/
 	}
 	
 	loadInfo.modelPool->pSlotFlags[modelIndex] = true;

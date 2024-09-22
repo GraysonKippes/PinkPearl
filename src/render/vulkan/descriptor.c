@@ -21,8 +21,8 @@ static const uint32_t maxDescriptorCounts[DESCRIPTOR_TYPE_COUNT] = {
 	4,		// Sampler descriptor count
 	256,	// Sampled image descriptor count
 	256,	// Storage image descriptor count
-	64,		// Uniform buffer descriptor count
-	64		// Storage buffer descriptor count
+	16,		// Uniform buffer descriptor count
+	16		// Storage buffer descriptor count
 };
 
 static uint32_t descriptorCounts[DESCRIPTOR_TYPE_COUNT] = {
@@ -41,11 +41,11 @@ typedef enum DescriptorTypeBinding {
 	DESCRIPTOR_BINDING_STORAGE_BUFFER 	= 4
 } DescriptorTypeBinding;
 
-const uint32_t descriptorHandleInvalid = UINT32_MAX;
+const uint32_t descriptorHandleInvalid = DESCRIPTOR_HANDLE_INVALID;
 
-static VkDescriptorSetLayout globalDescriptorSetLayout = VK_NULL_HANDLE;
-static VkDescriptorPool globalDescriptorPool = VK_NULL_HANDLE;
-static VkDescriptorSet globalDescriptorSet = VK_NULL_HANDLE;
+VkDescriptorSetLayout globalDescriptorSetLayout = VK_NULL_HANDLE;
+VkDescriptorPool globalDescriptorPool = VK_NULL_HANDLE;
+VkDescriptorSet globalDescriptorSet = VK_NULL_HANDLE;
 
 void initDescriptorManager(const VkDevice vkDevice) {
 	
@@ -132,6 +132,40 @@ void terminateDescriptorManager(const VkDevice vkDevice) {
 	vkDestroyDescriptorSetLayout(vkDevice, globalDescriptorSetLayout, nullptr);
 	globalDescriptorPool = VK_NULL_HANDLE;
 	globalDescriptorSetLayout = VK_NULL_HANDLE;
+}
+
+uint32_t uploadSampler(const VkDevice vkDevice, const Sampler sampler) {
+	
+	static const uint32_t descriptorBinding = DESCRIPTOR_BINDING_SAMPLER;
+	
+	const uint32_t handle = descriptorCounts[descriptorBinding];
+	if (handle >= maxDescriptorCounts[descriptorBinding]) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error uploading sampler descriptor: no sampler descriptors available.");
+		return descriptorHandleInvalid;
+	}
+	descriptorCounts[descriptorBinding] += 1;
+	
+	const VkDescriptorImageInfo descriptorImageInfo = {
+		.sampler = sampler.vkSampler,
+		.imageView = VK_NULL_HANDLE,
+		.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	};
+	
+	const VkWriteDescriptorSet writeDescriptorSet = {
+		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+		.dstSet = globalDescriptorSet,
+		.dstBinding = descriptorBinding,
+		.dstArrayElement = handle,
+		.descriptorType = descriptorTypes[descriptorBinding],
+		.descriptorCount = 1,
+		.pBufferInfo = nullptr,
+		.pImageInfo = &descriptorImageInfo,
+		.pTexelBufferView = nullptr
+	};
+	
+	vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
+	
+	return handle;
 }
 
 uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image) {

@@ -79,6 +79,9 @@ ModelPool modelPoolMain = nullptr;
 
 ModelPool modelPoolDebug = nullptr;
 
+static uint32_t matricesDescriptorMain = DESCRIPTOR_HANDLE_INVALID;
+static uint32_t matricesDescriptorDebug = DESCRIPTOR_HANDLE_INVALID;
+
 // TEST
 int testDebugModel = -1;
 
@@ -151,9 +154,10 @@ static void create_global_storage_buffer(void) {
 		.memory_type_set = memory_type_set,
 		.num_queue_family_indices = 0,
 		.queue_family_indices = nullptr,
-		.num_partition_sizes = 1,
-		.partition_sizes = (VkDeviceSize[1]){
-			33024	// Compute matrices
+		.num_partition_sizes = 2,
+		.partition_sizes = (VkDeviceSize[2]){
+			16512,
+			16512
 		}
 	};
 	
@@ -202,6 +206,9 @@ void create_vulkan_objects(void) {
 	create_global_uniform_buffer();
 	create_global_storage_buffer();
 	create_global_draw_data_buffer();
+	
+	matricesDescriptorMain = uploadStorageBuffer(device, global_storage_buffer_partition, 0);
+	matricesDescriptorDebug = uploadStorageBuffer(device, global_storage_buffer_partition, 1);
 
 	vkGetDeviceQueue(device, *physical_device.queueFamilyIndices.graphics_family_ptr, 0, &queueGraphics);
 	vkGetDeviceQueue(device, *physical_device.queueFamilyIndices.present_family_ptr, 0, &queuePresent);
@@ -214,10 +221,15 @@ void create_vulkan_objects(void) {
 
 	swapchain = createSwapchain(get_application_window(), windowSurface, physical_device, device, VK_NULL_HANDLE);
 	
-	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, VERTEX_SHADER_NAME);
-	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, FRAGMENT_SHADER_NAME);
+	samplerDefault = createSampler(device, physical_device);
+	uploadSampler(device, samplerDefault);
 	
-	GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {
+	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, "VertexShaderBindless.spv");
+	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, "FragmentShaderBindless.spv");
+	ShaderModule vertexShaderLinesModule = createShaderModule(device, SHADER_STAGE_VERTEX, "VertexShaderLines.spv");
+	ShaderModule fragmentShaderLinesModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, "FragmentShaderLines.spv");
+	
+	const GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {
 		.vkDevice = device,
 		.swapchain = swapchain,
 		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -230,16 +242,13 @@ void create_vulkan_objects(void) {
 		.pPushConstantRanges = (PushConstantRange[1]){
 			{
 				.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-				.size = 4
+				.size = 8
 			}
 		}
 	};
 	graphicsPipeline = createGraphicsPipeline(graphicsPipelineCreateInfo);
 	
-	ShaderModule vertexShaderLinesModule = createShaderModule(device, SHADER_STAGE_VERTEX, "VertexShaderLines.spv");
-	ShaderModule fragmentShaderLinesModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, "FragmentShaderLines.spv");
-	
-	GraphicsPipelineCreateInfo graphicsPipelineDebugCreateInfo = {
+	const GraphicsPipelineCreateInfo graphicsPipelineDebugCreateInfo = {
 		.vkDevice = device,
 		.swapchain = swapchain,
 		.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
@@ -265,7 +274,7 @@ void create_vulkan_objects(void) {
 		.pPushConstantRanges = (PushConstantRange[1]){
 			{
 				.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-				.size = 4
+				.size = 8
 			}
 		}
 	};
@@ -275,29 +284,6 @@ void create_vulkan_objects(void) {
 	destroyShaderModule(&fragmentShaderModule);
 	destroyShaderModule(&vertexShaderLinesModule);
 	destroyShaderModule(&fragmentShaderLinesModule);
-
-	samplerDefault = createSampler(device, physical_device);
-	
-	const FrameArrayCreateInfo frameArrayCreateInfo = {
-		.num_frames = 2,
-		.physical_device = physical_device,
-		.vkDevice = device,
-		.commandPool = commandPoolGraphics,
-		.descriptorPool = (DescriptorPool){
-			.handle = graphicsPipeline.vkDescriptorPool,
-			.layout = graphicsPipeline.vkDescriptorSetLayout,
-			.vkDevice = device
-		},
-		.descriptorPoolDebug = (DescriptorPool){
-			.handle = graphicsPipelineDebug.vkDescriptorPool,
-			.layout = graphicsPipelineDebug.vkDescriptorSetLayout,
-			.vkDevice = device
-		}
-	};
-	frame_array = createFrameArray(frameArrayCreateInfo);
-	
-	init_compute_matrices(device);
-	init_compute_room_texture(device);
 	
 	const ModelPoolCreateInfo modelPoolMainCreateInfo = {
 		.buffer = bufferDrawInfo,
@@ -324,6 +310,17 @@ void create_vulkan_objects(void) {
 		.maxModelCount = 256
 	};
 	createModelPool(modelPoolDebugCreateInfo, &modelPoolDebug);
+	
+	const FrameArrayCreateInfo frameArrayCreateInfo = {
+		.num_frames = 2,
+		.physical_device = physical_device,
+		.vkDevice = device,
+		.commandPool = commandPoolGraphics
+	};
+	frame_array = createFrameArray(frameArrayCreateInfo);
+	
+	init_compute_matrices(device);
+	init_compute_room_texture(device);
 }
 
 void destroy_vulkan_objects(void) {
@@ -373,7 +370,7 @@ void destroy_vulkan_objects(void) {
 
 void initTextureDescriptors(void) {
 	
-	const Texture texture = getTexture(textureHandleMissing);
+	/*const Texture texture = getTexture(textureHandleMissing);
 	
 	VkDescriptorImageInfo descriptorImageInfos[512];
 	for (int i = 0; i < 512; ++i) {
@@ -407,7 +404,7 @@ void initTextureDescriptors(void) {
 		}};
 		
 		vkUpdateDescriptorSets(device, 2, descriptorWrites, 0, nullptr);
-	}
+	}*/
 }
 
 void createTestDebugModel() {
@@ -516,7 +513,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	VkWriteDescriptorSet descriptor_writes[3] = { { } };
 
-	const VkDescriptorBufferInfo draw_data_buffer_info = modelPoolGetBufferDescriptorInfo(modelPoolMain);
+	/*const VkDescriptorBufferInfo draw_data_buffer_info = modelPoolGetBufferDescriptorInfo(modelPoolMain);
 	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_writes[0].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
 	descriptor_writes[0].dstBinding = 0;
@@ -549,9 +546,9 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	descriptor_writes[2].pImageInfo = nullptr;
 	descriptor_writes[2].pTexelBufferView = nullptr;
 
-	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, nullptr);
+	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, nullptr);*/
 	
-	uploadLightingData();
+	//uploadLightingData();
 
 	commandBufferBegin(&frame_array.frames[frame_array.current_frame].commandBuffer, false); {
 		
@@ -605,21 +602,23 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		vkCmdBeginRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &renderingInfo);
 		
-		// Resource binding
+		vkCmdBindDescriptorSets(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+				VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.vkPipelineLayout,
+				0, 1, &globalDescriptorSet, 0, nullptr);
+		
+		// Main drawing
 		
 		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipeline);
-		commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
+		//commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
 		
 		const VkDeviceSize offsets[1] = { 0 };
 		vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
 		vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
 		
-		// Draw call
-		
-		const uint32_t descriptorIndexOffsetMain = 0;
+		const uint32_t pushConstantsMain[2] = { 0, 0 };
 		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-				0, 4, &descriptorIndexOffsetMain);
+				0, sizeof(pushConstantsMain), pushConstantsMain);
 		
 		const uint32_t drawOffset = drawCountSize;
 		const VkBuffer bufferDrawInfoHandle = bufferGetVkBuffer(bufferDrawInfo);
@@ -632,19 +631,19 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		// Debug drawing
 		
 		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
-		commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSetDebug, graphicsPipelineDebug);
+		//commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSetDebug, graphicsPipelineDebug);
 		
-		const uint32_t descriptorIndexOffsetDebug = modelPoolGetMaxModelCount(modelPoolMain);
+		const uint32_t pushConstantsDebug[2] = { 1, 1 };
 		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-				0, 4, &descriptorIndexOffsetDebug);
+				0, sizeof(pushConstantsDebug), pushConstantsDebug);
 		
 		const uint32_t debugDrawOffset = modelPoolGetDrawInfoBufferOffset(modelPoolDebug);
 		const uint32_t debugMaxDrawCount = modelPoolGetMaxModelCount(modelPoolDebug);
-		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
-				bufferDrawInfoHandle, debugDrawOffset + drawCountSize, 
-				bufferDrawInfoHandle, debugDrawOffset, 
-				debugMaxDrawCount, drawCommandStride);
+		//vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+		//		bufferDrawInfoHandle, debugDrawOffset + drawCountSize, 
+		//		bufferDrawInfoHandle, debugDrawOffset, 
+		//		debugMaxDrawCount, drawCommandStride);
 		
 		vkCmdEndRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer);
 		

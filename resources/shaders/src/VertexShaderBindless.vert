@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_scalar_block_layout : require
+#extension GL_EXT_nonuniform_qualifier : require
 
 #define MAX_MODEL_COUNT 512
 
@@ -21,19 +22,23 @@ layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
 
 layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
 
-layout(set = 0, binding = 3) uniform U {
+// TODO: use buffer descriptor aliasing for various buffer configurations (e.g. matrices, lighting data).
+
+layout(set = 0, binding = 3, scalar) uniform UniformBuffers {
 	uint drawCount;
 	DrawInfo drawInfos[MAX_MODEL_COUNT];
 } drawInfoBuffers[];
 
-layout(set = 0, binding = 4) buffer S {
+layout(set = 0, binding = 4, scalar) buffer StorageBuffers {
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
 	mat4 modelMatrices[MAX_MODEL_COUNT];
 } matrixBuffers[];
 
+// TODO: take out descriptorIndexOffset, add in a descriptor index push constant for each descriptor binding
 layout(push_constant) uniform PushConstants {
 	uint descriptorIndexOffset;
+	uint descriptorIndex;
 } pushConstants;
 
 layout(location = 0) in vec3 inPosition;
@@ -45,13 +50,12 @@ layout(location = 1) out vec3 outColor;
 layout(location = 2) out uint outDrawIndex;
 
 void main() {
-
-	DrawInfo drawInfo = drawInfoBuffers[0].drawInfos[gl_DrawID];
-	uint descriptorIndex = drawInfo.modelIndex + pushConstants.descriptorIndexOffset;
+	DrawInfo drawInfo = drawInfoBuffers[pushConstants.descriptorIndex].drawInfos[gl_DrawID];
+	uint descriptorIndex = pushConstants.descriptorIndexOffset + drawInfo.modelIndex;	// get rid of this
 	
-	mat4 modelMatrix = matrixBuffers[0].modelMatrices[descriptorIndex];
+	mat4 modelMatrix = matrixBuffers[pushConstants.descriptorIndex].modelMatrices[drawInfo.modelIndex];
 	vec4 homogenousCoordinates = vec4(inPosition, 1.0);
-	gl_Position = matrixBuffers[0].projectionMatrix * matrixBuffers[0].viewMatrix * modelMatrix * homogenousCoordinates;
+	gl_Position = matrixBuffers[pushConstants.descriptorIndex].projectionMatrix * matrixBuffers[pushConstants.descriptorIndex].viewMatrix * modelMatrix * homogenousCoordinates;
 
 	outTextureCoordinates = inTextureCoordinates;
 	outColor = inColor;

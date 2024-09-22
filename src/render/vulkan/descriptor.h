@@ -12,6 +12,8 @@
 void initDescriptorManager(const VkDevice vkDevice);
 void terminateDescriptorManager(const VkDevice vkDevice);
 
+uint32_t uploadSampler(const VkDevice vkDevice, const Sampler sampler);
+
 uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image);
 
 uint32_t uploadStorageImage(const VkDevice vkDevice, const Image image);
@@ -21,6 +23,13 @@ uint32_t uploadUniformBuffer2(const VkDevice vkDevice, const BufferSubrange buff
 
 uint32_t uploadStorageBuffer(const VkDevice vkDevice, const BufferPartition bufferPartition, const uint32_t partitionIndex);
 uint32_t uploadStorageBuffer2(const VkDevice vkDevice, const BufferSubrange bufferSubrange);
+
+extern VkDescriptorSetLayout globalDescriptorSetLayout;
+extern VkDescriptorPool globalDescriptorPool;
+extern VkDescriptorSet globalDescriptorSet;
+
+#define DESCRIPTOR_HANDLE_INVALID UINT32_MAX
+extern const uint32_t descriptorHandleInvalid;
 
 /* -- TYPE DEFINITIONS -- */
 

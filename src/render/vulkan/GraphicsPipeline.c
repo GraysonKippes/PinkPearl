@@ -8,6 +8,7 @@
 #include "log/Logger.h"
 #include "render/render_config.h"
 
+#include "Descriptor.h"
 #include "VulkanManager.h"
 
 /* -- FUNCTION DECLARATIONS -- */
@@ -40,9 +41,9 @@ GraphicsPipeline createGraphicsPipeline(const GraphicsPipelineCreateInfo createI
 		shaderStateCreateInfos[i] = makeShaderStageCreateInfo(createInfo.pShaderModules[i]);
 	}
 
-	create_descriptor_pool(createInfo.vkDevice, NUM_FRAMES_IN_FLIGHT, createInfo.descriptorSetLayout, &pipeline.vkDescriptorPool);
-	create_descriptor_set_layout(createInfo.vkDevice, createInfo.descriptorSetLayout, &pipeline.vkDescriptorSetLayout);
-	pipeline.vkPipelineLayout = createPipelineLayout2(createInfo.vkDevice, 1, &pipeline.vkDescriptorSetLayout, createInfo.pushConstantRangeCount, createInfo.pPushConstantRanges);
+	//create_descriptor_pool(createInfo.vkDevice, NUM_FRAMES_IN_FLIGHT, createInfo.descriptorSetLayout, &pipeline.vkDescriptorPool);
+	//create_descriptor_set_layout(createInfo.vkDevice, createInfo.descriptorSetLayout, &pipeline.vkDescriptorSetLayout);
+	pipeline.vkPipelineLayout = createPipelineLayout2(createInfo.vkDevice, 1, &globalDescriptorSetLayout, createInfo.pushConstantRangeCount, createInfo.pPushConstantRanges);
 
 	// Find the number of vertex attributes by counting the number of bits in the vertex attribute type bitflags.
 	uint32_t vertexAttributeCount = 0;
@@ -169,14 +170,14 @@ void deleteGraphicsPipeline(GraphicsPipeline *const pPipeline) {
 	// Destroy the Vulkan objects associated with the pipeline struct.
 	vkDestroyPipeline(pPipeline->vkDevice, pPipeline->vkPipeline, nullptr);
 	vkDestroyPipelineLayout(pPipeline->vkDevice, pPipeline->vkPipelineLayout, nullptr);
-	vkDestroyDescriptorPool(pPipeline->vkDevice, pPipeline->vkDescriptorPool, nullptr);
-	vkDestroyDescriptorSetLayout(pPipeline->vkDevice, pPipeline->vkDescriptorSetLayout, nullptr);
+	//vkDestroyDescriptorPool(pPipeline->vkDevice, pPipeline->vkDescriptorPool, nullptr);
+	//vkDestroyDescriptorSetLayout(pPipeline->vkDevice, pPipeline->vkDescriptorSetLayout, nullptr);
 	
 	// Nullify the objects inside the struct.
 	pPipeline->vkPipeline = VK_NULL_HANDLE;
 	pPipeline->vkPipelineLayout = VK_NULL_HANDLE;
-	pPipeline->vkDescriptorPool = VK_NULL_HANDLE;
-	pPipeline->vkDescriptorSetLayout = VK_NULL_HANDLE;
+	//pPipeline->vkDescriptorPool = VK_NULL_HANDLE;
+	//pPipeline->vkDescriptorSetLayout = VK_NULL_HANDLE;
 	pPipeline->vkDevice = VK_NULL_HANDLE;
 }
 

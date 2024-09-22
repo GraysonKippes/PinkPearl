@@ -32,8 +32,8 @@ typedef struct GraphicsPipeline {
 	VkPipeline vkPipeline;
 	VkPipelineLayout vkPipelineLayout;
 	
-	VkDescriptorPool vkDescriptorPool;
-	VkDescriptorSetLayout vkDescriptorSetLayout;
+	//VkDescriptorPool vkDescriptorPool;
+	//VkDescriptorSetLayout vkDescriptorSetLayout;
 	
 	VkDevice vkDevice;
 	

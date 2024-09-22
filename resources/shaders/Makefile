@@ -7,10 +7,10 @@ shaders: compute_matrices.spv room_texture.spv \
 			VertexShaderBindless.spv FragmentShaderBindless.spv
 
 %.spv: $(SRC_DIR)/%.vert
-	$(SLC) $< -o $@.spv
+	$(SLC) $< -o $@
 
 %.spv: $(SRC_DIR)/%.frag
-	$(SLC) $< -o $@.spv
+	$(SLC) $< -o $@
 
 %.spv: $(SRC_DIR)/%.comp
-	$(SLC) $< -o $@.spv
+	$(SLC) $< -o $@

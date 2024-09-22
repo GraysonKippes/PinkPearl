@@ -21,9 +21,9 @@ typedef struct Frame {
 	
 	CommandBuffer commandBuffer;
 	
-	DescriptorSet descriptorSet;
+	//DescriptorSet descriptorSet;
 	
-	DescriptorSet descriptorSetDebug;
+	//DescriptorSet descriptorSetDebug;
 
 	// Signaled when the image for this frame is available.
 	BinarySemaphore semaphore_image_available;
@@ -64,8 +64,8 @@ typedef struct FrameArrayCreateInfo {
 	VkDevice vkDevice;
 	
 	CommandPool commandPool;
-	DescriptorPool descriptorPool;
-	DescriptorPool descriptorPoolDebug;
+	//DescriptorPool descriptorPool;
+	//DescriptorPool descriptorPoolDebug;
 	
 } FrameArrayCreateInfo;
 
