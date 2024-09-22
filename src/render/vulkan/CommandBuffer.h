@@ -9,6 +9,8 @@
 #include "GraphicsPipeline.h"
 #include "Pipeline.h"
 
+// TODO: design and implement a data-oriented command buffer system.
+
 typedef struct CommandPool {
 	
 	VkCommandPool vkCommandPool;
@@ -25,9 +27,6 @@ typedef struct CommandBuffer {
 	
 	bool recording;
 	bool resetable;
-	
-	uint32_t boundDescriptorSetCount;
-	DescriptorSet **ppBoundDescriptorSets;
 	
 } CommandBuffer;
 
@@ -46,10 +45,6 @@ void commandBufferEnd(CommandBuffer *const pCommandBuffer);
 void commandBufferBindPipeline(CommandBuffer *const pCommandBuffer, const Pipeline pipeline);
 
 void commandBufferBindGraphicsPipeline(CommandBuffer *const pCommandBuffer, const GraphicsPipeline pipeline);
-
-void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const Pipeline pipeline);
-
-void commandBufferBindDescriptorSet2(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const GraphicsPipeline pipeline);
 
 void commandBufferReset(CommandBuffer *const pCommandBuffer);
 

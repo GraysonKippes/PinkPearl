@@ -99,8 +99,8 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/vertex_input.c
 	src/render/vulkan/vulkan_instance.c
 	src/render/vulkan/VulkanManager.c
-	src/render/vulkan/compute/compute_matrices.c
-	src/render/vulkan/compute/compute_room_texture.c
+	src/render/vulkan/compute/ComputeMatrices.c
+	src/render/vulkan/compute/ComputeStitchTexture.c
 	src/render/vulkan/math/lerp.c
 	src/render/vulkan/math/render_vector.c
 	src/render/vulkan/math/vector4F.c

@@ -369,27 +369,6 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 		loadInfo.modelPool->pTextureStates[modelIndex] = textureState;
 		const Texture texture = getTexture(textureState.textureHandle);
 		uploadSampledImage(device, texture.image);
-		
-		/*VkWriteDescriptorSet writeDescriptorSets[NUM_FRAMES_IN_FLIGHT] = { { } };
-		
-		// Replace malloc with a better suited allocation, perhaps an arena?
-		VkDescriptorImageInfo *pDescriptorImageInfo = malloc(sizeof(VkDescriptorImageInfo));
-		*pDescriptorImageInfo = makeDescriptorImageInfo(texture.image);
-		
-		for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-			writeDescriptorSets[i] = (VkWriteDescriptorSet){
-				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-				.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
-				.dstBinding = 2,
-				.dstArrayElement = modelIndex,
-				.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-				.descriptorCount = 1,
-				.pBufferInfo = nullptr,
-				.pImageInfo = pDescriptorImageInfo,
-				.pTexelBufferView = nullptr
-			};
-			descriptorSetPushWrite(&frame_array.frames[i].descriptorSet, writeDescriptorSets[i]);
-		}*/
 	}
 	
 	loadInfo.modelPool->pSlotFlags[modelIndex] = true;

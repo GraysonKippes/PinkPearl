@@ -22,8 +22,6 @@ typedef struct ComputePipelineCreateInfo {
 	
 } ComputePipelineCreateInfo;
 
-Pipeline createComputePipeline(const VkDevice vkDevice, const DescriptorSetLayout descriptorSetLayout, const char *const pComputeShaderFilename);
-
-Pipeline createComputePipeline2(const ComputePipelineCreateInfo createInfo);
+Pipeline createComputePipeline(const ComputePipelineCreateInfo createInfo);
 
 #endif	// COMPUTE_PIPELINE_H

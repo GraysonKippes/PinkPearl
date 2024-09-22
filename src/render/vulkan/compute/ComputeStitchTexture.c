@@ -1,4 +1,4 @@
-#include "compute_room_texture.h"
+#include "ComputeStitchTexture.h"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -16,17 +16,6 @@
 #include "../VulkanManager.h"
 
 
-
-static const DescriptorBinding compute_room_texture_bindings[3] = {
-	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT },
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .count = 1, .stages = VK_SHADER_STAGE_COMPUTE_BIT }
-};
-
-static const DescriptorSetLayout compute_room_texture_layout = {
-	.num_bindings = 3,
-	.bindings = (DescriptorBinding *)compute_room_texture_bindings
-};
 
 // Subresource range used in all image views and layout transitions.
 static const ImageSubresourceRange imageSubresourceRange = {
@@ -144,7 +133,7 @@ static void createTransferImage(const VkDevice vkDevice) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created texture stitching transfer image.");
 }
 
-void init_compute_room_texture(const VkDevice vkDevice) {
+void initComputeStitchTexture(const VkDevice vkDevice) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initializing texture stitcher...");
 	
 	const ComputePipelineCreateInfo pipelineCreateInfo = {
@@ -162,7 +151,7 @@ void init_compute_room_texture(const VkDevice vkDevice) {
 			}
 		}
 	};
-	computeRoomTexturePipeline = createComputePipeline2(pipelineCreateInfo);
+	computeRoomTexturePipeline = createComputePipeline(pipelineCreateInfo);
 	
 	createTransferImage(vkDevice);
 	
@@ -172,7 +161,7 @@ void init_compute_room_texture(const VkDevice vkDevice) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done initializing texture stitcher.");
 }
 
-void terminate_compute_room_texture(void) {
+void terminateComputeStitchTexture(void) {
 	vkFreeMemory(transferImage.vkDevice, transferImageMemory, nullptr);
 	deleteImage(&transferImage);
 	deletePipeline(&computeRoomTexturePipeline);
@@ -197,52 +186,6 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	} buffer_partition_unmap_memory(global_uniform_buffer_partition);
 	
 	const uint32_t tilemapImageDescriptorHandle = uploadStorageImage(computeRoomTexturePipeline.vkDevice, tilemapTexture.image);
-
-	/*const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-		.pNext = nullptr,
-		.descriptorPool = computeRoomTexturePipeline.vkDescriptorPool,
-		.descriptorSetCount = 1,
-		.pSetLayouts = &computeRoomTexturePipeline.vkDescriptorSetLayout
-	};
-
-	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
-	const VkResult allocate_descriptor_set_result = vkAllocateDescriptorSets(device, &descriptor_set_allocate_info, &descriptor_set);
-	if (allocate_descriptor_set_result != 0) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error computing room texture: descriptor set allocation failed. (Error code: %i)", allocate_descriptor_set_result);
-		return;
-	}
-
-	const VkDescriptorBufferInfo uniform_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 1);
-	const VkDescriptorImageInfo tilemapTexture_info = makeDescriptorImageInfo(tilemapTexture.image);
-	const VkDescriptorImageInfo room_texture_storage_info = makeDescriptorImageInfo(transferImage);
-	const VkDescriptorImageInfo storage_image_infos[2] = { tilemapTexture_info, room_texture_storage_info };
-
-	VkWriteDescriptorSet write_descriptor_sets[2] = { { 0 } };
-	
-	write_descriptor_sets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write_descriptor_sets[0].pNext = nullptr;
-	write_descriptor_sets[0].dstSet = descriptor_set;
-	write_descriptor_sets[0].dstBinding = 0;
-	write_descriptor_sets[0].dstArrayElement = 0;
-	write_descriptor_sets[0].descriptorCount = 1;
-	write_descriptor_sets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	write_descriptor_sets[0].pImageInfo = nullptr;
-	write_descriptor_sets[0].pBufferInfo = &uniform_buffer_info;
-	write_descriptor_sets[0].pTexelBufferView = nullptr;
-
-	write_descriptor_sets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write_descriptor_sets[1].pNext = nullptr;
-	write_descriptor_sets[1].dstSet = descriptor_set;
-	write_descriptor_sets[1].dstBinding = 1;
-	write_descriptor_sets[1].dstArrayElement = 0;
-	write_descriptor_sets[1].descriptorCount = 2;
-	write_descriptor_sets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	write_descriptor_sets[1].pImageInfo = storage_image_infos;
-	write_descriptor_sets[1].pBufferInfo = nullptr;
-	write_descriptor_sets[1].pTexelBufferView = nullptr;
-
-	vkUpdateDescriptorSets(device, 2, write_descriptor_sets, 0, nullptr);*/
 
 	// Run compute shader to stitch texture.
 	VkCommandBuffer cmdBufCompute = VK_NULL_HANDLE;

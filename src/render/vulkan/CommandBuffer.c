@@ -54,9 +54,7 @@ CommandBuffer allocateCommandBuffer(const CommandPool commandPool) {
 	CommandBuffer commandBuffer = { 
 		.vkCommandBuffer = VK_NULL_HANDLE,
 		.recording = false,
-		.resetable = false,
-		.boundDescriptorSetCount = 0,
-		.ppBoundDescriptorSets = nullptr
+		.resetable = false
 	};
 	
 	const VkCommandBufferAllocateInfo allocateInfo = {
@@ -69,7 +67,6 @@ CommandBuffer allocateCommandBuffer(const CommandPool commandPool) {
 	vkAllocateCommandBuffers(commandPool.vkDevice, &allocateInfo, &commandBuffer.vkCommandBuffer);
 	
 	commandBuffer.resetable = commandPool.resetable;
-	commandBuffer.ppBoundDescriptorSets = malloc(8 * sizeof(DescriptorSet *));
 	
 	return commandBuffer;
 }
@@ -134,52 +131,6 @@ void commandBufferBindGraphicsPipeline(CommandBuffer *const pCommandBuffer, cons
 	vkCmdBindPipeline(pCommandBuffer->vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
 }
 
-void commandBufferBindDescriptorSet(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const Pipeline pipeline) {
-	if (!pCommandBuffer || !pDescriptorSet) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: null pointer(s) detected.");
-		return;
-	} else if (!pCommandBuffer->recording) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: command buffer not currently recording.");
-		return;
-	} else if (pCommandBuffer->boundDescriptorSetCount >= 8) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: maximum number of descriptor sets already bound.");
-		return;
-	}
-	
-	VkPipelineBindPoint pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	switch (pipeline.type) {
-		case PIPELINE_TYPE_GRAPHICS:
-			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			break;
-		case PIPELINE_TYPE_COMPUTE:
-			pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
-			break;
-	}
-	
-	vkCmdBindDescriptorSets(pCommandBuffer->vkCommandBuffer, pipelineBindPoint, pipeline.vkPipelineLayout, 0, 1, &pDescriptorSet->vkDescriptorSet, 0, nullptr);
-	pCommandBuffer->ppBoundDescriptorSets[pCommandBuffer->boundDescriptorSetCount] = pDescriptorSet;
-	pCommandBuffer->boundDescriptorSetCount += 1;
-	pDescriptorSet->bound = true;
-}
-
-void commandBufferBindDescriptorSet2(CommandBuffer *const pCommandBuffer, DescriptorSet *const pDescriptorSet, const GraphicsPipeline pipeline) {
-	if (!pCommandBuffer || !pDescriptorSet) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: null pointer(s) detected.");
-		return;
-	} else if (!pCommandBuffer->recording) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: command buffer not currently recording.");
-		return;
-	} else if (pCommandBuffer->boundDescriptorSetCount >= 8) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding descriptor set: maximum number of descriptor sets already bound.");
-		return;
-	}
-	
-	vkCmdBindDescriptorSets(pCommandBuffer->vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipelineLayout, 0, 1, &pDescriptorSet->vkDescriptorSet, 0, nullptr);
-	pCommandBuffer->ppBoundDescriptorSets[pCommandBuffer->boundDescriptorSetCount] = pDescriptorSet;
-	pCommandBuffer->boundDescriptorSetCount += 1;
-	pDescriptorSet->bound = true;
-}
-
 void commandBufferReset(CommandBuffer *const pCommandBuffer) {
 	if (!pCommandBuffer) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reseting command buffer: null pointer(s) detected.");
@@ -190,14 +141,6 @@ void commandBufferReset(CommandBuffer *const pCommandBuffer) {
 	}
 	
 	vkResetCommandBuffer(pCommandBuffer->vkCommandBuffer, 0);
-	
-	for (uint32_t i = 0; i < pCommandBuffer->boundDescriptorSetCount; ++i) {
-		DescriptorSet *const pDescriptorSet = pCommandBuffer->ppBoundDescriptorSets[i];
-		vkUpdateDescriptorSets(pDescriptorSet->vkDevice, pDescriptorSet->pendingWriteCount, pDescriptorSet->pPendingWrites, 0, nullptr);
-		pDescriptorSet->pendingWriteCount = 0;
-		pCommandBuffer->ppBoundDescriptorSets[i] = nullptr;
-	}
-	pCommandBuffer->boundDescriptorSetCount = 0;
 }
 
 

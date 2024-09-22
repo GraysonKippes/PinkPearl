@@ -60,10 +60,10 @@ extern BufferPartition global_storage_buffer_partition;
 extern FrameArray frame_array;
 
 // Creates all Vulkan objects needed for the rendering system.
-void create_vulkan_objects(void);
+void initVulkanManager(void);
 
 // Destroys the Vulkan objects created for the rendering system.
-void destroy_vulkan_objects(void);
+void terminateVulkanManager(void);
 
 void createTestDebugModel();
 

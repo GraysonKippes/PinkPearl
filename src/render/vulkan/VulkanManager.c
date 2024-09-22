@@ -21,8 +21,8 @@
 #include "Shader.h"
 #include "texture_manager.h"
 #include "vertex_input.h"
-#include "compute/compute_matrices.h"
-#include "compute/compute_room_texture.h"
+#include "compute/ComputeMatrices.h"
+#include "compute/ComputeStitchTexture.h"
 
 /* -- Vulkan Module Configuration -- */
 
@@ -85,21 +85,6 @@ static uint32_t transformBufferDescriptorHandle = DESCRIPTOR_HANDLE_INVALID;
 
 // TEST
 int testDebugModel = -1;
-
-/* -- Graphics Pipeline Descriptor Set Layout -- */
-
-static const DescriptorBinding graphicsPipelineDescriptorBindings[5] = {
-	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },	// Draw data
-	{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_VERTEX_BIT },	// Matrix buffer
-	{ .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .count = 512, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Texture array
-	{ .type = VK_DESCRIPTOR_TYPE_SAMPLER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT },	// Sampler
-	{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .count = 1, .stages = VK_SHADER_STAGE_FRAGMENT_BIT }	// Lighting
-};
-
-static const DescriptorSetLayout graphicsPipelineDescriptorSetLayout = {
-	.num_bindings = 5,
-	.bindings = (DescriptorBinding *const)graphicsPipelineDescriptorBindings
-};
 
 /* -- Function Definitions -- */
 
@@ -185,7 +170,7 @@ static void create_global_draw_data_buffer(void) {
 	createBuffer(bufferCreateInfo, &bufferDrawInfo);
 }
 
-void create_vulkan_objects(void) {
+void initVulkanManager(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initializing Vulkan...");
 
 	vulkan_instance = create_vulkan_instance();
@@ -237,7 +222,6 @@ void create_vulkan_objects(void) {
 		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.polygonMode = VK_POLYGON_MODE_FILL,
 		.vertexAttributeFlags = VERTEX_ATTRIBUTE_POSITION | VERTEX_ATTRIBUTE_TEXTURE_COORDINATES | VERTEX_ATTRIBUTE_COLOR,
-		.descriptorSetLayout = graphicsPipelineDescriptorSetLayout,
 		.shaderModuleCount = 2,
 		.pShaderModules = (ShaderModule[2]){ vertexShaderModule, fragmentShaderModule },
 		.pushConstantRangeCount = 1,
@@ -256,20 +240,6 @@ void create_vulkan_objects(void) {
 		.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
 		.polygonMode = VK_POLYGON_MODE_FILL,
 		.vertexAttributeFlags = VERTEX_ATTRIBUTE_POSITION | VERTEX_ATTRIBUTE_COLOR,
-		.descriptorSetLayout = (DescriptorSetLayout){ 
-			.num_bindings = 2,
-			.bindings = (DescriptorBinding[2]){
-				{ 
-					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 
-					.count = 1, 
-					.stages = VK_SHADER_STAGE_VERTEX_BIT 
-				}, { 
-					.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 
-					.count = 1, 
-					.stages = VK_SHADER_STAGE_VERTEX_BIT 
-				}
-			}
-		},
 		.shaderModuleCount = 2,
 		.pShaderModules = (ShaderModule[2]){ vertexShaderLinesModule, fragmentShaderLinesModule },
 		.pushConstantRangeCount = 1,
@@ -321,17 +291,17 @@ void create_vulkan_objects(void) {
 	};
 	frame_array = createFrameArray(frameArrayCreateInfo);
 	
-	init_compute_matrices(device);
-	init_compute_room_texture(device);
+	initComputeMatrices(device);
+	initComputeStitchTexture(device);
 }
 
-void destroy_vulkan_objects(void) {
+void terminateVulkanManager(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroying Vulkan objects...");
 
 	vkDeviceWaitIdle(device);
 
-	terminate_compute_matrices();
-	terminate_compute_room_texture();
+	terminateComputeMatrices();
+	terminateComputeStitchTexture();
 	terminateTextureManager();
 
 	deleteModelPool(&modelPoolDebug);
@@ -395,64 +365,6 @@ void createTestDebugModel() {
 		.color = (Vector4F){ 1.0F, 0.0F, 0.0F, 1.0F }
 	};
 	loadModel(loadInfo, &testDebugModel);
-}
-
-static void uploadLightingData(void) {
-	
-	typedef struct ambient_light_t {
-		float red;
-		float green;
-		float blue;
-		float intensity;
-	} ambient_light_t;
-	
-	typedef struct point_light_t {
-		float pos_x;
-		float pos_y;
-		float pos_z;
-		float red;
-		float green;
-		float blue;
-		float intensity;
-	} point_light_t;
-	
-	ambient_light_t ambient_lighting = {
-		.red = 0.125F,
-		.green = 0.25F,
-		.blue = 0.5F,
-		.intensity = 0.825
-	};
-	
-	const uint32_t num_point_lights = 1;
-	point_light_t point_lights[NUM_RENDER_OBJECT_SLOTS];
-	
-	for (uint32_t i = 0; i < numRenderObjectSlots; ++i) {
-		point_lights[i] = (point_light_t){
-			.pos_x = 0.0F,
-			.pos_y = 0.0F,
-			.pos_z = 0.0F,
-			.red = 0.0F,
-			.green = 0.0F,
-			.blue = 0.0F,
-			.intensity = 0.0F
-		};
-	}
-	
-	point_lights[0] = (point_light_t){
-		.pos_x = 0.0F,
-		.pos_y = 0.0F,
-		.pos_z = 0.5F,
-		.red = 1.0F,
-		.green = 0.825F,
-		.blue = 0.0F,
-		.intensity = 1.0F
-	};
-	
-	byte_t *lighting_data_mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 2);
-	memcpy(lighting_data_mapped_memory, &ambient_lighting, sizeof(ambient_lighting));
-	memcpy(&lighting_data_mapped_memory[16], &num_point_lights, sizeof(uint32_t));
-	memcpy(&lighting_data_mapped_memory[20], point_lights, numRenderObjectSlots * sizeof(point_light_t));
-	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 }
 
 void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds) {

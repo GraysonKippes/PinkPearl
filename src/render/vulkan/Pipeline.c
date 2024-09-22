@@ -31,30 +31,7 @@ bool deletePipeline(Pipeline *const pPipeline) {
 	return true;
 }
 
-VkPipelineLayout createPipelineLayout(VkDevice vkDevice, VkDescriptorSetLayout vkDescriptorSetLayout) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating pipeline layout...");
-
-	const VkPipelineLayoutCreateInfo createInfo = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.setLayoutCount = 1,
-		.pSetLayouts = &vkDescriptorSetLayout,
-		.pushConstantRangeCount = 0,
-		.pPushConstantRanges = nullptr
-	};
-
-	VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
-	VkResult result = vkCreatePipelineLayout(vkDevice, &createInfo, nullptr, &vkPipelineLayout);
-	if (result != VK_SUCCESS) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Graphics pipeline layout creation failed (error code: %i).", result);
-	}
-	
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created pipeline layout.");
-	return vkPipelineLayout;
-}
-
-VkPipelineLayout createPipelineLayout2(const VkDevice vkDevice, 
+VkPipelineLayout createPipelineLayout(const VkDevice vkDevice, 
 		const uint32_t vkDescriptorSetLayoutCount, const VkDescriptorSetLayout vkDescriptorSetLayouts[static const vkDescriptorSetLayoutCount],
 		const uint32_t pushConstantRangeCount, const PushConstantRange pushConstantRanges[static const pushConstantRangeCount]) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating pipeline layout...");

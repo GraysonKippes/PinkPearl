@@ -6,7 +6,7 @@
 
 #include "render_object.h"
 #include "vulkan/texture_manager.h"
-#include "vulkan/compute/compute_room_texture.h"
+#include "vulkan/compute/ComputeStitchTexture.h"
 #include "vulkan/math/lerp.h"
 
 static const String roomXSTextureID = {

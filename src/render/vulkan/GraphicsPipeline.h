@@ -57,9 +57,6 @@ typedef struct GraphicsPipelineCreateInfo {
 	// Bitflags that control which vertex attributes the pipeline will have.
 	uint32_t vertexAttributeFlags;
 	
-	// TODO - change to just array of descriptor bindings.
-	DescriptorSetLayout descriptorSetLayout;
-	
 	// Array of shader modules to attach to the pipeline.
 	uint32_t shaderModuleCount;
 	ShaderModule *pShaderModules;

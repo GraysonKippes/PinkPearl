@@ -8,9 +8,9 @@
 #include "../texture.h"
 #include "../TextureState.h"
 
-void init_compute_room_texture(const VkDevice vkDevice);
+void initComputeStitchTexture(const VkDevice vkDevice);
 
-void terminate_compute_room_texture(void);
+void terminateComputeStitchTexture(void);
 
 void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint32_t **tileIndices);
 

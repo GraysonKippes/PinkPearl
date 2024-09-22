@@ -21,7 +21,7 @@ AreaRenderState globalAreaRenderState = { };
 
 void init_renderer(void) {
 	
-	create_vulkan_objects();
+	initVulkanManager();
 	initRenderObjectManager();
 	initTextureManager();
 
@@ -98,7 +98,7 @@ void init_renderer(void) {
 }
 
 void terminate_renderer(void) {
-	destroy_vulkan_objects();
+	terminateVulkanManager();
 	terminateRenderObjectManager();
 }
 
