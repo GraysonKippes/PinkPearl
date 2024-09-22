@@ -59,6 +59,10 @@ struct ModelPool_T {
 	// The descriptor index of the first model in this pool. Offsets all descriptor/model indices.
 	uint32_t firstDescriptorIndex;
 	
+	uint32_t drawInfoBufferHandle;
+	
+	uint32_t matrixBufferHandle;
+	
 	// The maximum number of models.
 	uint32_t maxModelCount;
 	
@@ -108,7 +112,7 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	modelPool->drawInfoCount = 0;
 	
 	bufferBorrowSubrange(createInfo.buffer, createInfo.bufferSubrangeIndex, &modelPool->drawInfoBuffer);
-	uploadUniformBuffer2(device, modelPool->drawInfoBuffer);
+	modelPool->drawInfoBufferHandle = uploadUniformBuffer2(device, modelPool->drawInfoBuffer);
 	
 	modelPool->pSlotFlags = calloc(createInfo.maxModelCount, sizeof(bool));
 	if (!modelPool->pSlotFlags) {
@@ -184,6 +188,10 @@ void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const
 
 VkDeviceSize modelPoolGetDrawInfoBufferOffset(const ModelPool modelPool) {
 	return modelPool->drawInfoBuffer.offset;
+}
+
+uint32_t modelPoolGetDrawInfoBufferHandle(const ModelPool modelPool) {
+	return modelPool->drawInfoBufferHandle;
 }
 
 void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {

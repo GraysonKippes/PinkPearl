@@ -51,6 +51,8 @@ void modelPoolGetDrawCommandArguments(const ModelPool modelPool, uint32_t *const
 
 VkDeviceSize modelPoolGetDrawInfoBufferOffset(const ModelPool modelPool);
 
+uint32_t modelPoolGetDrawInfoBufferHandle(const ModelPool modelPool);
+
 
 
 typedef struct ModelLoadInfo {

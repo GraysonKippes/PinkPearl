@@ -81,6 +81,7 @@ ModelPool modelPoolDebug = nullptr;
 
 static uint32_t matricesDescriptorMain = DESCRIPTOR_HANDLE_INVALID;
 static uint32_t matricesDescriptorDebug = DESCRIPTOR_HANDLE_INVALID;
+static uint32_t transformBufferDescriptorHandle = DESCRIPTOR_HANDLE_INVALID;
 
 // TEST
 int testDebugModel = -1;
@@ -209,6 +210,7 @@ void create_vulkan_objects(void) {
 	
 	matricesDescriptorMain = uploadStorageBuffer(device, global_storage_buffer_partition, 0);
 	matricesDescriptorDebug = uploadStorageBuffer(device, global_storage_buffer_partition, 1);
+	transformBufferDescriptorHandle = uploadUniformBuffer(device, global_uniform_buffer_partition, 0);
 
 	vkGetDeviceQueue(device, *physical_device.queueFamilyIndices.graphics_family_ptr, 0, &queueGraphics);
 	vkGetDeviceQueue(device, *physical_device.queueFamilyIndices.present_family_ptr, 0, &queuePresent);
@@ -469,8 +471,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	}
 
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
-	computeMatrices(0, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolMain));
-	computeMatrices(16512, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolDebug));
+	computeMatrices(transformBufferDescriptorHandle, matricesDescriptorMain, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolMain));
+	computeMatrices(transformBufferDescriptorHandle, matricesDescriptorDebug, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolDebug));
 
 	commandBufferBegin(&frame_array.frames[frame_array.current_frame].commandBuffer, false); {
 		
@@ -536,7 +538,13 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
 		vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
 		
-		const uint32_t pushConstantsMain[5] = { 0, 0, 0, 0, 0 };
+		const uint32_t pushConstantsMain[5] = { 
+			0, 
+			0, 
+			0, 
+			modelPoolGetDrawInfoBufferHandle(modelPoolMain), 
+			matricesDescriptorMain
+		};
 		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 				0, sizeof(pushConstantsMain), pushConstantsMain);
@@ -553,7 +561,13 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		
 		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
 		
-		const uint32_t pushConstantsDebug[5] = { 0, 0, 0, 1, 1 };
+		const uint32_t pushConstantsDebug[5] = { 
+			0, 
+			0, 
+			0, 
+			modelPoolGetDrawInfoBufferHandle(modelPoolDebug), 
+			matricesDescriptorDebug
+		};
 		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 				0, sizeof(pushConstantsDebug), pushConstantsDebug);

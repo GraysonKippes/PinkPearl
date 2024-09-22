@@ -8,7 +8,7 @@
 
 // TODO - consider moving view and projection matrix computation to CPU.
 
-#define NUM_QUADS 512
+#define MAX_MODEL_COUNT 256
 
 // Type/struct definitions
 
@@ -35,7 +35,8 @@ struct ProjectionBounds {
 
 // Shader layout defintions
 
-layout(local_size_x = NUM_QUADS) in;
+// TODO: maybe use local_size_y to compute matrices for multiple matrix buffers.
+layout(local_size_x = MAX_MODEL_COUNT) in;
 
 layout(set = 0, binding = 0) uniform sampler samplers[];
 
@@ -43,26 +44,24 @@ layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
 
 layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
 
-layout(set = 0, binding = 3, scalar) uniform TransformBuffers {
+// TODO: make scalar
+layout(set = 0, binding = 3, std140) uniform TransformBuffers {
 	ProjectionBounds projectionBounds;
 	float deltaTime;
 	vec4 cameraPosition;
-	RenderTransform transforms[NUM_QUADS];
+	RenderTransform transforms[MAX_MODEL_COUNT];
 } transformBuffers[];
 
-layout(set = 0, binding = 4, scalar) buffer MatrixBuffers {
+// TODO: make scalar
+layout(set = 0, binding = 4, std140) writeonly buffer MatrixBuffers {
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
 	mat4 modelMatrices[MAX_MODEL_COUNT];
 } matrixBuffers[];
 
-// TODO: take out descriptorIndexOffset, add in a descriptor index push constant for each descriptor binding
 layout(push_constant) uniform PushConstants {
-	uint samplerIndex;
-	uint sampledImageIndex;
-	uint storageImageIndex;
-	uint uniformBufferIndex;
-	uint storageBufferIndex;
+	uint transformBufferIndex;
+	uint matrixBufferIndex;
 } pushConstants;
 
 // Function definitions
@@ -119,11 +118,17 @@ mat4 makeOrthographicProjectionMatrix(ProjectionBounds bounds) {
 
 void main() {
 
-	// Index into global array of quads, loaded or unloaded.
-	const uint quadID = gl_LocalInvocationID.x;
+	// Index into global array of model, loaded or unloaded.
+	const uint modelIndex = gl_LocalInvocationID.x;
+	
+	// Transform info.
+	const ProjectionBounds projectionBounds = transformBuffers[pushConstants.transformBufferIndex].projectionBounds;
+	const float deltaTime = transformBuffers[pushConstants.transformBufferIndex].deltaTime;
+	const vec4 cameraPosition = transformBuffers[pushConstants.transformBufferIndex].cameraPosition;
+	const RenderVector translation = transformBuffers[pushConstants.transformBufferIndex].transforms[modelIndex].translation;
 	
 	// Compute matrices.
-	matrixBuffers[0].modelMatrices[quadID] = makeTranslationMat4(vec4Lerp(transformBuffers[0].transforms[quadID].translation, transformBuffers[0].deltaTime));
-	matrixBuffers[0].viewMatrix = makeViewMatrix(transformBuffers[0].cameraPosition);
-	matrixBuffers[0].projectionMatrix = makeOrthographicProjectionMatrix(transformBuffers[0].projectionBounds);
+	matrixBuffers[pushConstants.matrixBufferIndex].modelMatrices[modelIndex] = makeTranslationMat4(vec4Lerp(translation, deltaTime));
+	matrixBuffers[pushConstants.matrixBufferIndex].viewMatrix = makeViewMatrix(cameraPosition);
+	matrixBuffers[pushConstants.matrixBufferIndex].projectionMatrix = makeOrthographicProjectionMatrix(projectionBounds);
 }

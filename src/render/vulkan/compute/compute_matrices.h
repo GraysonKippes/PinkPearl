@@ -16,6 +16,6 @@ extern const VkDeviceSize matrix_data_size;
 bool init_compute_matrices(const VkDevice vkDevice);
 void terminate_compute_matrices(void);
 
-void computeMatrices(const VkDeviceSize bufferOffset, const float deltaTime, const ProjectionBounds projectionBounds, const Vector4F cameraPosition, const ModelTransform *const transforms);
+void computeMatrices(const uint32_t transformBufferDescriptorHandle, const uint32_t matrixBufferDescriptorHandle, const float deltaTime, const ProjectionBounds projectionBounds, const Vector4F cameraPosition, const ModelTransform *const transforms);
 
 #endif	// COMPUTE_MATRICES_H

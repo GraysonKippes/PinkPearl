@@ -35,7 +35,6 @@ layout(set = 0, binding = 4) buffer MatrixBuffers {
 	mat4 modelMatrices[MAX_MODEL_COUNT];
 } matrixBuffers[];
 
-// TODO: take out descriptorIndexOffset, add in a descriptor index push constant for each descriptor binding
 layout(push_constant) uniform PushConstants {
 	uint samplerIndex;
 	uint sampledImageIndex;

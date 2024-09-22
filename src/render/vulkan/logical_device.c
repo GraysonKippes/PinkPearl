@@ -64,6 +64,7 @@ void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_devic
 	features13.pNext = nullptr;
 	features13.synchronization2 = VK_TRUE;
 	features13.dynamicRendering = VK_TRUE;
+	features13.maintenance4 = VK_TRUE;
 
 	VkPhysicalDeviceVulkan12Features features12 = { VK_FALSE };
 	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;

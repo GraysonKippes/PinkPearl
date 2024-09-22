@@ -19,7 +19,7 @@ typedef struct ShaderBytecode {
 } ShaderBytecode;
 
 static const char *shader_directory = SHADER_DIRECTORY;
-static const uint32_t initial_buffer_size = 8192;
+static const uint32_t initial_buffer_size = 16384;
 
 static ShaderBytecode read_shader_file(const char *const pPath) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Reading shader file at \"%s\"...", pPath);

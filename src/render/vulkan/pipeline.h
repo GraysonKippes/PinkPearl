@@ -15,9 +15,6 @@ typedef struct Pipeline {
 	VkPipeline vkPipeline;
 	VkPipelineLayout vkPipelineLayout;
 	
-	VkDescriptorPool vkDescriptorPool;
-	VkDescriptorSetLayout vkDescriptorSetLayout;
-	
 	VkDevice vkDevice;
 
 } Pipeline;

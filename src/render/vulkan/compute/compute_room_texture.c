@@ -10,7 +10,7 @@
 
 #include "../CommandBuffer.h"
 #include "../ComputePipeline.h"
-#include "../descriptor.h"
+#include "../Descriptor.h"
 #include "../texture.h"
 #include "../texture_manager.h"
 #include "../VulkanManager.h"
@@ -28,18 +28,20 @@ static const DescriptorSetLayout compute_room_texture_layout = {
 	.bindings = (DescriptorBinding *)compute_room_texture_bindings
 };
 
-static Pipeline computeRoomTexturePipeline;
-
-static Image transferImage;
-
-static VkDeviceMemory transferImageMemory;
-
 // Subresource range used in all image views and layout transitions.
 static const ImageSubresourceRange imageSubresourceRange = {
 	.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	.baseArrayLayer = 0,
 	.arrayLayerCount = VK_REMAINING_ARRAY_LAYERS
 };
+
+static Pipeline computeRoomTexturePipeline;
+
+static Image transferImage;
+static VkDeviceMemory transferImageMemory;
+
+static uint32_t uniformBufferDescriptorHandle = DESCRIPTOR_HANDLE_INVALID;
+static uint32_t transferImageDescriptorHandle = DESCRIPTOR_HANDLE_INVALID;
 
 
 
@@ -144,8 +146,29 @@ static void createTransferImage(const VkDevice vkDevice) {
 
 void init_compute_room_texture(const VkDevice vkDevice) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initializing texture stitcher...");
-	computeRoomTexturePipeline = createComputePipeline(vkDevice, compute_room_texture_layout, ROOM_TEXTURE_SHADER_NAME);
+	
+	const ComputePipelineCreateInfo pipelineCreateInfo = {
+		.vkDevice = vkDevice,
+		.shaderFilename = (String){
+			.length = 15,
+			.capacity = 16,
+			.pBuffer = "RoomTexture.spv"
+		},
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = (PushConstantRange[1]){
+			{
+				.shaderStageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+				.size = 3 * sizeof(uint32_t)
+			}
+		}
+	};
+	computeRoomTexturePipeline = createComputePipeline2(pipelineCreateInfo);
+	
 	createTransferImage(vkDevice);
+	
+	uniformBufferDescriptorHandle = uploadUniformBuffer(vkDevice, global_uniform_buffer_partition, 1);
+	transferImageDescriptorHandle = uploadStorageImage(vkDevice, transferImage);
+	
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done initializing texture stitcher.");
 }
 
@@ -172,8 +195,10 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 			memcpy(&mappedMemory[fullLayerSize * i], tileIndices[i], layerSize);
 		}
 	} buffer_partition_unmap_memory(global_uniform_buffer_partition);
+	
+	const uint32_t tilemapImageDescriptorHandle = uploadStorageImage(computeRoomTexturePipeline.vkDevice, tilemapTexture.image);
 
-	const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
+	/*const VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 		.pNext = nullptr,
 		.descriptorPool = computeRoomTexturePipeline.vkDescriptorPool,
@@ -217,15 +242,26 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	write_descriptor_sets[1].pBufferInfo = nullptr;
 	write_descriptor_sets[1].pTexelBufferView = nullptr;
 
-	vkUpdateDescriptorSets(device, 2, write_descriptor_sets, 0, nullptr);
+	vkUpdateDescriptorSets(device, 2, write_descriptor_sets, 0, nullptr);*/
 
 	// Run compute shader to stitch texture.
 	VkCommandBuffer cmdBufCompute = VK_NULL_HANDLE;
 	allocCmdBufs(device, commandPoolCompute.vkCommandPool, 1, &cmdBufCompute);
 	cmdBufBegin(cmdBufCompute, true); {
+		
 		vkCmdBindPipeline(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipeline);
-		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipelineLayout, 0, 1, &descriptor_set, 0, nullptr);
+		
+		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipelineLayout, 0, 1, &globalDescriptorSet, 0, nullptr);
+		
+		const uint32_t pushConstants[3] = { 
+			tilemapImageDescriptorHandle,
+			transferImageDescriptorHandle,
+			uniformBufferDescriptorHandle
+		};
+		vkCmdPushConstants(cmdBufCompute, computeRoomTexturePipeline.vkPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushConstants), pushConstants);
+		
 		vkCmdDispatch(cmdBufCompute, tileExtent.width, tileExtent.length, numRoomLayers);
+		
 	} vkEndCommandBuffer(cmdBufCompute);
 	submit_command_buffers_async(queueCompute, 1, &cmdBufCompute);
 	vkFreeCommandBuffers(device, commandPoolCompute.vkCommandPool, 1, &cmdBufCompute);

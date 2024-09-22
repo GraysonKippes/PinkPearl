@@ -7,8 +7,6 @@
 bool validatePipeline(const Pipeline pipeline) {
 	return pipeline.vkPipeline != VK_NULL_HANDLE
 		&& pipeline.vkPipelineLayout != VK_NULL_HANDLE
-		&& pipeline.vkDescriptorPool != VK_NULL_HANDLE
-		&& pipeline.vkDescriptorSetLayout != VK_NULL_HANDLE
 		&& pipeline.vkDevice != VK_NULL_HANDLE;
 }
 
@@ -24,14 +22,10 @@ bool deletePipeline(Pipeline *const pPipeline) {
 	// Destroy the Vulkan objects associated with the pipeline struct.
 	vkDestroyPipeline(pPipeline->vkDevice, pPipeline->vkPipeline, nullptr);
 	vkDestroyPipelineLayout(pPipeline->vkDevice, pPipeline->vkPipelineLayout, nullptr);
-	vkDestroyDescriptorPool(pPipeline->vkDevice, pPipeline->vkDescriptorPool, nullptr);
-	vkDestroyDescriptorSetLayout(pPipeline->vkDevice, pPipeline->vkDescriptorSetLayout, nullptr);
 	
 	// Nullify the handles inside the struct.
 	pPipeline->vkPipeline = VK_NULL_HANDLE;
 	pPipeline->vkPipelineLayout = VK_NULL_HANDLE;
-	pPipeline->vkDescriptorPool = VK_NULL_HANDLE;
-	pPipeline->vkDescriptorSetLayout = VK_NULL_HANDLE;
 	pPipeline->vkDevice = VK_NULL_HANDLE;
 
 	return true;
