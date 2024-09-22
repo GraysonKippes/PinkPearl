@@ -22,20 +22,23 @@ layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
 
 layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
 
-layout(set = 0, binding = 3, scalar) uniform U {
+layout(set = 0, binding = 3, scalar) uniform DrawInfoBuffers {
 	uint drawCount;
 	DrawInfo drawInfos[MAX_MODEL_COUNT];
 } drawInfoBuffers[];
 
-layout(set = 0, binding = 4) buffer S {
+layout(set = 0, binding = 4) buffer MatrixBuffers {
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
 	mat4 modelMatrices[MAX_MODEL_COUNT];
 } matrixBuffers[];
 
 layout(push_constant) uniform PushConstants {
-	uint descriptorIndexOffset;
-	uint descriptorIndex;
+	uint samplerIndex;
+	uint sampledImageIndex;
+	uint storageImageIndex;
+	uint uniformBufferIndex;
+	uint storageBufferIndex;
 } pushConstants;
 
 layout(location = 0) in vec3 inColor;

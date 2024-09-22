@@ -24,12 +24,12 @@ layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
 
 // TODO: use buffer descriptor aliasing for various buffer configurations (e.g. matrices, lighting data).
 
-layout(set = 0, binding = 3, scalar) uniform U {
+layout(set = 0, binding = 3, scalar) uniform DrawInfoBuffers {
 	uint drawCount;
 	DrawInfo drawInfos[MAX_MODEL_COUNT];
 } drawInfoBuffers[];
 
-layout(set = 0, binding = 4) buffer S {
+layout(set = 0, binding = 4) buffer MatrixBuffers {
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
 	mat4 modelMatrices[MAX_MODEL_COUNT];
@@ -37,8 +37,11 @@ layout(set = 0, binding = 4) buffer S {
 
 // TODO: take out descriptorIndexOffset, add in a descriptor index push constant for each descriptor binding
 layout(push_constant) uniform PushConstants {
-	uint descriptorIndexOffset;
-	uint descriptorIndex;
+	uint samplerIndex;
+	uint sampledImageIndex;
+	uint storageImageIndex;
+	uint uniformBufferIndex;
+	uint storageBufferIndex;
 } pushConstants;
 
 layout(location = 0) in vec3 inPosition;
@@ -47,12 +50,11 @@ layout(location = 1) in vec3 inColor;
 layout(location = 0) out vec3 outColor;
 
 void main() {
-	DrawInfo drawInfo = drawInfoBuffers[pushConstants.descriptorIndex].drawInfos[gl_DrawID];
-	uint descriptorIndex = pushConstants.descriptorIndexOffset + drawInfo.modelIndex;	// get rid of this
+	DrawInfo drawInfo = drawInfoBuffers[pushConstants.uniformBufferIndex].drawInfos[gl_DrawID];
 	
-	mat4 modelMatrix = matrixBuffers[pushConstants.descriptorIndex].modelMatrices[drawInfo.modelIndex];
+	mat4 modelMatrix = matrixBuffers[pushConstants.storageBufferIndex].modelMatrices[drawInfo.modelIndex];
 	vec4 homogenousCoordinates = vec4(inPosition, 1.0);
-	gl_Position = matrixBuffers[pushConstants.descriptorIndex].projectionMatrix * matrixBuffers[pushConstants.descriptorIndex].viewMatrix * modelMatrix * homogenousCoordinates;
+	gl_Position = matrixBuffers[pushConstants.storageBufferIndex].projectionMatrix * matrixBuffers[pushConstants.storageBufferIndex].viewMatrix * modelMatrix * homogenousCoordinates;
 
 	outColor = inColor;
 }

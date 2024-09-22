@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_scalar_block_layout : require
+#extension GL_EXT_nonuniform_qualifier : require
 
 #define MAX_MODEL_COUNT 512
 
@@ -15,76 +16,40 @@ struct DrawInfo {
 	uint imageIndex;
 };
 
-layout(push_constant) uniform PushConstants {
-	uint descriptorIndexOffset;
-} pushConstants;
+layout(set = 0, binding = 0) uniform sampler samplers[];
 
-layout(scalar, set = 0, binding = 0) readonly uniform UDrawData {
+layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
+
+layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
+
+layout(set = 0, binding = 3, scalar) uniform DrawInfoBuffers {
 	uint drawCount;
 	DrawInfo drawInfos[MAX_MODEL_COUNT];
-} uDrawData;
+} drawInfoBuffers[];
 
-layout(set = 0, binding = 2) uniform texture2DArray[MAX_MODEL_COUNT] textures;
-layout(set = 0, binding = 3) uniform sampler textureSampler;
+layout(set = 0, binding = 4, scalar) buffer MatrixBuffers {
+	mat4 viewMatrix;
+	mat4 projectionMatrix;
+	mat4 modelMatrices[MAX_MODEL_COUNT];
+} matrixBuffers[];
 
-struct ambient_light_t {
-	vec3 color;
-	float intensity;
-};
+layout(push_constant) uniform PushConstants {
+	uint samplerIndex;
+	uint sampledImageIndex;
+	uint storageImageIndex;
+	uint uniformBufferIndex;
+	uint storageBufferIndex;
+} pushConstants;
 
-struct point_light_t {
-	vec3 position;
-	vec3 color;
-	float intensity;
-};
+layout(location = 0) in vec2 inTextureCoordinates;
+layout(location = 1) in vec3 inColor;
+layout(location = 2) in flat uint inDrawIndex;
 
-layout(scalar, set = 0, binding = 4) readonly uniform lighting_data_t {
-
-	ambient_light_t ambient_lighting;
-
-	uint num_point_lights;
-	point_light_t point_lights[MAX_MODEL_COUNT];
-	
-} lighting_data;
-
-layout(location = 0) in vec3 in_position;	// Model space
-layout(location = 1) in vec2 in_tex_coord;
-layout(location = 2) in vec3 in_color;
-layout(location = 3) in flat uint in_draw_index;
-
-layout(location = 0) out vec4 out_color;
-
-float calculate_attenuation(const vec3 src, const vec3 dst, const float coefficient_quadratic, const float coefficient_linear) {
-	const float d = distance(src, dst);
-	const float r = coefficient_quadratic * (d * d) + coefficient_linear * d + 1.0;
-	return 1.0 / r;
-}
+layout(location = 0) out vec4 outColor;
 
 void main() {
-
-	DrawInfo drawInfo = uDrawData.drawInfos[in_draw_index];
-	uint descriptorIndex = drawInfo.modelIndex + pushConstants.descriptorIndexOffset;
-
-	// Texel position
-	vec3 texel_position = in_position;
-	texel_position.x = floor(in_position.x * 16.0) / 16.0;
-	texel_position.y = floor(in_position.y * 16.0) / 16.0;
-
-	const vec3 texture_coordinates = vec3(in_tex_coord, float(drawInfo.imageIndex));
-	out_color = texture(sampler2DArray(textures[descriptorIndex], textureSampler), texture_coordinates) * vec4(in_color, 1.0);
-	
-	/* Apply lighting
-	out_color.rgb *= (lighting_data.ambient_lighting.color * lighting_data.ambient_lighting.intensity);
-	vec3 point_light_color = vec3(1.0);
-	for (uint i = 0; i < lighting_data.num_point_lights; ++i) {
-		const point_light_t point_light = lighting_data.point_lights[i];
-		point_light_color *= (point_light.color * point_light.intensity * calculate_attenuation(point_light.position, texel_position, 0.07, 0.14));
-	}
-	out_color.rgb *= point_light_color; */
-	
-	/* Light level granularity
-	const float light_level = 32.0;
-	out_color.r = round(out_color.r * light_level) / light_level;
-	out_color.g = round(out_color.g * light_level) / light_level;
-	out_color.b = round(out_color.b * light_level) / light_level; */
+	const DrawInfo drawInfo = drawInfoBuffers[pushConstants.uniformBufferIndex].drawInfos[inDrawIndex];
+	const uint sampledImageIndex = pushConstants.sampledImageIndex + drawInfo.modelIndex;
+	const vec3 textureCoordinates = vec3(inTextureCoordinates, float(drawInfo.imageIndex));
+	outColor = texture(sampler2DArray(sampledImages[sampledImageIndex], samplers[0]), textureCoordinates) * vec4(inColor, 1.0);
 }

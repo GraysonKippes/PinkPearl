@@ -24,7 +24,6 @@ void init_renderer(void) {
 	create_vulkan_objects();
 	initRenderObjectManager();
 	initTextureManager();
-	initTextureDescriptors();
 
 	TexturePack texturePack = readTexturePackFile(FGT_PATH);
 	textureManagerLoadTexturePack(texturePack);

@@ -1,0 +1,129 @@
+#version 460
+#extension GL_EXT_scalar_block_layout : require
+#extension GL_EXT_nonuniform_qualifier : require
+
+// This compute shader takes in an array of vectors (representing positions),
+// and creates translation matrices. Then each matrix is multiplied by the camera
+// and projection matrices, and push to an output buffer.
+
+// TODO - consider moving view and projection matrix computation to CPU.
+
+#define NUM_QUADS 512
+
+// Type/struct definitions
+
+// Keeps track of current and previous vectors for interpolation.
+struct RenderVector {
+	vec4 current;
+	vec4 previous;
+};
+
+struct RenderTransform {
+	RenderVector translation;
+	RenderVector scaling;
+	RenderVector rotation;
+};
+
+struct ProjectionBounds {
+	float left;
+	float right;
+	float bottom;
+	float top;
+	float near;
+	float far;
+};
+
+// Shader layout defintions
+
+layout(local_size_x = NUM_QUADS) in;
+
+layout(set = 0, binding = 0) uniform sampler samplers[];
+
+layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
+
+layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
+
+layout(set = 0, binding = 3, scalar) uniform TransformBuffers {
+	ProjectionBounds projectionBounds;
+	float deltaTime;
+	vec4 cameraPosition;
+	RenderTransform transforms[NUM_QUADS];
+} transformBuffers[];
+
+layout(set = 0, binding = 4, scalar) buffer MatrixBuffers {
+	mat4 viewMatrix;
+	mat4 projectionMatrix;
+	mat4 modelMatrices[MAX_MODEL_COUNT];
+} matrixBuffers[];
+
+// TODO: take out descriptorIndexOffset, add in a descriptor index push constant for each descriptor binding
+layout(push_constant) uniform PushConstants {
+	uint samplerIndex;
+	uint sampledImageIndex;
+	uint storageImageIndex;
+	uint uniformBufferIndex;
+	uint storageBufferIndex;
+} pushConstants;
+
+// Function definitions
+
+vec4 vec4Lerp(const RenderVector vector, const float deltaTime) {
+	return vec4(
+		mix(vector.previous.x, vector.current.x, deltaTime),
+		mix(vector.previous.y, vector.current.y, deltaTime),
+		mix(vector.previous.z, vector.current.z, deltaTime),
+		mix(vector.previous.w, vector.current.w, deltaTime)
+	);
+}
+
+mat4 makeTranslationMat4(const vec4 position) {
+	return mat4(
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		position.xyz,  1.0
+	);
+}
+
+// Computes a view matrix given a camera position.
+mat4 makeViewMatrix(const vec4 cameraPosition) {
+	return mat4(
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		-cameraPosition.xyz, 1.0
+	);
+}
+
+// Makes and returns an orthographic projection matrix.
+// TODO - make this just take width, height, length, etc., instead of bounds.
+mat4 makeOrthographicProjectionMatrix(ProjectionBounds bounds) {
+	
+	const float zoomFactor = 1.0;
+	
+	const float scaleX = (2.0 * zoomFactor) / (bounds.right - bounds.left);
+	const float scaleY = -(2.0 * zoomFactor) / (bounds.bottom - bounds.top);
+	const float scaleZ = -(2.0 * zoomFactor) / (bounds.far - bounds.near);
+
+	const float midX = (bounds.right + bounds.left) / (bounds.right - bounds.left);
+	const float midY = (bounds.top + bounds.bottom) / (bounds.top - bounds.bottom);
+	const float midZ = (bounds.far + bounds.near) / (bounds.far - bounds.near);
+
+	return mat4(
+		scaleX, 0.0, 0.0, 0.0,
+		0.0, scaleY, 0.0, 0.0,
+		0.0, 0.0, scaleZ, 0.0,
+		-midX, -midY, -midZ, 1.0
+	);
+}
+
+void main() {
+
+	// Index into global array of quads, loaded or unloaded.
+	const uint quadID = gl_LocalInvocationID.x;
+	
+	// Compute matrices.
+	matrixBuffers[0].modelMatrices[quadID] = makeTranslationMat4(vec4Lerp(transformBuffers[0].transforms[quadID].translation, transformBuffers[0].deltaTime));
+	matrixBuffers[0].viewMatrix = makeViewMatrix(transformBuffers[0].cameraPosition);
+	matrixBuffers[0].projectionMatrix = makeOrthographicProjectionMatrix(transformBuffers[0].projectionBounds);
+}

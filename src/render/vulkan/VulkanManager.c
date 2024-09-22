@@ -224,8 +224,8 @@ void create_vulkan_objects(void) {
 	samplerDefault = createSampler(device, physical_device);
 	uploadSampler(device, samplerDefault);
 	
-	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, "VertexShaderBindless.spv");
-	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, "FragmentShaderBindless.spv");
+	ShaderModule vertexShaderModule = createShaderModule(device, SHADER_STAGE_VERTEX, "VertexShader.spv");
+	ShaderModule fragmentShaderModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, "FragmentShader.spv");
 	ShaderModule vertexShaderLinesModule = createShaderModule(device, SHADER_STAGE_VERTEX, "VertexShaderLines.spv");
 	ShaderModule fragmentShaderLinesModule = createShaderModule(device, SHADER_STAGE_FRAGMENT, "FragmentShaderLines.spv");
 	
@@ -242,7 +242,7 @@ void create_vulkan_objects(void) {
 		.pPushConstantRanges = (PushConstantRange[1]){
 			{
 				.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-				.size = 8
+				.size = 5 * sizeof(uint32_t)
 			}
 		}
 	};
@@ -274,7 +274,7 @@ void create_vulkan_objects(void) {
 		.pPushConstantRanges = (PushConstantRange[1]){
 			{
 				.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-				.size = 8
+				.size = 5 * sizeof(uint32_t)
 			}
 		}
 	};
@@ -366,45 +366,6 @@ void destroy_vulkan_objects(void) {
 	destroy_vulkan_instance(vulkan_instance);
 	
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroyed Vulkan objects.");
-}
-
-void initTextureDescriptors(void) {
-	
-	/*const Texture texture = getTexture(textureHandleMissing);
-	
-	VkDescriptorImageInfo descriptorImageInfos[512];
-	for (int i = 0; i < 512; ++i) {
-		descriptorImageInfos[i] = makeDescriptorImageInfo(texture.image);
-	}
-	
-	VkDescriptorImageInfo descriptorSamplerInfo = makeDescriptorSamplerInfo(samplerDefault);
-	
-	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
-		
-		const VkWriteDescriptorSet descriptorWrites[2] = {{
-			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
-			.dstBinding = 2,
-			.dstArrayElement = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			.descriptorCount = 512,
-			.pBufferInfo = nullptr,
-			.pImageInfo = descriptorImageInfos,
-			.pTexelBufferView = nullptr
-		}, {
-			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.dstSet = frame_array.frames[i].descriptorSet.vkDescriptorSet,
-			.dstBinding = 3,
-			.dstArrayElement = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-			.descriptorCount = 1,
-			.pBufferInfo = nullptr,
-			.pImageInfo = &descriptorSamplerInfo,
-			.pTexelBufferView = nullptr
-		}};
-		
-		vkUpdateDescriptorSets(device, 2, descriptorWrites, 0, nullptr);
-	}*/
 }
 
 void createTestDebugModel() {
@@ -511,45 +472,6 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	computeMatrices(0, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolMain));
 	computeMatrices(16512, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolDebug));
 
-	VkWriteDescriptorSet descriptor_writes[3] = { { } };
-
-	/*const VkDescriptorBufferInfo draw_data_buffer_info = modelPoolGetBufferDescriptorInfo(modelPoolMain);
-	descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[0].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
-	descriptor_writes[0].dstBinding = 0;
-	descriptor_writes[0].dstArrayElement = 0;
-	descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptor_writes[0].descriptorCount = 1;
-	descriptor_writes[0].pBufferInfo = &draw_data_buffer_info;
-	descriptor_writes[0].pImageInfo = nullptr;
-	descriptor_writes[0].pTexelBufferView = nullptr;
-
-	const VkDescriptorBufferInfo matrix_buffer_info = buffer_partition_descriptor_info(global_storage_buffer_partition, 0);
-	descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[1].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
-	descriptor_writes[1].dstBinding = 1;
-	descriptor_writes[1].dstArrayElement = 0;
-	descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	descriptor_writes[1].descriptorCount = 1;
-	descriptor_writes[1].pBufferInfo = &matrix_buffer_info;
-	descriptor_writes[1].pImageInfo = nullptr;
-	descriptor_writes[1].pTexelBufferView = nullptr;
-
-	const VkDescriptorBufferInfo lighting_buffer_info = buffer_partition_descriptor_info(global_uniform_buffer_partition, 2);
-	descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptor_writes[2].dstSet = frame_array.frames[frame_array.current_frame].descriptorSet.vkDescriptorSet;
-	descriptor_writes[2].dstBinding = 4;
-	descriptor_writes[2].dstArrayElement = 0;
-	descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptor_writes[2].descriptorCount = 1;
-	descriptor_writes[2].pBufferInfo = &lighting_buffer_info;
-	descriptor_writes[2].pImageInfo = nullptr;
-	descriptor_writes[2].pTexelBufferView = nullptr;
-
-	vkUpdateDescriptorSets(device, 3, descriptor_writes, 0, nullptr);*/
-	
-	//uploadLightingData();
-
 	commandBufferBegin(&frame_array.frames[frame_array.current_frame].commandBuffer, false); {
 		
 		static const ImageSubresourceRange imageSubresourceRange = {
@@ -609,13 +531,12 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		// Main drawing
 		
 		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipeline);
-		//commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSet, graphicsPipeline);
 		
 		const VkDeviceSize offsets[1] = { 0 };
 		vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
 		vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
 		
-		const uint32_t pushConstantsMain[2] = { 0, 0 };
+		const uint32_t pushConstantsMain[5] = { 0, 0, 0, 0, 0 };
 		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 				0, sizeof(pushConstantsMain), pushConstantsMain);
@@ -631,19 +552,18 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		// Debug drawing
 		
 		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
-		//commandBufferBindDescriptorSet2(&frame_array.frames[frame_array.current_frame].commandBuffer, &frame_array.frames[frame_array.current_frame].descriptorSetDebug, graphicsPipelineDebug);
 		
-		const uint32_t pushConstantsDebug[2] = { 1, 1 };
+		const uint32_t pushConstantsDebug[5] = { 0, 0, 0, 1, 1 };
 		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 				0, sizeof(pushConstantsDebug), pushConstantsDebug);
 		
 		const uint32_t debugDrawOffset = modelPoolGetDrawInfoBufferOffset(modelPoolDebug);
 		const uint32_t debugMaxDrawCount = modelPoolGetMaxModelCount(modelPoolDebug);
-		//vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
-		//		bufferDrawInfoHandle, debugDrawOffset + drawCountSize, 
-		//		bufferDrawInfoHandle, debugDrawOffset, 
-		//		debugMaxDrawCount, drawCommandStride);
+		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+				bufferDrawInfoHandle, debugDrawOffset + drawCountSize, 
+				bufferDrawInfoHandle, debugDrawOffset, 
+				debugMaxDrawCount, drawCommandStride);
 		
 		vkCmdEndRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer);
 		
