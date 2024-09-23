@@ -51,6 +51,9 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 		return entityHandleInvalid;
 	}
 	
+	// If debug mode is enabled, render the entity's hitbox.
+	renderObjectLoadDebugQuad(renderHandle, initPosition, boxD2F(entityRecord.entityHitbox), (Vector4F){ 1.0F, 0.0F, 0.0F, 1.0F });
+	
 	entities[entityHandle].physics = (EntityPhysics){
 		.position = initPosition,
 		.velocity = initVelocity

@@ -20,7 +20,7 @@ const Logger loggerRender = {
 
 const Logger loggerVulkan = {
 	.pName = "Vulkan",
-	.levelThreshold = LOG_LEVEL_VERBOSE
+	.levelThreshold = LOG_LEVEL_INFO
 };
 
 const Logger loggerAudio = {

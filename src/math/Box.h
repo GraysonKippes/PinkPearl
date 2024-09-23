@@ -55,4 +55,8 @@ double boxLengthD(const BoxD box);
 
 double boxAreaD(const BoxD box);
 
+BoxF boxD2F(const BoxD box);
+
+BoxD boxF2D(const BoxF box);
+
 #endif // BOX_H

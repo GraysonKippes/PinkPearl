@@ -29,8 +29,6 @@ void init_renderer(void) {
 	textureManagerLoadTexturePack(texturePack);
 	deleteTexturePack(&texturePack);
 	
-	createTestDebugModel();
-	
 	// TEMPORARY
 	// Create room textures -- one for each room size.
 	for (int i = 0; i < (int)num_room_sizes; ++i) {

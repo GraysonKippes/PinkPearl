@@ -77,9 +77,8 @@ void tick_entity(Entity *const pEntity) {
 	// Update render object.
 	const int renderHandle = pEntity->renderHandle;
 	renderObjectSetPosition(renderHandle, 0, pEntity->physics.position);
+	renderObjectSetPosition(renderHandle, 1, pEntity->physics.position);
 }
-
-/* -- Copied from hitbox.h -- */
 
 /* SINGLE-AXIS OVERLAP CASES
  *

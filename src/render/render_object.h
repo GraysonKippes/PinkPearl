@@ -28,6 +28,8 @@ void unloadRenderObject(int *const pRenderHandle);
 // Returns true if the render handle is both below the number of render object slots and positive, false otherwise.
 bool validateRenderObjectHandle(const int renderHandle);
 
+int renderObjectLoadDebugQuad(const int renderHandle, const Vector3D position, const BoxF dimensions, const Vector4F color);
+
 // Returns true if the quad index is both below the max number of quads per render object and positive, false otherwise.
 bool validateRenderObjectQuadIndex(const int quadIndex);
 
@@ -46,5 +48,7 @@ unsigned int renderObjectGetAnimation(const int renderHandle, const int quadInde
 // Sets the current animation of the render object's texture state which is referenced by the render handle.
 // Returns true if the animation was successfully updated, false otherwise.
 bool renderObjectSetAnimation(const int renderHandle, const int quadIndex, const unsigned int nextAnimation);
+
+int loadDebugRenderObject(const Vector4F color, const BoxF quadDimensions, const int quadCount, const Vector3D quadPositions[static const quadCount]);
 
 #endif	// RENDER_OBJECT_H
