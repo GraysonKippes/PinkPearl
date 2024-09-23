@@ -11,11 +11,6 @@
 
 #include "area_render_state.h"
 
-typedef enum RenderObjectQuadType {
-	QUAD_TYPE_MAIN,
-	QUAD_TYPE_DEBUG
-} RenderObjectQuadType;
-
 /*typedef struct RenderObjectQuad {
 	
 	// The handle to the quad in the Vulkan model manager.
@@ -96,6 +91,48 @@ int loadRenderObject(const String textureID, const BoxF quadDimensions, const in
 		loadModel(modelLoadInfo, &quadHandle);
 		renderObjectQuadHandles[renderHandle][i] = quadHandle;
 		renderObjectQuadTypes[renderHandle][i] = QUAD_TYPE_MAIN;
+	}
+	
+	return renderHandle;
+}
+
+int loadRenderObject2(const RenderObjectLoadInfo loadInfo) {
+	if (loadInfo.quadCount <= 0 || loadInfo.quadCount > maxNumRenderObjectQuads) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object: quad count (%i) is invalid.", loadInfo.quadCount);
+		return renderHandleInvalid;
+	}
+	
+	int renderHandle = renderHandleInvalid;
+	heapPop(&inactiveRenderHandles, &renderHandle);
+	if (!validateRenderObjectHandle(renderHandle)) {
+		return renderHandleInvalid;
+	}
+	
+	for (int quadIndex = 0; quadIndex < maxNumRenderObjectQuads; ++quadIndex) {
+		renderObjectQuadHandles[renderHandle][quadIndex] = -1;
+	}
+	
+	for (int quadIndex = 0; quadIndex < loadInfo.quadCount; ++quadIndex) {
+		const QuadLoadInfo quadLoadInfo = loadInfo.pQuadLoadInfos[quadIndex];
+		
+		const Vector4F position4F = {
+			.x = (float)quadLoadInfo.initPosition.x,
+			.y = (float)quadLoadInfo.initPosition.y,
+			.z = (float)quadLoadInfo.initPosition.z,
+			.w = 1.0F
+		};
+		
+		int quadHandle = -1;
+		const ModelLoadInfo modelLoadInfo = {
+			.modelPool = getModelPoolType(quadLoadInfo.quadType),
+			.position = position4F,
+			.dimensions = quadLoadInfo.quadDimensions,
+			.textureID = loadInfo.textureID,
+			.color = quadLoadInfo.color
+		};
+		loadModel(modelLoadInfo, &quadHandle);
+		renderObjectQuadHandles[renderHandle][quadIndex] = quadHandle;
+		renderObjectQuadTypes[renderHandle][quadIndex] = quadLoadInfo.quadType;
 	}
 	
 	return renderHandle;

@@ -45,14 +45,30 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 		return entityHandleInvalid;
 	}
 	
-	const int renderHandle = loadRenderObject(entityRecord.textureID, entityRecord.textureDimensions, 1, &initPosition);
+	const RenderObjectLoadInfo renderObjectLoadInfo = {
+		.textureID = entityRecord.textureID,
+		.quadCount = 2,
+		.pQuadLoadInfos = (QuadLoadInfo[2]){
+			{
+				.quadType = QUAD_TYPE_MAIN,
+				.initPosition = initPosition,
+				.quadDimensions = entityRecord.textureDimensions,
+				.initAnimation = 2,
+				.color = (Vector4F){ 1.0F, 1.0F, 1.0F, 1.0F }
+			}, {
+				.quadType = QUAD_TYPE_DEBUG,
+				.initPosition = initPosition,
+				.quadDimensions = boxD2F(entityRecord.entityHitbox),
+				.initAnimation = 0,
+				.color = (Vector4F){ 1.0F, 0.0F, 0.0F, 1.0F }
+			}
+		}
+	};
+	const int renderHandle = loadRenderObject2(renderObjectLoadInfo);
 	if (!validateRenderObjectHandle(renderHandle)) {
 		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to load render object.");
 		return entityHandleInvalid;
 	}
-	
-	// If debug mode is enabled, render the entity's hitbox.
-	renderObjectLoadDebugQuad(renderHandle, initPosition, boxD2F(entityRecord.entityHitbox), (Vector4F){ 1.0F, 0.0F, 0.0F, 1.0F });
 	
 	entities[entityHandle].physics = (EntityPhysics){
 		.position = initPosition,
