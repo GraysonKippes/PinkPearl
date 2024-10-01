@@ -24,6 +24,8 @@ static void entityAIRegularTickSlime(Entity *const pEntity) {
 	const unsigned long long int currentTimeMS = getTimeMS();
 	const unsigned long long int timeTillActionChange = random(0ULL, 2ULL) + random(1ULL, 2ULL);	// Seconds
 	if ((currentTimeMS - pEntity->ai.lastActionTimeMS) / 1000ULL < timeTillActionChange) {
+		pEntity->physics.acceleration = vector3DNormalize(pEntity->physics.acceleration);
+		pEntity->physics.acceleration = vector3DScalarMultiply(pEntity->physics.acceleration, accelerationMagnitude);
 		return;
 	}
 	
@@ -53,7 +55,7 @@ static void entityAIRegularTickSlime(Entity *const pEntity) {
 			nextAnimation = 1;
 			break;
 	}
-	pEntity->physics.acceleration = vector3D_scalar_multiply(pEntity->physics.acceleration, accelerationMagnitude);
+	pEntity->physics.acceleration = vector3DScalarMultiply(pEntity->physics.acceleration, accelerationMagnitude);
 	
 	if (nextAnimation != currentAnimation) {
 		renderObjectSetAnimation(pEntity->renderHandle, 0, nextAnimation);

@@ -9,7 +9,7 @@ bool vector3DIsZero(const Vector3D vector) {
 	return fabs(vector.x) < tolerance && fabs(vector.y) < tolerance && fabs(vector.z) < tolerance;
 }
 
-Vector3D vector3D_add(const Vector3D a, const Vector3D b) {
+Vector3D vector3DAdd(const Vector3D a, const Vector3D b) {
 	return (Vector3D){
 		.x = a.x + b.x,
 		.y = a.y + b.y,
@@ -17,7 +17,7 @@ Vector3D vector3D_add(const Vector3D a, const Vector3D b) {
 	};
 }
 
-Vector3D vector3D_subtract(const Vector3D a, const Vector3D b) {
+Vector3D vector3DSubtract(const Vector3D a, const Vector3D b) {
 	return (Vector3D){
 		.x = a.x - b.x,
 		.y = a.y - b.y,
@@ -25,7 +25,7 @@ Vector3D vector3D_subtract(const Vector3D a, const Vector3D b) {
 	};
 }
 
-Vector3D vector3D_scalar_multiply(const Vector3D vector, const double scalar) {
+Vector3D vector3DScalarMultiply(const Vector3D vector, const double scalar) {
 	return (Vector3D){
 		.x = vector.x * scalar,
 		.y = vector.y * scalar,
@@ -33,7 +33,7 @@ Vector3D vector3D_scalar_multiply(const Vector3D vector, const double scalar) {
 	};
 }
 
-Vector3D vector3D_scalar_divide(const Vector3D vector, const double scalar) {
+Vector3D vector3DScalarDivide(const Vector3D vector, const double scalar) {
 	return (Vector3D){
 		.x = vector.x / scalar,
 		.y = vector.y / scalar,
@@ -41,14 +41,14 @@ Vector3D vector3D_scalar_divide(const Vector3D vector, const double scalar) {
 	};
 }
 
-double vector3D_length(const Vector3D vector) {
+double vector3DLength(const Vector3D vector) {
 	return sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
 }
 
-Vector3D vector3D_normalize(const Vector3D vector) {
+Vector3D vector3DNormalize(const Vector3D vector) {
 	if (vector3DIsZero(vector)) {
 		return zeroVector3D;
 	}
-	const double length = vector3D_length(vector);
-	return vector3D_scalar_divide(vector, length);
+	const double length = vector3DLength(vector);
+	return vector3DScalarDivide(vector, length);
 }

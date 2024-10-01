@@ -12,17 +12,17 @@ extern const Vector3D zeroVector3D;
 bool vector3DIsZero(const Vector3D vector);
 
 // Returns the vector sum a + b.
-Vector3D vector3D_add(const Vector3D a, const Vector3D b);
+Vector3D vector3DAdd(const Vector3D a, const Vector3D b);
 
 // Returns the vector sum a - b.
-Vector3D vector3D_subtract(const Vector3D a, const Vector3D b);
+Vector3D vector3DSubtract(const Vector3D a, const Vector3D b);
 
-Vector3D vector3D_scalar_multiply(const Vector3D vector, const double scalar);
+Vector3D vector3DScalarMultiply(const Vector3D vector, const double scalar);
 
-Vector3D vector3D_scalar_divide(const Vector3D vector, const double scalar);
+Vector3D vector3DScalarDivide(const Vector3D vector, const double scalar);
 
-double vector3D_length(const Vector3D vector);
+double vector3DLength(const Vector3D vector);
 
-Vector3D vector3D_normalize(const Vector3D vector);
+Vector3D vector3DNormalize(const Vector3D vector);
 
 #endif	// VECTOR3D_H

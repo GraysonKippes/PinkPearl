@@ -31,27 +31,27 @@ void tick_entity(Entity *const pEntity) {
 
 	// Compute and apply kinetic friction.
 	// Points in the opposite direction of movement (i.e. velocity), applied to acceleration.
-	static const double frictionCoefficient = 0.12;
-	Vector3D friction = vector3D_normalize(pEntity->physics.velocity);
-	friction = vector3D_scalar_multiply(friction, -frictionCoefficient);
-	pEntity->physics.acceleration = vector3D_add(pEntity->physics.acceleration, friction);
+	const double frictionCoefficient = 0.5 * pEntity->speed;
+	Vector3D friction = vector3DNormalize(pEntity->physics.velocity);
+	friction = vector3DScalarMultiply(friction, -frictionCoefficient);
+	pEntity->physics.acceleration = vector3DAdd(pEntity->physics.acceleration, friction);
 
 	// Apply acceleration to velocity.
-	pEntity->physics.velocity = vector3D_add(pEntity->physics.velocity, pEntity->physics.acceleration);
+	pEntity->physics.velocity = vector3DAdd(pEntity->physics.velocity, pEntity->physics.acceleration);
 	
 	// Compute capped speed.
-	static const double maxSpeed = 0.24;
-	const double uncappedSpeed = vector3D_length(pEntity->physics.velocity);
+	const double maxSpeed = pEntity->speed;
+	const double uncappedSpeed = vector3DLength(pEntity->physics.velocity);
 	const double cappedSpeed = copysign(fmin(fabs(uncappedSpeed), fabs(maxSpeed)), uncappedSpeed);
 	
 	// Cap the speed (magnitude) of the velocity.
-	pEntity->physics.velocity = vector3D_normalize(pEntity->physics.velocity);
-	pEntity->physics.velocity = vector3D_scalar_multiply(pEntity->physics.velocity, cappedSpeed);
+	pEntity->physics.velocity = vector3DNormalize(pEntity->physics.velocity);
+	pEntity->physics.velocity = vector3DScalarMultiply(pEntity->physics.velocity, cappedSpeed);
 
 	// Update entity position.
 	const Vector3D previousPosition = pEntity->physics.position;
 	const Vector3D positionStep = pEntity->physics.velocity;
-	Vector3D nextPosition = vector3D_add(previousPosition, positionStep);
+	Vector3D nextPosition = vector3DAdd(previousPosition, positionStep);
 
 	// The square of the distance of the currently selected new position from the old position.
 	// This variable is used to track which resolved new position is the shortest from the entity.
@@ -63,7 +63,7 @@ void tick_entity(Entity *const pEntity) {
 		const BoxD wall = currentArea.pRooms[currentArea.currentRoomIndex].pWalls[i];
 
 		Vector3D resolved_position = resolve_collision(previousPosition, nextPosition, pEntity->hitbox, wall);
-		Vector3D resolved_step = vector3D_subtract(resolved_position, previousPosition);
+		Vector3D resolved_step = vector3DSubtract(resolved_position, previousPosition);
 		const double resolved_step_length_squared = SQUARE(resolved_step.x) + SQUARE(resolved_step.y) + SQUARE(resolved_step.z);
 
 		if (resolved_step_length_squared < step_length_squared) {
@@ -234,7 +234,7 @@ static Vector3D resolve_collision(const Vector3D old_position, const Vector3D ne
 	// This parameter determines how much the entity is slowed down when sliding against a wall.
 	static const double friction_factor = 0.75;
 
-	const Vector3D position_step = vector3D_subtract(new_position, old_position);
+	const Vector3D position_step = vector3DSubtract(new_position, old_position);
 
 	Vector3D resolved_position = new_position; 
 
@@ -262,7 +262,7 @@ static Vector3D resolve_collision(const Vector3D old_position, const Vector3D ne
 				Vector3D resolved_step = position_step;
 				resolved_step.x = 0.0;
 				resolved_step.y *= friction_factor;
-				resolved_position = vector3D_add(old_position, resolved_step);
+				resolved_position = vector3DAdd(old_position, resolved_step);
 			}
 			else {
 				resolved_position = new_position;
@@ -296,7 +296,7 @@ static Vector3D resolve_collision(const Vector3D old_position, const Vector3D ne
 				Vector3D resolved_step = position_step;
 				resolved_step.x = 0.0;
 				resolved_step.y *= friction_factor;
-				resolved_position = vector3D_add(old_position, resolved_step);
+				resolved_position = vector3DAdd(old_position, resolved_step);
 			}
 			else {
 				resolved_position = new_position;
@@ -331,7 +331,7 @@ static Vector3D resolve_collision(const Vector3D old_position, const Vector3D ne
 				Vector3D resolved_step = position_step;
 				resolved_step.y = 0.0;
 				resolved_step.x *= friction_factor;
-				resolved_position = vector3D_add(old_position, resolved_step);
+				resolved_position = vector3DAdd(old_position, resolved_step);
 			}
 			else {
 				resolved_position = new_position;
@@ -365,7 +365,7 @@ static Vector3D resolve_collision(const Vector3D old_position, const Vector3D ne
 				Vector3D resolved_step = position_step;
 				resolved_step.y = 0.0;
 				resolved_step.x *= friction_factor;
-				resolved_position = vector3D_add(old_position, resolved_step);
+				resolved_position = vector3DAdd(old_position, resolved_step);
 			}
 			else {
 				resolved_position = new_position;

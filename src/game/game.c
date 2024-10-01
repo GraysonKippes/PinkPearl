@@ -101,8 +101,8 @@ void tick_game(void) {
 		nextAnimation = 3;
 	}
 
-	pPlayerEntity->physics.acceleration = vector3D_normalize(pPlayerEntity->physics.acceleration);
-	pPlayerEntity->physics.acceleration = vector3D_scalar_multiply(pPlayerEntity->physics.acceleration, accelerationMagnitude);
+	pPlayerEntity->physics.acceleration = vector3DNormalize(pPlayerEntity->physics.acceleration);
+	pPlayerEntity->physics.acceleration = vector3DScalarMultiply(pPlayerEntity->physics.acceleration, accelerationMagnitude);
 	
 	if (nextAnimation != currentAnimation) {
 		renderObjectSetAnimation(pPlayerEntity->renderHandle, 0, nextAnimation);
