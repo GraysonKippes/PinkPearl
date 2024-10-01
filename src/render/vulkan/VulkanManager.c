@@ -340,33 +340,6 @@ void terminateVulkanManager(void) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroyed Vulkan objects.");
 }
 
-void createTestDebugModel() {
-	
-	const Vector4F testPosition = zeroVector4F;
-	
-	const BoxF testBox = {
-		.x1 = -0.5F,
-		.y1 = -0.5F,
-		.x2 = 0.5F,
-		.y2 = 0.5F
-	};
-	
-	const String testTextureID = {
-		.length = 7,
-		.capacity = 8,
-		.pBuffer = "missing"
-	};
-	
-	const ModelLoadInfo loadInfo = {
-		.modelPool = modelPoolDebug,
-		.position = testPosition,
-		.dimensions = testBox,
-		.textureID = testTextureID,
-		.color = (Vector4F){ 1.0F, 0.0F, 0.0F, 1.0F }
-	};
-	loadModel(loadInfo, &testDebugModel);
-}
-
 void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds) {
 
 	vkWaitForFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready, VK_TRUE, UINT64_MAX);

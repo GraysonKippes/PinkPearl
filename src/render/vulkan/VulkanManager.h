@@ -65,8 +65,6 @@ void initVulkanManager(void);
 // Destroys the Vulkan objects created for the rendering system.
 void terminateVulkanManager(void);
 
-void createTestDebugModel();
-
 void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds);
 
 #endif	// VULKAN_MANAGER_H
