@@ -144,7 +144,7 @@ bool areaRenderStateSetNextRoom(AreaRenderState *const pAreaRenderState, const R
 
 Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderState) {
 	if (!pAreaRenderState) {
-		return zeroVector4F;
+		return zeroVec4F;
 	}
 	
 	static const float posZ = 0.0F;
@@ -183,7 +183,7 @@ Vector4F areaRenderStateGetCameraPosition(AreaRenderState *const pAreaRenderStat
 	}
 	
 	const double deltaTime = (double)(currentTimeMS - pAreaRenderState->scrollStartTimeMS) / (double)(timeLimitMS);
-	return vector4F_lerp(start, end, deltaTime);
+	return lerpVec4F(start, end, deltaTime);
 }
 
 ProjectionBounds areaRenderStateGetProjectionBounds(const AreaRenderState areaRenderState) {

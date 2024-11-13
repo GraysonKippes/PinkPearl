@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include "config.h"
+#include "math/Vector.h"
 
 #include "area_render_state.h"
 #include "render_config.h"
@@ -12,7 +13,7 @@
 #include "vulkan/texture_manager.h"
 #include "vulkan/VulkanManager.h"
 #include "vulkan/math/projection.h"
-#include "vulkan/math/vector4F.h"
+//#include "vulkan/math/vector4F.h"
 
 #define DATA_PATH (RESOURCE_PATH "data/")
 #define FGT_PATH (RESOURCE_PATH "data/textures.fgt")

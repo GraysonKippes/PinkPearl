@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "math/Box.h"
-#include "math/vector4F.h"
+#include "math/Vector.h"
 #include "util/string.h"
 
 #include "Buffer2.h"
@@ -90,7 +90,7 @@ void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F
 
 
 
-// TODO - replace these two functions with specific control functions
+// TODO - replace these functions with specific control functions
 TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle);
 void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex);
 ModelTransform *getModelTransforms(const ModelPool modelPool);

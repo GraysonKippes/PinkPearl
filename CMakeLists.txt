@@ -69,11 +69,12 @@ target_sources(PinkPearl PRIVATE
 	src/math/Box.c
 	src/math/extent.c
 	src/math/offset.c
-	src/math/vector3D.c
+	src/math/Vector.c
 	src/render/area_render_state.c
 	src/render/render_config.c
 	src/render/render_object.c
 	src/render/renderer.c
+	src/render/RenderText.c
 	src/render/texture_pack.c
 	src/render/stb/image_data.c
 	src/render/vulkan/buffer.c
@@ -103,7 +104,6 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/compute/ComputeStitchTexture.c
 	src/render/vulkan/math/lerp.c
 	src/render/vulkan/math/render_vector.c
-	src/render/vulkan/math/vector4F.c
 	src/util/allocate.c
 	src/util/file_io.c
 	src/util/Random.c

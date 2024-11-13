@@ -104,7 +104,7 @@ CardinalDirection test_room_travel(const Vector3D player_position, const Area ar
 		.z = 0.0
 	};
 	// Player position in room space (abbreviated IRS).
-	const Vector3D player_position_irs = vector3DSubtract(player_position, roomPosition);
+	const Vector3D player_position_irs = subVec(player_position, roomPosition);
 
 	// TODO - make this check which edge of the room the player actually goes through.
 

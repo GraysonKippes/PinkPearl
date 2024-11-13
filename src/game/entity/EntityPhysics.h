@@ -1,7 +1,7 @@
 #ifndef ENTITY_PHYSICS_H
 #define ENTITY_PHYSICS_H
 
-#include "math/vector3D.h"
+#include "math/Vector.h"
 
 typedef struct EntityPhysics {
 	

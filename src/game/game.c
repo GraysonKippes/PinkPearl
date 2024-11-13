@@ -44,8 +44,7 @@ void start_game(void) {
 		.maxSpawnCount = 5
 	};
 	
-	//entitySpawnerReload(&testEntitySpawner);
-	testEntitySpawner.spawnCounter = 5;
+	entitySpawnerReload(&testEntitySpawner);
 	entitySpawnerSpawnEntities(&testEntitySpawner);
 }
 
@@ -75,9 +74,7 @@ void tick_game(void) {
 	
 	//static const double speed = 0.24;
 	static const double accelerationMagnitude = 0.24;
-
-	pPlayerEntity->physics.acceleration = zeroVector3D;
-	
+	pPlayerEntity->physics.acceleration = zeroVec3D;
 	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->renderHandle, 0);
 	unsigned int nextAnimation = currentAnimation;
 
@@ -101,8 +98,8 @@ void tick_game(void) {
 		nextAnimation = 3;
 	}
 
-	pPlayerEntity->physics.acceleration = vector3DNormalize(pPlayerEntity->physics.acceleration);
-	pPlayerEntity->physics.acceleration = vector3DScalarMultiply(pPlayerEntity->physics.acceleration, accelerationMagnitude);
+	pPlayerEntity->physics.acceleration = normVec(pPlayerEntity->physics.acceleration);
+	pPlayerEntity->physics.acceleration = mulVec(pPlayerEntity->physics.acceleration, accelerationMagnitude);
 	
 	if (nextAnimation != currentAnimation) {
 		renderObjectSetAnimation(pPlayerEntity->renderHandle, 0, nextAnimation);

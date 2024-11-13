@@ -211,7 +211,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 		return;
 	}
 	
-	loadInfo.modelPool->pModelTransforms[modelIndex] = makeModelTransform(loadInfo.position, zeroVector4F, zeroVector4F);
+	loadInfo.modelPool->pModelTransforms[modelIndex] = makeModelTransform(loadInfo.position, zeroVec4F, zeroVec4F);
 	
 	/* Generate model's mesh and upload to vertex buffer(s) */
 	

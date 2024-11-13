@@ -8,9 +8,9 @@
 #include "game/area/room.h"
 #include "math/Box.h"
 #include "math/offset.h"
+#include "math/Vector.h"
 #include "vulkan/TextureState.h"
 #include "vulkan/math/projection.h"
-#include "vulkan/math/vector4F.h"
 
 #include "render_config.h"
 

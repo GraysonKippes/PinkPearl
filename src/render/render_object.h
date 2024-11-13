@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #include "math/Box.h"
-#include "math/vector3D.h"
+#include "math/Vector.h"
 #include "util/string.h"
 #include "vulkan/TextureState.h"
 #include "vulkan/math/render_vector.h"

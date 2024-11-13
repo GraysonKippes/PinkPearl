@@ -1,9 +1,7 @@
 #include "render_vector.h"
 
-#include <stddef.h>
-
 void renderVectorSet(RenderVector *const pRenderVector, const Vector4F newVector) {
-	if (pRenderVector == nullptr) {
+	if (!pRenderVector) {
 		return;
 	}
 	pRenderVector->previous = pRenderVector->current;
@@ -11,7 +9,7 @@ void renderVectorSet(RenderVector *const pRenderVector, const Vector4F newVector
 }
 
 void renderVectorReset(RenderVector *const pRenderVector, const Vector4F newVector) {
-	if (pRenderVector == nullptr) {
+	if (!pRenderVector) {
 		return;
 	}
 	pRenderVector->current = newVector;
@@ -19,7 +17,7 @@ void renderVectorReset(RenderVector *const pRenderVector, const Vector4F newVect
 }
 
 void renderVectorSettle(RenderVector *const pRenderVector) {
-	if (pRenderVector == nullptr) {
+	if (!pRenderVector) {
 		return;
 	}
 	pRenderVector->previous = pRenderVector->current;

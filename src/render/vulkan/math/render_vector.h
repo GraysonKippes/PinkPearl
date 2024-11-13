@@ -1,7 +1,7 @@
 #ifndef RENDER_VECTOR_H
 #define RENDER_VECTOR_H
 
-#include "vector4F.h"
+#include "math/Vector.h"
 
 typedef struct RenderVector {
 	Vector4F current;
