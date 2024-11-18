@@ -76,6 +76,8 @@ typedef struct ModelLoadInfo {
 	// The color of the model if there is a color vertex attribute.
 	Vector4F color;
 	
+	uint32_t imageIndex;
+	
 } ModelLoadInfo;
 
 void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle);

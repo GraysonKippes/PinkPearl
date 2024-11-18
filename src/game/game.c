@@ -9,6 +9,7 @@
 #include "render/area_render_state.h"
 #include "render/render_object.h"
 #include "render/renderer.h"
+#include "render/RenderText.h"
 #include "render/vulkan/TextureState.h"
 #include "util/time.h"
 
@@ -26,6 +27,8 @@ Area currentArea = { };
 
 // The handle to the player entity.
 static int playerEntityHandle;
+
+static RenderTextObject testRenderTextObject = nullptr;
 
 void start_game(void) {
 
@@ -46,6 +49,8 @@ void start_game(void) {
 	
 	entitySpawnerReload(&testEntitySpawner);
 	entitySpawnerSpawnEntities(&testEntitySpawner);
+	
+	testRenderTextObject = loadRenderTextObject((String){ .length = 5, .capacity = 6, .pBuffer = "slime" }, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 1.0, 1.0, 1.0 });
 }
 
 void tick_game(void) {

@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 
-#include "math/Vector.h"
 #include "vulkan/Draw.h"
 #include "vulkan/VulkanManager.h"
 
@@ -31,7 +30,13 @@ RenderTextObject loadRenderTextObject(const String text, const Vector3D position
 		
 		const ModelLoadInfo modelLoadInfo = {
 			.modelPool = modelPoolMain,
-			.position = vec3DtoVec4F(position),
+			//.position = vec3DtoVec4F(position),
+			.position = (Vector4F){
+				.x = position.x + (float)i * 0.5F,
+				.y = position.y,
+				.z = position.z,
+				.w = 1.0F
+			},
 			.dimensions = (BoxF){
 				.x1 = -0.25F,
 				.y1 = -0.25F,
@@ -39,15 +44,24 @@ RenderTextObject loadRenderTextObject(const String text, const Vector3D position
 				.y2 = 0.25F
 			},
 			.textureID = (String){
-				.length = 13,
-				.capacity = 14,
-				.pBuffer = "fontFrogBlock"
+				.length = 17,
+				.capacity = 18,
+				.pBuffer = "gui/fontFrogBlock"
 			},
-			.color = vec3DtoVec4F(color)
+			.color = vec3DtoVec4F(color),
+			.imageIndex = (uint32_t)text.pBuffer[i]
 		};
 		
 		loadModel(modelLoadInfo, &renderTextObject->pQuadHandles[i]);
 	}
 	
 	return renderTextObject;
+}
+
+void unloadRenderTextObject(RenderTextObject *const pRenderTextObject) {
+	if (!pRenderTextObject) {
+		return;
+	}
+	
+	
 }

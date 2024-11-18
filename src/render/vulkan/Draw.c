@@ -336,7 +336,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 		.vertexOffset = loadInfo.modelPool->firstVertex + loadInfo.modelPool->vertexCount * modelIndex,
 		.firstInstance = 0,
 		.modelIndex = modelIndex,
-		.imageIndex = 0
+		.imageIndex = loadInfo.imageIndex
 	};
 	
 	uint32_t insertIndex = loadInfo.modelPool->drawInfoCount;
