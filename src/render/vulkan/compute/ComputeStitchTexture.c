@@ -138,11 +138,7 @@ void initComputeStitchTexture(const VkDevice vkDevice) {
 	
 	const ComputePipelineCreateInfo pipelineCreateInfo = {
 		.vkDevice = vkDevice,
-		.shaderFilename = (String){
-			.length = 15,
-			.capacity = 16,
-			.pBuffer = "RoomTexture.spv"
-		},
+		.shaderFilename = makeStaticString("RoomTexture.spv"),
 		.pushConstantRangeCount = 1,
 		.pPushConstantRanges = (PushConstantRange[1]){
 			{

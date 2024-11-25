@@ -30,11 +30,7 @@ bool initComputeMatrices(const VkDevice vkDevice) {
 	
 	const ComputePipelineCreateInfo pipelineCreateInfo = {
 		.vkDevice = vkDevice,
-		.shaderFilename = (String){
-			.length = 19,
-			.capacity = 20,
-			.pBuffer = "ComputeMatrices.spv"
-		},
+		.shaderFilename = makeStaticString("ComputeMatrices.spv"),
 		.pushConstantRangeCount = 1,
 		.pPushConstantRanges = (PushConstantRange[1]){
 			{

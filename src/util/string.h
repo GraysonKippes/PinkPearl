@@ -5,6 +5,15 @@
 #include <stddef.h>
 #include <string.h>
 
+// Constructs a String out of a static c-string, AKA char[].
+#define makeStaticString(cstr) \
+		(const String){ \
+			.length = sizeof(cstr) - 1, \
+			.capacity = sizeof(cstr), \
+			.pBuffer = cstr, \
+		}
+
+// TODO: consider adding a flag for whether the string is malloced/freeable or not.
 typedef struct String {
 	
 	// Number of characters in the string.

@@ -31,12 +31,11 @@ void start_game(void) {
 	currentArea = readAreaData("test");
 	areaRenderStateReset(&globalAreaRenderState, currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
 
-	String playerEntityID = { .length = 5, .capacity = 6, .pBuffer = "pearl" };
-	playerEntityHandle = loadEntity(playerEntityID, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
+	playerEntityHandle = loadEntity(makeStaticString("pearl"), (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
 	
 	// Test entity spawner.
 	EntitySpawner testEntitySpawner = {
-		.entityID = (String){ .length = 5, .capacity = 6, .pBuffer = "slime" },
+		.entityID = makeStaticString("slime"),
 		.reloadMode = RELOAD_AFTER_REFRESH,
 		.spawnCounter = 0,
 		.minSpawnCount = 2,

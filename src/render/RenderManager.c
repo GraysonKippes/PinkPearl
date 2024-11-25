@@ -14,7 +14,6 @@
 #define FGT_PATH (RESOURCE_PATH "data/textures.fgt")
 
 #define RENDER_OBJECT_MAX_COUNT 64
-
 #define RENDER_OBJECT_QUAD_MAX_COUNT 16
 
 typedef struct RenderObjectQuad {
@@ -93,29 +92,28 @@ void initRenderManager(void) {
 		
 		switch((RoomSize)i) {
 			case ROOM_SIZE_XS:
-				roomTextureCreateInfo.textureID = newString(256, "roomXS");
+				roomTextureCreateInfo.textureID = makeStaticString("roomXS");
 				roomTextureCreateInfo.cellExtent.width = 8 * tile_texel_length;
 				roomTextureCreateInfo.cellExtent.length = 5 * tile_texel_length;
 				break;
 			case ROOM_SIZE_S:
-				roomTextureCreateInfo.textureID = newString(256, "roomS");
+				roomTextureCreateInfo.textureID = makeStaticString("roomS");
 				roomTextureCreateInfo.cellExtent.width = 16 * tile_texel_length;
 				roomTextureCreateInfo.cellExtent.length = 10 * tile_texel_length;
 				break;
 			case ROOM_SIZE_M:
-				roomTextureCreateInfo.textureID = newString(256, "roomM");
+				roomTextureCreateInfo.textureID = makeStaticString("roomM");
 				roomTextureCreateInfo.cellExtent.width = 24 * tile_texel_length;
 				roomTextureCreateInfo.cellExtent.length = 15 * tile_texel_length;
 				break;
 			case ROOM_SIZE_L:
-				roomTextureCreateInfo.textureID = newString(256, "roomL");
+				roomTextureCreateInfo.textureID = makeStaticString("roomL");
 				roomTextureCreateInfo.cellExtent.width = 32 * tile_texel_length;
 				roomTextureCreateInfo.cellExtent.length = 20 * tile_texel_length;
 				break;
 		}
 		
 		textureManagerLoadTexture(roomTextureCreateInfo);
-		deleteString(&roomTextureCreateInfo.textureID);
 	}
 }
 
@@ -206,12 +204,7 @@ int32_t loadRenderText(const String text, const Vector3D position, const Vector3
 		quadLoadInfos[i] = (QuadLoadInfo){
 			.quadType = QUAD_TYPE_MAIN,
 			.initPosition = addVec(position, mulVec3D((Vector3D){ 0.5, 0.0, 0.0 }, (double)i)),
-			.quadDimensions = (BoxF){
-				.x1 = -0.25F,
-				.y1 = -0.25F,
-				.x2 = 0.25F,
-				.y2 = 0.25F
-			},
+			.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 			.initAnimation = 0,
 			.initCell = (int32_t)text.pBuffer[i],
 			.color = vec3DtoVec4F(color)
@@ -219,11 +212,7 @@ int32_t loadRenderText(const String text, const Vector3D position, const Vector3
 	}
 	
 	const RenderObjectLoadInfo loadInfo = {
-		.textureID = (String){
-			.length = 17,
-			.capacity = 18,
-			.pBuffer = "gui/fontFrogBlock"
-		},
+		.textureID = makeStaticString("gui/fontFrogBlock"),
 		.quadCount = text.length,
 		.pQuadLoadInfos = quadLoadInfos
 	};
