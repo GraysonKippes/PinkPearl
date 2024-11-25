@@ -39,23 +39,19 @@ struct ProjectionBounds {
 layout(local_size_x = MAX_MODEL_COUNT) in;
 
 layout(set = 0, binding = 0) uniform sampler samplers[];
-
 layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
-
 layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
 
-// TODO: make scalar
-layout(set = 0, binding = 3, std140) uniform TransformBuffers {
+layout(set = 0, binding = 3, scalar) uniform TransformBuffers {
 	ProjectionBounds projectionBounds;
 	float deltaTime;
 	vec4 cameraPosition;
 	RenderTransform transforms[MAX_MODEL_COUNT];
 } transformBuffers[];
 
-// TODO: make scalar
-layout(set = 0, binding = 4, std140) writeonly buffer MatrixBuffers {
-	mat4 viewMatrix;
+layout(set = 0, binding = 4, scalar) writeonly buffer MatrixBuffers {
 	mat4 projectionMatrix;
+	mat4 viewMatrices[MAX_MODEL_COUNT];
 	mat4 modelMatrices[MAX_MODEL_COUNT];
 } matrixBuffers[];
 
@@ -129,6 +125,6 @@ void main() {
 	
 	// Compute matrices.
 	matrixBuffers[pushConstants.matrixBufferIndex].modelMatrices[modelIndex] = makeTranslationMat4(vec4Lerp(translation, deltaTime));
-	matrixBuffers[pushConstants.matrixBufferIndex].viewMatrix = makeViewMatrix(cameraPosition);
+	matrixBuffers[pushConstants.matrixBufferIndex].viewMatrices[modelIndex] = makeViewMatrix(cameraPosition);
 	matrixBuffers[pushConstants.matrixBufferIndex].projectionMatrix = makeOrthographicProjectionMatrix(projectionBounds);
 }

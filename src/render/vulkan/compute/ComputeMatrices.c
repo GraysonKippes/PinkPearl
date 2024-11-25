@@ -10,8 +10,6 @@
 #include "../Descriptor.h"
 #include "../VulkanManager.h"
 
-
-
 static Pipeline computeMatricesPipeline;
 
 static VkCommandBuffer computeMatricesCmdBuf = VK_NULL_HANDLE;
@@ -19,8 +17,6 @@ static VkCommandBuffer computeMatricesCmdBuf = VK_NULL_HANDLE;
 TimelineSemaphore computeMatricesSemaphore = { };
 
 static VkFence computeMatricesFence = VK_NULL_HANDLE;
-
-
 
 // One camera matrix, one projection matrix, and one matrix for each render object slot.
 static const VkDeviceSize matrixCount = 256 + 2;
@@ -92,9 +88,9 @@ void computeMatrices(const uint32_t transformBufferDescriptorHandle, const uint3
 		return;
 	}
 	memcpy(mapped_memory, &projectionBounds, sizeof projectionBounds);
-	memcpy(mapped_memory + 32, &deltaTime, sizeof deltaTime);
-	memcpy(mapped_memory + 48, &cameraPosition, sizeof cameraPosition);
-	memcpy(mapped_memory + 64, transforms, numRenderObjectSlots * sizeof *transforms);
+	memcpy(mapped_memory + 24, &deltaTime, sizeof deltaTime);
+	memcpy(mapped_memory + 28, &cameraPosition, sizeof cameraPosition);
+	memcpy(mapped_memory + 44, transforms, numRenderObjectSlots * sizeof *transforms);
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 
 	vkFreeCommandBuffers(computeMatricesPipeline.vkDevice, commandPoolCompute.vkCommandPool, 1, &computeMatricesCmdBuf);

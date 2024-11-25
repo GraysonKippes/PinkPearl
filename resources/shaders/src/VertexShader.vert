@@ -2,7 +2,7 @@
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_nonuniform_qualifier : require
 
-#define MAX_MODEL_COUNT 512
+#define MAX_MODEL_COUNT 256
 
 // Type/struct definitions
 
@@ -21,9 +21,7 @@ struct DrawInfo {
 // Shader layout defintions
 
 layout(set = 0, binding = 0) uniform sampler samplers[];
-
 layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
-
 layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
 
 // TODO: use buffer descriptor aliasing for various buffer configurations (e.g. matrices, lighting data).
@@ -34,8 +32,8 @@ layout(set = 0, binding = 3, scalar) uniform DrawInfoBuffers {
 } drawInfoBuffers[];
 
 layout(set = 0, binding = 4, scalar) buffer MatrixBuffers {
-	mat4 viewMatrix;
 	mat4 projectionMatrix;
+	mat4 viewMatrices[MAX_MODEL_COUNT];
 	mat4 modelMatrices[MAX_MODEL_COUNT];
 } matrixBuffers[];
 
@@ -62,7 +60,7 @@ void main() {
 	
 	mat4 modelMatrix = matrixBuffers[pushConstants.storageBufferIndex].modelMatrices[drawInfo.modelIndex];
 	vec4 homogenousCoordinates = vec4(inPosition, 1.0);
-	gl_Position = matrixBuffers[pushConstants.storageBufferIndex].projectionMatrix * matrixBuffers[pushConstants.storageBufferIndex].viewMatrix * modelMatrix * homogenousCoordinates;
+	gl_Position = matrixBuffers[pushConstants.storageBufferIndex].projectionMatrix * matrixBuffers[pushConstants.storageBufferIndex].viewMatrices[drawInfo.modelIndex] * modelMatrix * homogenousCoordinates;
 
 	outTextureCoordinates = inTextureCoordinates;
 	outColor = inColor;

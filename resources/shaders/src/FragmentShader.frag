@@ -2,7 +2,7 @@
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_nonuniform_qualifier : require
 
-#define MAX_MODEL_COUNT 512
+#define MAX_MODEL_COUNT 256
 
 struct DrawInfo {
 	// Indirect draw info
@@ -17,9 +17,7 @@ struct DrawInfo {
 };
 
 layout(set = 0, binding = 0) uniform sampler samplers[];
-
 layout(set = 0, binding = 1) uniform texture2DArray sampledImages[];
-
 layout(set = 0, binding = 2, rgba8ui) uniform uimage2DArray storageImages[];
 
 layout(set = 0, binding = 3, scalar) uniform DrawInfoBuffers {
@@ -28,8 +26,8 @@ layout(set = 0, binding = 3, scalar) uniform DrawInfoBuffers {
 } drawInfoBuffers[];
 
 layout(set = 0, binding = 4, scalar) buffer MatrixBuffers {
-	mat4 viewMatrix;
 	mat4 projectionMatrix;
+	mat4 viewMatrices[MAX_MODEL_COUNT];
 	mat4 modelMatrices[MAX_MODEL_COUNT];
 } matrixBuffers[];
 

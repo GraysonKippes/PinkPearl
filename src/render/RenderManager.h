@@ -31,6 +31,9 @@ typedef struct QuadLoadInfo {
 
 typedef struct RenderObjectLoadInfo {
 	
+	// True if the render object will be a GUI element, AKA move with the camera.
+	bool isGUIElement;
+	
 	// The texture that all quads controlled by the render object will use.
 	// Only used for regular (i.e. not debug) render objects.
 	String textureID;
@@ -43,9 +46,16 @@ typedef struct RenderObjectLoadInfo {
 
 // GLOBAL VARIABLES
 
-extern AreaRenderState globalAreaRenderState;
-
 extern const Vector4F COLOR_WHITE;
+extern const Vector4F COLOR_BLACK;
+extern const Vector4F COLOR_RED;
+extern const Vector4F COLOR_GREEN;
+extern const Vector4F COLOR_BLUE;
+extern const Vector4F COLOR_YELLOW;
+extern const Vector4F COLOR_TEAL;
+extern const Vector4F COLOR_PURPLE;
+
+extern AreaRenderState globalAreaRenderState;
 
 // GENERAL RENDER MANAGER FUNCTIONS
 

@@ -33,11 +33,16 @@ typedef struct RenderObject {
 	
 } RenderObject;
 
+const Vector4F COLOR_WHITE 	= { 1.0F, 1.0F, 1.0F, 1.0F };
+const Vector4F COLOR_BLACK 	= { 0.0F, 0.0F, 0.0F, 1.0F };
+const Vector4F COLOR_RED 	= { 1.0F, 0.0F, 0.0F, 1.0F };
+const Vector4F COLOR_GREEN 	= { 0.0F, 1.0F, 0.0F, 1.0F };
+const Vector4F COLOR_BLUE 	= { 0.0F, 0.0F, 1.0F, 1.0F };
+const Vector4F COLOR_YELLOW	= { 1.0F, 1.0F, 0.0F, 1.0F };
+const Vector4F COLOR_TEAL 	= { 0.0F, 1.0F, 1.0F, 1.0F };
+const Vector4F COLOR_PURPLE	= { 1.0F, 0.0F, 1.0F, 1.0F };
+
 AreaRenderState globalAreaRenderState = { };
-
-const Vector4F COLOR_WHITE = { 1.0F, 1.0F, 1.0F, 1.0F };
-
-//AreaRenderState globalAreaRenderState = { };
 
 void initRenderManager(void) {
 	

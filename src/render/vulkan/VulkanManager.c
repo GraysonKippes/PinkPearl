@@ -142,8 +142,8 @@ static void create_global_storage_buffer(void) {
 		.queue_family_indices = nullptr,
 		.num_partition_sizes = 2,
 		.partition_sizes = (VkDeviceSize[2]){
-			16512,
-			16512
+			32832,
+			32832
 		}
 	};
 	
