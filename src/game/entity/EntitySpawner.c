@@ -9,7 +9,8 @@ void entitySpawnerReload(EntitySpawner *const pEntitySpawner) {
 	if (!pEntitySpawner) {
 		return;
 	}
-	pEntitySpawner->spawnCounter = random(pEntitySpawner->minSpawnCount, pEntitySpawner->maxSpawnCount);
+	//pEntitySpawner->spawnCounter = random(pEntitySpawner->minSpawnCount, pEntitySpawner->maxSpawnCount);
+	pEntitySpawner->spawnCounter = 3;
 }
 
 void entitySpawnerSpawnEntities(EntitySpawner *const pEntitySpawner) {

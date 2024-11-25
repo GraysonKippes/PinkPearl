@@ -47,10 +47,10 @@ TextureState newTextureState(const String textureID) {
 }
 
 bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned int nextAnimation) {
-	if (pTextureState == nullptr) {
+	if (!pTextureState) {
 		return false;
 	} else if (nextAnimation >= pTextureState->numAnimations) {
-		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning updating texture animation state: current animation index (%u) is not less than number of animations (%u).", pTextureState->currentAnimation, pTextureState->numAnimations);
+		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning updating texture animation state: next animation index (%u) is not less than number of animations (%u).", nextAnimation, pTextureState->numAnimations);
 		return false;
 	}
 

@@ -15,7 +15,7 @@ const Logger loggerGame = {
 
 const Logger loggerRender = {
 	.pName = "Render",
-	.levelThreshold = LOG_LEVEL_INFO
+	.levelThreshold = LOG_LEVEL_VERBOSE
 };
 
 const Logger loggerVulkan = {

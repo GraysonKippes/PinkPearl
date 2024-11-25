@@ -6,7 +6,7 @@
 #include "log/Logger.h"
 
 #include "game/game.h"
-#include "render/render_object.h"
+#include "render/RenderManager.h"
 #include "render/vulkan/math/render_vector.h"
 
 #define SQUARE(x) ((x) * (x))
@@ -74,10 +74,8 @@ void tick_entity(Entity *const pEntity) {
 
 	pEntity->physics.position = nextPosition;
 
-	// Update render object.
-	const int renderHandle = pEntity->renderHandle;
-	renderObjectSetPosition(renderHandle, 0, pEntity->physics.position);
-	renderObjectSetPosition(renderHandle, 1, pEntity->physics.position);
+	renderObjectSetPosition2(pEntity->renderHandle, 0, pEntity->physics.position);
+	renderObjectSetPosition2(pEntity->renderHandle, 1, pEntity->physics.position);
 }
 
 /* SINGLE-AXIS OVERLAP CASES

@@ -4,7 +4,7 @@
 
 #include "game/game.h"
 #include "glfw/glfw_manager.h"
-#include "render/renderer.h"
+#include "render/RenderManager.h"
 #include "util/time.h"
 
 static bool client_running = false;
@@ -33,7 +33,7 @@ void run_client(void) {
 		}
 
 		if (client_running && !should_application_window_close()) {
-			render_frame(tick_delta_time);
+			renderFrame(tick_delta_time);
 		}
 		else {
 			break;

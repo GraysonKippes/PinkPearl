@@ -5,8 +5,7 @@
 #include "EntityRegistry.h"
 
 #include "log/Logger.h"
-#include "render/render_object.h"
-#include "render/renderer.h"
+#include "render/RenderManager.h"
 
 const int maxNumEntities = MAX_NUM_ENTITIES;
 
@@ -54,7 +53,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 				.initPosition = initPosition,
 				.quadDimensions = entityRecord.textureDimensions,
 				.initAnimation = 2,
-				.color = (Vector4F){ 1.0F, 1.0F, 1.0F, 1.0F }
+				.color = COLOR_WHITE
 			}, {
 				.quadType = QUAD_TYPE_DEBUG,
 				.initPosition = initPosition,
@@ -64,8 +63,8 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 			}
 		}
 	};
-	const int renderHandle = loadRenderObject2(renderObjectLoadInfo);
-	if (!validateRenderObjectHandle(renderHandle)) {
+	const int32_t renderHandle = loadRenderObject3(renderObjectLoadInfo);
+	if (!renderObjectExists(renderHandle)) {
 		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to load render object.");
 		return entityHandleInvalid;
 	}
@@ -93,7 +92,7 @@ void unloadEntity(const int entityHandle) {
 		return;
 	}
 	
-	unloadRenderObject(&entities[entityHandle].renderHandle);
+	unloadRenderObject3(&entities[entityHandle].renderHandle);
 	entitySlotEnabledFlags[entityHandle] = false;
 }
 

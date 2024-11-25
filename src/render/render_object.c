@@ -38,6 +38,7 @@ static Heap inactiveRenderHandles = { };
 static int renderObjectQuadHandles[NUM_RENDER_OBJECT_SLOTS][MAX_NUM_RENDER_OBJECT_QUADS];
 static RenderObjectQuadType renderObjectQuadTypes[NUM_RENDER_OBJECT_SLOTS][MAX_NUM_RENDER_OBJECT_QUADS];
 
+bool validateRenderObjectHandle(const int renderHandle);
 static ModelPool getModelPoolType(const RenderObjectQuadType quadType);
 
 bool initRenderObjectManager(void) {

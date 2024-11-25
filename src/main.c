@@ -9,7 +9,7 @@
 #include "game/entity/EntityRegistry.h"
 #include "glfw/glfw_manager.h"
 #include "log/Logger.h"
-#include "render/renderer.h"
+#include "render/RenderManager.h"
 #include "util/Random.h"
 
 static const char appVersion[] = "Alpha 0.1";
@@ -22,7 +22,8 @@ int main(void) {
 	}
 
 	init_GLFW();
-	init_renderer();
+	initRenderManager();
+	//init_renderer();
 	init_audio_mixer();
 	init_portaudio();
 	initEntityRegistry();
@@ -37,7 +38,8 @@ int main(void) {
 	terminate_entity_registry();
 	terminate_portaudio();
 	terminate_audio_mixer();
-	terminate_renderer();
+	terminateRenderManager();
+	//terminate_renderer();
 	terminate_GLFW();
 
 	logMsg(loggerSystem, LOG_LEVEL_INFO, "Stopping Pink Pearl. Goodbye!");

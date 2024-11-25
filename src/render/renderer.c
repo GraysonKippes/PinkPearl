@@ -13,7 +13,6 @@
 #include "vulkan/texture_manager.h"
 #include "vulkan/VulkanManager.h"
 #include "vulkan/math/projection.h"
-//#include "vulkan/math/vector4F.h"
 
 #define DATA_PATH (RESOURCE_PATH "data/")
 #define FGT_PATH (RESOURCE_PATH "data/textures.fgt")
@@ -105,7 +104,7 @@ void render_frame(const float deltaTime) {
 	glfwPollEvents();
 	
 	for (int i = 0; i < (int)numRenderObjectSlots; ++i) {
-		renderObjectAnimate(i);
+		//renderObjectAnimate(i);
 	}
 	
 	const Vector4F cameraPosition = areaRenderStateGetCameraPosition(&globalAreaRenderState);

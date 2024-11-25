@@ -7,8 +7,7 @@
 #include "glfw/input_manager.h"
 #include "log/Logger.h"
 #include "render/area_render_state.h"
-#include "render/render_object.h"
-#include "render/renderer.h"
+#include "render/RenderManager.h"
 #include "render/RenderText.h"
 #include "render/vulkan/TextureState.h"
 #include "util/time.h"
@@ -27,8 +26,6 @@ Area currentArea = { };
 
 // The handle to the player entity.
 static int playerEntityHandle;
-
-static RenderTextObject testRenderTextObject = nullptr;
 
 void start_game(void) {
 
@@ -49,8 +46,6 @@ void start_game(void) {
 	
 	entitySpawnerReload(&testEntitySpawner);
 	entitySpawnerSpawnEntities(&testEntitySpawner);
-	
-	testRenderTextObject = loadRenderTextObject((String){ .length = 5, .capacity = 6, .pBuffer = "slime" }, (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 1.0, 1.0, 1.0 });
 }
 
 void tick_game(void) {
@@ -80,7 +75,7 @@ void tick_game(void) {
 	//static const double speed = 0.24;
 	static const double accelerationMagnitude = 0.24;
 	pPlayerEntity->physics.acceleration = zeroVec3D;
-	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->renderHandle, 0);
+	const unsigned int currentAnimation = renderObjectGetAnimation2(pPlayerEntity->renderHandle, 0);
 	unsigned int nextAnimation = currentAnimation;
 
 	if (move_up_pressed && !move_down_pressed) {
@@ -107,7 +102,7 @@ void tick_game(void) {
 	pPlayerEntity->physics.acceleration = mulVec(pPlayerEntity->physics.acceleration, accelerationMagnitude);
 	
 	if (nextAnimation != currentAnimation) {
-		renderObjectSetAnimation(pPlayerEntity->renderHandle, 0, nextAnimation);
+		renderObjectSetAnimation2(pPlayerEntity->renderHandle, 0, nextAnimation);
 	}
 
 	tickEntities();

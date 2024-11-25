@@ -1,5 +1,7 @@
 #include "RenderText.h"
 
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "vulkan/Draw.h"
@@ -62,6 +64,18 @@ void unloadRenderTextObject(RenderTextObject *const pRenderTextObject) {
 	if (!pRenderTextObject) {
 		return;
 	}
+	
+	
+}
+
+void drawTextF(const RenderTextObject renderTextObject, const char *const pFormat, ...) {
+	
+	char str[64];
+	
+	va_list args;
+	va_start(args, pFormat);
+	vsprintf(str, pFormat, args);
+	va_end(args);
 	
 	
 }

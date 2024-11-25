@@ -5,6 +5,7 @@
 #include "util/time.h"
 
 #include "render_object.h"
+#include "RenderManager.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/compute/ComputeStitchTexture.h"
 #include "vulkan/math/lerp.h"
@@ -230,13 +231,35 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	};
 	
 	// If there already is a room render object in the cache slot, then unload it first.
-	if (validateRenderObjectHandle(pAreaRenderState->roomRenderObjHandles[roomCacheSlot])) {
-		unloadRenderObject(&pAreaRenderState->roomRenderObjHandles[roomCacheSlot]);
+	if (renderObjectExists(pAreaRenderState->roomRenderObjHandles[roomCacheSlot])) {
+		unloadRenderObject3(&pAreaRenderState->roomRenderObjHandles[roomCacheSlot]);
 	}
 	
-	pAreaRenderState->roomRenderObjHandles[roomCacheSlot] = loadRenderObject(roomSizeToTextureID(room.size), roomQuadDimensions, 2, roomLayerPositions);
+	const RenderObjectLoadInfo loadInfo = {
+		.textureID = roomSizeToTextureID(room.size),
+		.quadCount = 2,
+		.pQuadLoadInfos = (QuadLoadInfo[2]){
+			{
+				.quadType = QUAD_TYPE_MAIN,
+				.initPosition = roomLayerPositions[0],
+				.quadDimensions = roomQuadDimensions,
+				.initAnimation = roomCacheSlot * numRoomLayers,
+				.initCell = 0,
+				.color = COLOR_WHITE
+			}, {
+				.quadType = QUAD_TYPE_MAIN,
+				.initPosition = roomLayerPositions[1],
+				.quadDimensions = roomQuadDimensions,
+				.initAnimation = roomCacheSlot * numRoomLayers + 1,
+				.initCell = 0,
+				.color = COLOR_WHITE
+			}
+		}
+	};
 	
-	const int textureHandle = renderObjectGetTextureHandle(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0);
+	pAreaRenderState->roomRenderObjHandles[roomCacheSlot] = loadRenderObject3(loadInfo);
+	
+	const int textureHandle = renderObjectGetTextureHandle2(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0);
 	const ImageSubresourceRange imageSubresourceRange = {
 		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 		.baseArrayLayer = roomCacheSlot * numRoomLayers,
@@ -244,6 +267,6 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	};
 	
 	computeStitchTexture(pAreaRenderState->tilemapTextureState.textureHandle, textureHandle, imageSubresourceRange, room.extent, room.ppTileIndices);
-	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0, roomCacheSlot * numRoomLayers);
-	renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 1, roomCacheSlot * numRoomLayers + 1);
+	//renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0, roomCacheSlot * numRoomLayers);
+	//renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 1, roomCacheSlot * numRoomLayers + 1);
 }

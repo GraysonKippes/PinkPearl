@@ -3,7 +3,7 @@
 #include "entity.h"
 
 #include "math/Vector.h"
-#include "render/render_object.h"
+#include "render/RenderManager.h"
 #include "util/Random.h"
 #include "util/time.h"
 
@@ -29,7 +29,7 @@ static void entityAIRegularTickSlime(Entity *const pEntity) {
 		return;
 	}
 	
-	const unsigned int currentAnimation = renderObjectGetAnimation(pEntity->renderHandle, 0);
+	const unsigned int currentAnimation = renderObjectGetAnimation2(pEntity->renderHandle, 0);
 	unsigned int nextAnimation = currentAnimation;
 	
 	const int nextDirection = random(0, 4);
@@ -58,7 +58,7 @@ static void entityAIRegularTickSlime(Entity *const pEntity) {
 	pEntity->physics.acceleration = mulVec(pEntity->physics.acceleration, accelerationMagnitude);
 	
 	if (nextAnimation != currentAnimation) {
-		renderObjectSetAnimation(pEntity->renderHandle, 0, nextAnimation);
+		renderObjectSetAnimation2(pEntity->renderHandle, 0, nextAnimation);
 	}
 	
 	pEntity->ai.lastActionTimeMS = currentTimeMS;
