@@ -8,7 +8,6 @@
 #include "log/Logger.h"
 #include "render/area_render_state.h"
 #include "render/RenderManager.h"
-#include "render/RenderText.h"
 #include "render/vulkan/TextureState.h"
 #include "util/time.h"
 

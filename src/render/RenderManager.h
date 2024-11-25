@@ -4,14 +4,46 @@
 #include <stdint.h>
 
 #include "area_render_state.h"
-#include "render_object.h"
-#include "renderer.h"
 
 // TYPE DEFINITIONS
 
+typedef enum RenderObjectQuadType {
+	QUAD_TYPE_MAIN = 0,
+	QUAD_TYPE_DEBUG = 1
+} RenderObjectQuadType;
 
+typedef struct QuadLoadInfo {
+	
+	RenderObjectQuadType quadType;
+	
+	Vector3D initPosition;
+	
+	BoxF quadDimensions;
+	
+	int32_t initAnimation;
+	
+	int32_t initCell;
+	
+	// The color that the quad will have.
+	Vector4F color;
+	
+} QuadLoadInfo;
+
+typedef struct RenderObjectLoadInfo {
+	
+	// The texture that all quads controlled by the render object will use.
+	// Only used for regular (i.e. not debug) render objects.
+	String textureID;
+	
+	// The load infos for each quad.
+	int32_t quadCount;
+	QuadLoadInfo *pQuadLoadInfos;
+	
+} RenderObjectLoadInfo;
 
 // GLOBAL VARIABLES
+
+extern AreaRenderState globalAreaRenderState;
 
 extern const Vector4F COLOR_WHITE;
 

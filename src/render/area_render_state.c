@@ -4,7 +4,6 @@
 #include "util/allocate.h"
 #include "util/time.h"
 
-#include "render_object.h"
 #include "RenderManager.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/compute/ComputeStitchTexture.h"

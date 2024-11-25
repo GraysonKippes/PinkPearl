@@ -33,6 +33,8 @@ typedef struct RenderObject {
 	
 } RenderObject;
 
+AreaRenderState globalAreaRenderState = { };
+
 const Vector4F COLOR_WHITE = { 1.0F, 1.0F, 1.0F, 1.0F };
 
 //AreaRenderState globalAreaRenderState = { };

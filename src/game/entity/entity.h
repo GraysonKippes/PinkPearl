@@ -1,9 +1,9 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include <stdint.h>
 #include "EntityAI.h"
 #include "EntityPhysics.h"
-
 #include "math/Box.h"
 
 // Represents a single "being" with the game (e.g. the player, NPCs, enemies, interactable objects).
@@ -30,7 +30,7 @@ typedef struct Entity {
 	double speed;
 	
 	// Handle to the render object associated with this entity.
-	int renderHandle;
+	int32_t renderHandle;
 	
 } Entity;
 
