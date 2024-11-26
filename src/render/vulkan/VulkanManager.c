@@ -356,8 +356,8 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	}
 
 	// Signal a semaphore when the entire batch in the compute queue is done being executed.
-	computeMatrices(transformBufferDescriptorHandle, matricesDescriptorMain, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolMain));
-	computeMatrices(transformBufferDescriptorHandle, matricesDescriptorDebug, deltaTime, projectionBounds, cameraPosition, getModelTransforms(modelPoolDebug));
+	computeMatrices(transformBufferDescriptorHandle, matricesDescriptorMain, deltaTime, projectionBounds, cameraPosition, getModelCameraFlags(modelPoolMain), getModelTransforms(modelPoolMain));
+	computeMatrices(transformBufferDescriptorHandle, matricesDescriptorDebug, deltaTime, projectionBounds, cameraPosition, getModelCameraFlags(modelPoolDebug), getModelTransforms(modelPoolDebug));
 
 	commandBufferBegin(&frame_array.frames[frame_array.current_frame].commandBuffer, false); {
 		

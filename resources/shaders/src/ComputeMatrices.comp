@@ -46,6 +46,7 @@ layout(set = 0, binding = 3, scalar) uniform TransformBuffers {
 	ProjectionBounds projectionBounds;
 	float deltaTime;
 	vec4 cameraPosition;
+	uint cameraFlags[MAX_MODEL_COUNT];
 	RenderTransform transforms[MAX_MODEL_COUNT];
 } transformBuffers[];
 
@@ -120,8 +121,9 @@ void main() {
 	// Transform info.
 	const ProjectionBounds projectionBounds = transformBuffers[pushConstants.transformBufferIndex].projectionBounds;
 	const float deltaTime = transformBuffers[pushConstants.transformBufferIndex].deltaTime;
-	const vec4 cameraPosition = transformBuffers[pushConstants.transformBufferIndex].cameraPosition;
 	const RenderVector translation = transformBuffers[pushConstants.transformBufferIndex].transforms[modelIndex].translation;
+	//const vec4 cameraPosition = vec4(0.0);
+	const vec4 cameraPosition = float(transformBuffers[pushConstants.transformBufferIndex].cameraFlags[modelIndex]) * transformBuffers[pushConstants.transformBufferIndex].cameraPosition;
 	
 	// Compute matrices.
 	matrixBuffers[pushConstants.matrixBufferIndex].modelMatrices[modelIndex] = makeTranslationMat4(vec4Lerp(translation, deltaTime));

@@ -68,6 +68,8 @@ typedef struct ModelLoadInfo {
 	// The quadrangle-vertices of the model.
 	BoxF dimensions;
 	
+	uint32_t cameraFlag;
+	
 	// Optional parameters, depending on which resources the model needs.
 	
 	// The ID of the texture to load for this model, if the model uses a texture.
@@ -95,6 +97,7 @@ void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F
 // TODO - replace these functions with specific control functions
 TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle);
 void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex);
+uint32_t *getModelCameraFlags(const ModelPool modelPool);
 ModelTransform *getModelTransforms(const ModelPool modelPool);
 
 #endif // DRAW_H

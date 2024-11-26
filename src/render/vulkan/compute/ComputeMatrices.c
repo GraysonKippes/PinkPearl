@@ -70,8 +70,8 @@ void terminateComputeMatrices(void) {
 	deletePipeline(&computeMatricesPipeline);
 }
 
-void computeMatrices(const uint32_t transformBufferDescriptorHandle, const uint32_t matrixBufferDescriptorHandle, const float deltaTime, const ProjectionBounds projectionBounds, const Vector4F cameraPosition, const ModelTransform *const transforms) {
-	if (!transforms) {
+void computeMatrices(const uint32_t transformBufferDescriptorHandle, const uint32_t matrixBufferDescriptorHandle, const float deltaTime, const ProjectionBounds projectionBounds, const Vector4F cameraPosition, const uint32_t *const pCameraFlags, const ModelTransform *const transforms) {
+	if (!pCameraFlags || !transforms) {
 		return;
 	}
 
@@ -86,7 +86,8 @@ void computeMatrices(const uint32_t transformBufferDescriptorHandle, const uint3
 	memcpy(mapped_memory, &projectionBounds, sizeof projectionBounds);
 	memcpy(mapped_memory + 24, &deltaTime, sizeof deltaTime);
 	memcpy(mapped_memory + 28, &cameraPosition, sizeof cameraPosition);
-	memcpy(mapped_memory + 44, transforms, numRenderObjectSlots * sizeof *transforms);
+	memcpy(mapped_memory + 44, pCameraFlags, 256 * sizeof(*pCameraFlags));
+	memcpy(mapped_memory + 44 + 256 * sizeof(*pCameraFlags), transforms, 256 * sizeof(*transforms));
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 
 	vkFreeCommandBuffers(computeMatricesPipeline.vkDevice, commandPoolCompute.vkCommandPool, 1, &computeMatricesCmdBuf);

@@ -235,6 +235,7 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	}
 	
 	const RenderObjectLoadInfo loadInfo = {
+		.isGUIElement = false,
 		.textureID = roomSizeToTextureID(room.size),
 		.quadCount = 2,
 		.pQuadLoadInfos = (QuadLoadInfo[2]){
@@ -266,6 +267,4 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	};
 	
 	computeStitchTexture(pAreaRenderState->tilemapTextureState.textureHandle, textureHandle, imageSubresourceRange, room.extent, room.ppTileIndices);
-	//renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0, roomCacheSlot * numRoomLayers);
-	//renderObjectSetAnimation(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 1, roomCacheSlot * numRoomLayers + 1);
 }

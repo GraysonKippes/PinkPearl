@@ -71,8 +71,7 @@ void renderFrame(const float timeDelta);
 int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo);
 
 // Loads a render object displaying text.
-// TODO: make take Vector4F for color.
-int32_t loadRenderText(const String text, const Vector3D position, const Vector3D color);
+int32_t loadRenderText(const String text, const Vector3D position, const Vector4F color);
 
 // Unloads a render object.
 void unloadRenderObject3(int32_t *const pRenderObjectHandle);

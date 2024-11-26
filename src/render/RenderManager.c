@@ -183,6 +183,7 @@ int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
 			.modelPool = getModelPoolType2(quadLoadInfo.quadType),
 			.position = vec3DtoVec4F(quadLoadInfo.initPosition),
 			.dimensions = quadLoadInfo.quadDimensions,
+			.cameraFlag = loadInfo.isGUIElement ? 0 : 1,
 			.textureID = loadInfo.textureID,
 			.color = quadLoadInfo.color,
 			.imageIndex = imageIndex
@@ -197,7 +198,7 @@ int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
 	return handle;
 }
 
-int32_t loadRenderText(const String text, const Vector3D position, const Vector3D color) {
+int32_t loadRenderText(const String text, const Vector3D position, const Vector4F color) {
 	
 	QuadLoadInfo quadLoadInfos[text.length] = { };
 	for (int32_t i = 0; i < (int32_t)text.length; ++i) {
@@ -207,11 +208,12 @@ int32_t loadRenderText(const String text, const Vector3D position, const Vector3
 			.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 			.initAnimation = 0,
 			.initCell = (int32_t)text.pBuffer[i],
-			.color = vec3DtoVec4F(color)
+			.color = color
 		};
 	}
 	
 	const RenderObjectLoadInfo loadInfo = {
+		.isGUIElement = true,
 		.textureID = makeStaticString("gui/fontFrogBlock"),
 		.quadCount = text.length,
 		.pQuadLoadInfos = quadLoadInfos

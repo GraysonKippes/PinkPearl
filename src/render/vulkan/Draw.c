@@ -75,6 +75,9 @@ struct ModelPool_T {
 	// Used to update a particular model's draw parameters without rebuilding the whole array of draw info structures.
 	uint32_t *pDrawInfoIndices;
 	
+	// Controls whether a model moves against the camera or not.
+	uint32_t *pCameraFlags;
+	
 	ModelTransform *pModelTransforms;
 	
 	TextureState *pTextureStates;
@@ -99,6 +102,7 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	
 	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
 	if (!modelPool) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate model pool object.");
 		return;
 	}
 	
@@ -117,6 +121,7 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	modelPool->pSlotFlags = calloc(createInfo.maxModelCount, sizeof(bool));
 	if (!modelPool->pSlotFlags) {
 		free(modelPool);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate slot flags.");
 		return;
 	}
 	
@@ -124,6 +129,16 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	if (!modelPool->pDrawInfoIndices) {
 		free(modelPool->pSlotFlags);
 		free(modelPool);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate draw info indices.");
+		return;
+	}
+	
+	modelPool->pCameraFlags = calloc(createInfo.maxModelCount, sizeof(uint32_t));
+	if (!modelPool->pCameraFlags) {
+		free(modelPool->pSlotFlags);
+		free(modelPool->pDrawInfoIndices);
+		free(modelPool);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate camera flags.");
 		return;
 	}
 	
@@ -131,7 +146,9 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	if (!modelPool->pModelTransforms) {
 		free(modelPool->pSlotFlags);
 		free(modelPool->pDrawInfoIndices);
+		free(modelPool->pCameraFlags);
 		free(modelPool);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate model transforms.");
 		return;
 	}
 	
@@ -139,8 +156,10 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	if (!modelPool->pTextureStates) {
 		free(modelPool->pSlotFlags);
 		free(modelPool->pDrawInfoIndices);
+		free(modelPool->pCameraFlags);
 		free(modelPool->pModelTransforms);
 		free(modelPool);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate texture states.");
 		return;
 	}
 	
@@ -148,9 +167,11 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	if (!modelPool->pTextureStates) {
 		free(modelPool->pSlotFlags);
 		free(modelPool->pDrawInfoIndices);
+		free(modelPool->pCameraFlags);
 		free(modelPool->pModelTransforms);
 		free(modelPool->pTextureStates);
 		free(modelPool);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate draw infos.");
 		return;
 	}
 	
@@ -165,6 +186,7 @@ void deleteModelPool(ModelPool *const pModelPool) {
 	
 	free((*pModelPool)->pSlotFlags);
 	free((*pModelPool)->pDrawInfoIndices);
+	free((*pModelPool)->pCameraFlags);
 	free((*pModelPool)->pModelTransforms);
 	free((*pModelPool)->pTextureStates);
 	free((*pModelPool)->pDrawInfos);
@@ -212,6 +234,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	}
 	
 	loadInfo.modelPool->pModelTransforms[modelIndex] = makeModelTransform(loadInfo.position, zeroVec4F, zeroVec4F);
+	loadInfo.modelPool->pCameraFlags[modelIndex] = loadInfo.cameraFlag;
 	
 	/* Generate model's mesh and upload to vertex buffer(s) */
 	
@@ -430,6 +453,10 @@ void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned i
 	modelPool->pDrawInfos[drawInfoIndex].imageIndex = (uint32_t)imageIndex;
 	
 	bufferHostTransfer(modelPool->drawInfoBuffer, drawCountSize + drawInfoIndex * sizeof(DrawInfo), sizeof(DrawInfo), &modelPool->pDrawInfos[drawInfoIndex]);
+}
+
+uint32_t *getModelCameraFlags(const ModelPool modelPool) {
+	return modelPool->pCameraFlags;
 }
 
 ModelTransform *getModelTransforms(const ModelPool modelPool) {

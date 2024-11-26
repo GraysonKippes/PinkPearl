@@ -45,6 +45,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	}
 	
 	const RenderObjectLoadInfo renderObjectLoadInfo = {
+		.isGUIElement = false,
 		.textureID = entityRecord.textureID,
 		.quadCount = 2,
 		.pQuadLoadInfos = (QuadLoadInfo[2]){

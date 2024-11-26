@@ -44,6 +44,8 @@ void start_game(void) {
 	
 	entitySpawnerReload(&testEntitySpawner);
 	entitySpawnerSpawnEntities(&testEntitySpawner);
+	
+	loadRenderText(makeStaticString("Pearl"), (Vector3D){ 0.0, 0.0, -32.0 }, COLOR_WHITE);
 }
 
 void tick_game(void) {

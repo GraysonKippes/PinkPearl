@@ -44,17 +44,17 @@ static ShaderBytecode read_shader_file(const char *const pPath) {
 		++shader_bytecode.bytecode_size;
 	}
 	
-	if (!allocate((void **)&shader_bytecode.bytecode, initial_buffer_size, sizeof(byte_t))) {
+	shader_bytecode.bytecode = calloc(initial_buffer_size, sizeof(uint8_t));
+	if (!shader_bytecode.bytecode) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: failed to allocate buffer for shader bytecode.");
 		return shader_bytecode;
 	}
-
-	uint32_t file_size = 0;
+	
+	uint32_t fileSize = 0;
 	rewind(file);
-	char next_char = fgetc(file);
-	while (next_char != EOF) {
-		shader_bytecode.bytecode[file_size++] = next_char;
-		next_char = fgetc(file);
+	int c;
+	while ((c = fgetc(file)) != EOF) {
+		shader_bytecode.bytecode[fileSize++] = (unsigned char)c;
 	}
 
 	fclose(file);
