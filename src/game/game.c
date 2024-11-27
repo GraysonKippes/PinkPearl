@@ -24,7 +24,12 @@ static GameState gameState = { };
 Area currentArea = { };
 
 // The handle to the player entity.
-static int playerEntityHandle;
+static int playerEntityHandle = -1;
+
+static bool debugMenuEnabled = false;
+static int32_t debugTextHandle = -1;
+
+void toggleDebugMenu(void);
 
 void start_game(void) {
 
@@ -44,11 +49,13 @@ void start_game(void) {
 	
 	entitySpawnerReload(&testEntitySpawner);
 	entitySpawnerSpawnEntities(&testEntitySpawner);
-	
-	loadRenderText(makeStaticString("Pearl"), (Vector3D){ 0.0, 0.0, -32.0 }, COLOR_WHITE);
 }
 
 void tick_game(void) {
+
+	if (isInputPressed(GLFW_KEY_F3)) {
+		toggleDebugMenu();
+	}
 
 	const bool move_up_pressed = is_input_pressed_or_held(GLFW_KEY_W);		// UP
 	const bool move_left_pressed = is_input_pressed_or_held(GLFW_KEY_A);	// LEFT
@@ -70,6 +77,10 @@ void tick_game(void) {
 	int result = getEntity(playerEntityHandle, &pPlayerEntity);
 	if (pPlayerEntity == nullptr || result != 0) {
 		return;
+	}
+	
+	if (debugMenuEnabled) {
+		writeRenderText(debugTextHandle, "%.2f", pPlayerEntity->physics.position.x);
 	}
 	
 	//static const double speed = 0.24;
@@ -121,5 +132,14 @@ void tick_game(void) {
 			currentArea.currentRoomIndex = pNextRoom->id;
 			areaRenderStateSetNextRoom(&globalAreaRenderState, *pNextRoom);
 		}
+	}
+}
+
+void toggleDebugMenu(void) {
+	debugMenuEnabled = !debugMenuEnabled;
+	if (debugMenuEnabled) {
+		debugTextHandle = loadRenderText(makeStaticString("Position"), (Vector3D){ -6.0, 3.75, -32.0 }, COLOR_WHITE);
+	} else {
+		unloadRenderObject3(&debugTextHandle);
 	}
 }

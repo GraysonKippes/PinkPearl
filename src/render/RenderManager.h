@@ -70,11 +70,14 @@ void renderFrame(const float timeDelta);
 // Loads a render object, AKA a collection of quads being rendered that can be managed through a single handle.
 int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo);
 
+// Unloads a render object.
+void unloadRenderObject3(int32_t *const pRenderObjectHandle);
+
 // Loads a render object displaying text.
 int32_t loadRenderText(const String text, const Vector3D position, const Vector4F color);
 
-// Unloads a render object.
-void unloadRenderObject3(int32_t *const pRenderObjectHandle);
+// Writes formatted text to a render object.
+void writeRenderText(const int32_t handle, const char *const pFormat, ...);
 
 // Checks whether a render object handle is valid or not.
 bool validateRenderObjectHandle2(const int32_t handle);

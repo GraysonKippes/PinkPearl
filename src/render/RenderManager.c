@@ -1,6 +1,8 @@
 #include "RenderManager.h"
 
 #include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <GLFW/glfw3.h>
 
@@ -14,7 +16,7 @@
 #define FGT_PATH (RESOURCE_PATH "data/textures.fgt")
 
 #define RENDER_OBJECT_MAX_COUNT 64
-#define RENDER_OBJECT_QUAD_MAX_COUNT 16
+#define RENDER_OBJECT_QUAD_MAX_COUNT 64
 
 typedef struct RenderObjectQuad {
 	int32_t handle;
@@ -243,6 +245,28 @@ void unloadRenderObject3(int32_t *const pHandle) {
 	
 	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Unloaded render object %i.", *pHandle);
 	*pHandle = -1;
+}
+
+void writeRenderText(const int32_t handle, const char *const pFormat, ...) {
+	if (!renderObjectExists(handle)) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error writing render text: render object %i does not exist.", handle);
+	}
+	
+	char buffer[RENDER_OBJECT_QUAD_MAX_COUNT + 1];
+	va_list vlist;
+	va_start(vlist, pFormat);
+	vsnprintf_s(buffer, RENDER_OBJECT_QUAD_MAX_COUNT + 1, renderObjects[handle].quadCount, pFormat, vlist);
+	va_end(vlist);
+	
+	for (int32_t quadIndex = 0; quadIndex < renderObjects[handle].quadCount; ++quadIndex) {
+		const ModelPool modelPool = getModelPoolType2(renderObjects[handle].pQuads[quadIndex].type);
+		TextureState *const pTextureState = modelGetTextureState(modelPool, renderObjects[handle].pQuads[quadIndex].handle);
+		if (pTextureState) {
+			const unsigned int imageIndex = (unsigned int)buffer[quadIndex];
+			pTextureState->currentFrame = imageIndex;
+			updateDrawInfo(modelPool, renderObjects[handle].pQuads[quadIndex].handle, imageIndex);
+		}
+	}
 }
 
 bool validateRenderObjectHandle2(const int32_t handle) {

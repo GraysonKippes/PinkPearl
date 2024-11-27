@@ -22,6 +22,14 @@ bool is_input_pressed_or_held(int input_index) {
 	return pressed_or_held;
 }
 
+bool isInputPressed(const int inputIndex) {
+	if (input_states[inputIndex] == INPUT_STATE_PRESSED) {
+		input_states[inputIndex] = INPUT_STATE_HELD;
+		return true;
+	}
+	return false;
+}
+
 static void update_input_state(int input_index, int action) {
 
 	if (action == GLFW_RELEASE) {
