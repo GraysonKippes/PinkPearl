@@ -12,7 +12,7 @@ static void entityAIRegularTickNone(Entity *const pEntity) {
 }
 
 const EntityAI entityAINone = {
-	.id = (String){ .length = 4, .capacity = 5, .pBuffer = "none" },
+	.id = makeStaticString("none"),
 	.onTick = entityAIRegularTickNone
 };
 
@@ -65,6 +65,6 @@ static void entityAIRegularTickSlime(Entity *const pEntity) {
 }
 
 const EntityAI entityAISlime = {
-	.id = (String){ .length = 5, .capacity = 6, .pBuffer = "slime" },
+	.id = makeStaticString("slime"),
 	.onTick = entityAIRegularTickSlime
 };

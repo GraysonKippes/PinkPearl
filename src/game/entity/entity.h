@@ -3,8 +3,18 @@
 
 #include <stdint.h>
 #include "EntityAI.h"
-#include "EntityPhysics.h"
 #include "math/Box.h"
+#include "math/Vector.h"
+
+typedef struct EntityPhysics {
+	
+	Vector3D position;
+	
+	Vector3D velocity;
+	
+	Vector3D acceleration;
+	
+} EntityPhysics;
 
 // Represents a single "being" with the game (e.g. the player, NPCs, enemies, interactable objects).
 typedef struct Entity {
