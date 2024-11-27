@@ -49,7 +49,7 @@ target_sources(PinkPearl PRIVATE
 	src/client.c
 	src/debug.c
 	src/main.c
-	src/game/game.c
+	src/game/Game.c
 	src/audio/audio_config.c
 	src/audio/audio_loader.c
 	src/audio/audio_mixer.c

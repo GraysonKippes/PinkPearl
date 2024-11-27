@@ -3,19 +3,21 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-
 #include "glfw/input_manager.h"
 #include "log/Logger.h"
 #include "render/area_render_state.h"
 #include "render/RenderManager.h"
 #include "render/vulkan/TextureState.h"
 #include "util/time.h"
-
-#include "game_state.h"
 #include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
 #include "entity/EntityRegistry.h"
 #include "entity/EntitySpawner.h"
+
+typedef struct GameState {
+	bool paused;
+	bool scrolling;
+} GameState;
 
 // Stores information about the Pink Pearl game, such as whether or not the game is paused.
 static GameState gameState = { };
