@@ -38,7 +38,6 @@ void start_game(void) {
 
 	currentArea = readAreaData("test");
 	areaRenderStateReset(&globalAreaRenderState, currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
-	//playerEntityHandle = loadEntity(makeStaticString("pearl"), makeVec3D(0.0, 0.0, -32.0), zeroVec3D);
 	playerEntityHandle = loadEntity(makeStaticString("pearl"), makeVec3D(0.0, 0.0, 1.0), zeroVec3D);
 	
 	// Test entity spawner.
@@ -51,7 +50,7 @@ void start_game(void) {
 	};
 	
 	entitySpawnerReload(&testEntitySpawner);
-	//entitySpawnerSpawnEntities(&testEntitySpawner);
+	entitySpawnerSpawnEntities(&testEntitySpawner);
 }
 
 void tick_game(void) {
@@ -88,22 +87,22 @@ void tick_game(void) {
 	unsigned int nextAnimation = currentAnimation;
 
 	if (move_up_pressed && !move_down_pressed) {
-		pPlayerEntity->physics.acceleration.y = 1.0;
+		pPlayerEntity->physics.acceleration = unitVec3DPosY;
 		nextAnimation = 1;
 	}
 	
 	if (!move_left_pressed && move_right_pressed) {
-		pPlayerEntity->physics.acceleration.x = 1.0;
+		pPlayerEntity->physics.acceleration = unitVec3DPosX;
 		nextAnimation = 3;
 	}
 	
 	if (!move_up_pressed && move_down_pressed) {
-		pPlayerEntity->physics.acceleration.y = -1.0;
+		pPlayerEntity->physics.acceleration = unitVec3DNegY;
 		nextAnimation = 5;
 	}
 	
 	if (move_left_pressed && !move_right_pressed) {
-		pPlayerEntity->physics.acceleration.x = -1.0;
+		pPlayerEntity->physics.acceleration = unitVec3DNegX;
 		nextAnimation = 7;
 	}
 
@@ -141,9 +140,9 @@ void tick_game(void) {
 void toggleDebugMenu(void) {
 	debugMenuEnabled = !debugMenuEnabled;
 	if (debugMenuEnabled) {
-		debugTextHandles[0] = loadRenderText(makeStaticString("Position Position"), makeVec3D(-11.5, 7.25, 3.0), COLOR_PINK);
-		debugTextHandles[1] = loadRenderText(makeStaticString("Velocity Velocity"), makeVec3D(-11.5, 6.75, 3.0), COLOR_PINK);
-		debugTextHandles[2] = loadRenderText(makeStaticString("Acceleration Acce"), makeVec3D(-11.5, 6.25, 3.0), COLOR_PINK);
+		debugTextHandles[0] = loadRenderText(makeStaticString("Position Position"), makeVec3D(-11.5, 7.25, 4.0), COLOR_PINK);
+		debugTextHandles[1] = loadRenderText(makeStaticString("Velocity Velocity"), makeVec3D(-11.5, 6.75, 4.0), COLOR_PINK);
+		debugTextHandles[2] = loadRenderText(makeStaticString("Acceleration Acce"), makeVec3D(-11.5, 6.25, 4.0), COLOR_PINK);
 	} else {
 		unloadRenderObject(&debugTextHandles[0]);
 		unloadRenderObject(&debugTextHandles[1]);

@@ -23,7 +23,7 @@ void entitySpawnerSpawnEntities(EntitySpawner *const pEntitySpawner) {
 	}
 	
 	for (int i = 0; i < pEntitySpawner->spawnCounter; ++i) {
-		loadEntity(pEntitySpawner->entityID, (Vector3D){ 5.5, 2.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
+		loadEntity(pEntitySpawner->entityID, makeVec3D(5.5, 2.0, 0.5), zeroVec3D);
 	}
 	pEntitySpawner->spawnCounter = 0;
 }

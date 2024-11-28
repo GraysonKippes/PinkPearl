@@ -56,10 +56,17 @@ typedef struct Vector4F {
 	float w;
 } Vector4F;
 
-// Zero vectors
+// Common vectors (zero vectors, unit vectors)
 
 extern const Vector3D zeroVec3D;
 extern const Vector4F zeroVec4F;
+
+extern const Vector3D unitVec3DPosX; // +i
+extern const Vector3D unitVec3DNegX; // -i
+extern const Vector3D unitVec3DPosY; // +j
+extern const Vector3D unitVec3DNegY; // -j
+extern const Vector3D unitVec3DPosZ; // +k
+extern const Vector3D unitVec3DNegZ; // -k
 
 // Vector3D operations
 

@@ -3,8 +3,14 @@
 #define LERP(start, end, delta) ((start) + (delta) * ((end) - (start)))
 
 const Vector3D zeroVec3D = { 0.0, 0.0, 0.0 };
-
 const Vector4F zeroVec4F = { 0.0F, 0.0F, 0.0F, 1.0F };
+
+const Vector3D unitVec3DPosX = { 1.0, 0.0, 0.0 };
+const Vector3D unitVec3DNegX = { -1.0, 0.0, 0.0 };
+const Vector3D unitVec3DPosY = { 0.0, 1.0, 0.0 };
+const Vector3D unitVec3DNegY = { 0.0, -1.0, 0.0 };
+const Vector3D unitVec3DPosZ = { 0.0, 0.0, 1.0 };
+const Vector3D unitVec3DNegZ = { 0.0, 0.0, -1.0 };
 
 bool isZeroVec3D(const Vector3D v) {
 	static const double tolerance = 0.0001;

@@ -35,23 +35,23 @@ static void entityAIRegularTickSlime(Entity *const pEntity) {
 	const int nextDirection = random(0, 4);
 	switch (nextDirection) {
 		case 0: // NONE
-			pEntity->physics.acceleration = (Vector3D){ 0.0, 0.0, 0.0 };
+			pEntity->physics.acceleration = zeroVec3D;
 			nextAnimation = 0;
 			break;
 		case 1: // NORTH
-			pEntity->physics.acceleration = (Vector3D){ 0.0, 1.0, 0.0 };
+			pEntity->physics.acceleration = unitVec3DPosY;
 			nextAnimation = 1;
 			break;
 		case 2: // EAST
-			pEntity->physics.acceleration = (Vector3D){ -1.0, 0.0, 0.0 };
+			pEntity->physics.acceleration = unitVec3DNegX;
 			nextAnimation = 1;
 			break;
 		case 3: // SOUTH
-			pEntity->physics.acceleration = (Vector3D){ 0.0, -1.0, 0.0 };
+			pEntity->physics.acceleration = unitVec3DNegY;
 			nextAnimation = 1;
 			break;
 		case 4: // WEST
-			pEntity->physics.acceleration = (Vector3D){ 1.0, 0.0, 0.0 };
+			pEntity->physics.acceleration = unitVec3DPosX;
 			nextAnimation = 1;
 			break;
 	}
