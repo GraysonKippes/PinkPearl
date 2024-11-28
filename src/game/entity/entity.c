@@ -32,21 +32,18 @@ void tick_entity(Entity *const pEntity) {
 	// Compute and apply kinetic friction.
 	// Points in the opposite direction of movement (i.e. velocity), applied to acceleration.
 	const double frictionCoefficient = 0.5 * pEntity->speed;
-	Vector3D friction = normVec(pEntity->physics.velocity);
-	friction = mulVec(friction, -frictionCoefficient);
+	const Vector3D friction = mulVec(normVec(pEntity->physics.velocity), -frictionCoefficient);
 	pEntity->physics.acceleration = addVec(pEntity->physics.acceleration, friction);
 
 	// Apply acceleration to velocity.
+	const Vector3D previousVelocity = pEntity->physics.velocity;
 	pEntity->physics.velocity = addVec(pEntity->physics.velocity, pEntity->physics.acceleration);
 	
-	// Compute capped speed.
-	const double maxSpeed = pEntity->speed;
-	const double uncappedSpeed = magnitude(pEntity->physics.velocity);
-	const double cappedSpeed = copysign(fmin(fabs(uncappedSpeed), fabs(maxSpeed)), uncappedSpeed);
-	
-	// Cap the speed (magnitude) of the velocity.
+	// Compute and apply capped speed.
+	const double cappedSpeed = fmin(magnitude(pEntity->physics.velocity), pEntity->speed);
 	pEntity->physics.velocity = normVec(pEntity->physics.velocity);
 	pEntity->physics.velocity = mulVec(pEntity->physics.velocity, cappedSpeed);
+	pEntity->physics.acceleration = subVec(pEntity->physics.velocity, previousVelocity); // Reflect actual velocity.
 
 	// Update entity position.
 	const Vector3D previousPosition = pEntity->physics.position;
