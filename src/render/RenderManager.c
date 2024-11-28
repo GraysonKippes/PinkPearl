@@ -20,7 +20,7 @@
 
 typedef struct RenderObjectQuad {
 	int32_t handle;
-	RenderObjectQuadType type;
+	ModelPool modelPool;
 } RenderObjectQuad;
 
 typedef struct RenderObject {
@@ -135,8 +135,6 @@ void renderFrame(const float timeDelta) {
 	drawFrame(timeDelta, cameraPosition, projectionBounds);
 }
 
-static ModelPool getModelPoolType2(const RenderObjectQuadType quadType);
-
 static RenderObject renderObjects[RENDER_OBJECT_MAX_COUNT];
 
 int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
@@ -166,7 +164,7 @@ int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
 	for (int32_t i = 0; i < loadInfo.quadCount; ++i) {
 		renderObjects[handle].pQuads[i] = (RenderObjectQuad){
 			.handle = -1,
-			.type = QUAD_TYPE_MAIN
+			.modelPool = nullptr,
 		};
 	}
 	
@@ -182,7 +180,7 @@ int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
 		}
 		
 		const ModelLoadInfo modelLoadInfo = {
-			.modelPool = getModelPoolType2(quadLoadInfo.quadType),
+			.modelPool = renderObjects[handle].pQuads[quadIndex].modelPool,
 			.position = vec3DtoVec4F(quadLoadInfo.initPosition),
 			.dimensions = quadLoadInfo.quadDimensions,
 			.cameraFlag = loadInfo.isGUIElement ? 0 : 1,
@@ -192,7 +190,16 @@ int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
 		};
 		
 		loadModel(modelLoadInfo, &renderObjects[handle].pQuads[quadIndex].handle);
-		renderObjects[handle].pQuads[quadIndex].type = quadLoadInfo.quadType;
+		
+		switch (quadLoadInfo.quadType) {
+			default:
+			case QUAD_TYPE_MAIN:
+				renderObjects[handle].pQuads[quadIndex].modelPool = modelPoolMain; 
+				break;
+			case QUAD_TYPE_DEBUG:
+				renderObjects[handle].pQuads[quadIndex].modelPool = modelPoolDebug; 
+				break;
+		}
 	}
 	
 	renderObjects[handle].active = true;
@@ -211,8 +218,7 @@ void unloadRenderObject3(int32_t *const pHandle) {
 	
 	for (int32_t quadIndex = 0; quadIndex < renderObjects[*pHandle].quadCount; ++quadIndex) {
 		if (renderObjects[*pHandle].pQuads[quadIndex].handle >= 0) {
-			const ModelPool modelPool = getModelPoolType2(renderObjects[*pHandle].pQuads[quadIndex].type);
-			unloadModel(modelPool, &renderObjects[*pHandle].pQuads[quadIndex].handle);
+			unloadModel(renderObjects[*pHandle].pQuads[quadIndex].modelPool, &renderObjects[*pHandle].pQuads[quadIndex].handle);
 		}
 	}
 	renderObjects[*pHandle].active = false;
@@ -259,12 +265,11 @@ void writeRenderText(const int32_t handle, const char *const pFormat, ...) {
 	va_end(vlist);
 	
 	for (int32_t quadIndex = 0; quadIndex < renderObjects[handle].quadCount; ++quadIndex) {
-		const ModelPool modelPool = getModelPoolType2(renderObjects[handle].pQuads[quadIndex].type);
-		TextureState *const pTextureState = modelGetTextureState(modelPool, renderObjects[handle].pQuads[quadIndex].handle);
+		TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
 		if (pTextureState) {
 			const unsigned int imageIndex = (unsigned int)buffer[quadIndex];
 			pTextureState->currentFrame = imageIndex;
-			updateDrawInfo(modelPool, renderObjects[handle].pQuads[quadIndex].handle, imageIndex);
+			updateDrawInfo(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle, imageIndex);
 		}
 	}
 }
@@ -301,9 +306,7 @@ void renderObjectSetPosition2(const int32_t handle, const int32_t quadIndex, con
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error setting render object position: quad %i of render object %i does not exist.", quadIndex, handle);
 		return;
 	}
-	
-	const ModelPool modelPool = getModelPoolType2(renderObjects[handle].pQuads[quadIndex].type);
-	modelSetTranslation(modelPool, renderObjects[handle].pQuads[quadIndex].handle, vec3DtoVec4F(position));
+	modelSetTranslation(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle, vec3DtoVec4F(position));
 }
 
 int32_t renderObjectGetTextureHandle2(const int32_t handle, const int32_t quadIndex) {
@@ -314,9 +317,7 @@ int32_t renderObjectGetTextureHandle2(const int32_t handle, const int32_t quadIn
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error getting render object texture handle: quad %i of render object %i does not exist.", quadIndex, handle);
 		return -1;
 	}
-	
-	const ModelPool modelPool = getModelPoolType2(renderObjects[handle].pQuads[quadIndex].type);
-	TextureState *const pTextureState = modelGetTextureState(modelPool, renderObjects[handle].pQuads[quadIndex].handle);
+	TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
 	if (pTextureState) {
 		return pTextureState->textureHandle;
 	}
@@ -335,12 +336,10 @@ void renderObjectAnimate2(const int32_t handle) {
 			continue;
 		}
 		
-		const ModelPool modelPool = getModelPoolType2(renderObjects[handle].pQuads[quadIndex].type);
-		TextureState *const pTextureState = modelGetTextureState(modelPool, quadHandle);
+		TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, quadHandle);
 		if (textureStateAnimate(pTextureState) == 2) {
 			const uint32_t imageIndex = pTextureState->startCell + pTextureState->currentFrame;
-			const ModelPool modelPool = getModelPoolType2(renderObjects[handle].pQuads[quadIndex].type);
-			updateDrawInfo(modelPool, quadHandle, imageIndex);
+			updateDrawInfo(renderObjects[handle].pQuads[quadIndex].modelPool, quadHandle, imageIndex);
 		}
 	}
 }
@@ -354,8 +353,7 @@ uint32_t renderObjectGetAnimation2(const int32_t handle, const int32_t quadIndex
 		return 0;
 	}
 	
-	const ModelPool modelPool = getModelPoolType2(renderObjects[handle].pQuads[quadIndex].type);
-	TextureState *const pTextureState = modelGetTextureState(modelPool, renderObjects[handle].pQuads[quadIndex].handle);
+	const TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
 	if (pTextureState) {
 		return pTextureState->currentAnimation;
 	}
@@ -371,23 +369,14 @@ bool renderObjectSetAnimation2(const int32_t handle, const int32_t quadIndex, co
 		return false;
 	}
 	
-	const ModelPool modelPool = getModelPoolType2(renderObjects[handle].pQuads[quadIndex].type);
-	TextureState *const pTextureState = modelGetTextureState(modelPool, renderObjects[handle].pQuads[quadIndex].handle);
+	TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
 	if (pTextureState) {
 		if (!textureStateSetAnimation(pTextureState, nextAnimation)) {
 			return false;
 		}
 		const uint32_t imageIndex = pTextureState->startCell + pTextureState->currentFrame;
-		updateDrawInfo(modelPool, renderObjects[handle].pQuads[quadIndex].handle, imageIndex);
+		updateDrawInfo(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle, imageIndex);
 		return true;
 	}
 	return false;
-}
-
-static ModelPool getModelPoolType2(const RenderObjectQuadType quadType) {
-	switch (quadType) {
-		default:
-		case QUAD_TYPE_MAIN: return modelPoolMain;
-		case QUAD_TYPE_DEBUG: return modelPoolDebug;
-	};
 }
