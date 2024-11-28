@@ -1,6 +1,8 @@
 #ifndef RANDOM_H
 #define RANDOM_H
 
+// TODO: generate template function name automatically.
+
 #define LIST_OF_RANDOM_FUNCTIONS \
 		X(short, randomS) \
 		X(int, randomI) \

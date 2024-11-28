@@ -45,8 +45,8 @@ void start_game(void) {
 		.entityID = makeStaticString("slime"),
 		.reloadMode = RELOAD_AFTER_REFRESH,
 		.spawnCounter = 0,
-		.minSpawnCount = 2,
-		.maxSpawnCount = 5
+		.minSpawnCount = 1,
+		.maxSpawnCount = 3
 	};
 	
 	entitySpawnerReload(&testEntitySpawner);

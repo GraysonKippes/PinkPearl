@@ -1,6 +1,7 @@
 #ifndef ENTITY_AI_H
 #define ENTITY_AI_H
 
+#include <stdint.h>
 #include "util/string.h"
 
 typedef struct Entity Entity;
@@ -11,7 +12,10 @@ typedef struct EntityAI {
 	String id;
 	
 	// The time point in milliseconds of the last action performed by the entity.
-	unsigned long long int lastActionTimeMS;
+	uint64_t lastActionTimeMS;
+	uint64_t timeTillNextAction;
+	
+	uint32_t direction;
 
 	// This function is called each tick, and it represents regular, idle behavior 
 	// 	when there is no specific action being done.
