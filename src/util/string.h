@@ -5,6 +5,13 @@
 #include <stddef.h>
 #include <string.h>
 
+#define makeConstantString(cstr) \
+		{ \
+			.length = sizeof(cstr) - 1, \
+			.capacity = sizeof(cstr), \
+			.pBuffer = cstr, \
+		}
+
 // Constructs a String out of a static c-string, AKA char[].
 #define makeStaticString(cstr) \
 		(const String){ \

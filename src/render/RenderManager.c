@@ -4,8 +4,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <GLFW/glfw3.h>
-
 #include "config.h"
 #include "log/Logger.h"
 #include "vulkan/Draw.h"
@@ -42,6 +42,7 @@ const Vector4F COLOR_BLUE 	= { 0.0F, 0.0F, 1.0F, 1.0F };
 const Vector4F COLOR_YELLOW	= { 1.0F, 1.0F, 0.0F, 1.0F };
 const Vector4F COLOR_TEAL 	= { 0.0F, 1.0F, 1.0F, 1.0F };
 const Vector4F COLOR_PURPLE	= { 1.0F, 0.0F, 1.0F, 1.0F };
+const Vector4F COLOR_PINK	= { 1.0F, 0.6392156863F, 0.7568627451F, 1.0F };
 
 AreaRenderState globalAreaRenderState = { };
 
@@ -164,7 +165,7 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 	for (int32_t i = 0; i < loadInfo.quadCount; ++i) {
 		renderObjects[handle].pQuads[i] = (RenderObjectQuad){
 			.handle = -1,
-			.modelPool = nullptr,
+			.modelPool = nullptr
 		};
 	}
 	
@@ -179,8 +180,19 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 			imageIndex = texture.animations[quadLoadInfo.initAnimation].startCell + quadLoadInfo.initCell;
 		}
 		
+		ModelPool modelPool = nullptr;
+		switch (quadLoadInfo.quadType) {
+			default:
+			case QUAD_TYPE_MAIN:
+				modelPool = modelPoolMain; 
+				break;
+			case QUAD_TYPE_DEBUG:
+				modelPool = modelPoolDebug; 
+				break;
+		}
+		
 		const ModelLoadInfo modelLoadInfo = {
-			.modelPool = renderObjects[handle].pQuads[quadIndex].modelPool,
+			.modelPool = modelPool,
 			.position = vec3DtoVec4F(quadLoadInfo.initPosition),
 			.dimensions = quadLoadInfo.quadDimensions,
 			.cameraFlag = loadInfo.isGUIElement ? 0 : 1,
@@ -190,16 +202,7 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 		};
 		
 		loadModel(modelLoadInfo, &renderObjects[handle].pQuads[quadIndex].handle);
-		
-		switch (quadLoadInfo.quadType) {
-			default:
-			case QUAD_TYPE_MAIN:
-				renderObjects[handle].pQuads[quadIndex].modelPool = modelPoolMain; 
-				break;
-			case QUAD_TYPE_DEBUG:
-				renderObjects[handle].pQuads[quadIndex].modelPool = modelPoolDebug; 
-				break;
-		}
+		renderObjects[handle].pQuads[quadIndex].modelPool = modelPool;
 	}
 	
 	renderObjects[handle].active = true;
@@ -258,11 +261,14 @@ void writeRenderText(const int32_t handle, const char *const pFormat, ...) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error writing render text: render object %i does not exist.", handle);
 	}
 	
-	char buffer[RENDER_OBJECT_QUAD_MAX_COUNT + 1];
+	#define BUFSIZE (RENDER_OBJECT_QUAD_MAX_COUNT + 1)
+	char buffer[BUFSIZE];
+	memset(buffer, 0, BUFSIZE);
 	va_list vlist;
 	va_start(vlist, pFormat);
-	vsnprintf_s(buffer, RENDER_OBJECT_QUAD_MAX_COUNT + 1, renderObjects[handle].quadCount, pFormat, vlist);
+	vsnprintf_s(buffer, BUFSIZE, renderObjects[handle].quadCount, pFormat, vlist);
 	va_end(vlist);
+	#undef BUFSIZE
 	
 	for (int32_t quadIndex = 0; quadIndex < renderObjects[handle].quadCount; ++quadIndex) {
 		TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);

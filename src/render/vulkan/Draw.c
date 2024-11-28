@@ -176,7 +176,6 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	}
 	
 	*pOutModelPool = modelPool;
-	
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Created model pool.");
 }
 
@@ -362,10 +361,11 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 		.imageIndex = loadInfo.imageIndex
 	};
 	
+	// Select insertion position depending on depth.
 	uint32_t insertIndex = loadInfo.modelPool->drawInfoCount;
 	for (uint32_t i = 0; i < loadInfo.modelPool->drawInfoCount; ++i) {
 		const float otherZ = loadInfo.modelPool->pModelTransforms[loadInfo.modelPool->pDrawInfos[i].modelIndex].translation.current.z;
-		if (loadInfo.position.z > otherZ) {
+		if (loadInfo.position.z < otherZ) { // Z-up
 			insertIndex = i;
 			break;
 		}
@@ -447,11 +447,9 @@ TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle) {
 }
 
 void updateDrawInfo(ModelPool modelPool, const int modelHandle, const unsigned int imageIndex) {
-	
 	const uint32_t modelIndex = (uint32_t)modelHandle;
 	const uint32_t drawInfoIndex = modelPool->pDrawInfoIndices[modelIndex];
 	modelPool->pDrawInfos[drawInfoIndex].imageIndex = (uint32_t)imageIndex;
-	
 	bufferHostTransfer(modelPool->drawInfoBuffer, drawCountSize + drawInfoIndex * sizeof(DrawInfo), sizeof(DrawInfo), &modelPool->pDrawInfos[drawInfoIndex]);
 }
 

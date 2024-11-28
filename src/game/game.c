@@ -28,8 +28,9 @@ Area currentArea = { };
 // The handle to the player entity.
 static int playerEntityHandle = -1;
 
+#define DEBUG_TEXT_HANDLE_COUNT 3
 static bool debugMenuEnabled = false;
-static int32_t debugTextHandle = -1;
+static int32_t debugTextHandles[DEBUG_TEXT_HANDLE_COUNT] = { -1, -1, -1 };
 
 void toggleDebugMenu(void);
 
@@ -37,8 +38,8 @@ void start_game(void) {
 
 	currentArea = readAreaData("test");
 	areaRenderStateReset(&globalAreaRenderState, currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
-
-	playerEntityHandle = loadEntity(makeStaticString("pearl"), makeVec3D(0.0, 0.0, -32.0), zeroVec3D);
+	//playerEntityHandle = loadEntity(makeStaticString("pearl"), makeVec3D(0.0, 0.0, -32.0), zeroVec3D);
+	playerEntityHandle = loadEntity(makeStaticString("pearl"), makeVec3D(0.0, 0.0, 1.0), zeroVec3D);
 	
 	// Test entity spawner.
 	EntitySpawner testEntitySpawner = {
@@ -50,7 +51,7 @@ void start_game(void) {
 	};
 	
 	entitySpawnerReload(&testEntitySpawner);
-	entitySpawnerSpawnEntities(&testEntitySpawner);
+	//entitySpawnerSpawnEntities(&testEntitySpawner);
 }
 
 void tick_game(void) {
@@ -81,10 +82,6 @@ void tick_game(void) {
 		return;
 	}
 	
-	if (debugMenuEnabled) {
-		writeRenderText(debugTextHandle, "%.2f", pPlayerEntity->physics.position.x);
-	}
-	
 	//static const double speed = 0.24;
 	static const double accelerationMagnitude = 0.24;
 	pPlayerEntity->physics.acceleration = zeroVec3D;
@@ -113,12 +110,17 @@ void tick_game(void) {
 
 	pPlayerEntity->physics.acceleration = normVec(pPlayerEntity->physics.acceleration);
 	pPlayerEntity->physics.acceleration = mulVec(pPlayerEntity->physics.acceleration, accelerationMagnitude);
+	tickEntities();
 	
 	if (nextAnimation != currentAnimation) {
 		renderObjectSetAnimation(pPlayerEntity->renderHandle, 0, nextAnimation);
 	}
-
-	tickEntities();
+	
+	if (debugMenuEnabled) {
+		writeRenderText(debugTextHandles[0], "P %.2f, %.2f", pPlayerEntity->physics.position.x, pPlayerEntity->physics.position.y);
+		writeRenderText(debugTextHandles[1], "V %.3f, %.3f", pPlayerEntity->physics.velocity.x, pPlayerEntity->physics.velocity.y);
+		writeRenderText(debugTextHandles[2], "A %.3f, %.3f", pPlayerEntity->physics.acceleration.x, pPlayerEntity->physics.acceleration.y);
+	}
 
 	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->physics.position, currentArea, currentArea.currentRoomIndex);
 	if (travelDirection != DIRECTION_NONE) {
@@ -140,8 +142,12 @@ void tick_game(void) {
 void toggleDebugMenu(void) {
 	debugMenuEnabled = !debugMenuEnabled;
 	if (debugMenuEnabled) {
-		debugTextHandle = loadRenderText(makeStaticString("Position"), makeVec3D(-6.0, 3.75, -32.0), COLOR_WHITE);
+		debugTextHandles[0] = loadRenderText(makeStaticString("Position Position"), makeVec3D(-11.5, 7.25, 3.0), COLOR_PINK);
+		debugTextHandles[1] = loadRenderText(makeStaticString("Velocity Velocity"), makeVec3D(-11.5, 6.75, 3.0), COLOR_PINK);
+		debugTextHandles[2] = loadRenderText(makeStaticString("Acceleration Acce"), makeVec3D(-11.5, 6.25, 3.0), COLOR_PINK);
 	} else {
-		unloadRenderObject(&debugTextHandle);
+		unloadRenderObject(&debugTextHandles[0]);
+		unloadRenderObject(&debugTextHandles[1]);
+		unloadRenderObject(&debugTextHandles[2]);
 	}
 }

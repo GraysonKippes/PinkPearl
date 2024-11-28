@@ -3,35 +3,15 @@
 #include "log/Logger.h"
 #include "util/allocate.h"
 #include "util/time.h"
-
 #include "RenderManager.h"
 #include "vulkan/texture_manager.h"
 #include "vulkan/compute/ComputeStitchTexture.h"
 #include "vulkan/math/lerp.h"
 
-static const String roomXSTextureID = {
-	.length = 6,
-	.capacity = 7,
-	.pBuffer = "roomXS"
-};
-
-static const String roomSTextureID = {
-	.length = 5,
-	.capacity = 6,
-	.pBuffer = "roomS"
-};
-
-static const String roomMTextureID = {
-	.length = 5,
-	.capacity = 6,
-	.pBuffer = "roomM"
-};
-
-static const String roomLTextureID = {
-	.length = 5,
-	.capacity = 6,
-	.pBuffer = "roomL"
-};
+static const String roomXSTextureID = makeConstantString("roomXS");
+static const String roomSTextureID = makeConstantString("roomS");
+static const String roomMTextureID = makeConstantString("roomM");
+static const String roomLTextureID = makeConstantString("roomL");
 
 static String roomSizeToTextureID(const RoomSize roomSize) {
 	switch (roomSize) {
@@ -190,15 +170,13 @@ ProjectionBounds areaRenderStateGetProjectionBounds(const AreaRenderState areaRe
 	const Extent roomExtent = room_size_to_extent(areaRenderState.roomSize);
 	const float top = -((float)roomExtent.length / 2.0F);
 	const float left = -((float)roomExtent.width / 2.0F);
-	const float bottom = -top;
-	const float right = -left;
 	return (ProjectionBounds){
 		.left = left,
-		.right = right,
-		.bottom = bottom,
+		.right = -left,
+		.bottom = -top,
 		.top = top,
-		.near = -64.0F,
-		.far = 64.0F
+		.near = 16.0F,
+		.far = -16.0F
 	};
 }
 
@@ -220,12 +198,11 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 		{ // Background
 			(double)room.position.x * room.extent.width, 
 			(double)room.position.y * room.extent.length, 
-			-16.0 
-		},
-		{ // Foreground
+			0.0 
+		}, { // Foreground
 			(double)room.position.x * room.extent.width, 
 			(double)room.position.y * room.extent.length, 
-			-48.0 
+			2.0 
 		}
 	};
 	

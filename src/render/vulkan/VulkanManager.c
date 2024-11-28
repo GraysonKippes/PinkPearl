@@ -121,7 +121,7 @@ static void create_global_uniform_buffer(void) {
 		.queue_family_indices = nullptr,
 		.num_partition_sizes = 3,
 		.partition_sizes = (VkDeviceSize[3]){
-			2096,	// Compute matrices
+			25644,	// Compute matrices
 			5120,	// Compute room texture
 			1812	// Lighting data
 		}

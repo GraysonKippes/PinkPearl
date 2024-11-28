@@ -54,6 +54,7 @@ extern const Vector4F COLOR_BLUE;
 extern const Vector4F COLOR_YELLOW;
 extern const Vector4F COLOR_TEAL;
 extern const Vector4F COLOR_PURPLE;
+extern const Vector4F COLOR_PINK;
 
 extern AreaRenderState globalAreaRenderState;
 
