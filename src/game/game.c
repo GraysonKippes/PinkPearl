@@ -78,11 +78,10 @@ void tick_game(void) {
 
 	Entity *pPlayerEntity = nullptr;
 	int result = getEntity(playerEntityHandle, &pPlayerEntity);
-	if (pPlayerEntity == nullptr || result != 0) {
+	if (!pPlayerEntity || result != 0) {
 		return;
 	}
 	
-	//static const double speed = 0.24;
 	static const double accelerationMagnitude = 0.24;
 	pPlayerEntity->physics.acceleration = zeroVec3D;
 	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->renderHandle, 0);
@@ -93,6 +92,11 @@ void tick_game(void) {
 		nextAnimation = 1;
 	}
 	
+	if (!move_left_pressed && move_right_pressed) {
+		pPlayerEntity->physics.acceleration.x = 1.0;
+		nextAnimation = 3;
+	}
+	
 	if (!move_up_pressed && move_down_pressed) {
 		pPlayerEntity->physics.acceleration.y = -1.0;
 		nextAnimation = 5;
@@ -101,11 +105,6 @@ void tick_game(void) {
 	if (move_left_pressed && !move_right_pressed) {
 		pPlayerEntity->physics.acceleration.x = -1.0;
 		nextAnimation = 7;
-	}
-	
-	if (!move_left_pressed && move_right_pressed) {
-		pPlayerEntity->physics.acceleration.x = 1.0;
-		nextAnimation = 3;
 	}
 
 	pPlayerEntity->physics.acceleration = normVec(pPlayerEntity->physics.acceleration);

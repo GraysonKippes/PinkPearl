@@ -31,7 +31,7 @@ void tick_entity(Entity *const pEntity) {
 
 	// Compute and apply kinetic friction.
 	// Points in the opposite direction of movement (i.e. velocity), applied to acceleration.
-	const double frictionCoefficient = 0.5 * pEntity->speed;
+	const double frictionCoefficient = fmin(0.5 * pEntity->speed, magnitude(pEntity->physics.velocity));
 	const Vector3D friction = mulVec(normVec(pEntity->physics.velocity), -frictionCoefficient);
 	pEntity->physics.acceleration = addVec(pEntity->physics.acceleration, friction);
 
@@ -43,7 +43,6 @@ void tick_entity(Entity *const pEntity) {
 	const double cappedSpeed = fmin(magnitude(pEntity->physics.velocity), pEntity->speed);
 	pEntity->physics.velocity = normVec(pEntity->physics.velocity);
 	pEntity->physics.velocity = mulVec(pEntity->physics.velocity, cappedSpeed);
-	pEntity->physics.acceleration = subVec(pEntity->physics.velocity, previousVelocity); // Reflect actual velocity.
 
 	// Update entity position.
 	const Vector3D previousPosition = pEntity->physics.position;
@@ -69,7 +68,10 @@ void tick_entity(Entity *const pEntity) {
 		}
 	}
 
+	// Update entity physics to final position, velocity, and acceleration.
 	pEntity->physics.position = nextPosition;
+	pEntity->physics.velocity = subVec(pEntity->physics.position, previousPosition);
+	pEntity->physics.acceleration = subVec(pEntity->physics.velocity, previousVelocity);
 
 	renderObjectSetPosition(pEntity->renderHandle, 0, pEntity->physics.position);
 	renderObjectSetPosition(pEntity->renderHandle, 1, pEntity->physics.position);
