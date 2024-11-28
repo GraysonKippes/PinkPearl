@@ -59,13 +59,15 @@ typedef struct Vector4F {
 // Zero vectors
 
 extern const Vector3D zeroVec3D;
-
 extern const Vector4F zeroVec4F;
 
 // Vector3D operations
 
 // Returns true if the all elements of v are zero or close enough to zero within a set tolerance.
 bool isZeroVec3D(const Vector3D v);
+
+// Constructs and returns a three component vector of double-precision floats.
+Vector3D makeVec3D(const double x, const double y, const double z);
 
 // Returns the vector sum a + b.
 Vector3D addVec3D(const Vector3D a, const Vector3D b);
@@ -89,6 +91,9 @@ Vector3D normVec3D(const Vector3D v);
 
 // Returns true if the all elements of v are zero or close enough to zero within a set tolerance.
 bool isZeroVec4F(const Vector4F v);
+
+// Constructs and returns a four component vector of single-precision floats.
+Vector4F makeVec4F(const float x, const float y, const float z, const float w);
 
 // Returns the vector sum a + b.
 Vector4F addVec4F(const Vector4F a, const Vector4F b);

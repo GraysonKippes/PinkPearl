@@ -38,7 +38,7 @@ void start_game(void) {
 	currentArea = readAreaData("test");
 	areaRenderStateReset(&globalAreaRenderState, currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
 
-	playerEntityHandle = loadEntity(makeStaticString("pearl"), (Vector3D){ 0.0, 0.0, -32.0 }, (Vector3D){ 0.0, 0.0, 0.0 });
+	playerEntityHandle = loadEntity(makeStaticString("pearl"), makeVec3D(0.0, 0.0, -32.0), zeroVec3D);
 	
 	// Test entity spawner.
 	EntitySpawner testEntitySpawner = {
@@ -140,7 +140,7 @@ void tick_game(void) {
 void toggleDebugMenu(void) {
 	debugMenuEnabled = !debugMenuEnabled;
 	if (debugMenuEnabled) {
-		debugTextHandle = loadRenderText(makeStaticString("Position"), (Vector3D){ -6.0, 3.75, -32.0 }, COLOR_WHITE);
+		debugTextHandle = loadRenderText(makeStaticString("Position"), makeVec3D(-6.0, 3.75, -32.0), COLOR_WHITE);
 	} else {
 		unloadRenderObject3(&debugTextHandle);
 	}

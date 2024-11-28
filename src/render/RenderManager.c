@@ -200,30 +200,6 @@ int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
 	return handle;
 }
 
-int32_t loadRenderText(const String text, const Vector3D position, const Vector4F color) {
-	
-	QuadLoadInfo quadLoadInfos[text.length] = { };
-	for (int32_t i = 0; i < (int32_t)text.length; ++i) {
-		quadLoadInfos[i] = (QuadLoadInfo){
-			.quadType = QUAD_TYPE_MAIN,
-			.initPosition = addVec(position, mulVec3D((Vector3D){ 0.5, 0.0, 0.0 }, (double)i)),
-			.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
-			.initAnimation = 0,
-			.initCell = (int32_t)text.pBuffer[i],
-			.color = color
-		};
-	}
-	
-	const RenderObjectLoadInfo loadInfo = {
-		.isGUIElement = true,
-		.textureID = makeStaticString("gui/fontFrogBlock"),
-		.quadCount = text.length,
-		.pQuadLoadInfos = quadLoadInfos
-	};
-	
-	return loadRenderObject3(loadInfo);
-}
-
 void unloadRenderObject3(int32_t *const pHandle) {
 	if (!pHandle) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error unloading render object: pointer to render object handle is null.");
@@ -245,6 +221,30 @@ void unloadRenderObject3(int32_t *const pHandle) {
 	
 	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Unloaded render object %i.", *pHandle);
 	*pHandle = -1;
+}
+
+int32_t loadRenderText(const String text, const Vector3D position, const Vector4F color) {
+	
+	QuadLoadInfo quadLoadInfos[text.length] = { };
+	for (int32_t i = 0; i < (int32_t)text.length; ++i) {
+		quadLoadInfos[i] = (QuadLoadInfo){
+			.quadType = QUAD_TYPE_MAIN,
+			.initPosition = addVec(position, mulVec3D(makeVec3D(0.5, 0.0, 0.0), (double)i)),
+			.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
+			.initAnimation = 0,
+			.initCell = (int32_t)text.pBuffer[i],
+			.color = color
+		};
+	}
+	
+	const RenderObjectLoadInfo loadInfo = {
+		.isGUIElement = true,
+		.textureID = makeStaticString("gui/fontFrogBlock"),
+		.quadCount = text.length,
+		.pQuadLoadInfos = quadLoadInfos
+	};
+	
+	return loadRenderObject3(loadInfo);
 }
 
 void writeRenderText(const int32_t handle, const char *const pFormat, ...) {

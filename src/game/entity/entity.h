@@ -7,13 +7,9 @@
 #include "math/Vector.h"
 
 typedef struct EntityPhysics {
-	
-	Vector3D position;
-	
-	Vector3D velocity;
-	
-	Vector3D acceleration;
-	
+	Vector3D position;		// Current position of the entity is the game area.
+	Vector3D velocity;		// Added to position every tick.
+	Vector3D acceleration;	// Added to velocity every tick.
 } EntityPhysics;
 
 // Represents a single "being" with the game (e.g. the player, NPCs, enemies, interactable objects).
@@ -32,12 +28,9 @@ typedef struct Entity {
 	bool persistent;
 	
 	/* Stats */
-	
-	int currentHP;
-	
-	int maxHP;
-	
-	double speed;
+	int32_t currentHP;	// Current hit points of the entity.
+	int32_t maxHP;		// Maximum hit points of the entity. Current HP cannot exceed this value.
+	double speed;		// Maximum magnitude of velocity.
 	
 	// Handle to the render object associated with this entity.
 	int32_t renderHandle;

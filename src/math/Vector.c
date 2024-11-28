@@ -11,6 +11,14 @@ bool isZeroVec3D(const Vector3D v) {
 	return fabs(v.x) < tolerance && fabs(v.y) < tolerance && fabs(v.z) < tolerance;
 }
 
+Vector3D makeVec3D(const double x, const double y, const double z) {
+	return (Vector3D){
+		.x = x,
+		.y = y,
+		.z = z
+	};
+}
+
 Vector3D addVec3D(const Vector3D a, const Vector3D b) {
 	return (Vector3D){
 		.x = a.x + b.x,
@@ -57,6 +65,15 @@ Vector3D normVec3D(const Vector3D v) {
 bool isZeroVec4F(const Vector4F v) {
 	static const float tolerance = 0.0001F;
 	return fabs(v.x) < tolerance && fabs(v.y) < tolerance && fabs(v.z) < tolerance && fabs(v.w) < tolerance;
+}
+
+Vector4F makeVec4F(const float x, const float y, const float z, const float w) {
+	return (Vector4F){
+		.x = x,
+		.y = y,
+		.z = z,
+		.w = w
+	};
 }
 
 Vector4F addVec4F(const Vector4F a, const Vector4F b) {
