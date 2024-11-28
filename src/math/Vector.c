@@ -122,7 +122,7 @@ Vector4F lerpVec4F(const Vector4F start, const Vector4F end, const float delta) 
 }
 
 float magnitudeVec4F(const Vector4F v) {
-	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
+	return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
 }
 
 Vector4F normVec4F(const Vector4F v) {
