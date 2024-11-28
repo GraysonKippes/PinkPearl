@@ -74,8 +74,8 @@ void tick_entity(Entity *const pEntity) {
 
 	pEntity->physics.position = nextPosition;
 
-	renderObjectSetPosition2(pEntity->renderHandle, 0, pEntity->physics.position);
-	renderObjectSetPosition2(pEntity->renderHandle, 1, pEntity->physics.position);
+	renderObjectSetPosition(pEntity->renderHandle, 0, pEntity->physics.position);
+	renderObjectSetPosition(pEntity->renderHandle, 1, pEntity->physics.position);
 }
 
 /* SINGLE-AXIS OVERLAP CASES

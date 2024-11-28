@@ -64,7 +64,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 			}
 		}
 	};
-	const int32_t renderHandle = loadRenderObject3(renderObjectLoadInfo);
+	const int32_t renderHandle = loadRenderObject(renderObjectLoadInfo);
 	if (!renderObjectExists(renderHandle)) {
 		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error loading entity: failed to load render object.");
 		return entityHandleInvalid;
@@ -93,7 +93,7 @@ void unloadEntity(const int entityHandle) {
 		return;
 	}
 	
-	unloadRenderObject3(&entities[entityHandle].renderHandle);
+	unloadRenderObject(&entities[entityHandle].renderHandle);
 	entitySlotEnabledFlags[entityHandle] = false;
 }
 

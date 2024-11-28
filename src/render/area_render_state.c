@@ -231,7 +231,7 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	
 	// If there already is a room render object in the cache slot, then unload it first.
 	if (renderObjectExists(pAreaRenderState->roomRenderObjHandles[roomCacheSlot])) {
-		unloadRenderObject3(&pAreaRenderState->roomRenderObjHandles[roomCacheSlot]);
+		unloadRenderObject(&pAreaRenderState->roomRenderObjHandles[roomCacheSlot]);
 	}
 	
 	const RenderObjectLoadInfo loadInfo = {
@@ -257,9 +257,9 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 		}
 	};
 	
-	pAreaRenderState->roomRenderObjHandles[roomCacheSlot] = loadRenderObject3(loadInfo);
+	pAreaRenderState->roomRenderObjHandles[roomCacheSlot] = loadRenderObject(loadInfo);
 	
-	const int textureHandle = renderObjectGetTextureHandle2(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0);
+	const int textureHandle = renderObjectGetTextureHandle(pAreaRenderState->roomRenderObjHandles[roomCacheSlot], 0);
 	const ImageSubresourceRange imageSubresourceRange = {
 		.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 		.baseArrayLayer = roomCacheSlot * numRoomLayers,

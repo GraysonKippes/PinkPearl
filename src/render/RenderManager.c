@@ -127,7 +127,7 @@ void renderFrame(const float timeDelta) {
 	glfwPollEvents();
 	
 	for (int32_t i = 0; i < RENDER_OBJECT_MAX_COUNT; ++i) {
-		renderObjectAnimate2(i);
+		renderObjectAnimate(i);
 	}
 	
 	const Vector4F cameraPosition = areaRenderStateGetCameraPosition(&globalAreaRenderState);
@@ -137,7 +137,7 @@ void renderFrame(const float timeDelta) {
 
 static RenderObject renderObjects[RENDER_OBJECT_MAX_COUNT];
 
-int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
+int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 	if (loadInfo.quadCount <= 0 || loadInfo.quadCount > RENDER_OBJECT_QUAD_MAX_COUNT) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object: quad count (%i) is invalid.", loadInfo.quadCount);
 		return -1;
@@ -150,7 +150,7 @@ int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
 			break;
 		}
 	}
-	if (!validateRenderObjectHandle2(handle)) {
+	if (!validateRenderObjectHandle(handle)) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object: no render object slots available.");
 		return -1;
 	}
@@ -207,7 +207,7 @@ int32_t loadRenderObject3(const RenderObjectLoadInfo loadInfo) {
 	return handle;
 }
 
-void unloadRenderObject3(int32_t *const pHandle) {
+void unloadRenderObject(int32_t *const pHandle) {
 	if (!pHandle) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error unloading render object: pointer to render object handle is null.");
 		return;
@@ -250,7 +250,7 @@ int32_t loadRenderText(const String text, const Vector3D position, const Vector4
 		.pQuadLoadInfos = quadLoadInfos
 	};
 	
-	return loadRenderObject3(loadInfo);
+	return loadRenderObject(loadInfo);
 }
 
 void writeRenderText(const int32_t handle, const char *const pFormat, ...) {
@@ -274,31 +274,31 @@ void writeRenderText(const int32_t handle, const char *const pFormat, ...) {
 	}
 }
 
-bool validateRenderObjectHandle2(const int32_t handle) {
+bool validateRenderObjectHandle(const int32_t handle) {
 	return handle >= 0 && handle < RENDER_OBJECT_MAX_COUNT;
 }
 
 bool renderObjectExists(const int32_t handle) {
-	return validateRenderObjectHandle2(handle) && renderObjects[handle].active;
+	return validateRenderObjectHandle(handle) && renderObjects[handle].active;
 }
 
 // TODO: implement function.
-int32_t renderObjectLoadQuad2(const int32_t handle, const QuadLoadInfo loadInfo) {
+int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo) {
 	assert(false);
 	(void)handle;
 	(void)loadInfo;
 	return -1;
 }
 
-bool validateRenderObjectQuadIndex2(const int32_t quadIndex) {
+bool validateRenderObjectQuadIndex(const int32_t quadIndex) {
 	return quadIndex >= 0 && quadIndex < RENDER_OBJECT_QUAD_MAX_COUNT;
 }
 
 bool renderObjectQuadExists(const int32_t handle, const int32_t quadIndex) {
-	return renderObjectExists(handle) && validateRenderObjectQuadIndex2(quadIndex) && renderObjects[handle].pQuads[quadIndex].handle >= 0;
+	return renderObjectExists(handle) && validateRenderObjectQuadIndex(quadIndex) && renderObjects[handle].pQuads[quadIndex].handle >= 0;
 }
 
-void renderObjectSetPosition2(const int32_t handle, const int32_t quadIndex, const Vector3D position) {
+void renderObjectSetPosition(const int32_t handle, const int32_t quadIndex, const Vector3D position) {
 	if (!renderObjectExists(handle)) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error setting render object position: render object %i does not exist.", handle);
 		return;
@@ -309,7 +309,7 @@ void renderObjectSetPosition2(const int32_t handle, const int32_t quadIndex, con
 	modelSetTranslation(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle, vec3DtoVec4F(position));
 }
 
-int32_t renderObjectGetTextureHandle2(const int32_t handle, const int32_t quadIndex) {
+int32_t renderObjectGetTextureHandle(const int32_t handle, const int32_t quadIndex) {
 	if (!renderObjectExists(handle)) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error getting render object texture handle: render object %i does not exist.", handle);
 		return -1;
@@ -324,7 +324,7 @@ int32_t renderObjectGetTextureHandle2(const int32_t handle, const int32_t quadIn
 	return -1;
 }
 
-void renderObjectAnimate2(const int32_t handle) {
+void renderObjectAnimate(const int32_t handle) {
 	if (!renderObjectExists(handle)) {
 		//logMsg(loggerRender, LOG_LEVEL_ERROR, "Error animating render object: render object %i does not exist.", handle);
 		return;
@@ -344,7 +344,7 @@ void renderObjectAnimate2(const int32_t handle) {
 	}
 }
 
-uint32_t renderObjectGetAnimation2(const int32_t handle, const int32_t quadIndex) {
+uint32_t renderObjectGetAnimation(const int32_t handle, const int32_t quadIndex) {
 	if (!renderObjectExists(handle)) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error getting render object animation: render object %i does not exist.", handle);
 		return 0;
@@ -360,7 +360,7 @@ uint32_t renderObjectGetAnimation2(const int32_t handle, const int32_t quadIndex
 	return 0;
 }
 
-bool renderObjectSetAnimation2(const int32_t handle, const int32_t quadIndex, const uint32_t nextAnimation) {
+bool renderObjectSetAnimation(const int32_t handle, const int32_t quadIndex, const uint32_t nextAnimation) {
 	if (!renderObjectExists(handle)) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error setting render object animation: render object %i does not exist.", handle);
 		return false;

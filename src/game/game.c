@@ -88,7 +88,7 @@ void tick_game(void) {
 	//static const double speed = 0.24;
 	static const double accelerationMagnitude = 0.24;
 	pPlayerEntity->physics.acceleration = zeroVec3D;
-	const unsigned int currentAnimation = renderObjectGetAnimation2(pPlayerEntity->renderHandle, 0);
+	const unsigned int currentAnimation = renderObjectGetAnimation(pPlayerEntity->renderHandle, 0);
 	unsigned int nextAnimation = currentAnimation;
 
 	if (move_up_pressed && !move_down_pressed) {
@@ -115,7 +115,7 @@ void tick_game(void) {
 	pPlayerEntity->physics.acceleration = mulVec(pPlayerEntity->physics.acceleration, accelerationMagnitude);
 	
 	if (nextAnimation != currentAnimation) {
-		renderObjectSetAnimation2(pPlayerEntity->renderHandle, 0, nextAnimation);
+		renderObjectSetAnimation(pPlayerEntity->renderHandle, 0, nextAnimation);
 	}
 
 	tickEntities();
@@ -142,6 +142,6 @@ void toggleDebugMenu(void) {
 	if (debugMenuEnabled) {
 		debugTextHandle = loadRenderText(makeStaticString("Position"), makeVec3D(-6.0, 3.75, -32.0), COLOR_WHITE);
 	} else {
-		unloadRenderObject3(&debugTextHandle);
+		unloadRenderObject(&debugTextHandle);
 	}
 }
