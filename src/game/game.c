@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "glfw/input_manager.h"
+#include "glfw/InputManager.h"
 #include "log/Logger.h"
 #include "render/area_render_state.h"
 #include "render/RenderManager.h"
@@ -41,8 +41,8 @@ static GameControls controls = {
 	.moveLeft = GLFW_KEY_A,
 	.moveDown = GLFW_KEY_S,
 	.moveRight = GLFW_KEY_D,
-	.useItemLeft = GLFW_MOUSE_BUTTON_LEFT,
-	.useItemRight = GLFW_MOUSE_BUTTON_RIGHT
+	.useItemLeft = MOUSE_BUTTON_LEFT,
+	.useItemRight = MOUSE_BUTTON_RIGHT
 };
 
 // The area that the player is currently in.
@@ -155,10 +155,10 @@ void tick_game(void) {
 		unloadImpersistentEntities();
 	}
 
-	const bool move_up_pressed = is_input_pressed_or_held(controls.moveUp);		// UP
-	const bool move_left_pressed = is_input_pressed_or_held(controls.moveLeft);	// LEFT
-	const bool move_down_pressed = is_input_pressed_or_held(controls.moveDown);	// DOWN
-	const bool move_right_pressed = is_input_pressed_or_held(controls.moveRight);	// RIGHT
+	const bool move_up_pressed = isInputPressedOrHeld(controls.moveUp);		// UP
+	const bool move_left_pressed = isInputPressedOrHeld(controls.moveLeft);	// LEFT
+	const bool move_down_pressed = isInputPressedOrHeld(controls.moveDown);	// DOWN
+	const bool move_right_pressed = isInputPressedOrHeld(controls.moveRight);	// RIGHT
 
 	Entity *pPlayerEntity = nullptr;
 	int result = getEntity(playerEntityHandle, &pPlayerEntity);

@@ -4,8 +4,7 @@
 #include "debug.h"
 #include "log/Logger.h"
 #include "render/stb/image_data.h"
-
-#include "input_manager.h"
+#include "InputManager.h"
 
 static const int window_width_default = 960;
 static const int window_height_default = 600;
@@ -43,11 +42,11 @@ void init_GLFW(void) {
 		window = glfwCreateWindow(mode->width, mode->height, APP_NAME, monitor, nullptr);
 	}
 
-	if (window == nullptr) {
+	if (!window) {
 		logMsg(loggerSystem, LOG_LEVEL_FATAL, "GLFW window creation failed.");
 	}
 	
-	init_input_manager(window);
+	initInputManager(window);
 
 	// TODO - add window icons.
 }

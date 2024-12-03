@@ -64,7 +64,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/entity/EntityRegistry.c
 	src/game/entity/EntitySpawner.c
 	src/glfw/glfw_manager.c
-	src/glfw/input_manager.c
+	src/glfw/InputManager.c
 	src/log/Logger.c
 	src/math/Box.c
 	src/math/extent.c
