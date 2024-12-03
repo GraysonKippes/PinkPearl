@@ -15,13 +15,35 @@
 #include "entity/EntityRegistry.h"
 #include "entity/EntitySpawner.h"
 
+// Stores information about the Pink Pearl game, such as whether or not the game is paused.
 typedef struct GameState {
 	bool paused;
 	bool scrolling;
 } GameState;
 
-// Stores information about the Pink Pearl game, such as whether or not the game is paused.
+// Stores keybinds for playing the game.
+typedef struct GameControls {
+	int pauseGame;
+	int debugMenu;
+	int moveUp;
+	int moveLeft;
+	int moveDown;
+	int moveRight;
+	int useItemLeft;
+	int useItemRight;
+} GameControls;
+
 static GameState gameState = { };
+static GameControls controls = {
+	.pauseGame = GLFW_KEY_ESCAPE,
+	.debugMenu = GLFW_KEY_F3,
+	.moveUp = GLFW_KEY_W,
+	.moveLeft = GLFW_KEY_A,
+	.moveDown = GLFW_KEY_S,
+	.moveRight = GLFW_KEY_D,
+	.useItemLeft = GLFW_MOUSE_BUTTON_LEFT,
+	.useItemRight = GLFW_MOUSE_BUTTON_RIGHT
+};
 
 // The area that the player is currently in.
 Area currentArea = { };
@@ -113,7 +135,11 @@ void tick_game(void) {
 
 	tickRenderManager();
 
-	if (isInputPressed(GLFW_KEY_ESCAPE)) {
+	if (isInputPressed(controls.debugMenu)) {
+		toggleDebugMenu();
+	}
+
+	if (isInputPressed(controls.pauseGame)) {
 		pauseGame(&gameState);
 	}
 
@@ -121,25 +147,18 @@ void tick_game(void) {
 		return;
 	}
 
-	if (isInputPressed(GLFW_KEY_F3)) {
-		toggleDebugMenu();
-	}
-
-	const bool move_up_pressed = is_input_pressed_or_held(GLFW_KEY_W);		// UP
-	const bool move_left_pressed = is_input_pressed_or_held(GLFW_KEY_A);	// LEFT
-	const bool move_down_pressed = is_input_pressed_or_held(GLFW_KEY_S);	// DOWN
-	const bool move_right_pressed = is_input_pressed_or_held(GLFW_KEY_D);	// RIGHT
-
 	if (gameState.scrolling) {
-		if (!areaRenderStateIsScrolling(globalAreaRenderState)) {
-			gameState.scrolling = false;
-			unloadImpersistentEntities();
-		}
-		else {
-			//settle_render_positions();
+		if (areaRenderStateIsScrolling(globalAreaRenderState)) {
 			return;
 		}
+		gameState.scrolling = false;
+		unloadImpersistentEntities();
 	}
+
+	const bool move_up_pressed = is_input_pressed_or_held(controls.moveUp);		// UP
+	const bool move_left_pressed = is_input_pressed_or_held(controls.moveLeft);	// LEFT
+	const bool move_down_pressed = is_input_pressed_or_held(controls.moveDown);	// DOWN
+	const bool move_right_pressed = is_input_pressed_or_held(controls.moveRight);	// RIGHT
 
 	Entity *pPlayerEntity = nullptr;
 	int result = getEntity(playerEntityHandle, &pPlayerEntity);
