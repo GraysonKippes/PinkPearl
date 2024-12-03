@@ -2,7 +2,6 @@
 
 #include "entity_manager.h"
 #include "EntityRegistry.h"
-
 #include "util/Random.h"
 
 void entitySpawnerReload(EntitySpawner *const pEntitySpawner) {

@@ -28,6 +28,9 @@ Area currentArea = { };
 // The handle to the player entity.
 static int playerEntityHandle = -1;
 
+static int32_t heartsHandle = -1;
+static int32_t slotsHandle = -1;
+
 #define DEBUG_TEXT_HANDLE_COUNT 3
 static bool debugMenuEnabled = false;
 static int32_t debugTextHandles[DEBUG_TEXT_HANDLE_COUNT] = { -1, -1, -1 };
@@ -35,7 +38,7 @@ static int32_t debugTextHandles[DEBUG_TEXT_HANDLE_COUNT] = { -1, -1, -1 };
 void toggleDebugMenu(void);
 
 void start_game(void) {
-
+	
 	currentArea = readAreaData("test");
 	areaRenderStateReset(&globalAreaRenderState, currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
 	playerEntityHandle = loadEntity(makeStaticString("pearl"), makeVec3D(0.0, 0.0, 1.0), zeroVec3D);
@@ -51,6 +54,54 @@ void start_game(void) {
 	
 	entitySpawnerReload(&testEntitySpawner);
 	entitySpawnerSpawnEntities(&testEntitySpawner);
+	
+	const RenderObjectLoadInfo loadInfoHearts = {
+		.isGUIElement = true,
+		.textureID = makeStaticString("gui/heart3"),
+		.quadCount = 3,
+		.pQuadLoadInfos = (QuadLoadInfo[3]){
+			{
+				.quadType = QUAD_TYPE_MAIN,
+				.initPosition = makeVec3D(-11.5, 7.25, 3.0),
+				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
+				.initAnimation = 0,
+				.initCell = 0,
+				.color = COLOR_WHITE
+			}, {
+				.quadType = QUAD_TYPE_MAIN,
+				.initPosition = makeVec3D(-11.0, 7.25, 3.0),
+				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
+				.initAnimation = 0,
+				.initCell = 0,
+				.color = COLOR_WHITE
+			}, {
+				.quadType = QUAD_TYPE_MAIN,
+				.initPosition = makeVec3D(-10.5, 7.25, 3.0),
+				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
+				.initAnimation = 0,
+				.initCell = 0,
+				.color = COLOR_WHITE
+			}
+		}
+	};
+	heartsHandle = loadRenderObject(loadInfoHearts);
+	
+	const RenderObjectLoadInfo loadInfoSlots = {
+		.isGUIElement = true,
+		.textureID = makeStaticString("gui/slots"),
+		.quadCount = 1,
+		.pQuadLoadInfos = (QuadLoadInfo[1]){
+			{
+				.quadType = QUAD_TYPE_MAIN,
+				.initPosition = makeVec3D(10.25, 7.0, 3.0),
+				.quadDimensions = (BoxF){ .x1 = -1.75F, .y1 = -0.5F, .x2 = 1.75F, .y2 = 0.5F },
+				.initAnimation = 0,
+				.initCell = 0,
+				.color = COLOR_WHITE
+			}
+		}
+	};
+	slotsHandle = loadRenderObject(loadInfoSlots);
 }
 
 void tick_game(void) {
