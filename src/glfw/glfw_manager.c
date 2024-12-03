@@ -31,8 +31,7 @@ void init_GLFW(void) {
 
 	if (debug_enabled) {
 		window = glfwCreateWindow(window_width_default, window_height_default, application_name, nullptr, nullptr);
-	}
-	else {
+	} else {
 		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 		glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -49,6 +48,8 @@ void init_GLFW(void) {
 	initInputManager(window);
 
 	// TODO - add window icons.
+	GLFWimage icon = load_glfw_image(RESOURCE_PATH "assets/textures/icon.png");
+	glfwSetWindowIcon(window, 1, &icon);
 }
 
 void terminate_GLFW(void) {

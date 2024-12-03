@@ -183,13 +183,9 @@ char *getInputName(const int input) {
 		case GLFW_KEY_RIGHT_CONTROL: return "Right Control";
 		case GLFW_KEY_RIGHT_ALT: return "Right Alt";
 		case GLFW_KEY_RIGHT_SUPER: return "Right Super";
-		case GLFW_KEY_MENU: return "Menu";
 		case MOUSE_BUTTON_LEFT: return "Mouse Left";
 		case MOUSE_BUTTON_MIDDLE: return "Mouse Middle";
 		case MOUSE_BUTTON_RIGHT: return "Mouse Right";
-		case MOUSE_BUTTON_1: return "Mouse 1";
-		case MOUSE_BUTTON_2: return "Mouse 2";
-		case MOUSE_BUTTON_3: return "Mouse 3";
 		case MOUSE_BUTTON_4: return "Mouse 4";
 		case MOUSE_BUTTON_5: return "Mouse 5";
 		case MOUSE_BUTTON_6: return "Mouse 6";

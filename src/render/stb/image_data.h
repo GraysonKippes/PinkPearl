@@ -12,7 +12,7 @@
 typedef struct image_data_t {
 	
 	// The data of this image.
-	byte_t *data;
+	unsigned char *data;
 
 	// The width of this image, in pixels.
 	size_t width;
