@@ -1,7 +1,6 @@
 #include "client.h"
 
 #include <stdbool.h>
-
 #include "game/game.h"
 #include "glfw/glfw_manager.h"
 #include "render/RenderManager.h"
@@ -33,7 +32,7 @@ void run_client(void) {
 		}
 
 		if (client_running && !should_application_window_close()) {
-			renderFrame(tick_delta_time);
+			renderFrame(tick_delta_time, isGamePaused());
 		}
 		else {
 			break;

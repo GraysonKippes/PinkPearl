@@ -34,6 +34,8 @@ typedef struct RenderObject {
 	
 } RenderObject;
 
+static RenderObject renderObjects[RENDER_OBJECT_MAX_COUNT];
+
 const Vector4F COLOR_WHITE 	= { 1.0F, 1.0F, 1.0F, 1.0F };
 const Vector4F COLOR_BLACK 	= { 0.0F, 0.0F, 0.0F, 1.0F };
 const Vector4F COLOR_RED 	= { 1.0F, 0.0F, 0.0F, 1.0F };
@@ -124,19 +126,32 @@ void terminateRenderManager(void) {
 	terminateVulkanManager();
 }
 
-void renderFrame(const float timeDelta) {
+void tickRenderManager(void) {
+	for (int32_t handle = 0; handle < RENDER_OBJECT_MAX_COUNT; ++handle) {
+		if (!renderObjects[handle].active) {
+			continue;
+		}
+		for (int32_t quadIndex = 0; quadIndex < renderObjects[handle].quadCount; ++quadIndex) {
+			if (renderObjects[handle].pQuads[quadIndex].handle >= 0) {
+				modelSettleTransform(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
+			}
+		}
+	}
+}
+
+void renderFrame(const float timeDelta, const bool paused) {
 	glfwPollEvents();
 	
-	for (int32_t i = 0; i < RENDER_OBJECT_MAX_COUNT; ++i) {
-		renderObjectAnimate(i);
+	if (!paused) {
+		for (int32_t i = 0; i < RENDER_OBJECT_MAX_COUNT; ++i) {
+			renderObjectAnimate(i);
+		}
 	}
 	
 	const Vector4F cameraPosition = areaRenderStateGetCameraPosition(&globalAreaRenderState);
 	const ProjectionBounds projectionBounds = areaRenderStateGetProjectionBounds(globalAreaRenderState);
 	drawFrame(timeDelta, cameraPosition, projectionBounds);
 }
-
-static RenderObject renderObjects[RENDER_OBJECT_MAX_COUNT];
 
 int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 	if (loadInfo.quadCount <= 0 || loadInfo.quadCount > RENDER_OBJECT_QUAD_MAX_COUNT) {

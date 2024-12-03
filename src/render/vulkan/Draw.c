@@ -442,6 +442,12 @@ void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F
 	renderVectorSet(&modelPool->pModelTransforms[modelHandle].rotation, rotation);
 }
 
+void modelSettleTransform(ModelPool modelPool, const int modelHandle) {
+	renderVectorSettle(&modelPool->pModelTransforms[modelHandle].translation);
+	renderVectorSettle(&modelPool->pModelTransforms[modelHandle].scaling);
+	renderVectorSettle(&modelPool->pModelTransforms[modelHandle].rotation);
+}
+
 TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle) {
 	return &modelPool->pTextureStates[modelHandle];
 }

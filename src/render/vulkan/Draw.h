@@ -92,6 +92,9 @@ void modelSetScaling(ModelPool modelPool, const int modelHandle, const Vector4F 
 
 void modelSetRotation(ModelPool modelPool, const int modelHandle, const Vector4F rotation);
 
+// Settles the transform of a model, setting its previous transform to equal its current transform.
+void modelSettleTransform(ModelPool modelPool, const int modelHandle);
+
 
 
 // TODO - replace these functions with specific control functions

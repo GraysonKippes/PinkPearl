@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -28,12 +29,16 @@ Area currentArea = { };
 // The handle to the player entity.
 static int playerEntityHandle = -1;
 
+// Move from global state to struct.
 static int32_t heartsHandle = -1;
 static int32_t slotsHandle = -1;
+static int32_t pausedHandle = -1;
 
 #define DEBUG_TEXT_HANDLE_COUNT 3
 static bool debugMenuEnabled = false;
 static int32_t debugTextHandles[DEBUG_TEXT_HANDLE_COUNT] = { -1, -1, -1 };
+
+void pauseGame(GameState *const pGameState);
 
 void toggleDebugMenu(void);
 
@@ -105,6 +110,16 @@ void start_game(void) {
 }
 
 void tick_game(void) {
+
+	tickRenderManager();
+
+	if (isInputPressed(GLFW_KEY_ESCAPE)) {
+		pauseGame(&gameState);
+	}
+
+	if (gameState.paused) {
+		return;
+	}
 
 	if (isInputPressed(GLFW_KEY_F3)) {
 		toggleDebugMenu();
@@ -186,6 +201,20 @@ void tick_game(void) {
 			areaRenderStateSetNextRoom(&globalAreaRenderState, *pNextRoom);
 		}
 	}
+}
+
+void pauseGame(GameState *const pGameState) {
+	assert(pGameState);
+	pGameState->paused = !pGameState->paused;
+	if (pGameState->paused) {
+		pausedHandle = loadRenderText(makeStaticString("Paused"), makeVec3D(-1.5, 0.25, 3.0), COLOR_WHITE);
+	} else {
+		unloadRenderObject(&pausedHandle);
+	}
+}
+
+bool isGamePaused(void) {
+	return gameState.paused;
 }
 
 void toggleDebugMenu(void) {

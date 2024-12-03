@@ -9,4 +9,6 @@ void start_game(void);
 
 void tick_game(void);
 
+bool isGamePaused(void);
+
 #endif	// GAME_H

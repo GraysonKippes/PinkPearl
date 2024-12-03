@@ -66,8 +66,11 @@ void initRenderManager(void);
 // Terminates the render manager.
 void terminateRenderManager(void);
 
+// Synchronizes the render manager with the game layer.
+void tickRenderManager(void);
+
 // Renders a single frame and polls GLFW for events.
-void renderFrame(const float timeDelta);
+void renderFrame(const float timeDelta, const bool paused);
 
 // RENDER OBJECT INTERFACE
 

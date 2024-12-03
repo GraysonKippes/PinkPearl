@@ -4,7 +4,7 @@ void renderVectorSet(RenderVector *const pRenderVector, const Vector4F newVector
 	if (!pRenderVector) {
 		return;
 	}
-	pRenderVector->previous = pRenderVector->current;
+	//pRenderVector->previous = pRenderVector->current;
 	pRenderVector->current = newVector;
 }
 
