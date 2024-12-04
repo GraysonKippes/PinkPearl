@@ -29,7 +29,8 @@ typedef struct RenderObject {
 	bool active;
 	
 	// Array of handles to quads being rendered.
-	int32_t quadCount;
+	int32_t quadCount; // Number of quads actually being rendered.
+	int32_t quadCapacity; // Number of elements allocated for the quad array.
 	RenderObjectQuad *pQuads;
 	
 } RenderObject;
@@ -172,6 +173,7 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 	}
 	
 	renderObjects[handle].quadCount = loadInfo.quadCount;
+	renderObjects[handle].quadCapacity = loadInfo.quadCount;
 	renderObjects[handle].pQuads = calloc(loadInfo.quadCount, sizeof(RenderObjectQuad));
 	if (!renderObjects[handle].pQuads) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object: failed to allocate quad array.");
@@ -195,29 +197,18 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 			imageIndex = texture.animations[quadLoadInfo.initAnimation].startCell + quadLoadInfo.initCell;
 		}
 		
-		ModelPool modelPool = nullptr;
-		switch (quadLoadInfo.quadType) {
-			default:
-			case QUAD_TYPE_MAIN:
-				modelPool = modelPoolMain; 
-				break;
-			case QUAD_TYPE_DEBUG:
-				modelPool = modelPoolDebug; 
-				break;
-		}
-		
 		const ModelLoadInfo modelLoadInfo = {
-			.modelPool = modelPool,
+			.modelPool = quadLoadInfo.quadType == QUAD_TYPE_WIREFRAME ? modelPoolDebug : modelPoolMain,
 			.position = vec3DtoVec4F(quadLoadInfo.initPosition),
 			.dimensions = quadLoadInfo.quadDimensions,
-			.cameraFlag = loadInfo.isGUIElement ? 0 : 1,
+			.cameraFlag = quadLoadInfo.quadType == QUAD_TYPE_GUI ? 0 : 1,
 			.textureID = loadInfo.textureID,
 			.color = quadLoadInfo.color,
 			.imageIndex = imageIndex
 		};
 		
 		loadModel(modelLoadInfo, &renderObjects[handle].pQuads[quadIndex].handle);
-		renderObjects[handle].pQuads[quadIndex].modelPool = modelPool;
+		renderObjects[handle].pQuads[quadIndex].modelPool = modelLoadInfo.modelPool;
 	}
 	
 	renderObjects[handle].active = true;
@@ -252,7 +243,7 @@ int32_t loadRenderText(const String text, const Vector3D position, const Vector4
 	QuadLoadInfo quadLoadInfos[text.length] = { };
 	for (int32_t i = 0; i < (int32_t)text.length; ++i) {
 		quadLoadInfos[i] = (QuadLoadInfo){
-			.quadType = QUAD_TYPE_MAIN,
+			.quadType = QUAD_TYPE_GUI,
 			.initPosition = addVec(position, mulVec3D(makeVec3D(0.5, 0.0, 0.0), (double)i)),
 			.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 			.initAnimation = 0,
@@ -262,7 +253,6 @@ int32_t loadRenderText(const String text, const Vector3D position, const Vector4
 	}
 	
 	const RenderObjectLoadInfo loadInfo = {
-		.isGUIElement = true,
 		.textureID = makeStaticString("gui/fontFrogBlock"),
 		.quadCount = text.length,
 		.pQuadLoadInfos = quadLoadInfos
@@ -305,9 +295,61 @@ bool renderObjectExists(const int32_t handle) {
 
 // TODO: implement function.
 int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo) {
-	assert(false);
-	(void)handle;
-	(void)loadInfo;
+	if (!renderObjectExists(handle)) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object quad: render object %i does not exist.", handle);
+		return -1;
+	}
+	
+	// Find the first appropriate slot to use.
+	/*bool enoughSpace = false; // Set to true if space for the new quad is found.
+	int32_t quadIndex = 0;
+	for (; quadIndex < renderObjects[handle].quadCapacity; ++quadIndex) {
+		if (renderObjects[handle].pQuads[quadIndex].handle >= 0) {
+			enoughSpace = true;
+			break;
+		}
+	}
+	
+	// If there is not enough space for the new quad, double the amount of space.
+	if (!enoughSpace) {
+		RenderObjectQuad *const pRealloc = realloc(renderObjects[handle].pQuads, 2 * renderObjects[handle].quadCapacity * sizeof(RenderObjectQuad));
+		if (!pRealloc) {
+			logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object quad: failed to reallocate quad array.");
+			return -1;
+		}
+		renderObjects[handle].pQuads = pRealloc;
+		quadIndex = renderObjects[handle].quadCapacity;
+		renderObjects[handle].quadCapacity *= 2;
+	}
+	
+	const Texture texture = getTexture(findTexture(loadInfo.textureID));
+	int32_t imageIndex = 0;
+	if (quadLoadInfo.initAnimation >= 0 && quadLoadInfo.initAnimation < (int32_t)texture.numAnimations) {
+		imageIndex = texture.animations[quadLoadInfo.initAnimation].startCell + quadLoadInfo.initCell;
+	}
+	
+	ModelPool modelPool = nullptr;
+	switch (quadLoadInfo.quadType) {
+		default:
+		case QUAD_TYPE_MAIN:
+			modelPool = modelPoolMain; 
+			break;
+		case QUAD_TYPE_WIREFRAME:
+			modelPool = modelPoolDebug; 
+			break;
+	}
+	
+	const ModelLoadInfo modelLoadInfo = {
+		.modelPool = modelPool,
+		.position = vec3DtoVec4F(loadInfo.initPosition),
+		.dimensions = loadInfo.quadDimensions,
+		.cameraFlag = 0, // TODO: allow new quads to be GUI elements.
+		.textureID = loadInfo.textureID,
+		.color = loadInfo.color,
+		.imageIndex = imageIndex
+	};
+	
+	return quadIndex;*/
 	return -1;
 }
 

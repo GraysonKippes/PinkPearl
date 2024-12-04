@@ -212,7 +212,6 @@ static void areaRenderStateLoadRoomQuad(AreaRenderState *const pAreaRenderState,
 	}
 	
 	const RenderObjectLoadInfo loadInfo = {
-		.isGUIElement = false,
 		.textureID = roomSizeToTextureID(room.size),
 		.quadCount = 2,
 		.pQuadLoadInfos = (QuadLoadInfo[2]){

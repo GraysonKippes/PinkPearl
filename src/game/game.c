@@ -83,26 +83,25 @@ void start_game(void) {
 	entitySpawnerSpawnEntities(&testEntitySpawner);
 	
 	const RenderObjectLoadInfo loadInfoHearts = {
-		.isGUIElement = true,
 		.textureID = makeStaticString("gui/heart3"),
 		.quadCount = 3,
 		.pQuadLoadInfos = (QuadLoadInfo[3]){
 			{
-				.quadType = QUAD_TYPE_MAIN,
+				.quadType = QUAD_TYPE_GUI,
 				.initPosition = makeVec3D(-11.5, 7.25, 3.0),
 				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 				.initAnimation = 0,
 				.initCell = 0,
 				.color = COLOR_WHITE
 			}, {
-				.quadType = QUAD_TYPE_MAIN,
+				.quadType = QUAD_TYPE_GUI,
 				.initPosition = makeVec3D(-11.0, 7.25, 3.0),
 				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 				.initAnimation = 0,
 				.initCell = 0,
 				.color = COLOR_WHITE
 			}, {
-				.quadType = QUAD_TYPE_MAIN,
+				.quadType = QUAD_TYPE_GUI,
 				.initPosition = makeVec3D(-10.5, 7.25, 3.0),
 				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 				.initAnimation = 0,
@@ -114,12 +113,11 @@ void start_game(void) {
 	heartsHandle = loadRenderObject(loadInfoHearts);
 	
 	const RenderObjectLoadInfo loadInfoSlots = {
-		.isGUIElement = true,
 		.textureID = makeStaticString("gui/slots"),
 		.quadCount = 1,
 		.pQuadLoadInfos = (QuadLoadInfo[1]){
 			{
-				.quadType = QUAD_TYPE_MAIN,
+				.quadType = QUAD_TYPE_GUI,
 				.initPosition = makeVec3D(10.25, 7.0, 3.0),
 				.quadDimensions = (BoxF){ .x1 = -1.75F, .y1 = -0.5F, .x2 = 1.75F, .y2 = 0.5F },
 				.initAnimation = 0,

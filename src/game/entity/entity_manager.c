@@ -45,7 +45,6 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	}
 	
 	const RenderObjectLoadInfo renderObjectLoadInfo = {
-		.isGUIElement = false,
 		.textureID = entityRecord.textureID,
 		.quadCount = 2,
 		.pQuadLoadInfos = (QuadLoadInfo[2]){
@@ -56,7 +55,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 				.initAnimation = 2,
 				.color = COLOR_WHITE
 			}, {
-				.quadType = QUAD_TYPE_DEBUG,
+				.quadType = QUAD_TYPE_WIREFRAME,
 				.initPosition = initPosition,
 				.quadDimensions = boxD2F(entityRecord.entityHitbox),
 				.initAnimation = 0,

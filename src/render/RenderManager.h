@@ -9,7 +9,8 @@
 
 typedef enum RenderObjectQuadType {
 	QUAD_TYPE_MAIN = 0,
-	QUAD_TYPE_DEBUG = 1
+	QUAD_TYPE_GUI = 1,
+	QUAD_TYPE_WIREFRAME = 2
 } RenderObjectQuadType;
 
 typedef struct QuadLoadInfo {
@@ -30,9 +31,6 @@ typedef struct QuadLoadInfo {
 } QuadLoadInfo;
 
 typedef struct RenderObjectLoadInfo {
-	
-	// True if the render object will be a GUI element, AKA move with the camera.
-	bool isGUIElement;
 	
 	// The texture that all quads controlled by the render object will use.
 	// Only used for regular (i.e. not debug) render objects.

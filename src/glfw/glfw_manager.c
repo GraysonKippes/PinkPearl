@@ -47,7 +47,6 @@ void init_GLFW(void) {
 	
 	initInputManager(window);
 
-	// TODO - add window icons.
 	GLFWimage icon = load_glfw_image(RESOURCE_PATH "assets/textures/icon.png");
 	glfwSetWindowIcon(window, 1, &icon);
 }
