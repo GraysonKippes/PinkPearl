@@ -388,10 +388,17 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	// True if the model uses a texture, false otherwise.
 	const bool textureNeeded = loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset >= 0;
 	if (textureNeeded) {
-		const TextureState textureState = newTextureState(loadInfo.textureID);
-		loadInfo.modelPool->pTextureStates[modelIndex] = textureState;
-		const Texture texture = getTexture(textureState.textureHandle);
-		uploadSampledImage(device, texture.image);
+		if (loadInfo.textureHandle > 0) {
+			const TextureState textureState = newTextureState2(loadInfo.textureHandle);
+			loadInfo.modelPool->pTextureStates[modelIndex] = textureState;
+			const Texture texture = getTexture(textureState.textureHandle);
+			uploadSampledImage(device, texture.image);
+		} else {
+			const TextureState textureState = newTextureState(loadInfo.textureID);
+			loadInfo.modelPool->pTextureStates[modelIndex] = textureState;
+			const Texture texture = getTexture(textureState.textureHandle);
+			uploadSampledImage(device, texture.image);
+		}
 	}
 	
 	loadInfo.modelPool->pSlotFlags[modelIndex] = true;
@@ -423,7 +430,9 @@ void unloadModel(ModelPool modelPool, int *const pModelHandle) {
 	}
 	
 	bufferHostTransfer(modelPool->drawInfoBuffer, 0, drawCountSize, &modelPool->drawInfoCount);
-	bufferHostTransfer(modelPool->drawInfoBuffer, drawCountSize, modelPool->drawInfoCount * sizeof(DrawInfo), modelPool->pDrawInfos);
+	if (modelPool->drawInfoCount > 0) {
+		bufferHostTransfer(modelPool->drawInfoBuffer, drawCountSize, modelPool->drawInfoCount * sizeof(DrawInfo), modelPool->pDrawInfos);
+	}
 	
 	modelPool->pSlotFlags[modelIndex] = false;
 	

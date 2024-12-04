@@ -46,11 +46,28 @@ TextureState newTextureState(const String textureID) {
 	return textureState;
 }
 
+TextureState newTextureState2(const int32_t textureHandle) {
+	if (!validateTextureHandle(textureHandle)) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating texture state: texture %i does not exist.", textureHandle);
+		return nullTextureState();
+	}
+	
+	TextureState textureState = nullTextureState();
+	Texture texture = getTexture(textureHandle);
+	textureState.numAnimations = texture.numAnimations;
+	textureState.startCell = texture.animations[textureState.currentAnimation].startCell;
+	textureState.numFrames = texture.animations[textureState.currentAnimation].numFrames;
+	textureState.currentFPS = texture.animations[textureState.currentAnimation].framesPerSecond;
+	textureState.lastFrameTimeMS = getTimeMS();
+	
+	return textureState;
+}
+
 bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned int nextAnimation) {
 	if (!pTextureState) {
 		return false;
 	} else if (nextAnimation >= pTextureState->numAnimations) {
-		logMsg(loggerVulkan, LOG_LEVEL_WARNING, "Warning updating texture animation state: next animation index (%u) is not less than number of animations (%u).", nextAnimation, pTextureState->numAnimations);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Updating texture animation state: next animation index (%u) is not less than number of animations (%u).", nextAnimation, pTextureState->numAnimations);
 		return false;
 	}
 

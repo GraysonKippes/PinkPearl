@@ -74,7 +74,9 @@ void tick_entity(Entity *const pEntity) {
 	pEntity->physics.acceleration = subVec(pEntity->physics.velocity, previousVelocity);
 
 	renderObjectSetPosition(pEntity->renderHandle, 0, pEntity->physics.position);
-	renderObjectSetPosition(pEntity->renderHandle, 1, pEntity->physics.position);
+	if (renderObjectQuadExists(pEntity->renderHandle, pEntity->wireframe)) {
+		renderObjectSetPosition(pEntity->renderHandle, pEntity->wireframe, pEntity->physics.position);
+	}
 }
 
 /* SINGLE-AXIS OVERLAP CASES

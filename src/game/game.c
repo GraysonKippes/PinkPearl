@@ -240,9 +240,11 @@ void toggleDebugMenu(void) {
 		debugTextHandles[0] = loadRenderText(makeStaticString("Position Position"), makeVec3D(-11.5, 7.25, 4.0), COLOR_PINK);
 		debugTextHandles[1] = loadRenderText(makeStaticString("Velocity Velocity"), makeVec3D(-11.5, 6.75, 4.0), COLOR_PINK);
 		debugTextHandles[2] = loadRenderText(makeStaticString("Acceleration Acce"), makeVec3D(-11.5, 6.25, 4.0), COLOR_PINK);
+		drawEntityHitboxes();
 	} else {
 		unloadRenderObject(&debugTextHandles[0]);
 		unloadRenderObject(&debugTextHandles[1]);
 		unloadRenderObject(&debugTextHandles[2]);
+		undrawEntityHitboxes();
 	}
 }

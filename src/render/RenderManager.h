@@ -93,6 +93,8 @@ bool renderObjectExists(const int32_t handle);
 // Loads a quad into a render object.
 int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo);
 
+void renderObjectUnloadQuad(const int32_t handle, int32_t *const pQuadIndex);
+
 // Checks whether a render object quad index is valid or not.
 bool validateRenderObjectQuadIndex(const int32_t quadIndex);
 

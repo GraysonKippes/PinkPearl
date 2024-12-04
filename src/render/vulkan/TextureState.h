@@ -1,7 +1,7 @@
 #ifndef TEXTURE_STATE_H
 #define TEXTURE_STATE_H
 
-#include <stdbool.h>
+#include <stdint.h>
 
 #include "util/string.h"
 
@@ -36,6 +36,8 @@ typedef struct TextureState {
 TextureState nullTextureState(void);
 
 TextureState newTextureState(const String textureID);
+
+TextureState newTextureState2(const int32_t textureHandle);
 
 bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned int nextAnimation);
 

@@ -24,6 +24,12 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 // Frees the entity slot at the specified handle.
 void unloadEntity(const int entityHandle);
 
+// Loads a wireframe for each active entity's hitbox.
+void drawEntityHitboxes(void);
+
+// Unloads the wireframe for each active entity's hitbox.
+void undrawEntityHitboxes(void);
+
 // Unloads all entities that are not marked persistent.
 void unloadImpersistentEntities(void);
 

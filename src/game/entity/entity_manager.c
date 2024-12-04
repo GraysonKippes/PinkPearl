@@ -1,9 +1,7 @@
 #include "entity_manager.h"
 
 #include <stddef.h>
-
 #include "EntityRegistry.h"
-
 #include "log/Logger.h"
 #include "render/RenderManager.h"
 
@@ -46,7 +44,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	
 	const RenderObjectLoadInfo renderObjectLoadInfo = {
 		.textureID = entityRecord.textureID,
-		.quadCount = 2,
+		.quadCount = 1, // TODO: load wireframe if debug menu is enabled.
 		.pQuadLoadInfos = (QuadLoadInfo[2]){
 			{
 				.quadType = QUAD_TYPE_MAIN,
@@ -59,7 +57,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 				.initPosition = initPosition,
 				.quadDimensions = boxD2F(entityRecord.entityHitbox),
 				.initAnimation = 0,
-				.color = (Vector4F){ 1.0F, 0.0F, 0.0F, 1.0F }
+				.color = COLOR_RED // TODO: select color green if entity is the player.
 			}
 		}
 	};
@@ -78,7 +76,7 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	entities[entityHandle].persistent = entityRecord.entityIsPersistent;
 	entities[entityHandle].speed = entityRecord.entitySpeed;
 	entities[entityHandle].renderHandle = renderHandle;
-	
+	entities[entityHandle].wireframe = -1;
 	entitySlotEnabledFlags[entityHandle] = true;
 	
 	return entityHandle;
@@ -91,9 +89,33 @@ void unloadEntity(const int entityHandle) {
 		logMsg(loggerGame, LOG_LEVEL_WARNING, "Unloading already unused entity slot (%i).", entityHandle);
 		return;
 	}
-	
 	unloadRenderObject(&entities[entityHandle].renderHandle);
 	entitySlotEnabledFlags[entityHandle] = false;
+}
+
+void drawEntityHitboxes(void) {
+	for (int32_t i = 0; i < maxNumEntities; ++i) {
+		if (!entitySlotEnabledFlags[i]) {
+			continue;
+		}
+		const QuadLoadInfo loadInfo = {
+			.quadType = QUAD_TYPE_WIREFRAME,
+			.initPosition = entities[i].physics.position,
+			.quadDimensions = boxD2F(entities[i].hitbox),
+			.initAnimation = 0,
+			.color = COLOR_RED // TODO: select color green if entity is the player.
+		};
+		entities[i].wireframe = renderObjectLoadQuad(entities[i].renderHandle, loadInfo);
+	}
+}
+
+void undrawEntityHitboxes(void) {
+	for (int32_t i = 0; i < maxNumEntities; ++i) {
+		if (!entitySlotEnabledFlags[i]) {
+			continue;
+		}
+		renderObjectUnloadQuad(entities[i].renderHandle, &entities[i].wireframe);
+	}
 }
 
 void unloadImpersistentEntities(void) {

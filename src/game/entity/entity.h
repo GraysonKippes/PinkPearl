@@ -32,8 +32,9 @@ typedef struct Entity {
 	int32_t maxHP;		// Maximum hit points of the entity. Current HP cannot exceed this value.
 	double speed;		// Maximum magnitude of velocity.
 	
-	// Handle to the render object associated with this entity.
-	int32_t renderHandle;
+	/* Render */
+	int32_t renderHandle; // Render object for the entity sprite.
+	int32_t wireframe; // Quad index for the hitbox wireframe of the entity.
 	
 } Entity;
 

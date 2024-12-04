@@ -28,9 +28,10 @@ typedef struct RenderObject {
 	// True if this render object is 'loaded' or in use.
 	bool active;
 	
+	int32_t textureHandle;
+	
 	// Array of handles to quads being rendered.
-	int32_t quadCount; // Number of quads actually being rendered.
-	int32_t quadCapacity; // Number of elements allocated for the quad array.
+	int32_t quadCount;
 	RenderObjectQuad *pQuads;
 	
 } RenderObject;
@@ -173,7 +174,6 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 	}
 	
 	renderObjects[handle].quadCount = loadInfo.quadCount;
-	renderObjects[handle].quadCapacity = loadInfo.quadCount;
 	renderObjects[handle].pQuads = calloc(loadInfo.quadCount, sizeof(RenderObjectQuad));
 	if (!renderObjects[handle].pQuads) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object: failed to allocate quad array.");
@@ -186,7 +186,8 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 		};
 	}
 	
-	const Texture texture = getTexture(findTexture(loadInfo.textureID));
+	renderObjects[handle].textureHandle = findTexture(loadInfo.textureID);
+	const Texture texture = getTexture(renderObjects[handle].textureHandle);
 	
 	for (int32_t quadIndex = 0; quadIndex < loadInfo.quadCount; ++quadIndex) {
 		
@@ -206,7 +207,6 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 			.color = quadLoadInfo.color,
 			.imageIndex = imageIndex
 		};
-		
 		loadModel(modelLoadInfo, &renderObjects[handle].pQuads[quadIndex].handle);
 		renderObjects[handle].pQuads[quadIndex].modelPool = modelLoadInfo.modelPool;
 	}
@@ -293,7 +293,6 @@ bool renderObjectExists(const int32_t handle) {
 	return validateRenderObjectHandle(handle) && renderObjects[handle].active;
 }
 
-// TODO: implement function.
 int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo) {
 	if (!renderObjectExists(handle)) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object quad: render object %i does not exist.", handle);
@@ -301,10 +300,10 @@ int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo) 
 	}
 	
 	// Find the first appropriate slot to use.
-	/*bool enoughSpace = false; // Set to true if space for the new quad is found.
+	bool enoughSpace = false; // Set to true if space for the new quad is found.
 	int32_t quadIndex = 0;
-	for (; quadIndex < renderObjects[handle].quadCapacity; ++quadIndex) {
-		if (renderObjects[handle].pQuads[quadIndex].handle >= 0) {
+	for (; quadIndex < renderObjects[handle].quadCount; ++quadIndex) {
+		if (renderObjects[handle].pQuads[quadIndex].handle < 0) {
 			enoughSpace = true;
 			break;
 		}
@@ -312,45 +311,49 @@ int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo) 
 	
 	// If there is not enough space for the new quad, double the amount of space.
 	if (!enoughSpace) {
-		RenderObjectQuad *const pRealloc = realloc(renderObjects[handle].pQuads, 2 * renderObjects[handle].quadCapacity * sizeof(RenderObjectQuad));
+		const int32_t newCapacity = renderObjects[handle].quadCount > 0 ? 2 * renderObjects[handle].quadCount : 1;
+		RenderObjectQuad *const pRealloc = realloc(renderObjects[handle].pQuads, newCapacity * sizeof(RenderObjectQuad));
 		if (!pRealloc) {
 			logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object quad: failed to reallocate quad array.");
 			return -1;
 		}
 		renderObjects[handle].pQuads = pRealloc;
-		quadIndex = renderObjects[handle].quadCapacity;
-		renderObjects[handle].quadCapacity *= 2;
+		quadIndex = renderObjects[handle].quadCount;
+		renderObjects[handle].quadCount = newCapacity;
 	}
 	
-	const Texture texture = getTexture(findTexture(loadInfo.textureID));
+	const Texture texture = getTexture(renderObjects[handle].textureHandle);
 	int32_t imageIndex = 0;
-	if (quadLoadInfo.initAnimation >= 0 && quadLoadInfo.initAnimation < (int32_t)texture.numAnimations) {
-		imageIndex = texture.animations[quadLoadInfo.initAnimation].startCell + quadLoadInfo.initCell;
-	}
-	
-	ModelPool modelPool = nullptr;
-	switch (quadLoadInfo.quadType) {
-		default:
-		case QUAD_TYPE_MAIN:
-			modelPool = modelPoolMain; 
-			break;
-		case QUAD_TYPE_WIREFRAME:
-			modelPool = modelPoolDebug; 
-			break;
+	if (loadInfo.initAnimation >= 0 && loadInfo.initAnimation < (int32_t)texture.numAnimations) {
+		imageIndex = texture.animations[loadInfo.initAnimation].startCell + loadInfo.initCell;
 	}
 	
 	const ModelLoadInfo modelLoadInfo = {
-		.modelPool = modelPool,
+		.modelPool = loadInfo.quadType == QUAD_TYPE_WIREFRAME ? modelPoolDebug : modelPoolMain,
 		.position = vec3DtoVec4F(loadInfo.initPosition),
 		.dimensions = loadInfo.quadDimensions,
-		.cameraFlag = 0, // TODO: allow new quads to be GUI elements.
-		.textureID = loadInfo.textureID,
+		.cameraFlag = loadInfo.quadType == QUAD_TYPE_GUI ? 0 : 1,
+		.textureHandle = renderObjects[handle].textureHandle,
 		.color = loadInfo.color,
 		.imageIndex = imageIndex
 	};
+	loadModel(modelLoadInfo, &renderObjects[handle].pQuads[quadIndex].handle);
+	renderObjects[handle].pQuads[quadIndex].modelPool = modelLoadInfo.modelPool;
 	
-	return quadIndex;*/
-	return -1;
+	return quadIndex;
+}
+
+void renderObjectUnloadQuad(const int32_t handle, int32_t *const pQuadIndex) {
+	if (!renderObjectExists(handle)) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error unloading render object quad: render object %i does not exist.", handle);
+		return;
+	} else if (!renderObjectQuadExists(handle, *pQuadIndex)) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error unloading render object quad: quad %i of render object %i does not exist.", *pQuadIndex, handle);
+		return;
+	}
+	unloadModel(renderObjects[handle].pQuads[*pQuadIndex].modelPool, pQuadIndex);
+	renderObjects[handle].pQuads[*pQuadIndex].handle = -1;
+	renderObjects[handle].pQuads[*pQuadIndex].modelPool = nullptr;
 }
 
 bool validateRenderObjectQuadIndex(const int32_t quadIndex) {
@@ -380,7 +383,7 @@ int32_t renderObjectGetTextureHandle(const int32_t handle, const int32_t quadInd
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error getting render object texture handle: quad %i of render object %i does not exist.", quadIndex, handle);
 		return -1;
 	}
-	TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
+	const TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
 	if (pTextureState) {
 		return pTextureState->textureHandle;
 	}
@@ -394,15 +397,14 @@ void renderObjectAnimate(const int32_t handle) {
 	}
 	
 	for (int32_t quadIndex = 0; quadIndex < renderObjects[handle].quadCount; ++quadIndex) {
-		const int32_t quadHandle = renderObjects[handle].pQuads[quadIndex].handle;
-		if (quadHandle < 0) {
+		if (renderObjects[handle].pQuads[quadIndex].handle < 0) {
 			continue;
 		}
 		
-		TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, quadHandle);
+		TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
 		if (textureStateAnimate(pTextureState) == 2) {
 			const uint32_t imageIndex = pTextureState->startCell + pTextureState->currentFrame;
-			updateDrawInfo(renderObjects[handle].pQuads[quadIndex].modelPool, quadHandle, imageIndex);
+			updateDrawInfo(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle, imageIndex);
 		}
 	}
 }

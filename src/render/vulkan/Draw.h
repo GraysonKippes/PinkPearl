@@ -72,7 +72,13 @@ typedef struct ModelLoadInfo {
 	
 	// Optional parameters, depending on which resources the model needs.
 	
+	// The handle of the texture for this model, if the model uses a texture.
+	// If the model uses a texture and this value is not positive, then the model loader
+	//	attempts to load the texture using textureID instead.
+	int32_t textureHandle;
+	
 	// The ID of the texture to load for this model, if the model uses a texture.
+	// This is only used if the model uses a texture but textureHandle is not positive.
 	String textureID;
 	
 	// The color of the model if there is a color vertex attribute.
