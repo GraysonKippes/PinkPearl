@@ -19,7 +19,7 @@ static const VkDescriptorType descriptorTypes[DESCRIPTOR_TYPE_COUNT] = {
 
 static const uint32_t maxDescriptorCounts[DESCRIPTOR_TYPE_COUNT] = {
 	4,		// Sampler descriptor count
-	256,	// Sampled image descriptor count
+	4096,	// Sampled image descriptor count
 	256,	// Storage image descriptor count
 	16,		// Uniform buffer descriptor count
 	16		// Storage buffer descriptor count

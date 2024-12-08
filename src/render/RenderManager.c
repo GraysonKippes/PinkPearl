@@ -185,7 +185,11 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 		};
 	}
 	
-	renderObjects[handle].textureHandle = findTexture(loadInfo.textureID);
+	if (!stringIsNull(loadInfo.textureID)) {
+		renderObjects[handle].textureHandle = findTexture(loadInfo.textureID);
+	} else {
+		renderObjects[handle].textureHandle = textureHandleMissing;
+	}
 	const Texture texture = getTexture(renderObjects[handle].textureHandle);
 	
 	for (int32_t quadIndex = 0; quadIndex < loadInfo.quadCount; ++quadIndex) {
@@ -202,7 +206,8 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 			.position = vec3DtoVec4F(quadLoadInfo.initPosition),
 			.dimensions = quadLoadInfo.quadDimensions,
 			.cameraFlag = quadLoadInfo.quadType == QUAD_TYPE_GUI ? 0 : 1,
-			.textureID = loadInfo.textureID,
+			//.textureID = loadInfo.textureID,
+			.textureHandle = renderObjects[handle].textureHandle,
 			.color = quadLoadInfo.color,
 			.imageIndex = imageIndex
 		};
@@ -355,9 +360,9 @@ void renderObjectUnloadQuad(const int32_t handle, int32_t *const pQuadIndex) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error unloading render object quad: quad %i of render object %i does not exist.", *pQuadIndex, handle);
 		return;
 	}
-	unloadModel(renderObjects[handle].pQuads[*pQuadIndex].modelPool, pQuadIndex);
-	renderObjects[handle].pQuads[*pQuadIndex].handle = -1;
+	unloadModel(renderObjects[handle].pQuads[*pQuadIndex].modelPool, &renderObjects[handle].pQuads[*pQuadIndex].handle);
 	renderObjects[handle].pQuads[*pQuadIndex].modelPool = nullptr;
+	*pQuadIndex = -1;
 }
 
 bool validateRenderObjectQuadIndex(const int32_t quadIndex) {

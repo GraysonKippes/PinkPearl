@@ -1,5 +1,6 @@
 #include "area.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -20,7 +21,7 @@ static const String roomSTextureID = makeConstantString("roomS");
 static const String roomMTextureID = makeConstantString("roomM");
 static const String roomLTextureID = makeConstantString("roomL");
 
-static String roomSizeToTextureID2(const RoomSize roomSize) {
+static String roomSizeToTextureID(const RoomSize roomSize) {
 	switch (roomSize) {
 		case ROOM_SIZE_XS: return roomXSTextureID;
 		case ROOM_SIZE_S: return roomSTextureID;
@@ -79,9 +80,7 @@ bool areaGetCurrentRoom(const Area area, Room **const ppRoom) {
 		logMsg(loggerGame, LOG_LEVEL_ERROR, "Error getting current room pointer: pointer to room pointer is null.");
 		return false;
 	}
-	
 	*ppRoom = &area.pRooms[area.currentRoomIndex];
-	
 	return true;
 }
 
@@ -179,38 +178,6 @@ bool areaSetNextRoom(Area *const pArea, const CardinalDirection direction) {
 	pArea->renderState.roomIDsToCacheSlots[pNextRoom->id] = pArea->renderState.nextCacheSlot;
 	pArea->renderState.cacheSlotsToRoomIDs[pArea->renderState.nextCacheSlot] = pNextRoom->id;
 	pArea->currentRoomIndex = pNextRoom->id;
-	
-	
-	
-	/*const RenderObjectLoadInfo loadInfo = {
-		.textureID = roomSizeToTextureID(room.size),
-		.quadCount = 2,
-		.pQuadLoadInfos = (QuadLoadInfo[2]){
-			{
-				.quadType = QUAD_TYPE_MAIN,
-				.initPosition = roomLayerPositions[0],
-				.quadDimensions = roomQuadDimensions,
-				.initAnimation = roomCacheSlot * numRoomLayers,
-				.initCell = 0,
-				.color = COLOR_WHITE
-			}, {
-				.quadType = QUAD_TYPE_MAIN,
-				.initPosition = roomLayerPositions[1],
-				.quadDimensions = roomQuadDimensions,
-				.initAnimation = roomCacheSlot * numRoomLayers + 1,
-				.initCell = 0,
-				.color = COLOR_WHITE
-			}
-		}
-	};
-	pAreaRenderState->roomRenderObjHandles[roomCacheSlot] = loadRenderObject(loadInfo);
-	
-	// If there already is a room render object in the cache slot, then unload it first.
-	if (renderObjectExists(pAreaRenderState->roomRenderObjHandles[roomCacheSlot])) {
-		unloadRenderObject(&pAreaRenderState->roomRenderObjHandles[roomCacheSlot]);
-	}*/
-	
-	
 	
 	return true;
 }
@@ -319,7 +286,6 @@ void areaRenderStateReset(Area *const pArea, const Room initialRoom) {
 	}
 	
 	for (uint32_t i = 0; i < numRoomTextureCacheSlots; ++i) {
-		//pArea->renderState.roomRenderObjHandles[i] = -1;
 		pArea->renderState.cacheSlotsToRoomIDs[i] = UINT32_MAX;
 	}
 	
@@ -328,8 +294,6 @@ void areaRenderStateReset(Area *const pArea, const Room initialRoom) {
 	pArea->renderState.roomIDsToCacheSlots[initialRoom.id] = pArea->renderState.currentCacheSlot;
 	pArea->renderState.roomIDsToPositions[initialRoom.id] = initialRoom.position;
 	pArea->renderState.cacheSlotsToRoomIDs[pArea->renderState.currentCacheSlot] = (uint32_t)initialRoom.id;
-	
-	//areaRenderStateLoadRoomQuad(pAreaRenderState, pAreaRenderState->currentCacheSlot, initialRoom);
 	
 	const BoxF roomQuadDimensions = {
 		.x1 = -0.5F * pArea->room_extent.width,
@@ -349,7 +313,7 @@ void areaRenderStateReset(Area *const pArea, const Room initialRoom) {
 		}
 	};
 	const RenderObjectLoadInfo renderObjectLoadInfo = {
-		.textureID = roomSizeToTextureID2(initialRoom.size),
+		.textureID = roomSizeToTextureID(initialRoom.size),
 		.quadCount = NUM_ROOM_LAYERS,
 		.pQuadLoadInfos = (QuadLoadInfo[NUM_ROOM_LAYERS]){
 			{
@@ -442,4 +406,44 @@ ProjectionBounds areaGetProjectionBounds(const Area area) {
 		.near = 16.0F,
 		.far = -16.0F
 	};
+}
+
+void areaLoadWireframes(Area *const pArea) {
+	assert(pArea);
+	
+	Room *pRoom = nullptr;
+	areaGetCurrentRoom(*pArea, &pRoom);
+	if (!pRoom) {
+		return;
+	}
+	
+	if  (pRoom->wallCount == 0) {
+		return;
+	}
+	
+	QuadLoadInfo quadLoadInfos[pRoom->wallCount];
+	for (int32_t i = 0; i < (int32_t)pRoom->wallCount; ++i) {
+		const BoxD wall = pRoom->pWalls[i];
+		quadLoadInfos[i] = (QuadLoadInfo){
+			.quadType = QUAD_TYPE_WIREFRAME,
+			.initPosition = zeroVec3D,
+			.quadDimensions = boxD2F(wall),
+			.color = COLOR_YELLOW
+		};
+	}
+	
+	const RenderObjectLoadInfo wireframesLoadInfo = {
+		.quadCount = pRoom->wallCount,
+		.pQuadLoadInfos = quadLoadInfos
+	};
+	pArea->renderState.wireframesHandle = loadRenderObject(wireframesLoadInfo);
+}
+
+void areaUnloadWireframes(Area *const pArea) {
+	assert(pArea);
+	if (!renderObjectExists(pArea->renderState.wireframesHandle)) {
+		//logMsg(loggerGame, LOG_LEVEL_ERROR, "Unloading room wireframes: room wireframes are not currently loaded.");
+		return;
+	}
+	unloadRenderObject(&pArea->renderState.wireframesHandle);
 }

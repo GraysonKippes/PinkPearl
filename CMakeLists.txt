@@ -10,7 +10,7 @@ set(APP_NAME "\"Pink Pearl\"")
 set(RESOURCE_PATH "\"../resources/\"")
 configure_file(src/config.h.in config.h)
 
-target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall -Wextra
+target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -ggdb -Wpedantic -Wall -Wextra
 	-Werror=return-type 
 	-Werror=implicit-function-declaration 
 	-Werror=implicit-int

@@ -16,6 +16,10 @@ typedef struct AreaRenderState {
 	int32_t currentRoomQuadIndices[2];
 	int32_t nextRoomQuadIndices[2];
 	
+	int32_t wireframesHandle;
+	int32_t currentRoomWireframes[16];
+	int32_t nextRoomWireframes[16];
+	
 	TextureState tilemapTextureState;
 	
 	// Indexes into the array of room render object handles.
@@ -31,7 +35,7 @@ typedef struct AreaRenderState {
 	
 	// Maps room texture cache slots to room positions.
 	// UINT32_MAX represents unmapped cache slot.
-	uint32_t cacheSlotsToRoomIDs[NUM_ROOM_TEXTURE_CACHE_SLOTS];
+	uint32_t cacheSlotsToRoomIDs[2];
 	
 } AreaRenderState;
 
@@ -110,5 +114,9 @@ bool areaIsScrolling(const Area area);
 Vector4F areaGetCameraPosition(Area *const pArea);
 
 ProjectionBounds areaGetProjectionBounds(const Area area);
+
+void areaLoadWireframes(Area *const pArea);
+
+void areaUnloadWireframes(Area *const pArea);
 
 #endif	// AREA_H
