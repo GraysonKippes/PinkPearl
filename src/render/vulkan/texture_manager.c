@@ -183,7 +183,7 @@ int findTexture(const String textureID) {
 
 Texture getTexture(const int textureHandle) {
 	if (!validateTextureHandle(textureHandle)) {
-		//logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error getting loaded texture: texture handle (%u) is invalid.", textureHandle);
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error getting loaded texture: texture handle (%u) is invalid.", textureHandle);
 		return textures[textureHandleMissing];
 	}
 	return textures[textureHandle];

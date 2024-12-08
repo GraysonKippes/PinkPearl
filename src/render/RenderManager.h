@@ -2,8 +2,10 @@
 #define RENDER_MANAGER_H
 
 #include <stdint.h>
-
-#include "area_render_state.h"
+#include "math/Box.h"
+#include "math/Vector.h"
+#include "util/string.h"
+#include "vulkan/math/projection.h"
 
 // TYPE DEFINITIONS
 
@@ -54,8 +56,6 @@ extern const Vector4F COLOR_TEAL;
 extern const Vector4F COLOR_PURPLE;
 extern const Vector4F COLOR_PINK;
 
-extern AreaRenderState globalAreaRenderState;
-
 // GENERAL RENDER MANAGER FUNCTIONS
 
 // Initializes the render manager.
@@ -68,7 +68,7 @@ void terminateRenderManager(void);
 void tickRenderManager(void);
 
 // Renders a single frame and polls GLFW for events.
-void renderFrame(const float timeDelta, const bool paused);
+void renderFrame(const float timeDelta, const Vector4F cameraPosition, const ProjectionBounds projectionBounds, const bool animate);
 
 // RENDER OBJECT INTERFACE
 

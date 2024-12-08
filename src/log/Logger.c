@@ -5,17 +5,17 @@
 
 const Logger loggerSystem = {
 	.pName = "System",
-	.levelThreshold = LOG_LEVEL_INFO
+	.levelThreshold = LOG_LEVEL_VERBOSE
 };
 
 const Logger loggerGame = {
 	.pName = "Game",
-	.levelThreshold = LOG_LEVEL_INFO
+	.levelThreshold = LOG_LEVEL_VERBOSE
 };
 
 const Logger loggerRender = {
 	.pName = "Render",
-	.levelThreshold = LOG_LEVEL_INFO
+	.levelThreshold = LOG_LEVEL_VERBOSE
 };
 
 const Logger loggerVulkan = {

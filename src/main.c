@@ -1,5 +1,5 @@
+#include <unistd.h>
 #include "config.h"
-
 #include "client.h"
 #include "debug.h"
 #include "audio/audio_mixer.h"
@@ -19,6 +19,7 @@ int main(void) {
 	logMsg(loggerSystem, LOG_LEVEL_INFO, "Running Pink Pearl version %s.", appVersion);
 	if (debug_enabled) {
 		logMsg(loggerSystem, LOG_LEVEL_WARNING, "Debug mode is enabled.");
+		logMsg(loggerSystem, LOG_LEVEL_VERBOSE, "Process ID is %i.", getpid());
 	}
 
 	init_GLFW();

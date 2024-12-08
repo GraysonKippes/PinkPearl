@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include "glfw/InputManager.h"
 #include "log/Logger.h"
-#include "render/area_render_state.h"
 #include "render/RenderManager.h"
 #include "render/vulkan/TextureState.h"
 #include "util/time.h"
@@ -14,6 +13,8 @@
 #include "entity/entity_manager.h"
 #include "entity/EntityRegistry.h"
 #include "entity/EntitySpawner.h"
+
+#define DEBUG_TEXT_HANDLE_COUNT 3
 
 // Stores information about the Pink Pearl game, such as whether or not the game is paused.
 typedef struct GameState {
@@ -32,6 +33,20 @@ typedef struct GameControls {
 	int useItemLeft;
 	int useItemRight;
 } GameControls;
+
+// Stores render state for various visual aspects of the game, including player HUD and debug menu.
+typedef struct GameRenderState {
+	
+	// Player HUD
+	int32_t heartsHandle; // Player hit points, represented as hearts.
+	int32_t slotsHandle; // Equipped item slots.
+	int32_t pauseTextHandle; // Pause screen text.
+	
+	// Debug Menu
+	bool debugMenuEnabled;
+	int32_t debugTextHandles[DEBUG_TEXT_HANDLE_COUNT];
+	
+} GameRenderState;
 
 static GameState gameState = { };
 static GameControls controls = {
@@ -55,8 +70,6 @@ static int playerEntityHandle = -1;
 static int32_t heartsHandle = -1;
 static int32_t slotsHandle = -1;
 static int32_t pausedHandle = -1;
-
-#define DEBUG_TEXT_HANDLE_COUNT 3
 static bool debugMenuEnabled = false;
 static int32_t debugTextHandles[DEBUG_TEXT_HANDLE_COUNT] = { -1, -1, -1 };
 
@@ -67,7 +80,7 @@ void toggleDebugMenu(void);
 void start_game(void) {
 	
 	currentArea = readAreaData("test");
-	areaRenderStateReset(&globalAreaRenderState, currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
+	areaRenderStateReset(&currentArea, currentArea.pRooms[currentArea.currentRoomIndex]);
 	playerEntityHandle = loadEntity(makeStaticString("pearl"), makeVec3D(0.0, 0.0, 1.0), zeroVec3D);
 	
 	// Test entity spawner.
@@ -80,7 +93,7 @@ void start_game(void) {
 	};
 	
 	entitySpawnerReload(&testEntitySpawner);
-	entitySpawnerSpawnEntities(&testEntitySpawner);
+	//entitySpawnerSpawnEntities(&testEntitySpawner);
 	
 	const RenderObjectLoadInfo loadInfoHearts = {
 		.textureID = makeStaticString("gui/heart3"),
@@ -146,7 +159,7 @@ void tick_game(void) {
 	}
 
 	if (gameState.scrolling) {
-		if (areaRenderStateIsScrolling(globalAreaRenderState)) {
+		if (areaIsScrolling(currentArea)) {
 			return;
 		}
 		gameState.scrolling = false;
@@ -204,20 +217,7 @@ void tick_game(void) {
 	}
 
 	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->physics.position, currentArea, currentArea.currentRoomIndex);
-	if (travelDirection != DIRECTION_NONE) {
-
-		const Room current_room = currentArea.pRooms[currentArea.currentRoomIndex];
-		const Offset room_offset = direction_offset(travelDirection);
-		const Offset next_room_position = offset_add(current_room.position, room_offset);
-
-		Room *pNextRoom = nullptr;
-		const bool result = areaGetRoom(currentArea, next_room_position, &pNextRoom);
-		if (result && pNextRoom != nullptr) {
-			gameState.scrolling = true;
-			currentArea.currentRoomIndex = pNextRoom->id;
-			areaRenderStateSetNextRoom(&globalAreaRenderState, *pNextRoom);
-		}
-	}
+	gameState.scrolling = areaSetNextRoom(&currentArea, travelDirection);
 }
 
 void pauseGame(GameState *const pGameState) {

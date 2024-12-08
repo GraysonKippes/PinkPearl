@@ -164,11 +164,12 @@ void terminateComputeStitchTexture(void) {
 }
 
 void computeStitchTexture(const int tilemapTextureHandle, const int destinationTextureHandle, const ImageSubresourceRange destinationRange, const Extent tileExtent, uint32_t **tileIndices) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Computing room texture...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Stitching texture...");
 	
 	const Texture tilemapTexture = getTexture(tilemapTextureHandle);
 	Texture *const pRoomTexture = getTextureP(destinationTextureHandle);
 	if (!pRoomTexture) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Stitching texture: could not get room texture.");
 		return;
 	}
 	
@@ -287,5 +288,5 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
 	vkFreeCommandBuffers(device, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
 
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done computing room texture.");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done stitching texture.");
 }

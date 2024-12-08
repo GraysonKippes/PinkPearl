@@ -32,7 +32,7 @@ void run_client(void) {
 		}
 
 		if (client_running && !should_application_window_close()) {
-			renderFrame(tick_delta_time, isGamePaused());
+			renderFrame(tick_delta_time, areaGetCameraPosition(&currentArea), areaGetProjectionBounds(currentArea), isGamePaused());
 		}
 		else {
 			break;

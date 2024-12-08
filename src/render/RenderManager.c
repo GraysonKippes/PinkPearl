@@ -8,9 +8,12 @@
 #include <GLFW/glfw3.h>
 #include "config.h"
 #include "log/Logger.h"
+#include "util/allocate.h"
 #include "vulkan/Draw.h"
 #include "vulkan/VulkanManager.h"
 #include "vulkan/texture_manager.h"
+
+#include "game/Game.h"
 
 #define DATA_PATH (RESOURCE_PATH "data/")
 #define FGT_PATH (RESOURCE_PATH "data/textures.fgt")
@@ -47,8 +50,6 @@ const Vector4F COLOR_YELLOW	= { 1.0F, 1.0F, 0.0F, 1.0F };
 const Vector4F COLOR_TEAL 	= { 0.0F, 1.0F, 1.0F, 1.0F };
 const Vector4F COLOR_PURPLE	= { 1.0F, 0.0F, 1.0F, 1.0F };
 const Vector4F COLOR_PINK	= { 1.0F, 0.6392156863F, 0.7568627451F, 1.0F };
-
-AreaRenderState globalAreaRenderState = { };
 
 void initRenderManager(void) {
 	
@@ -141,17 +142,15 @@ void tickRenderManager(void) {
 	}
 }
 
-void renderFrame(const float timeDelta, const bool paused) {
+void renderFrame(const float timeDelta, const Vector4F cameraPosition, const ProjectionBounds projectionBounds, const bool animate) {
 	glfwPollEvents();
 	
-	if (!paused) {
+	if (!animate) {
 		for (int32_t i = 0; i < RENDER_OBJECT_MAX_COUNT; ++i) {
 			renderObjectAnimate(i);
 		}
 	}
 	
-	const Vector4F cameraPosition = areaRenderStateGetCameraPosition(&globalAreaRenderState);
-	const ProjectionBounds projectionBounds = areaRenderStateGetProjectionBounds(globalAreaRenderState);
 	drawFrame(timeDelta, cameraPosition, projectionBounds);
 }
 
@@ -174,7 +173,7 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 	}
 	
 	renderObjects[handle].quadCount = loadInfo.quadCount;
-	renderObjects[handle].pQuads = calloc(loadInfo.quadCount, sizeof(RenderObjectQuad));
+	renderObjects[handle].pQuads = heapAlloc(loadInfo.quadCount, sizeof(RenderObjectQuad));
 	if (!renderObjects[handle].pQuads) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object: failed to allocate quad array.");
 		return -1;
@@ -209,6 +208,7 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 		};
 		loadModel(modelLoadInfo, &renderObjects[handle].pQuads[quadIndex].handle);
 		renderObjects[handle].pQuads[quadIndex].modelPool = modelLoadInfo.modelPool;
+		logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Loaded quad %i in render object %i (model handle = %i).", quadIndex, handle, renderObjects[handle].pQuads[quadIndex].handle);
 	}
 	
 	renderObjects[handle].active = true;
@@ -232,7 +232,7 @@ void unloadRenderObject(int32_t *const pHandle) {
 	}
 	renderObjects[*pHandle].active = false;
 	renderObjects[*pHandle].quadCount = 0;
-	free(renderObjects[*pHandle].pQuads);
+	renderObjects[*pHandle].pQuads = heapFree(renderObjects[*pHandle].pQuads);
 	
 	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Unloaded render object %i.", *pHandle);
 	*pHandle = -1;
@@ -312,7 +312,7 @@ int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo) 
 	// If there is not enough space for the new quad, double the amount of space.
 	if (!enoughSpace) {
 		const int32_t newCapacity = renderObjects[handle].quadCount > 0 ? 2 * renderObjects[handle].quadCount : 1;
-		RenderObjectQuad *const pRealloc = realloc(renderObjects[handle].pQuads, newCapacity * sizeof(RenderObjectQuad));
+		RenderObjectQuad *const pRealloc = heapRealloc(renderObjects[handle].pQuads, newCapacity, sizeof(RenderObjectQuad));
 		if (!pRealloc) {
 			logMsg(loggerRender, LOG_LEVEL_ERROR, "Error loading render object quad: failed to reallocate quad array.");
 			return -1;
@@ -320,6 +320,9 @@ int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo) 
 		renderObjects[handle].pQuads = pRealloc;
 		quadIndex = renderObjects[handle].quadCount;
 		renderObjects[handle].quadCount = newCapacity;
+		for (int32_t i = quadIndex; i < newCapacity; ++i) {
+			renderObjects[handle].pQuads[i].handle = -1;
+		}
 	}
 	
 	const Texture texture = getTexture(renderObjects[handle].textureHandle);
@@ -340,6 +343,7 @@ int32_t renderObjectLoadQuad(const int32_t handle, const QuadLoadInfo loadInfo) 
 	loadModel(modelLoadInfo, &renderObjects[handle].pQuads[quadIndex].handle);
 	renderObjects[handle].pQuads[quadIndex].modelPool = modelLoadInfo.modelPool;
 	
+	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Loaded quad %i in render object %i (model handle = %i).", quadIndex, handle, renderObjects[handle].pQuads[quadIndex].handle);
 	return quadIndex;
 }
 
@@ -383,11 +387,7 @@ int32_t renderObjectGetTextureHandle(const int32_t handle, const int32_t quadInd
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error getting render object texture handle: quad %i of render object %i does not exist.", quadIndex, handle);
 		return -1;
 	}
-	const TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
-	if (pTextureState) {
-		return pTextureState->textureHandle;
-	}
-	return -1;
+	return renderObjects[handle].textureHandle;
 }
 
 void renderObjectAnimate(const int32_t handle) {

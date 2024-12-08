@@ -17,16 +17,28 @@ bool allocate_max(void **ppObject, const size_t num_objects, const size_t num_by
 // Returns true normally, but returns false if `ppObject` itself is nullptr.
 bool deallocate(void **const ppObject);
 
-typedef void *(*Allocator)(const size_t size);
 
-typedef void *(*Reallocator)(void *const pBuffer, const size_t size);
 
-typedef void (*Deallocator)(void *const pBuffer);
+typedef void *(*Allocator)(const size_t objectCount, const size_t objectSize);
+typedef void *(*Reallocator)(void *const pMemory, const size_t objectCount, const size_t objectSize);
+typedef void *(*Deallocator)(void *pMemory);
 
 typedef struct AllocationFunctors {
 	Allocator allocator;
 	Reallocator reallocator;
 	Deallocator deallocator;
 } AllocationFunctors;
+
+// Allocates at least objectCount * objectSize bytes on the heap.
+// Returns nullptr if the allocation fails.
+void *heapAlloc(const size_t objectCount, const size_t objectSize);
+
+// Reallocates an existing memory object to at least objectCount * objectSize bytes on the heap.
+// Returns the pointer to the original memory if the reallocation fails, which is still valid and must be freed.
+void *heapRealloc(void *const pMemory, const size_t objectCount, const size_t objectSize);
+
+// Reallocates an existing memory object to at least objectCount * objectSize bytes on the heap.
+// Returns nullptr, assign the pointer variable being passed in as an argument to the return value of this function.
+void *heapFree(void *pMemory);
 
 #endif	// ALLOCATE_H

@@ -70,7 +70,6 @@ target_sources(PinkPearl PRIVATE
 	src/math/extent.c
 	src/math/offset.c
 	src/math/Vector.c
-	src/render/area_render_state.c
 	src/render/render_config.c
 	src/render/RenderManager.c
 	src/render/texture_pack.c

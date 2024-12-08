@@ -33,7 +33,7 @@ TextureState newTextureState(const String textureID) {
 	textureState.textureHandle = findTexture(textureID);
 	if (!validateTextureHandle(textureState.textureHandle)) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating texture state: could not find texture \"%s\".", textureID.pBuffer);
-		return nullTextureState();
+		return (TextureState){ };
 	}
 	
 	Texture texture = getTexture(textureState.textureHandle);
@@ -52,15 +52,18 @@ TextureState newTextureState2(const int32_t textureHandle) {
 		return nullTextureState();
 	}
 	
-	TextureState textureState = nullTextureState();
 	Texture texture = getTexture(textureHandle);
-	textureState.numAnimations = texture.numAnimations;
-	textureState.startCell = texture.animations[textureState.currentAnimation].startCell;
-	textureState.numFrames = texture.animations[textureState.currentAnimation].numFrames;
-	textureState.currentFPS = texture.animations[textureState.currentAnimation].framesPerSecond;
-	textureState.lastFrameTimeMS = getTimeMS();
 	
-	return textureState;
+	return (TextureState){
+		.textureHandle = textureHandle,
+		.numAnimations = texture.numAnimations,
+		.currentAnimation = 0,
+		.startCell = texture.animations[0].startCell,
+		.numFrames = texture.animations[0].numFrames,
+		.currentFPS = texture.animations[0].framesPerSecond,
+		.currentFrame = 0,
+		.lastFrameTimeMS = getTimeMS()
+	};
 }
 
 bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned int nextAnimation) {

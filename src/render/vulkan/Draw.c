@@ -1,9 +1,8 @@
 #include "Draw.h"
 
 #include <stdlib.h>
-
 #include "log/Logger.h"
-
+#include "util/allocate.h"
 #include "Descriptor.h"
 #include "frame.h"
 #include "texture_manager.h"
@@ -118,14 +117,14 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	bufferBorrowSubrange(createInfo.buffer, createInfo.bufferSubrangeIndex, &modelPool->drawInfoBuffer);
 	modelPool->drawInfoBufferHandle = uploadUniformBuffer2(device, modelPool->drawInfoBuffer);
 	
-	modelPool->pSlotFlags = calloc(createInfo.maxModelCount, sizeof(bool));
+	modelPool->pSlotFlags = heapAlloc(createInfo.maxModelCount, sizeof(bool));
 	if (!modelPool->pSlotFlags) {
 		free(modelPool);
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate slot flags.");
 		return;
 	}
 	
-	modelPool->pDrawInfoIndices = calloc(createInfo.maxModelCount, sizeof(uint32_t));
+	modelPool->pDrawInfoIndices = heapAlloc(createInfo.maxModelCount, sizeof(uint32_t));
 	if (!modelPool->pDrawInfoIndices) {
 		free(modelPool->pSlotFlags);
 		free(modelPool);
@@ -133,7 +132,7 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 		return;
 	}
 	
-	modelPool->pCameraFlags = calloc(createInfo.maxModelCount, sizeof(uint32_t));
+	modelPool->pCameraFlags = heapAlloc(createInfo.maxModelCount, sizeof(uint32_t));
 	if (!modelPool->pCameraFlags) {
 		free(modelPool->pSlotFlags);
 		free(modelPool->pDrawInfoIndices);
@@ -142,7 +141,7 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 		return;
 	}
 	
-	modelPool->pModelTransforms = calloc(createInfo.maxModelCount, sizeof(ModelTransform));
+	modelPool->pModelTransforms = heapAlloc(createInfo.maxModelCount, sizeof(ModelTransform));
 	if (!modelPool->pModelTransforms) {
 		free(modelPool->pSlotFlags);
 		free(modelPool->pDrawInfoIndices);
@@ -152,7 +151,7 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 		return;
 	}
 	
-	modelPool->pTextureStates = calloc(createInfo.maxModelCount, sizeof(TextureState));
+	modelPool->pTextureStates = heapAlloc(createInfo.maxModelCount, sizeof(TextureState));
 	if (!modelPool->pTextureStates) {
 		free(modelPool->pSlotFlags);
 		free(modelPool->pDrawInfoIndices);
@@ -163,8 +162,8 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 		return;
 	}
 	
-	modelPool->pDrawInfos = calloc(createInfo.maxModelCount, sizeof(DrawInfo));
-	if (!modelPool->pTextureStates) {
+	modelPool->pDrawInfos = heapAlloc(createInfo.maxModelCount, sizeof(DrawInfo));
+	if (!modelPool->pDrawInfos) {
 		free(modelPool->pSlotFlags);
 		free(modelPool->pDrawInfoIndices);
 		free(modelPool->pCameraFlags);
@@ -183,13 +182,13 @@ void deleteModelPool(ModelPool *const pModelPool) {
 	
 	bufferReturnSubrange(&(*pModelPool)->drawInfoBuffer);
 	
-	free((*pModelPool)->pSlotFlags);
-	free((*pModelPool)->pDrawInfoIndices);
-	free((*pModelPool)->pCameraFlags);
-	free((*pModelPool)->pModelTransforms);
-	free((*pModelPool)->pTextureStates);
-	free((*pModelPool)->pDrawInfos);
-	free((*pModelPool));
+	(*pModelPool)->pSlotFlags = heapFree((*pModelPool)->pSlotFlags);
+	(*pModelPool)->pDrawInfoIndices = heapFree((*pModelPool)->pDrawInfoIndices);
+	(*pModelPool)->pCameraFlags = heapFree((*pModelPool)->pCameraFlags);
+	(*pModelPool)->pModelTransforms = heapFree((*pModelPool)->pModelTransforms);
+	(*pModelPool)->pTextureStates = heapFree((*pModelPool)->pTextureStates);
+	(*pModelPool)->pDrawInfos = heapFree((*pModelPool)->pDrawInfos);
+	(*pModelPool) = heapFree((*pModelPool));
 	
 	*pModelPool = nullptr;
 }
@@ -386,6 +385,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	
 	// Update texture descriptor
 	// True if the model uses a texture, false otherwise.
+	loadInfo.modelPool->pTextureStates[modelIndex] = (TextureState){ };
 	const bool textureNeeded = loadInfo.modelPool->graphicsPipeline.vertexAttributeTextureCoordinatesOffset >= 0;
 	if (textureNeeded) {
 		if (loadInfo.textureHandle > 0) {
@@ -458,6 +458,10 @@ void modelSettleTransform(ModelPool modelPool, const int modelHandle) {
 }
 
 TextureState *modelGetTextureState(ModelPool modelPool, const int modelHandle) {
+	if (!modelPool) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Getting model texture state: model pool is null.");
+		return nullptr;
+	}
 	return &modelPool->pTextureStates[modelHandle];
 }
 
