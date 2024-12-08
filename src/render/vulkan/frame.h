@@ -64,13 +64,11 @@ typedef struct FrameArrayCreateInfo {
 	VkDevice vkDevice;
 	
 	CommandPool commandPool;
-	//DescriptorPool descriptorPool;
-	//DescriptorPool descriptorPoolDebug;
 	
 } FrameArrayCreateInfo;
 
 FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo);
 
-bool deleteFrameArray(FrameArray *const frame_array_ptr);
+bool deleteFrameArray(FrameArray *const pFrameArray);
 
 #endif	// FRAME_H

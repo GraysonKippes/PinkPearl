@@ -27,6 +27,11 @@ target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -Wpedantic -Wall 
 	-Werror=enum-conversion
 	-Werror=free-nonheap-object
 	-Werror=pointer-arith
+	-Werror=cast-align=strict
+	-Werror=strict-prototypes
+	-Werror=stringop-overflow=4
+	-Werror=shadow
+	-Werror=strict-aliasing=3
 	-Wno-switch
 )
 

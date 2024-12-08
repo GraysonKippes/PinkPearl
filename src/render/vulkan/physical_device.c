@@ -220,22 +220,22 @@ PhysicalDevice select_physical_device(const VulkanInstance vulkanInstance, const
 
 	for (uint32_t i = 0; i < physicalDeviceCount; ++i) {
 	
-		PhysicalDevice physicalDevice = nullPhysicalDevice;
-		physicalDevice.vkPhysicalDevice = vkPhysicalDevices[i];
+		PhysicalDevice currentPhysicalDevice = nullPhysicalDevice;
+		currentPhysicalDevice.vkPhysicalDevice = vkPhysicalDevices[i];
 		
-		vkGetPhysicalDeviceProperties(physicalDevice.vkPhysicalDevice, &physicalDevice.properties);
-		vkGetPhysicalDeviceFeatures(physicalDevice.vkPhysicalDevice, &physicalDevice.features);
+		vkGetPhysicalDeviceProperties(currentPhysicalDevice.vkPhysicalDevice, &currentPhysicalDevice.properties);
+		vkGetPhysicalDeviceFeatures(currentPhysicalDevice.vkPhysicalDevice, &currentPhysicalDevice.features);
 		
-		physicalDevice.queueFamilyIndices = getQueueFamilyIndices(physicalDevice.vkPhysicalDevice, windowSurface);
-		physicalDevice.swapchainSupportDetails = getSwapchainSupportDetails(physicalDevice.vkPhysicalDevice, windowSurface);
+		currentPhysicalDevice.queueFamilyIndices = getQueueFamilyIndices(currentPhysicalDevice.vkPhysicalDevice, windowSurface);
+		currentPhysicalDevice.swapchainSupportDetails = getSwapchainSupportDetails(currentPhysicalDevice.vkPhysicalDevice, windowSurface);
 		
-		physicalDevice.extensionNames.num_strings = deviceExtensionCount;
-		physicalDevice.extensionNames.strings = pDeviceExtensionNames;
+		currentPhysicalDevice.extensionNames.num_strings = deviceExtensionCount;
+		currentPhysicalDevice.extensionNames.strings = pDeviceExtensionNames;
 
-		int device_score = rate_physical_device(physicalDevice);
-		if (device_score > selectedScore) {
-			selectedPhysicalDevice = physicalDevice;
-			selectedScore = device_score;
+		const int deviceScore = rate_physical_device(currentPhysicalDevice);
+		if (deviceScore > selectedScore) {
+			selectedPhysicalDevice = currentPhysicalDevice;
+			selectedScore = deviceScore;
 		}
 	}
 
