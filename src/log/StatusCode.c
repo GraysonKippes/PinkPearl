@@ -10,12 +10,12 @@
 typedef struct error_queue_node_t {
 	LogLevel logLevel;
 	StatusCode errorCode;
-	struct error_queue_node_t *next_node_ptr;
+	struct error_queue_node_t *pNextNode;
 } error_queue_node_t;
 
 typedef struct error_queue_t {
-	error_queue_node_t *head_node_ptr;
-	error_queue_node_t *tail_node_ptr;
+	error_queue_node_t *pHeadNode;
+	error_queue_node_t *pTailNode;
 } error_queue_t;
 
 static error_queue_t error_queue;
@@ -27,37 +27,37 @@ void error_queue_push(const LogLevel logLevel, const StatusCode errorCode) {
 	*new_node_ptr = (error_queue_node_t){
 		.logLevel = logLevel,
 		.errorCode = errorCode,
-		.next_node_ptr = nullptr
+		.pNextNode = nullptr
 	};
 	
-	if (error_queue.head_node_ptr == nullptr || error_queue.tail_node_ptr == nullptr) {
-		error_queue.head_node_ptr = new_node_ptr;
-		error_queue.tail_node_ptr = new_node_ptr;
+	if (error_queue.pHeadNode == nullptr || error_queue.pTailNode == nullptr) {
+		error_queue.pHeadNode = new_node_ptr;
+		error_queue.pTailNode = new_node_ptr;
 	}
-	else if (error_queue.tail_node_ptr != nullptr) {
-		error_queue.tail_node_ptr->next_node_ptr = new_node_ptr;
-		error_queue.tail_node_ptr = new_node_ptr;
+	else if (error_queue.pTailNode != nullptr) {
+		error_queue.pTailNode->pNextNode = new_node_ptr;
+		error_queue.pTailNode = new_node_ptr;
 	}
 }
 
 void error_queue_flush(void) {
-	while (error_queue.head_node_ptr != nullptr) {
-		logMsg(error_queue.head_node_ptr->logLevel, error_code_str(error_queue.head_node_ptr->errorCode));
+	while (error_queue.pHeadNode != nullptr) {
+		logMsg(error_queue.pHeadNode->logLevel, error_code_str(error_queue.pHeadNode->errorCode));
 		logMsg();
-		error_queue_node_t *previous_node_ptr = error_queue.head_node_ptr;
-		error_queue.head_node_ptr = error_queue.head_node_ptr->next_node_ptr;
+		error_queue_node_t *previous_node_ptr = error_queue.pHeadNode;
+		error_queue.pHeadNode = error_queue.pHeadNode->pNextNode;
 		deallocate((void **)&previous_node_ptr);
 	}
-	error_queue.tail_node_ptr = error_queue.head_node_ptr;
+	error_queue.pTailNode = error_queue.pHeadNode;
 }
 
 void terminate_error_queue(void) {
-	while (error_queue.head_node_ptr != nullptr) {
-		error_queue_node_t *previous_node_ptr = error_queue.head_node_ptr;
-		error_queue.head_node_ptr = error_queue.head_node_ptr->next_node_ptr;
+	while (error_queue.pHeadNode != nullptr) {
+		error_queue_node_t *previous_node_ptr = error_queue.pHeadNode;
+		error_queue.pHeadNode = error_queue.pHeadNode->pNextNode;
 		deallocate((void **)&previous_node_ptr);
 	}
-	error_queue.tail_node_ptr = error_queue.head_node_ptr;
+	error_queue.pTailNode = error_queue.pHeadNode;
 }
 
 char *error_code_str(const StatusCode errorCode) {

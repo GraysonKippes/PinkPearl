@@ -1,11 +1,25 @@
 #ifndef AUDIO_LOADER_H
 #define AUDIO_LOADER_H
 
-#include <stdbool.h>
+#include <stddef.h>
 
-#include "audio_data.h"
+typedef float AudioSample;
 
-audio_data_t load_audio_file(const char *const filename);
-bool unload_audio_file(audio_data_t *const audio_data_ptr);
+typedef struct AudioData {
+	unsigned int num_channels;
+	unsigned int sample_rate;
+	size_t num_samples;
+	AudioSample *samples;
+} AudioData;
+
+typedef struct AudioTrack {
+	bool loop;
+	size_t current_position;
+	AudioData data;
+} AudioTrack;
+
+AudioData load_audio_file(const char *const filename);
+
+bool unload_audio_file(AudioData *const audio_data_ptr);
 
 #endif	// AUDIO_LOADER_H

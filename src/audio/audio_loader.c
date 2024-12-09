@@ -9,9 +9,9 @@
 
 #define AUDIO_PATH (RESOURCE_PATH "assets/audio/music/demo_dungeon.wav")
 
-audio_data_t load_audio_file(const char *const filename) {
+AudioData load_audio_file(const char *const filename) {
 	
-	audio_data_t audio_data = { };
+	AudioData audio_data = { };
 	if (!filename) {
 		logMsg(loggerAudio, LOG_LEVEL_ERROR, "Error loading audio file: filename is null.");
 		return audio_data;
@@ -30,7 +30,7 @@ audio_data_t load_audio_file(const char *const filename) {
 	return audio_data;
 }
 
-bool unload_audio_file(audio_data_t *const audio_data_ptr) {
+bool unload_audio_file(AudioData *const audio_data_ptr) {
 
 	if (!audio_data_ptr) {
 		return false;

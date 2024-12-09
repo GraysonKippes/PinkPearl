@@ -1,23 +1,18 @@
 #include "audio_mixer.h"
 
 #include <math.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-
 #include <pthread.h>
-
 #include "log/Logger.h"
-
-#include "audio_loader.h"
 
 static pthread_t audio_mixer_thread;
 static atomic_bool audio_mixer_running = false;
 
 // TODO - use mutexes.
-static audio_track_t background_music_track;
+static AudioTrack background_music_track;
 
-audio_queue_t audio_mixer_queue;
+AudioQueue audio_mixer_queue;
 
 static void *audio_mixer_main(void *arg);
 static void audio_mixer_mix(void);
@@ -54,7 +49,7 @@ void terminate_audio_mixer(void) {
 	logMsg(loggerAudio, LOG_LEVEL_VERBOSE, "Done terminating audio mixer.");
 }
 
-void audio_mixer_set_music_track(const audio_data_t audio_data) {
+void audio_mixer_set_music_track(const AudioData audio_data) {
 	background_music_track.data = audio_data;
 	background_music_track.loop = true;
 	background_music_track.current_position = 0;
@@ -75,14 +70,14 @@ static void audio_mixer_mix(void) {
 	if (atomic_load(&audio_mixer_queue.num_excess_nodes) < excess_node_limit) {
 	
 		// Create the next node.
-		atomic_store(&audio_mixer_queue.tail_node_ptr->next_node_ptr, (_Atomic audio_queue_node_t *)new_audio_queue_node());
-		_Atomic audio_queue_node_t *next_node_ptr = atomic_load(&audio_mixer_queue.tail_node_ptr->next_node_ptr);
+		atomic_store(&audio_mixer_queue.pTailNode->pNextNode, (_Atomic AudioQueueNode *)new_audio_queue_node());
+		_Atomic AudioQueueNode *pNextNode = atomic_load(&audio_mixer_queue.pTailNode->pNextNode);
 		
 		// Mix audio data into new node.
 		if (background_music_track.current_position + audio_buffer_length >= background_music_track.data.num_samples) {
 			size_t mix_index = background_music_track.current_position;
 			for (size_t i = 0; i < audio_buffer_length; ++i) {
-				next_node_ptr->samples[i] = background_music_track.data.samples[mix_index];
+				pNextNode->samples[i] = background_music_track.data.samples[mix_index];
 				if (++mix_index >= background_music_track.data.num_samples) {
 					mix_index -= background_music_track.data.num_samples;
 				}
@@ -90,22 +85,22 @@ static void audio_mixer_mix(void) {
 			background_music_track.current_position = mix_index;
 		}
 		else {
-			//memcpy_s(next_node_ptr->samples, audio_buffer_length * sizeof(audio_sample_t), &background_music_track.data.samples[background_music_track.current_position], audio_buffer_length * sizeof(audio_sample_t));
+			//memcpy_s(pNextNode->samples, audio_buffer_length * sizeof(AudioSample), &background_music_track.data.samples[background_music_track.current_position], audio_buffer_length * sizeof(AudioSample));
 			for (size_t i = 0; i < audio_buffer_length; i++) {
-				next_node_ptr->samples[i] = background_music_track.data.samples[background_music_track.current_position + i];
+				pNextNode->samples[i] = background_music_track.data.samples[background_music_track.current_position + i];
 			}
 			background_music_track.current_position += audio_buffer_length;
 		}
 		
 		// Publish the new node.
-		atomic_store(&audio_mixer_queue.tail_node_ptr, audio_mixer_queue.tail_node_ptr->next_node_ptr);
+		atomic_store(&audio_mixer_queue.pTailNode, audio_mixer_queue.pTailNode->pNextNode);
 		atomic_fetch_add(&audio_mixer_queue.num_excess_nodes, 1);
 	}
 	
 	// Remove already-processed nodes.
-	while (audio_mixer_queue.head_node_ptr != audio_mixer_queue.neck_node_ptr) {
-		audio_queue_node_t *const temp_node_ptr = audio_mixer_queue.head_node_ptr;
-		audio_mixer_queue.head_node_ptr = (audio_queue_node_t *)audio_mixer_queue.head_node_ptr->next_node_ptr;
+	while (audio_mixer_queue.pHeadNode != audio_mixer_queue.pNeckNode) {
+		AudioQueueNode *const temp_node_ptr = audio_mixer_queue.pHeadNode;
+		audio_mixer_queue.pHeadNode = (AudioQueueNode *)audio_mixer_queue.pHeadNode->pNextNode;
 		destroy_audio_queue_node(temp_node_ptr);
 	}
 }
