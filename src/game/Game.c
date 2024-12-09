@@ -16,12 +16,6 @@
 
 #define DEBUG_TEXT_HANDLE_COUNT 3
 
-// Stores information about the Pink Pearl game, such as whether or not the game is paused.
-typedef struct GameState {
-	bool paused;
-	bool scrolling;
-} GameState;
-
 // Stores keybinds for playing the game.
 typedef struct GameControls {
 	int pauseGame;
@@ -73,9 +67,9 @@ static int32_t pausedHandle = -1;
 static bool debugMenuEnabled = false;
 static int32_t debugTextHandles[DEBUG_TEXT_HANDLE_COUNT] = { -1, -1, -1 };
 
-void pauseGame(GameState *const pGameState);
+static void pauseGame(GameState *const pGameState);
 
-void toggleDebugMenu(void);
+static void toggleDebugMenu(void);
 
 void start_game(void) {
 	
@@ -220,7 +214,11 @@ void tick_game(void) {
 	gameState.scrolling = areaSetNextRoom(&currentArea, travelDirection);
 }
 
-void pauseGame(GameState *const pGameState) {
+GameState getGameState(void) {
+	return gameState;
+}
+
+static void pauseGame(GameState *const pGameState) {
 	assert(pGameState);
 	pGameState->paused = !pGameState->paused;
 	if (pGameState->paused) {
@@ -234,7 +232,7 @@ bool isGamePaused(void) {
 	return gameState.paused;
 }
 
-void toggleDebugMenu(void) {
+static void toggleDebugMenu(void) {
 	debugMenuEnabled = !debugMenuEnabled;
 	if (debugMenuEnabled) {
 		debugTextHandles[0] = loadRenderText(makeStaticString("Position Position"), makeVec3D(-11.5, -6.25, 4.0), COLOR_PINK);

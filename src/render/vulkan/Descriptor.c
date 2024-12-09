@@ -1,7 +1,6 @@
 #include "Descriptor.h"
 
 #include <stdlib.h>
-
 #include "log/Logger.h"
 
 // BINDLESS MANAGER
@@ -71,7 +70,6 @@ void initDescriptorManager(const VkDevice vkDevice) {
 		.bindingCount = descriptorTypeCount,
 		.pBindingFlags = bindingFlags
 	};
-
 	const VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.pNext = &bindingFlagsInfo,
@@ -79,7 +77,6 @@ void initDescriptorManager(const VkDevice vkDevice) {
 		.bindingCount = descriptorTypeCount,
 		.pBindings = bindings
 	};
-	
 	const VkResult layoutCreateResult = vkCreateDescriptorSetLayout(vkDevice, &layoutCreateInfo, nullptr, &globalDescriptorSetLayout);
 	if (layoutCreateResult != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing descriptor manager: global descriptor set layout creation failed (error code: %i).", layoutCreateResult);
@@ -104,7 +101,6 @@ void initDescriptorManager(const VkDevice vkDevice) {
 		.poolSizeCount = descriptorTypeCount,
 		.pPoolSizes = poolSizes
 	};
-	
 	const VkResult poolCreateResult = vkCreateDescriptorPool(vkDevice, &poolCreateInfo, nullptr, &globalDescriptorPool);
 	if (poolCreateResult != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing descriptor manager: global descriptor pool creation failed (error code: %i).", poolCreateResult);
@@ -120,7 +116,6 @@ void initDescriptorManager(const VkDevice vkDevice) {
 		.descriptorSetCount = 1,
 		.pSetLayouts = &globalDescriptorSetLayout
 	};
-
 	const VkResult allocateResult = vkAllocateDescriptorSets(vkDevice, &allocateInfo, &globalDescriptorSet);
 	if (allocateResult != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error initializing descriptor manager: global descriptor set allocation failed (error code: %i).", allocateResult);
@@ -150,7 +145,6 @@ uint32_t uploadSampler(const VkDevice vkDevice, const Sampler sampler) {
 		.imageView = VK_NULL_HANDLE,
 		.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	};
-	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
@@ -162,7 +156,6 @@ uint32_t uploadSampler(const VkDevice vkDevice, const Sampler sampler) {
 		.pImageInfo = &descriptorImageInfo,
 		.pTexelBufferView = nullptr
 	};
-	
 	vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
 	
 	return handle;
@@ -184,7 +177,6 @@ uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image) {
 		.imageView = image.vkImageView,
 		.imageLayout = image.usage.imageLayout
 	};
-	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
@@ -196,7 +188,6 @@ uint32_t uploadSampledImage(const VkDevice vkDevice, const Image image) {
 		.pImageInfo = &descriptorImageInfo,
 		.pTexelBufferView = nullptr
 	};
-	
 	vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
 	
 	return handle;
@@ -218,7 +209,6 @@ uint32_t uploadStorageImage(const VkDevice vkDevice, const Image image) {
 		.imageView = image.vkImageView,
 		.imageLayout = image.usage.imageLayout
 	};
-	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
@@ -230,7 +220,6 @@ uint32_t uploadStorageImage(const VkDevice vkDevice, const Image image) {
 		.pImageInfo = &descriptorImageInfo,
 		.pTexelBufferView = nullptr
 	};
-	
 	vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
 	
 	return handle;
@@ -248,7 +237,6 @@ uint32_t uploadUniformBuffer(const VkDevice vkDevice, const BufferPartition buff
 	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorBufferInfo descriptorBufferInfo = buffer_partition_descriptor_info(bufferPartition, partitionIndex);
-	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
@@ -260,7 +248,6 @@ uint32_t uploadUniformBuffer(const VkDevice vkDevice, const BufferPartition buff
 		.pImageInfo = nullptr,
 		.pTexelBufferView = nullptr
 	};
-	
 	vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
 	
 	return handle;
@@ -278,7 +265,6 @@ uint32_t uploadUniformBuffer2(const VkDevice vkDevice, const BufferSubrange buff
 	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorBufferInfo descriptorBufferInfo = makeDescriptorBufferInfo2(bufferSubrange);
-	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
@@ -290,7 +276,6 @@ uint32_t uploadUniformBuffer2(const VkDevice vkDevice, const BufferSubrange buff
 		.pImageInfo = nullptr,
 		.pTexelBufferView = nullptr
 	};
-	
 	vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
 	
 	return handle;
@@ -308,7 +293,6 @@ uint32_t uploadStorageBuffer(const VkDevice vkDevice, const BufferPartition buff
 	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorBufferInfo descriptorBufferInfo = buffer_partition_descriptor_info(bufferPartition, partitionIndex);
-	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
@@ -320,7 +304,6 @@ uint32_t uploadStorageBuffer(const VkDevice vkDevice, const BufferPartition buff
 		.pImageInfo = nullptr,
 		.pTexelBufferView = nullptr
 	};
-	
 	vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
 	
 	return handle;
@@ -338,7 +321,6 @@ uint32_t uploadStorageBuffer2(const VkDevice vkDevice, const BufferSubrange buff
 	descriptorCounts[descriptorBinding] += 1;
 	
 	const VkDescriptorBufferInfo descriptorBufferInfo = makeDescriptorBufferInfo2(bufferSubrange);
-	
 	const VkWriteDescriptorSet writeDescriptorSet = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = globalDescriptorSet,
@@ -350,7 +332,6 @@ uint32_t uploadStorageBuffer2(const VkDevice vkDevice, const BufferSubrange buff
 		.pImageInfo = nullptr,
 		.pTexelBufferView = nullptr
 	};
-	
 	vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
 	
 	return handle;

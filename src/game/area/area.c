@@ -170,8 +170,8 @@ bool areaSetNextRoom(Area *const pArea, const CardinalDirection direction) {
 		};
 		computeStitchTexture(pArea->renderState.tilemapTextureState.textureHandle, textureHandle, imageSubresourceRange, pArea->room_extent, pNextRoom->ppTileIndices);
 	} else {
-		swap(pArea->renderState.currentRoomQuadIndices[0], pArea->renderState.nextRoomQuadIndices[0]);
-		swap(pArea->renderState.currentRoomQuadIndices[1], pArea->renderState.nextRoomQuadIndices[1]);
+		//swap(pArea->renderState.currentRoomQuadIndices[0], pArea->renderState.nextRoomQuadIndices[0]);
+		//swap(pArea->renderState.currentRoomQuadIndices[1], pArea->renderState.nextRoomQuadIndices[1]);
 	}
 	pArea->renderState.nextCacheSlot = nextCacheSlot;
 	pArea->renderState.scrollStartTimeMS = getTimeMS();

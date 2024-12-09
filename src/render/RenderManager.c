@@ -13,8 +13,6 @@
 #include "vulkan/VulkanManager.h"
 #include "vulkan/texture_manager.h"
 
-#include "game/Game.h"
-
 #define DATA_PATH (RESOURCE_PATH "data/")
 #define FGT_PATH (RESOURCE_PATH "data/textures.fgt")
 
@@ -145,7 +143,7 @@ void tickRenderManager(void) {
 void renderFrame(const float timeDelta, const Vector4F cameraPosition, const ProjectionBounds projectionBounds, const bool animate) {
 	glfwPollEvents();
 	
-	if (!animate) {
+	if (animate) {
 		for (int32_t i = 0; i < RENDER_OBJECT_MAX_COUNT; ++i) {
 			renderObjectAnimate(i);
 		}
@@ -206,7 +204,6 @@ int32_t loadRenderObject(const RenderObjectLoadInfo loadInfo) {
 			.position = vec3DtoVec4F(quadLoadInfo.initPosition),
 			.dimensions = quadLoadInfo.quadDimensions,
 			.cameraFlag = quadLoadInfo.quadType == QUAD_TYPE_GUI ? 0 : 1,
-			//.textureID = loadInfo.textureID,
 			.textureHandle = renderObjects[handle].textureHandle,
 			.color = quadLoadInfo.color,
 			.imageIndex = imageIndex

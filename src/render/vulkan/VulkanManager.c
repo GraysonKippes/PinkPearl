@@ -3,16 +3,13 @@
 #include <stdalign.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <vulkan/vulkan.h>
-
 #include "debug.h"
 #include "log/Logger.h"
 #include "glfw/glfw_manager.h"
 #include "render/render_config.h"
 #include "render/stb/image_data.h"
 #include "util/Types.h"
-
 #include "CommandBuffer.h"
 #include "descriptor.h"
 #include "GraphicsPipeline.h"
