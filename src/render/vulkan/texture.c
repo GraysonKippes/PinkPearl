@@ -104,6 +104,7 @@ bool deleteImage(Image *const pImage) {
 	pImage->vkDevice = VK_NULL_HANDLE;
 	
 	// Reset other information attached to the image.
+	pImage->arrayLayerCount = 0;
 	pImage->usage = imageUsageUndefined;
 	pImage->extent = (Extent){ 0, 0 };
 
@@ -115,7 +116,6 @@ const Texture nullTexture = {
 	.isTilemap = false,
 	.numAnimations = 0,
 	.animations = nullptr,
-	.numImageArrayLayers = 0,
 	.image.usage = imageUsageUndefined,
 	.image.extent.width = 0,
 	.image.extent.length = 0,
@@ -128,8 +128,7 @@ const Texture nullTexture = {
 };
 
 bool textureIsNull(const Texture texture) {
-	return texture.numImageArrayLayers == 0
-		|| texture.image.vkImage == VK_NULL_HANDLE
+	return texture.image.vkImage == VK_NULL_HANDLE
 		|| texture.image.vkImageView == VK_NULL_HANDLE
 		|| texture.vkDeviceMemory == VK_NULL_HANDLE
 		|| texture.vkDevice == VK_NULL_HANDLE;
@@ -149,14 +148,13 @@ static VkImageUsageFlags getTextureImageUsage(const TextureCreateInfo textureCre
 	return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 }
 
-static VkImage createTextureImage(const Texture texture, const TextureCreateInfo textureCreateInfo) {
+static VkImage createTextureImage(const VkDevice vkDevice, const uint32_t arrayLayerCount, const TextureCreateInfo textureCreateInfo) {
 
 	uint32_t queueFamilyIndices[2];
 	if (textureCreateInfo.isTilemap) {
 		queueFamilyIndices[0] = *physical_device.queueFamilyIndices.transfer_family_ptr;
 		queueFamilyIndices[1] = *physical_device.queueFamilyIndices.compute_family_ptr;
-	}
-	else {
+	} else {
 		queueFamilyIndices[0] = *physical_device.queueFamilyIndices.graphics_family_ptr;
 		queueFamilyIndices[1] = *physical_device.queueFamilyIndices.transfer_family_ptr;
 	}
@@ -171,7 +169,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 		.extent.height = textureCreateInfo.cellExtent.length,
 		.extent.depth = 1,
 		.mipLevels = 1,
-		.arrayLayers = texture.numImageArrayLayers,
+		.arrayLayers = arrayLayerCount,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = VK_IMAGE_TILING_OPTIMAL,
 		.usage = getTextureImageUsage(textureCreateInfo),
@@ -182,7 +180,7 @@ static VkImage createTextureImage(const Texture texture, const TextureCreateInfo
 	};
 
 	VkImage vkImage = VK_NULL_HANDLE;
-	const VkResult imageCreateResult = vkCreateImage(texture.vkDevice, &imageCreateInfo, nullptr, &vkImage);
+	const VkResult imageCreateResult = vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &vkImage);
 	if (imageCreateResult != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating texture: image creation failed (error code: %i).", imageCreateResult);
 	}
@@ -228,7 +226,6 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
 	Texture texture = nullTexture;
 	texture.numAnimations = textureCreateInfo.numAnimations;
-	texture.numImageArrayLayers = textureCreateInfo.numCells.width * textureCreateInfo.numCells.length;
 	texture.vkDevice = device;	// TODO - pass vkDevice through parameters, not global state.
 	texture.isLoaded = textureCreateInfo.isLoaded;
 	texture.isTilemap = textureCreateInfo.isTilemap;
@@ -236,7 +233,8 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	allocate((void **)&texture.animations, texture.numAnimations, sizeof(TextureAnimation));
 	memcpy(texture.animations, textureCreateInfo.animations, textureCreateInfo.numAnimations * sizeof(TextureAnimation));
 
-	texture.image.vkImage = createTextureImage(texture, textureCreateInfo);
+	texture.image.arrayLayerCount = textureCreateInfo.numCells.width * textureCreateInfo.numCells.length;
+	texture.image.vkImage = createTextureImage(texture.vkDevice, texture.image.arrayLayerCount, textureCreateInfo);
 	texture.image.extent = textureCreateInfo.cellExtent;
 
 	// Allocate memory for the texture image.

@@ -95,7 +95,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, 1, &transferCommandBuffer);
 	cmdBufBegin(transferCommandBuffer, true); {
 		
-		const uint32_t numBufImgCopies = texture.numImageArrayLayers;
+		const uint32_t numBufImgCopies = texture.image.arrayLayerCount;
 		VkBufferImageCopy2 *bufImgCopies = nullptr;
 		if (!allocate((void **)&bufImgCopies, numBufImgCopies, sizeof(VkBufferImageCopy2))) {
 			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: failed to allocate copy region pointer-array.");

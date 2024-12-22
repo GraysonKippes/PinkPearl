@@ -3,11 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
 #include <vulkan/vulkan.h>
-
 #include "physical_device.h"
-
 #include "math/extent.h"
 #include "util/string.h"
 
@@ -33,6 +30,9 @@ typedef struct Image {
 	
 	// Size of the texture in texels.
 	Extent extent;
+	
+	// Number of array layers in the Vulkan image.
+	uint32_t arrayLayerCount;
 	
 	// Handle to the Vulkan image.
 	VkImage vkImage;
@@ -92,9 +92,6 @@ typedef struct Texture {
 	
 	uint32_t numAnimations;
 	TextureAnimation *animations;
-	
-	// TODO - maybe move this to Image.
-	uint32_t numImageArrayLayers;
 	
 	Image image;
 	
