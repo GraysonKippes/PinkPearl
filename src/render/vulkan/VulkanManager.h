@@ -2,7 +2,6 @@
 #define VULKAN_MANAGER_H
 
 #include <vulkan/vulkan.h>
-
 #include "buffer.h"
 #include "Buffer2.h"
 #include "Draw.h"
@@ -14,7 +13,6 @@
 #include "texture.h"
 #include "vulkan_instance.h"
 #include "math/projection.h"
-
 #include "render/render_config.h"
 
 /* -- Vulkan Module Configuration -- */

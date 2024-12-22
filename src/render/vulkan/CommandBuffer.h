@@ -10,6 +10,8 @@
 #include "Pipeline.h"
 
 // TODO: design and implement a data-oriented command buffer system.
+// Command pools can be wrapped into objects because there will only be a small limited set of them, and only one will be used at a time.
+// Command buffers should NOT be wrapped into objects, but arrays of command buffers can be packed into structs along with command buffer count.
 
 typedef struct CommandPool {
 	
@@ -21,6 +23,33 @@ typedef struct CommandPool {
 	
 } CommandPool;
 
+// Creates a new command pool in the specified queue family.
+CommandPool createCommandPool(const VkDevice vkDevice, const uint32_t queueFamilyIndex, const bool transient, const bool resetable);
+
+// Deletes the command pool and resets its objects to null values.
+void deleteCommandPool(CommandPool *const pCommandPool);
+
+typedef struct CmdBufArray {
+	bool resetable;
+	uint32_t count;
+	VkCommandBuffer *pCmdBufs;
+} CmdBufArray;
+
+// Allocates an array of command buffers and returns them in a struct.
+// commandPool: the command pool in which the command buffers will be allocated.
+// count: the number of command buffers to allocate.
+CmdBufArray cmdBufAlloc2(const CommandPool commandPool, const uint32_t count);
+
+void cmdBufFree2(CmdBufArray *const pArr);
+
+void cmdBufBegin2(const CmdBufArray arr, const uint32_t idx, const bool singleSubmit);
+
+void cmdBufEnd2(const CmdBufArray arr, const uint32_t idx);
+
+void cmdBufReset(const CmdBufArray arr, const uint32_t idx);
+
+
+
 typedef struct CommandBuffer {
 	
 	VkCommandBuffer vkCommandBuffer;
@@ -29,12 +58,6 @@ typedef struct CommandBuffer {
 	bool resetable;
 	
 } CommandBuffer;
-
-// Creates a new command pool in the specified queue family.
-CommandPool createCommandPool(const VkDevice vkDevice, const uint32_t queueFamilyIndex, const bool transient, const bool resetable);
-
-// Deletes the command pool and resets its objects to null values.
-void deleteCommandPool(CommandPool *const pCommandPool);
 
 CommandBuffer allocateCommandBuffer(const CommandPool commandPool);
 
@@ -50,13 +73,13 @@ void commandBufferReset(CommandBuffer *const pCommandBuffer);
 
 
 
-void allocCmdBufs(const VkDevice vkDevice, const VkCommandPool commandPool, const uint32_t numBuffers, VkCommandBuffer *pCommandBuffers);
+void allocCmdBufs(const VkDevice vkDevice, const VkCommandPool commandPool, const uint32_t bufCount, VkCommandBuffer *const pCmdBufs);
 
 void cmdBufBegin(const VkCommandBuffer cmdBuf, const bool singleSubmit);
 
 VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer command_buffer);
 
-// TODO - remove.
+// TODO: remove.
 // Submits command buffers to the specified queue, without synchronization from either semaphores or fences.
 // Useful for single-use command buffers such as those used for transfer operations.
 void submit_command_buffers_async(VkQueue queue, uint32_t num_command_buffers, VkCommandBuffer *command_buffers);

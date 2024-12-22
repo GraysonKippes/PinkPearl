@@ -1,8 +1,9 @@
 #include "CommandBuffer.h"
 
+#include <assert.h>
 #include <stdlib.h>
-
 #include "log/Logger.h"
+#include "util/allocate.h"
 
 CommandPool createCommandPool(const VkDevice vkDevice, const uint32_t queueFamilyIndex, const bool transient, const bool resetable) {
 	
@@ -48,6 +49,94 @@ void deleteCommandPool(CommandPool *const pCommandPool) {
 	pCommandPool->transient = false;
 	pCommandPool->resetable = false;
 }
+
+CmdBufArray cmdBufAlloc2(const CommandPool commandPool, const uint32_t count) {
+	
+	CmdBufArray cmdBufArray = { };
+	
+	cmdBufArray.pCmdBufs = heapAlloc(count, sizeof(VkCommandBuffer));
+	if (!cmdBufArray.pCmdBufs) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Allocating command buffers: failed to allocate command buffer handle array (count = %u).", count);
+		return (CmdBufArray){ };
+	}
+	cmdBufArray.count = count;
+	
+	const VkCommandBufferAllocateInfo allocInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.pNext = nullptr,
+		.commandPool = commandPool.vkCommandPool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = cmdBufArray.count
+	};
+	const VkResult allocResult = vkAllocateCommandBuffers(commandPool.vkDevice, &allocInfo, cmdBufArray.pCmdBufs);
+	if (allocResult != VK_SUCCESS) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Allocating command buffers: failed to allocate command buffers (error code = %i).", allocResult);
+		cmdBufArray.pCmdBufs = heapFree(cmdBufArray.pCmdBufs);
+		return (CmdBufArray){ };
+	}
+	cmdBufArray.resetable = commandPool.resetable;
+	
+	return cmdBufArray;
+}
+
+void cmdBufFree2(CmdBufArray *const pArr) {
+	assert(pArr);
+	pArr->resetable = false;
+	pArr->count = 0;
+	pArr->pCmdBufs = heapFree(pArr->pCmdBufs);
+}
+
+void cmdBufBegin2(const CmdBufArray arr, const uint32_t idx, const bool singleSubmit) {
+	if (idx >= arr.count) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Beginning command buffer recording: command buffer index (%u) is not less than command buffer count (%u) in command buffer array %p.", idx, arr.count, arr.pCmdBufs);
+		return;
+	}
+	
+	const VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = nullptr,
+		.flags = singleSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0,
+		.pInheritanceInfo = nullptr
+	};
+	const VkResult result = vkBeginCommandBuffer(arr.pCmdBufs[idx], &beginInfo);
+	if (result != VK_SUCCESS) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Beginning command buffer recording: failed to begin recording (error code = %i).", result);
+	}
+}
+
+void cmdBufEnd2(const CmdBufArray arr, const uint32_t idx) {
+	if (idx >= arr.count) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Ending command buffer recording: command buffer index (%u) is not less than command buffer count (%u) in command buffer array %p.", idx, arr.count, arr.pCmdBufs);
+		return;
+	}
+	
+	const VkResult result = vkEndCommandBuffer(arr.pCmdBufs[idx]);
+	if (result != VK_SUCCESS) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Ending command buffer recording: failed to end recording (error code = %i).", result);
+	}
+}
+
+void cmdBufReset(const CmdBufArray arr, const uint32_t idx) {
+	if (idx >= arr.count) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Resetting command buffer: command buffer index (%u) is not less than command buffer count (%u) in command buffer array %p.", idx, arr.count, arr.pCmdBufs);
+		return;
+	}
+	
+	if (!arr.resetable) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Resetting command buffer: command buffer array %p is not resetable.", arr.pCmdBufs);
+		return;
+	}
+	
+	const VkResult result = vkResetCommandBuffer(arr.pCmdBufs[idx], 0);
+	if (result != VK_SUCCESS) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Resetting command buffer: failed to reset command buffer (error code = %i).", result);
+	}
+}
+
+
+
+
+
 
 CommandBuffer allocateCommandBuffer(const CommandPool commandPool) {
 	
