@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 #include "debug.h"
 #include "log/Logger.h"
-#include "glfw/glfw_manager.h"
+#include "glfw/GLFWManager.h"
 #include "render/render_config.h"
 #include "render/stb/image_data.h"
 #include "util/Types.h"
@@ -203,7 +203,7 @@ void initVulkanManager(void) {
 	commandPoolTransfer = createCommandPool(device, *physical_device.queueFamilyIndices.transfer_family_ptr, true, true);
 	commandPoolCompute = createCommandPool(device, *physical_device.queueFamilyIndices.compute_family_ptr, true, false);
 
-	swapchain = createSwapchain(get_application_window(), windowSurface, physical_device, device, VK_NULL_HANDLE);
+	swapchain = createSwapchain(getAppWindow(), windowSurface, physical_device, device, VK_NULL_HANDLE);
 	
 	samplerDefault = createSampler(device, physical_device);
 	uploadSampler(device, samplerDefault);
@@ -290,10 +290,12 @@ void initVulkanManager(void) {
 	
 	initComputeMatrices(device);
 	initComputeStitchTexture(device);
+	
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Initialized Vulkan.");
 }
 
 void terminateVulkanManager(void) {
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroying Vulkan objects...");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Terminating Vulkan...");
 
 	vkDeviceWaitIdle(device);
 
@@ -334,7 +336,7 @@ void terminateVulkanManager(void) {
 	destroy_debug_messenger(vulkan_instance.handle, debug_messenger);
 	destroy_vulkan_instance(vulkan_instance);
 	
-	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Destroyed Vulkan objects.");
+	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Terminated Vulkan.");
 }
 
 void drawFrame(const float deltaTime, const Vector4F cameraPosition, const ProjectionBounds projectionBounds) {

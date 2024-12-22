@@ -2,45 +2,40 @@
 
 #include <stdbool.h>
 #include "game/game.h"
-#include "glfw/glfw_manager.h"
+#include "glfw/GLFWManager.h"
 #include "render/RenderManager.h"
 #include "util/time.h"
 
-static bool client_running = false;
+static bool clientRunning = false;
 
-void run_client(void) {
-
-	client_running = true;
+void runClient(void) {
+	clientRunning = true;
 	
-	static const double ticks_per_second = 20.0;	// ticks / s
-	static const double ms_per_tick = 1000.0 / ticks_per_second;
+	static const double tickPerSecond = 20.0;	// ticks / s
+	static const double msPerTick = 1000.0 / tickPerSecond; // ms
 
-	uint64_t time_previous = getTimeMS();	// ms
+	uint64_t previousTime = getTimeMS();	// ms
+	float tickDelta = 0.0F; // Unitless interpolation value
 
-	float tick_delta_time = 0.0F;
+	while (clientRunning && !shouldAppWindowClose()) {
 
-	while (client_running && !should_application_window_close()) {
+		const uint64_t currentTime = getTimeMS();	// ms
+		const uint64_t deltaTime = currentTime - previousTime;	// ms
+		previousTime = currentTime;
+		tickDelta += (float)(deltaTime / msPerTick);
 
-		const uint64_t time_now = getTimeMS();	// ms
-		const uint64_t delta_time = time_now - time_previous;	// ms
-		time_previous = time_now;
-		tick_delta_time += (float)(delta_time / ms_per_tick);
-
-		while (tick_delta_time >= 1.0F) {
+		while (tickDelta >= 1.0F) {
 			tick_game();
-			tick_delta_time -= 1.0F;
+			tickDelta -= 1.0F;
 		}
 
-		if (client_running && !should_application_window_close()) {
+		if (clientRunning && !shouldAppWindowClose()) {
 			const GameState gameState = getGameState();
-			renderFrame(tick_delta_time, areaGetCameraPosition(&currentArea), areaGetProjectionBounds(currentArea), !gameState.paused && !gameState.scrolling);
-		}
-		else {
+			renderFrame(tickDelta, areaGetCameraPosition(&currentArea), areaGetProjectionBounds(currentArea), !gameState.paused && !gameState.scrolling);
+		} else {
 			break;
 		}
 	}
-}
-
-void stop_client(void) {
-	client_running = false;
+	
+	clientRunning = true;
 }

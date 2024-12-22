@@ -20,6 +20,6 @@ typedef struct AudioTrack {
 
 AudioData load_audio_file(const char *const filename);
 
-bool unload_audio_file(AudioData *const audio_data_ptr);
+bool unload_audio_file(AudioData *const pAudioData);
 
 #endif	// AUDIO_LOADER_H

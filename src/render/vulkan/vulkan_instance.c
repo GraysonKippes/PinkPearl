@@ -4,12 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <GLFW/glfw3.h>
-
 #include "config.h"
 #include "debug.h"
-#include "glfw/glfw_manager.h"
+#include "glfw/GLFWManager.h"
 #include "log/Logger.h"
 
 #define NUM_VALIDATION_LAYERS 1
@@ -100,27 +97,49 @@ VulkanInstance create_vulkan_instance(void) {
 
 		num_extensions = num_glfw_extensions + 1;	// Include space for the debug extension name.
 		extensions = calloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to nullptr.
+		if (!extensions) {
+			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate array of extension names.");
+			return vulkan_instance;
+		}
 
 		for (uint32_t i = 0; i < num_glfw_extensions; ++i) {
 			size_t glfw_extension_name_length = strlen(glfw_extensions[i]) + 1;	// +1 to include the null-terminator.
-			*(extensions + i) = malloc(glfw_extension_name_length * sizeof(char));	// Allocate enough space for the GLFW extension name.
-			strncpy(*(extensions + i), glfw_extensions[i], glfw_extension_name_length);
+			extensions[i] = malloc(glfw_extension_name_length * sizeof(char));	// Allocate enough space for the GLFW extension name.
+			if (!extensions[i]) {
+				logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate extension name.");
+				free(extensions);
+				return vulkan_instance;
+			}
+			strncpy(extensions[i], glfw_extensions[i], glfw_extension_name_length);
 		}
 
 		// Append the debug extension name.
 		size_t debug_extension_name_length = strlen(VK_EXT_DEBUG_UTILS_EXTENSION_NAME) + 1;
-		*(extensions + num_extensions - 1) = calloc(debug_extension_name_length, sizeof(char));
-		strncpy(*(extensions + num_extensions - 1), VK_EXT_DEBUG_UTILS_EXTENSION_NAME, debug_extension_name_length);
-	}
-	else {
+		extensions[num_extensions - 1] = calloc(debug_extension_name_length, sizeof(char));
+		if (!extensions[num_extensions - 1]) {
+			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate extension name.");
+			free(extensions);
+			return vulkan_instance;
+		}
+		strncpy(extensions[num_extensions - 1], VK_EXT_DEBUG_UTILS_EXTENSION_NAME, debug_extension_name_length);
+	} else {
 		
 		num_extensions = num_glfw_extensions;
 		extensions = calloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to nullptr.
+		if (!extensions) {
+			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate array of extension names.");
+			return vulkan_instance;
+		}
 
 		for (uint32_t i = 0; i < num_glfw_extensions; ++i) {
 			size_t glfw_extension_name_length = strlen(glfw_extensions[i]) + 1;	// +1 to include the null-terminator.
-			*(extensions + i) = malloc(glfw_extension_name_length * sizeof(char));	// Allocate enough space for the GLFW extension name.
-			strncpy(*(extensions + i), glfw_extensions[i], glfw_extension_name_length);
+			extensions[i] = malloc(glfw_extension_name_length * sizeof(char));	// Allocate enough space for the GLFW extension name.
+			if (!extensions[i]) {
+				logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate extension name.");
+				free(extensions);
+				return vulkan_instance;
+			}
+			strncpy(extensions[i], glfw_extensions[i], glfw_extension_name_length);
 		}
 	}
 
@@ -132,9 +151,9 @@ VulkanInstance create_vulkan_instance(void) {
 		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 		.pNext = nullptr,
 		.pApplicationName = APP_NAME,	// TODO - link to project config
-		.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
+		.applicationVersion = VK_MAKE_API_VERSION(0, 0, 2, 0),
 		.pEngineName = "No Engine",
-		.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0),
+		.engineVersion = VK_MAKE_API_VERSION(0, 0, 0, 0),
 		.apiVersion = VK_API_VERSION_1_3
 	};
 	
@@ -247,7 +266,7 @@ WindowSurface createWindowSurface(const VulkanInstance vulkanInstance) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating window surface...");
 	
 	VkSurfaceKHR vkSurface;
-	const VkResult result = glfwCreateWindowSurface(vulkanInstance.handle, get_application_window(), nullptr, &vkSurface);
+	const VkResult result = glfwCreateWindowSurface(vulkanInstance.handle, getAppWindow(), nullptr, &vkSurface);
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating window surface: surface creation failed (error code: %i).", result);
 		return (WindowSurface){ .vkSurface = VK_NULL_HANDLE, .vkInstance = VK_NULL_HANDLE };

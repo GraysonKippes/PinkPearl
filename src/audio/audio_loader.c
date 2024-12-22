@@ -1,8 +1,8 @@
 #include "audio_loader.h"
 
+#include <assert.h>
 #define DR_WAV_IMPLEMENTATION
 #include <dr_audio/dr_wav.h>
-
 #include "config.h"
 #include "log/Logger.h"
 #include "util/allocate.h"
@@ -30,15 +30,12 @@ AudioData load_audio_file(const char *const filename) {
 	return audio_data;
 }
 
-bool unload_audio_file(AudioData *const audio_data_ptr) {
+bool unload_audio_file(AudioData *const pAudioData) {
+	assert(pAudioData);
 
-	if (!audio_data_ptr) {
-		return false;
-	}
-
-	free(audio_data_ptr->samples);
-	audio_data_ptr->num_samples = 0;
-	audio_data_ptr->samples = nullptr;
+	free(pAudioData->samples);
+	pAudioData->num_samples = 0;
+	pAudioData->samples = nullptr;
 
 	return true;
 }

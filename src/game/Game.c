@@ -53,6 +53,9 @@ static GameControls controls = {
 	.useItemLeft = MOUSE_BUTTON_LEFT,
 	.useItemRight = MOUSE_BUTTON_RIGHT
 };
+static GameRenderState renderState = {
+	
+};
 
 // The area that the player is currently in.
 Area currentArea = { };
@@ -60,16 +63,9 @@ Area currentArea = { };
 // The handle to the player entity.
 static int playerEntityHandle = -1;
 
-// Move from global state to struct.
-static int32_t heartsHandle = -1;
-static int32_t slotsHandle = -1;
-static int32_t pausedHandle = -1;
-static bool debugMenuEnabled = false;
-static int32_t debugTextHandles[DEBUG_TEXT_HANDLE_COUNT] = { -1, -1, -1 };
+static void pauseGame(GameState *const pGameState, GameRenderState *const pGameRenderState);
 
-static void pauseGame(GameState *const pGameState);
-
-static void toggleDebugMenu(void);
+static void toggleDebugMenu(GameRenderState *const pGameRenderState);
 
 void start_game(void) {
 	
@@ -117,7 +113,7 @@ void start_game(void) {
 			}
 		}
 	};
-	heartsHandle = loadRenderObject(loadInfoHearts);
+	renderState.heartsHandle = loadRenderObject(loadInfoHearts);
 	
 	const RenderObjectLoadInfo loadInfoSlots = {
 		.textureID = makeStaticString("gui/slots"),
@@ -133,7 +129,11 @@ void start_game(void) {
 			}
 		}
 	};
-	slotsHandle = loadRenderObject(loadInfoSlots);
+	renderState.slotsHandle = loadRenderObject(loadInfoSlots);
+}
+
+void endGame(void) {
+	deleteArea(&currentArea);
 }
 
 void tick_game(void) {
@@ -141,11 +141,11 @@ void tick_game(void) {
 	tickRenderManager();
 
 	if (isInputPressed(controls.debugMenu)) {
-		toggleDebugMenu();
+		toggleDebugMenu(&renderState);
 	}
 
 	if (isInputPressed(controls.pauseGame)) {
-		pauseGame(&gameState);
+		pauseGame(&gameState, &renderState);
 	}
 
 	if (gameState.paused) {
@@ -204,10 +204,10 @@ void tick_game(void) {
 		renderObjectSetAnimation(pPlayerEntity->renderHandle, 0, nextAnimation);
 	}
 	
-	if (debugMenuEnabled) {
-		writeRenderText(debugTextHandles[0], "P %.2f, %.2f", pPlayerEntity->physics.position.x, pPlayerEntity->physics.position.y);
-		writeRenderText(debugTextHandles[1], "V %.3f, %.3f", pPlayerEntity->physics.velocity.x, pPlayerEntity->physics.velocity.y);
-		writeRenderText(debugTextHandles[2], "A %.3f, %.3f", pPlayerEntity->physics.acceleration.x, pPlayerEntity->physics.acceleration.y);
+	if (renderState.debugMenuEnabled) {
+		writeRenderText(renderState.debugTextHandles[0], "P %.2f, %.2f", pPlayerEntity->physics.position.x, pPlayerEntity->physics.position.y);
+		writeRenderText(renderState.debugTextHandles[1], "V %.3f, %.3f", pPlayerEntity->physics.velocity.x, pPlayerEntity->physics.velocity.y);
+		writeRenderText(renderState.debugTextHandles[2], "A %.3f, %.3f", pPlayerEntity->physics.acceleration.x, pPlayerEntity->physics.acceleration.y);
 	}
 
 	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->physics.position, currentArea, currentArea.currentRoomIndex);
@@ -218,32 +218,28 @@ GameState getGameState(void) {
 	return gameState;
 }
 
-static void pauseGame(GameState *const pGameState) {
+static void pauseGame(GameState *const pGameState, GameRenderState *const pGameRenderState) {
 	assert(pGameState);
 	pGameState->paused = !pGameState->paused;
 	if (pGameState->paused) {
-		pausedHandle = loadRenderText(makeStaticString("Paused"), makeVec3D(-1.5, 0.25, 3.0), COLOR_WHITE);
+		pGameRenderState->pauseTextHandle = loadRenderText(makeStaticString("Paused"), makeVec3D(-1.5, 0.25, 3.0), COLOR_WHITE);
 	} else {
-		unloadRenderObject(&pausedHandle);
+		unloadRenderObject(&pGameRenderState->pauseTextHandle);
 	}
 }
 
-bool isGamePaused(void) {
-	return gameState.paused;
-}
-
-static void toggleDebugMenu(void) {
-	debugMenuEnabled = !debugMenuEnabled;
-	if (debugMenuEnabled) {
-		debugTextHandles[0] = loadRenderText(makeStaticString("Position Position"), makeVec3D(-11.5, -6.25, 4.0), COLOR_PINK);
-		debugTextHandles[1] = loadRenderText(makeStaticString("Velocity Velocity"), makeVec3D(-11.5, -6.75, 4.0), COLOR_PINK);
-		debugTextHandles[2] = loadRenderText(makeStaticString("Acceleration Acce"), makeVec3D(-11.5, -7.25, 4.0), COLOR_PINK);
+static void toggleDebugMenu(GameRenderState *const pGameRenderState) {
+	pGameRenderState->debugMenuEnabled = !pGameRenderState->debugMenuEnabled;
+	if (pGameRenderState->debugMenuEnabled) {
+		pGameRenderState->debugTextHandles[0] = loadRenderText(makeStaticString("Position Position"), makeVec3D(-11.5, -6.25, 4.0), COLOR_PINK);
+		pGameRenderState->debugTextHandles[1] = loadRenderText(makeStaticString("Velocity Velocity"), makeVec3D(-11.5, -6.75, 4.0), COLOR_PINK);
+		pGameRenderState->debugTextHandles[2] = loadRenderText(makeStaticString("Acceleration Acce"), makeVec3D(-11.5, -7.25, 4.0), COLOR_PINK);
 		drawEntityHitboxes();
 		areaLoadWireframes(&currentArea);
 	} else {
-		unloadRenderObject(&debugTextHandles[0]);
-		unloadRenderObject(&debugTextHandles[1]);
-		unloadRenderObject(&debugTextHandles[2]);
+		unloadRenderObject(&pGameRenderState->debugTextHandles[0]);
+		unloadRenderObject(&pGameRenderState->debugTextHandles[1]);
+		unloadRenderObject(&pGameRenderState->debugTextHandles[2]);
 		undrawEntityHitboxes();
 		areaUnloadWireframes(&currentArea);
 	}

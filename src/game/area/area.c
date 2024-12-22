@@ -31,6 +31,14 @@ static String roomSizeToTextureID(const RoomSize roomSize) {
 	return roomMTextureID;
 }
 
+void deleteArea(Area *const pArea) {
+	assert(pArea);
+	free(pArea->pRooms);
+	free(pArea->pPositionsToRooms);
+	pArea->pRooms = nullptr;
+	pArea->pPositionsToRooms = nullptr;
+}
+
 bool validateArea(const Area area) {
 	return area.pRooms != nullptr
 		&& area.currentRoomIndex >= 0
@@ -262,7 +270,7 @@ Offset direction_offset(const CardinalDirection direction) {
 void areaRenderStateReset(Area *const pArea, const Room initialRoom) {
 	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Resetting area render state...");
 	
-	const String tilemapTextureID = makeStaticString("tilemap/dungeon4");
+	const String tilemapTextureID = makeStaticString("tilemap/dungeon5");
 	pArea->renderState.tilemapTextureState = newTextureState(tilemapTextureID);
 	pArea->renderState.numRoomIDs = pArea->roomCount;
 	pArea->renderState.roomIDsToCacheSlots = realloc(pArea->renderState.roomIDsToCacheSlots, pArea->renderState.numRoomIDs * sizeof(uint32_t));

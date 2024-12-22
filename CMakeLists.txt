@@ -3,14 +3,14 @@ cmake_minimum_required(VERSION 3.27)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
-project(PinkPearl VERSION 0.0)
+project(PinkPearl VERSION 0.2)
 add_executable(PinkPearl)
 
 set(APP_NAME "\"Pink Pearl\"")
 set(RESOURCE_PATH "\"../resources/\"")
 configure_file(src/config.h.in config.h)
 
-target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -ggdb -Wpedantic -Wall -Wextra
+target_compile_options(PinkPearl PRIVATE -std=c2x -lpthread -g -fanalyzer -Wpedantic -Wall -Wextra
 	-Werror=return-type 
 	-Werror=implicit-function-declaration 
 	-Werror=implicit-int
@@ -68,7 +68,7 @@ target_sources(PinkPearl PRIVATE
 	src/game/entity/entity_manager.c
 	src/game/entity/EntityRegistry.c
 	src/game/entity/EntitySpawner.c
-	src/glfw/glfw_manager.c
+	src/glfw/GLFWManager.c
 	src/glfw/InputManager.c
 	src/log/Logger.c
 	src/math/Box.c

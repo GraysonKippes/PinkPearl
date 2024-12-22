@@ -73,6 +73,8 @@ typedef enum CardinalDirection {
 	DIRECTION_WEST = 4
 } CardinalDirection;
 
+void deleteArea(Area *const pArea);
+
 bool validateArea(const Area area);
 
 // Gives the pointer to the room at the position in the area.

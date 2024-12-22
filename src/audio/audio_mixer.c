@@ -19,7 +19,6 @@ static void audio_mixer_mix(void);
 
 // Call on main thread.
 void init_audio_mixer(void) {
-	
 	logMsg(loggerAudio, LOG_LEVEL_VERBOSE, "Initializing audio mixer...");
 	
 	audio_mixer_queue = make_audio_queue();
@@ -35,7 +34,6 @@ void init_audio_mixer(void) {
 
 // Call on main thread.
 void terminate_audio_mixer(void) {
-	
 	logMsg(loggerAudio, LOG_LEVEL_VERBOSE, "Terminating audio mixer...");
 	
 	atomic_store(&audio_mixer_running, false);
@@ -45,6 +43,7 @@ void terminate_audio_mixer(void) {
 	}
 	
 	destroy_audio_queue(&audio_mixer_queue);
+	unload_audio_file(&background_music_track.data);
 	
 	logMsg(loggerAudio, LOG_LEVEL_VERBOSE, "Done terminating audio mixer.");
 }

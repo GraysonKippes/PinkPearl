@@ -25,7 +25,7 @@ const Logger loggerVulkan = {
 
 const Logger loggerAudio = {
 	.pName = "Audio",
-	.levelThreshold = LOG_LEVEL_INFO
+	.levelThreshold = LOG_LEVEL_VERBOSE
 };
 
 static const char *logFormat(const LogLevel level);

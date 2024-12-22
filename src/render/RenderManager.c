@@ -50,6 +50,7 @@ const Vector4F COLOR_PURPLE	= { 1.0F, 0.0F, 1.0F, 1.0F };
 const Vector4F COLOR_PINK	= { 1.0F, 0.6392156863F, 0.7568627451F, 1.0F };
 
 void initRenderManager(void) {
+	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Initializing render manager...");
 	
 	initVulkanManager();
 	initTextureManager();
@@ -121,10 +122,13 @@ void initRenderManager(void) {
 		
 		textureManagerLoadTexture(roomTextureCreateInfo);
 	}
+	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Initialized render manager.");
 }
 
 void terminateRenderManager(void) {
+	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Terminating render manager...");
 	terminateVulkanManager();
+	logMsg(loggerRender, LOG_LEVEL_VERBOSE, "Terminated render manager.");
 }
 
 void tickRenderManager(void) {

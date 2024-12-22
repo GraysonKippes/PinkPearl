@@ -29,13 +29,13 @@ static ShaderBytecode read_shader_file(const char *const pPath) {
 		.bytecode = nullptr
 	};
 	
-	if (pPath == nullptr) {
+	if (!pPath) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: pointer to pPath string is null.");
 		return shader_bytecode;
 	}
 
 	FILE *file = fopen(pPath, "rb");
-	if (file == nullptr) {
+	if (!file) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: could not open file \"%s\".", pPath);
 		return shader_bytecode;
 	}
@@ -47,6 +47,7 @@ static ShaderBytecode read_shader_file(const char *const pPath) {
 	shader_bytecode.bytecode = calloc(initial_buffer_size, sizeof(uint8_t));
 	if (!shader_bytecode.bytecode) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: failed to allocate buffer for shader bytecode.");
+		fclose(file);
 		return shader_bytecode;
 	}
 	

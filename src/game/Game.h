@@ -13,10 +13,10 @@ extern Area currentArea;
 
 void start_game(void);
 
+void endGame(void);
+
 void tick_game(void);
 
 GameState getGameState(void);
-
-bool isGamePaused(void);
 
 #endif	// GAME_H

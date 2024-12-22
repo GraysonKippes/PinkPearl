@@ -75,6 +75,7 @@ void createBuffer(const BufferCreateInfo bufferCreateInfo, Buffer *const pOutBuf
 	buffer->pSubrangeFlags = calloc(bufferCreateInfo.subrangeCount, sizeof(bool));
 	if (!buffer->pSubrangeFlags) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating buffer: failed to allocate memory for buffer->pSubrangeFlags.");
+		free(buffer);
 		return;
 	}
 	
@@ -82,6 +83,7 @@ void createBuffer(const BufferCreateInfo bufferCreateInfo, Buffer *const pOutBuf
 	if (!buffer->pSubranges) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating buffer: failed to allocate memory for buffer->pSubranges.");
 		free(buffer->pSubrangeFlags);
+		free(buffer);
 		return;
 	}
 	

@@ -311,8 +311,8 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
 	
 	static VkCommandBuffer cmdBufs[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
-	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
-	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, frame_array.num_frames, cmdBufs);
+	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, NUM_FRAMES_IN_FLIGHT, cmdBufs);
+	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, NUM_FRAMES_IN_FLIGHT, cmdBufs);
 	
 	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
 	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
@@ -325,7 +325,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 		.size = sizeof(mesh)
 	};
 	
-	for (uint32_t i = 0; i < frame_array.num_frames; ++i) {
+	for (uint32_t i = 0; i < NUM_FRAMES_IN_FLIGHT; ++i) {
 		cmdBufBegin(cmdBufs[i], true);
 		vkCmdCopyBuffer(cmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
 		vkEndCommandBuffer(cmdBufs[i]);
@@ -346,7 +346,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 			.pSignalSemaphoreInfos = &semaphoreSignalSubmitInfos[i]
 		};
 	}
-	vkQueueSubmit2(queueTransfer, frame_array.num_frames, submitInfos, VK_NULL_HANDLE);
+	vkQueueSubmit2(queueTransfer, NUM_FRAMES_IN_FLIGHT, submitInfos, VK_NULL_HANDLE);
 	
 	/* Create and insert new model's draw info struct */
 	

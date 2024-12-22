@@ -26,9 +26,10 @@ void deleteTexturePack(TexturePack *const pTexturePack) {
 TexturePack readTexturePackFile(const char *pPath) {
 	logMsg(loggerSystem, LOG_LEVEL_VERBOSE, "Loading texture pack from \"%s\"...", pPath);
 
-	TexturePack texturePack = { };
-	texturePack.numTextures = 0;
-	texturePack.pTextureCreateInfos = nullptr;
+	TexturePack texturePack = {
+		.numTextures = 0,
+		.pTextureCreateInfos = nullptr
+	};
 
 	if (!pPath) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Filename is nullptr.");
@@ -36,7 +37,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 	}
 
 	FILE *pFile = fopen(pPath, "rb");
-	if (pFile == nullptr) {
+	if (!pFile) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "File not found at \"%s\".", pPath);
 		return texturePack;
 	}
@@ -138,6 +139,5 @@ TexturePack readTexturePackFile(const char *pPath) {
 
 end_read:
 	fclose(pFile);
-	//error_queue_flush();
 	return texturePack;
 }
