@@ -40,12 +40,21 @@ typedef struct CmdBufArray {
 // count: the number of command buffers to allocate.
 CmdBufArray cmdBufAlloc(const CommandPool commandPool, const uint32_t count);
 
+// Frees all the command buffers and frees the array the handles are stored in.
 void cmdBufFree(CmdBufArray *const pArr);
 
+// Prepares a command buffer for recording commands.
 void cmdBufBegin(const CmdBufArray arr, const uint32_t idx, const bool singleSubmit);
 
+// Ends command recording for a command buffer.
 void cmdBufEnd(const CmdBufArray arr, const uint32_t idx);
 
+#define recordCommands(cmdBufArr, cmdBufIdx, singleSubmit, ...) cmdBufBegin(cmdBufArr, cmdBufIdx, singleSubmit); {\
+		const VkCommandBuffer cmdBuf = cmdBufArr.pCmdBufs[cmdBufIdx];\
+		__VA_ARGS__\
+		} cmdBufEnd(cmdBufArr, cmdBufIdx)
+
+// Resets a single command buffer within a command buffer array.
 void cmdBufReset(const CmdBufArray arr, const uint32_t idx);
 
 VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer command_buffer);

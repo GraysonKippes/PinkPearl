@@ -137,8 +137,7 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 	}
 	
 	CmdBufArray cmdBufArray = cmdBufAlloc(frameArrayCreateInfo.commandPool, 1);
-	cmdBufBegin(cmdBufArray, 0, true); {
-	
+	recordCommands(cmdBufArray, 0, true,
 		static const VkDeviceSize indexCount = 14;
 		const uint16_t indices[14] = {
 			0, 1, 2, 2, 3, 0,
@@ -154,12 +153,10 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 			.dstOffset = 0,
 			.size = indexCount * sizeof(uint16_t)
 		};
-		
 		for (uint32_t i = 0; i < frameArray.num_frames; ++i) {
-			vkCmdCopyBuffer(cmdBufArray.pCmdBufs[0], global_staging_buffer_partition.buffer, frameArray.frames[i].index_buffer, 1, &bufCpy);
+			vkCmdCopyBuffer(cmdBuf, global_staging_buffer_partition.buffer, frameArray.frames[i].index_buffer, 1, &bufCpy);
 		}
-	
-	} cmdBufEnd(cmdBufArray, 0);
+	);
 
 	const VkCommandBufferSubmitInfo cmdBufSubmitInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,

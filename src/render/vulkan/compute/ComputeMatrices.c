@@ -85,21 +85,16 @@ void computeMatrices(const uint32_t transformBufferDescriptorHandle, const uint3
 	memcpy(mapped_memory + 44 + 256 * sizeof(*pCameraFlags), transforms, 256 * sizeof(*transforms));
 	buffer_partition_unmap_memory(global_uniform_buffer_partition);
 
-	cmdBufBegin(computeMatricesCmdBufArray, 0, false); {
-
-		vkCmdBindPipeline(computeMatricesCmdBufArray.pCmdBufs[0], VK_PIPELINE_BIND_POINT_COMPUTE, computeMatricesPipeline.vkPipeline);
-		
-		vkCmdBindDescriptorSets(computeMatricesCmdBufArray.pCmdBufs[0], VK_PIPELINE_BIND_POINT_COMPUTE, computeMatricesPipeline.vkPipelineLayout, 0, 1, &globalDescriptorSet, 0, nullptr);
-		
+	recordCommands(computeMatricesCmdBufArray, 0, false, 
+		vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, computeMatricesPipeline.vkPipeline);
+		vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, computeMatricesPipeline.vkPipelineLayout, 0, 1, &globalDescriptorSet, 0, nullptr);
 		const uint32_t pushConstants[2] = { 
 			transformBufferDescriptorHandle,
 			matrixBufferDescriptorHandle
 		};
-		vkCmdPushConstants(computeMatricesCmdBufArray.pCmdBufs[0], computeMatricesPipeline.vkPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushConstants), pushConstants);
-		
-		vkCmdDispatch(computeMatricesCmdBufArray.pCmdBufs[0], 1, 1, 1);
-
-	} cmdBufEnd(computeMatricesCmdBufArray, 0);
+		vkCmdPushConstants(cmdBuf, computeMatricesPipeline.vkPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushConstants), pushConstants);
+		vkCmdDispatch(cmdBuf, 1, 1, 1);
+	);
 	
 	const VkCommandBufferSubmitInfo cmdBufSubmitInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,

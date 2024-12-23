@@ -323,9 +323,9 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	};
 	
 	for (uint32_t i = 0; i < NUM_FRAMES_IN_FLIGHT; ++i) {
-		cmdBufBegin(cmdBufArray, i, true);
-		vkCmdCopyBuffer(cmdBufArray.pCmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
-		cmdBufEnd(cmdBufArray, i);
+		recordCommands(cmdBufArray, i, true, 
+			vkCmdCopyBuffer(cmdBuf, global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
+		);
 		
 		cmdBufSubmitInfos[i] = make_command_buffer_submit_info(cmdBufArray.pCmdBufs[i]);
 		semaphoreWaitSubmitInfos[i] = make_timeline_semaphore_wait_submit_info(frame_array.frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);

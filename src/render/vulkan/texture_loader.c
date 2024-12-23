@@ -90,7 +90,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	// Transfer image data to texture images.
 	CmdBufArray transferCmdBufs = cmdBufAlloc(commandPoolTransfer, 1);
-	cmdBufBegin(transferCmdBufs, 0, true); {
+	recordCommands(transferCmdBufs, 0, true,
 		
 		const uint32_t numBufImgCopies = texture.image.arrayLayerCount;
 		VkBufferImageCopy2 *bufImgCopies = nullptr;
@@ -144,10 +144,10 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.pRegions = bufImgCopies
 		};
 
-		vkCmdCopyBufferToImage2(transferCmdBufs.pCmdBufs[0], &copy_info);
+		vkCmdCopyBufferToImage2(cmdBuf, &copy_info);
 
 		deallocate((void **)&bufImgCopies);
-	} cmdBufEnd(transferCmdBufs, 0);
+	);
 
 	{	// Second submit // TODO: use vkQueueSubmit2
 		const VkSubmitInfo submitInfo = {
@@ -166,13 +166,8 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	// Command buffer for second image layout transition (transfer destination to sampled).
 	CmdBufArray transitionCmdBufs = cmdBufAlloc(commandPoolGraphics, 1);
-	cmdBufBegin(transitionCmdBufs, 0, true); {
-
-		ImageUsage imageUsage = imageUsageSampled;
-		if (textureCreateInfo.isTilemap) {
-			imageUsage = imageUsageComputeRead;
-		}
-
+	recordCommands(transitionCmdBufs, 0, true,
+		const ImageUsage imageUsage = textureCreateInfo.isTilemap ? imageUsageComputeRead : imageUsageSampled;
 		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(texture.image, imageSubresourceRange, imageUsage);
 		const VkDependencyInfo dependencyInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -185,10 +180,9 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.imageMemoryBarrierCount = 1,
 			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
-		vkCmdPipelineBarrier2(transitionCmdBufs.pCmdBufs[0], &dependencyInfo);
+		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
 		texture.image.usage = imageUsage;
-
-	} cmdBufEnd(transitionCmdBufs, 0);
+	);
 
 	VkPipelineStageFlags transition_1_stage_flags[1] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
 

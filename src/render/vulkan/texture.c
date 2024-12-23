@@ -4,10 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "log/Logger.h"
 #include "util/allocate.h"
-
 #include "buffer.h"
 #include "CommandBuffer.h"
 #include "VulkanManager.h"
@@ -260,7 +258,7 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	/* Transition texture image layout to something usable. */
 
 	CmdBufArray cmdBufArray = cmdBufAlloc(commandPoolGraphics, 1);
-	cmdBufBegin(cmdBufArray, 0, true); {
+	recordCommands(cmdBufArray, 0, true, 
 		const ImageUsage imageUsage = textureCreateInfo.isLoaded ? imageUsageTransferDestination : imageUsageSampled;
 		const ImageSubresourceRange imageSubresourceRange = {
 			.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -279,9 +277,9 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 			.imageMemoryBarrierCount = 1,
 			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
-		vkCmdPipelineBarrier2(cmdBufArray.pCmdBufs[0], &dependencyInfo);
+		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
 		texture.image.usage = imageUsage;
-	} cmdBufEnd(cmdBufArray, 0);
+	);
 	submit_command_buffers_async(queueGraphics, 1, &cmdBufArray.pCmdBufs[0]);
 	cmdBufFree(&cmdBufArray);
 
