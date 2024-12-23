@@ -3,11 +3,9 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "log/Logger.h"
 #include "render/render_config.h"
 #include "util/allocate.h"
-
 #include "../CommandBuffer.h"
 #include "../ComputePipeline.h"
 #include "../Descriptor.h"
@@ -25,6 +23,12 @@ static const ImageSubresourceRange imageSubresourceRange = {
 };
 
 static Pipeline computeRoomTexturePipeline;
+
+static CmdBufArray stitchTextureCmdBufArray = { };
+static CmdBufArray transferImageCmdBufArray = { };
+
+static VkFence stitchTextureFence = VK_NULL_HANDLE;
+static VkFence transferImageFence = VK_NULL_HANDLE;
 
 static Image transferImage;
 static VkDeviceMemory transferImageMemory;
@@ -108,9 +112,8 @@ static void createTransferImage(const VkDevice vkDevice) {
 	vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &transferImage.vkImageView);
 	
 	// Transition the image layout.
-	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(vkDevice, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
-	cmdBufBegin(cmdBuf, true); {
+	CmdBufArray cmdBufArray = cmdBufAlloc(commandPoolGraphics, 1);
+	cmdBufBegin(cmdBufArray, 0, true); {
 		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(transferImage, imageSubresourceRange, imageUsageComputeWrite);
 		const VkDependencyInfo dependencyInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -123,9 +126,10 @@ static void createTransferImage(const VkDevice vkDevice) {
 			.imageMemoryBarrierCount = 1,
 			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
-		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
-	} vkEndCommandBuffer(cmdBuf);
-	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
+		vkCmdPipelineBarrier2(cmdBufArray.pCmdBufs[0], &dependencyInfo);
+	} cmdBufEnd(cmdBufArray, 0);
+	submit_command_buffers_async(queueGraphics, 1, &cmdBufArray.pCmdBufs[0]);
+	cmdBufFree(&cmdBufArray);
 	transferImage.usage = imageUsageComputeWrite;
 	
 	transferImage.vkDevice = vkDevice;
@@ -151,6 +155,17 @@ void initComputeStitchTexture(const VkDevice vkDevice) {
 	
 	createTransferImage(vkDevice);
 	
+	stitchTextureCmdBufArray = cmdBufAlloc(commandPoolCompute, 1);
+	transferImageCmdBufArray = cmdBufAlloc(commandPoolGraphics, 1);
+	
+	const VkFenceCreateInfo fenceCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = VK_FENCE_CREATE_SIGNALED_BIT
+	};
+	vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &stitchTextureFence);
+	vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &transferImageFence);
+	
 	uniformBufferDescriptorHandle = uploadUniformBuffer(vkDevice, global_uniform_buffer_partition, 1);
 	transferImageDescriptorHandle = uploadStorageImage(vkDevice, transferImage);
 	
@@ -159,6 +174,10 @@ void initComputeStitchTexture(const VkDevice vkDevice) {
 
 void terminateComputeStitchTexture(void) {
 	vkFreeMemory(transferImage.vkDevice, transferImageMemory, nullptr);
+	vkDestroyFence(transferImage.vkDevice, stitchTextureFence, nullptr);
+	vkDestroyFence(transferImage.vkDevice, transferImageFence, nullptr);
+	cmdBufFree(&stitchTextureCmdBufArray);
+	cmdBufFree(&transferImageCmdBufArray);
 	deleteImage(&transferImage);
 	deletePipeline(&computeRoomTexturePipeline);
 }
@@ -185,31 +204,48 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 	const uint32_t tilemapImageDescriptorHandle = uploadStorageImage(computeRoomTexturePipeline.vkDevice, tilemapTexture.image);
 
 	// Run compute shader to stitch texture.
-	VkCommandBuffer cmdBufCompute = VK_NULL_HANDLE;
-	allocCmdBufs(device, commandPoolCompute.vkCommandPool, 1, &cmdBufCompute);
-	cmdBufBegin(cmdBufCompute, true); {
+	vkWaitForFences(computeRoomTexturePipeline.vkDevice, 1, &stitchTextureFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(computeRoomTexturePipeline.vkDevice, 1, &stitchTextureFence);
+	cmdBufBegin(stitchTextureCmdBufArray, 0, false); {
 		
-		vkCmdBindPipeline(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipeline);
+		vkCmdBindPipeline(stitchTextureCmdBufArray.pCmdBufs[0], VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipeline);
 		
-		vkCmdBindDescriptorSets(cmdBufCompute, VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipelineLayout, 0, 1, &globalDescriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(stitchTextureCmdBufArray.pCmdBufs[0], VK_PIPELINE_BIND_POINT_COMPUTE, computeRoomTexturePipeline.vkPipelineLayout, 0, 1, &globalDescriptorSet, 0, nullptr);
 		
 		const uint32_t pushConstants[3] = { 
 			tilemapImageDescriptorHandle,
 			transferImageDescriptorHandle,
 			uniformBufferDescriptorHandle
 		};
-		vkCmdPushConstants(cmdBufCompute, computeRoomTexturePipeline.vkPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushConstants), pushConstants);
+		vkCmdPushConstants(stitchTextureCmdBufArray.pCmdBufs[0], computeRoomTexturePipeline.vkPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushConstants), pushConstants);
 		
-		vkCmdDispatch(cmdBufCompute, tileExtent.width, tileExtent.length, numRoomLayers);
+		vkCmdDispatch(stitchTextureCmdBufArray.pCmdBufs[0], tileExtent.width, tileExtent.length, numRoomLayers);
 		
-	} vkEndCommandBuffer(cmdBufCompute);
-	submit_command_buffers_async(queueCompute, 1, &cmdBufCompute);
-	vkFreeCommandBuffers(device, commandPoolCompute.vkCommandPool, 1, &cmdBufCompute);
+	} cmdBufEnd(stitchTextureCmdBufArray, 0);
+	
+	const VkCommandBufferSubmitInfo stitchTextureCmdBufSubmitInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		.pNext = nullptr,
+		.commandBuffer = stitchTextureCmdBufArray.pCmdBufs[0],
+		.deviceMask = 0
+	};
+	const VkSubmitInfo2 stitchTextureSubmitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+		.pNext = nullptr,
+		.waitSemaphoreInfoCount = 0,
+		.pWaitSemaphoreInfos = nullptr,
+		.commandBufferInfoCount = 1,
+		.pCommandBufferInfos = &stitchTextureCmdBufSubmitInfo,
+		.signalSemaphoreInfoCount = 0,
+		.pSignalSemaphoreInfos = nullptr
+	};
+	vkQueueSubmit2(queueCompute, 1, &stitchTextureSubmitInfo, stitchTextureFence);
+	vkQueueWaitIdle(queueCompute);
 	
 	// Perform the transfer to the target texture image.
-	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(device, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
-	cmdBufBegin(cmdBuf, true); {
+	vkWaitForFences(computeRoomTexturePipeline.vkDevice, 1, &transferImageFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(computeRoomTexturePipeline.vkDevice, 1, &transferImageFence);
+	cmdBufBegin(transferImageCmdBufArray, 0, false); {
 		
 		// Transition the compute texture to transfer source and the destination texture to transfer destination.
 		const VkImageMemoryBarrier2 imageMemoryBarriers1[2] = {
@@ -227,7 +263,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 			.imageMemoryBarrierCount = 2,
 			.pImageMemoryBarriers = imageMemoryBarriers1
 		};
-		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo1);
+		vkCmdPipelineBarrier2(transferImageCmdBufArray.pCmdBufs[0], &dependencyInfo1);
 		transferImage.usage = imageUsageTransferSource;
 		pRoomTexture->image.usage = imageUsageTransferDestination;
 	
@@ -236,7 +272,6 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 			.baseArrayLayer = 0,
 			.arrayLayerCount = destinationRange.arrayLayerCount
 		};
-
 		const VkImageCopy2 imageCopyRegion = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_COPY_2,
 			.pNext = nullptr,
@@ -250,7 +285,6 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 				.depth = 1
 			}
 		};
-
 		const VkCopyImageInfo2 copyImageInfo = {
 			.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
 			.pNext = nullptr,
@@ -261,8 +295,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 			.regionCount = 1,
 			.pRegions = &imageCopyRegion
 		};
-
-		vkCmdCopyImage2(cmdBuf, &copyImageInfo);
+		vkCmdCopyImage2(transferImageCmdBufArray.pCmdBufs[0], &copyImageInfo);
 		
 		// Transition the compute texture to general and the destination texture to sampled.
 		const VkImageMemoryBarrier2 imageMemoryBarriers2[2] = {
@@ -280,13 +313,30 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 			.imageMemoryBarrierCount = 2,
 			.pImageMemoryBarriers = imageMemoryBarriers2
 		};
-		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo2);
+		vkCmdPipelineBarrier2(transferImageCmdBufArray.pCmdBufs[0], &dependencyInfo2);
 		transferImage.usage = imageUsageComputeWrite;
 		pRoomTexture->image.usage = imageUsageSampled;
 		
-	} vkEndCommandBuffer(cmdBuf);
-	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
-	vkFreeCommandBuffers(device, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
+	} cmdBufEnd(transferImageCmdBufArray, 0);
+	
+	const VkCommandBufferSubmitInfo transferImageCmdBufSubmitInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		.pNext = nullptr,
+		.commandBuffer = transferImageCmdBufArray.pCmdBufs[0],
+		.deviceMask = 0
+	};
+	const VkSubmitInfo2 transferImageSubmitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+		.pNext = nullptr,
+		.waitSemaphoreInfoCount = 0,
+		.pWaitSemaphoreInfos = nullptr,
+		.commandBufferInfoCount = 1,
+		.pCommandBufferInfos = &transferImageCmdBufSubmitInfo,
+		.signalSemaphoreInfoCount = 0,
+		.pSignalSemaphoreInfos = nullptr
+	};
+	vkQueueSubmit2(queueGraphics, 1, &transferImageSubmitInfo, transferImageFence);
+	vkQueueWaitIdle(queueGraphics);
 
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Done stitching texture.");
 }

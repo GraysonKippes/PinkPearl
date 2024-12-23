@@ -1,10 +1,7 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include <stdbool.h>
-
 #include <vulkan/vulkan.h>
-
 #include "buffer.h"
 #include "CommandBuffer.h"
 #include "descriptor.h"
@@ -18,12 +15,6 @@
 // They are placed in a struct for easy duplication, so that multiple frames can be pipelined.
 
 typedef struct Frame {
-	
-	CommandBuffer commandBuffer;
-	
-	//DescriptorSet descriptorSet;
-	
-	//DescriptorSet descriptorSetDebug;
 
 	// Signaled when the image for this frame is available.
 	BinarySemaphore semaphore_image_available;
@@ -51,6 +42,8 @@ typedef struct FrameArray {
 	uint32_t current_frame;
 	uint32_t num_frames;
 	Frame *frames;
+	
+	CmdBufArray cmdBufArray;
 
 	VkDeviceMemory buffer_memory;
 	VkDevice device;

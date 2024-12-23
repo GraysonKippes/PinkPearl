@@ -310,10 +310,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	};
 	vkWaitSemaphores(device, &semaphoreWaitInfo, UINT64_MAX);
 	
-	static VkCommandBuffer cmdBufs[NUM_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE };
-	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, NUM_FRAMES_IN_FLIGHT, cmdBufs);
-	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, NUM_FRAMES_IN_FLIGHT, cmdBufs);
-	
+	CmdBufArray cmdBufArray = cmdBufAlloc(commandPoolTransfer, NUM_FRAMES_IN_FLIGHT);
 	VkCommandBufferSubmitInfo cmdBufSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
 	VkSemaphoreSubmitInfo semaphoreWaitSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
 	VkSemaphoreSubmitInfo semaphoreSignalSubmitInfos[NUM_FRAMES_IN_FLIGHT] = { { } };
@@ -326,11 +323,11 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 	};
 	
 	for (uint32_t i = 0; i < NUM_FRAMES_IN_FLIGHT; ++i) {
-		cmdBufBegin(cmdBufs[i], true);
-		vkCmdCopyBuffer(cmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
-		vkEndCommandBuffer(cmdBufs[i]);
+		cmdBufBegin(cmdBufArray, i, true);
+		vkCmdCopyBuffer(cmdBufArray.pCmdBufs[i], global_staging_buffer_partition.buffer, frame_array.frames[i].vertex_buffer, 1, &bufferCopy);
+		cmdBufEnd(cmdBufArray, i);
 		
-		cmdBufSubmitInfos[i] = make_command_buffer_submit_info(cmdBufs[i]);
+		cmdBufSubmitInfos[i] = make_command_buffer_submit_info(cmdBufArray.pCmdBufs[i]);
 		semaphoreWaitSubmitInfos[i] = make_timeline_semaphore_wait_submit_info(frame_array.frames[i].semaphore_render_finished, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
 		semaphoreSignalSubmitInfos[i] = make_timeline_semaphore_signal_submit_info(frame_array.frames[i].semaphore_buffers_ready, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
 		frame_array.frames[i].semaphore_buffers_ready.wait_counter += 1;
@@ -347,6 +344,7 @@ void loadModel(const ModelLoadInfo loadInfo, int *const pModelHandle) {
 		};
 	}
 	vkQueueSubmit2(queueTransfer, NUM_FRAMES_IN_FLIGHT, submitInfos, VK_NULL_HANDLE);
+	//cmdBufFree(&cmdBufArray); // TODO: clean up command buffers properly.
 	
 	/* Create and insert new model's draw info struct */
 	

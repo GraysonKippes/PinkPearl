@@ -2,9 +2,7 @@
 #define COMMAND_BUFFER_H
 
 #include <stdint.h>
-
 #include <vulkan/vulkan.h>
-
 #include "descriptor.h"
 #include "GraphicsPipeline.h"
 #include "Pipeline.h"
@@ -33,49 +31,22 @@ typedef struct CmdBufArray {
 	bool resetable;
 	uint32_t count;
 	VkCommandBuffer *pCmdBufs;
+	VkCommandPool vkCommandPool;
+	VkDevice vkDevice;
 } CmdBufArray;
 
 // Allocates an array of command buffers and returns them in a struct.
 // commandPool: the command pool in which the command buffers will be allocated.
 // count: the number of command buffers to allocate.
-CmdBufArray cmdBufAlloc2(const CommandPool commandPool, const uint32_t count);
+CmdBufArray cmdBufAlloc(const CommandPool commandPool, const uint32_t count);
 
-void cmdBufFree2(CmdBufArray *const pArr);
+void cmdBufFree(CmdBufArray *const pArr);
 
-void cmdBufBegin2(const CmdBufArray arr, const uint32_t idx, const bool singleSubmit);
+void cmdBufBegin(const CmdBufArray arr, const uint32_t idx, const bool singleSubmit);
 
-void cmdBufEnd2(const CmdBufArray arr, const uint32_t idx);
+void cmdBufEnd(const CmdBufArray arr, const uint32_t idx);
 
 void cmdBufReset(const CmdBufArray arr, const uint32_t idx);
-
-
-
-typedef struct CommandBuffer {
-	
-	VkCommandBuffer vkCommandBuffer;
-	
-	bool recording;
-	bool resetable;
-	
-} CommandBuffer;
-
-CommandBuffer allocateCommandBuffer(const CommandPool commandPool);
-
-void commandBufferBegin(CommandBuffer *const pCommandBuffer, const bool singleSubmit);
-
-void commandBufferEnd(CommandBuffer *const pCommandBuffer);
-
-void commandBufferBindPipeline(CommandBuffer *const pCommandBuffer, const Pipeline pipeline);
-
-void commandBufferBindGraphicsPipeline(CommandBuffer *const pCommandBuffer, const GraphicsPipeline pipeline);
-
-void commandBufferReset(CommandBuffer *const pCommandBuffer);
-
-
-
-void allocCmdBufs(const VkDevice vkDevice, const VkCommandPool commandPool, const uint32_t bufCount, VkCommandBuffer *const pCmdBufs);
-
-void cmdBufBegin(const VkCommandBuffer cmdBuf, const bool singleSubmit);
 
 VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer command_buffer);
 

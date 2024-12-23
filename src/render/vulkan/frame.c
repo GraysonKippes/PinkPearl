@@ -1,19 +1,16 @@
 #include "frame.h"
 
 #include <string.h>
-
 #include "log/Logger.h"
 #include "render/render_config.h"
 #include "util/allocate.h"
-
 #include "queue.h"
 #include "vertex_input.h"
 #include "VulkanManager.h"
 
-static Frame createFrame(PhysicalDevice physicalDevice, VkDevice vkDevice, CommandPool commandPool) {
+static Frame createFrame(PhysicalDevice physicalDevice, VkDevice vkDevice) {
 
 	Frame frame = {
-		.commandBuffer = { },
 		.semaphore_image_available = (BinarySemaphore){ },
 		.semaphore_present_ready = (BinarySemaphore){ },
 		.semaphore_render_finished = (TimelineSemaphore){ },
@@ -33,7 +30,6 @@ static Frame createFrame(PhysicalDevice physicalDevice, VkDevice vkDevice, Comma
 	frame.semaphore_present_ready = create_binary_semaphore(vkDevice);
 	frame.semaphore_render_finished = create_timeline_semaphore(vkDevice);
 	frame.semaphore_buffers_ready = create_timeline_semaphore(vkDevice);
-	frame.commandBuffer = allocateCommandBuffer(commandPool);
 
 	uint32_t queue_family_indices[2] = {
 		*physicalDevice.queueFamilyIndices.graphics_family_ptr,
@@ -111,7 +107,7 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 	VkDeviceSize total_index_memory_size = 0;
 
 	for (uint32_t i = 0; i < frameArray.num_frames; ++i) {
-		frameArray.frames[i] = createFrame(frameArrayCreateInfo.physical_device, frameArrayCreateInfo.vkDevice, frameArrayCreateInfo.commandPool);
+		frameArray.frames[i] = createFrame(frameArrayCreateInfo.physical_device, frameArrayCreateInfo.vkDevice);
 		
 		VkMemoryRequirements vertex_buffer_memory_requirements;
 		VkMemoryRequirements index_buffer_memory_requirements;
@@ -140,9 +136,8 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 		vkBindBufferMemory(frameArray.device, frameArray.frames[i].index_buffer, frameArray.buffer_memory, total_vertex_memory_size + index_buffer_memory_ranges[i].offset);
 	}
 	
-	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(frameArray.device, frameArrayCreateInfo.commandPool.vkCommandPool, 1, &cmdBuf);
-	cmdBufBegin(cmdBuf, true); {
+	CmdBufArray cmdBufArray = cmdBufAlloc(frameArrayCreateInfo.commandPool, 1);
+	cmdBufBegin(cmdBufArray, 0, true); {
 	
 		static const VkDeviceSize indexCount = 14;
 		const uint16_t indices[14] = {
@@ -161,18 +156,17 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 		};
 		
 		for (uint32_t i = 0; i < frameArray.num_frames; ++i) {
-			vkCmdCopyBuffer(cmdBuf, global_staging_buffer_partition.buffer, frameArray.frames[i].index_buffer, 1, &bufCpy);
+			vkCmdCopyBuffer(cmdBufArray.pCmdBufs[0], global_staging_buffer_partition.buffer, frameArray.frames[i].index_buffer, 1, &bufCpy);
 		}
 	
-	} vkEndCommandBuffer(cmdBuf);
+	} cmdBufEnd(cmdBufArray, 0);
 
 	const VkCommandBufferSubmitInfo cmdBufSubmitInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 		.pNext = nullptr,
-		.commandBuffer = cmdBuf,
+		.commandBuffer = cmdBufArray.pCmdBufs[0],
 		.deviceMask = 0
 	};
-
 	const VkSubmitInfo2 submitInfo = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
 		.pNext = nullptr,
@@ -184,9 +178,10 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 		.signalSemaphoreInfoCount = 0,
 		.pSignalSemaphoreInfos = nullptr
 	};
-	
 	vkQueueSubmit2(queueGraphics, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(queueGraphics);
+	
+	frameArray.cmdBufArray = cmdBufAlloc(frameArrayCreateInfo.commandPool, frameArrayCreateInfo.num_frames);
 
 	return frameArray;
 }
@@ -200,6 +195,7 @@ bool deleteFrameArray(FrameArray *const pFrameArray) {
 		destroy_frame(pFrameArray->device, pFrameArray->frames[i]);
 	}
 	deallocate((void **)&pFrameArray->frames);
+	cmdBufFree(&pFrameArray->cmdBufArray);
 	pFrameArray->num_frames = 0;
 	pFrameArray->current_frame = 0;
 	

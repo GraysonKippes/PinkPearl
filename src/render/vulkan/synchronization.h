@@ -1,9 +1,7 @@
 #ifndef SYNCHRONIZATION_H
 #define SYNCHRONIZATION_H
 
-#include <stdbool.h>
 #include <stdint.h>
-
 #include <vulkan/vulkan.h>
 
 /* -- BINARY SEMAPHORE -- */

@@ -201,7 +201,7 @@ void initVulkanManager(void) {
 
 	commandPoolGraphics = createCommandPool(device, *physical_device.queueFamilyIndices.graphics_family_ptr, false, true);
 	commandPoolTransfer = createCommandPool(device, *physical_device.queueFamilyIndices.transfer_family_ptr, true, true);
-	commandPoolCompute = createCommandPool(device, *physical_device.queueFamilyIndices.compute_family_ptr, true, false);
+	commandPoolCompute = createCommandPool(device, *physical_device.queueFamilyIndices.compute_family_ptr, true, true);
 
 	swapchain = createSwapchain(getAppWindow(), windowSurface, physical_device, device, VK_NULL_HANDLE);
 	
@@ -343,7 +343,6 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 
 	vkWaitForFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready, VK_TRUE, UINT64_MAX);
 	vkResetFences(device, 1, &frame_array.frames[frame_array.current_frame].fence_frame_ready);
-	commandBufferReset(&frame_array.frames[frame_array.current_frame].commandBuffer);
 
 	uint32_t imageIndex = 0;
 	const VkResult result = vkAcquireNextImageKHR(device, swapchain.vkSwapchain, UINT64_MAX, frame_array.frames[frame_array.current_frame].semaphore_image_available.semaphore, VK_NULL_HANDLE, &imageIndex);
@@ -358,7 +357,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 	computeMatrices(transformBufferDescriptorHandle, matricesDescriptorMain, deltaTime, projectionBounds, cameraPosition, getModelCameraFlags(modelPoolMain), getModelTransforms(modelPoolMain));
 	computeMatrices(transformBufferDescriptorHandle, matricesDescriptorDebug, deltaTime, projectionBounds, cameraPosition, getModelCameraFlags(modelPoolDebug), getModelTransforms(modelPoolDebug));
 
-	commandBufferBegin(&frame_array.frames[frame_array.current_frame].commandBuffer, false); {
+	cmdBufBegin(frame_array.cmdBufArray, frame_array.current_frame, false); {
 		
 		static const ImageSubresourceRange imageSubresourceRange = {
 			.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -367,7 +366,6 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 		};
 		
 		const VkImageMemoryBarrier2 swapchainTransitionBarrier1 = makeImageTransitionBarrier(swapchain.pImages[imageIndex], imageSubresourceRange, imageUsageColorAttachment);
-		
 		const VkDependencyInfo dependencyInfo1 = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.pNext = nullptr,
@@ -379,8 +377,7 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 			.imageMemoryBarrierCount = 1,
 			.pImageMemoryBarriers = &swapchainTransitionBarrier1
 		};
-		
-		vkCmdPipelineBarrier2(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &dependencyInfo1);
+		vkCmdPipelineBarrier2(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], &dependencyInfo1);
 		
 		const VkRenderingAttachmentInfo attachmentInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -394,7 +391,6 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 			.clearValue = (VkClearValue){ .color = { { 0.0F, 0.0F, 0.0F, 1.0F } } }
 		};
-		
 		const VkRenderingInfo renderingInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 			.pNext = nullptr,
@@ -407,20 +403,19 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 			.pDepthAttachment = nullptr,
 			.pStencilAttachment = nullptr
 		};
+		vkCmdBeginRendering(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], &renderingInfo);
 		
-		vkCmdBeginRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &renderingInfo);
-		
-		vkCmdBindDescriptorSets(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+		vkCmdBindDescriptorSets(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], 
 				VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.vkPipelineLayout,
 				0, 1, &globalDescriptorSet, 0, nullptr);
 		
 		// Main drawing
 		
-		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipeline);
+		vkCmdBindPipeline(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.vkPipeline);
 		
 		const VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
-		vkCmdBindIndexBuffer(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindVertexBuffers(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], 0, 1, &frame_array.frames[frame_array.current_frame].vertex_buffer, offsets);
+		vkCmdBindIndexBuffer(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], frame_array.frames[frame_array.current_frame].index_buffer, 0, VK_INDEX_TYPE_UINT16);
 		
 		const uint32_t pushConstantsMain[5] = { 
 			0, 
@@ -429,21 +424,21 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 			modelPoolGetDrawInfoBufferHandle(modelPoolMain), 
 			matricesDescriptorMain
 		};
-		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+		vkCmdPushConstants(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], 
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 				0, sizeof(pushConstantsMain), pushConstantsMain);
 		
 		const uint32_t drawOffset = drawCountSize;
 		const VkBuffer bufferDrawInfoHandle = bufferGetVkBuffer(bufferDrawInfo);
 		const uint32_t maxDrawCount = modelPoolGetMaxModelCount(modelPoolMain);
-		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+		vkCmdDrawIndexedIndirectCount(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], 
 				bufferDrawInfoHandle, drawOffset, 
 				bufferDrawInfoHandle, 0, 
 				maxDrawCount, drawCommandStride);
 		
 		// Debug drawing
 		
-		commandBufferBindGraphicsPipeline(&frame_array.frames[frame_array.current_frame].commandBuffer, graphicsPipelineDebug);
+		vkCmdBindPipeline(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineDebug.vkPipeline);
 		
 		const uint32_t pushConstantsDebug[5] = { 
 			0, 
@@ -452,18 +447,18 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 			modelPoolGetDrawInfoBufferHandle(modelPoolDebug), 
 			matricesDescriptorDebug
 		};
-		vkCmdPushConstants(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+		vkCmdPushConstants(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], 
 				graphicsPipelineDebug.vkPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 				0, sizeof(pushConstantsDebug), pushConstantsDebug);
 		
 		const uint32_t debugDrawOffset = modelPoolGetDrawInfoBufferOffset(modelPoolDebug);
 		const uint32_t debugMaxDrawCount = modelPoolGetMaxModelCount(modelPoolDebug);
-		vkCmdDrawIndexedIndirectCount(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, 
+		vkCmdDrawIndexedIndirectCount(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], 
 				bufferDrawInfoHandle, debugDrawOffset + drawCountSize, 
 				bufferDrawInfoHandle, debugDrawOffset, 
 				debugMaxDrawCount, drawCommandStride);
 		
-		vkCmdEndRendering(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer);
+		vkCmdEndRendering(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame]);
 		
 		const VkImageMemoryBarrier2 swapchainTransitionBarrier2 = makeImageTransitionBarrier(swapchain.pImages[imageIndex], imageSubresourceRange, imageUsagePresent);
 		
@@ -479,14 +474,14 @@ void drawFrame(const float deltaTime, const Vector4F cameraPosition, const Proje
 			.pImageMemoryBarriers = &swapchainTransitionBarrier2
 		};
 		
-		vkCmdPipelineBarrier2(frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer, &dependencyInfo2);
+		vkCmdPipelineBarrier2(frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame], &dependencyInfo2);
 	
-	} commandBufferEnd(&frame_array.frames[frame_array.current_frame].commandBuffer);
+	} cmdBufEnd(frame_array.cmdBufArray, frame_array.current_frame);
 
 	const VkCommandBufferSubmitInfo command_buffer_submit_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 		.pNext = nullptr,
-		.commandBuffer = frame_array.frames[frame_array.current_frame].commandBuffer.vkCommandBuffer,
+		.commandBuffer = frame_array.cmdBufArray.pCmdBufs[frame_array.current_frame],
 		.deviceMask = 0
 	};
 

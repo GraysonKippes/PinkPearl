@@ -37,7 +37,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	static const VkDeviceSize numImageChannels = 4;
 
-	// TODO - modify this to use semaphores between image transitions and data transfer operations.
+	// TODO: modify this to use semaphores between image transitions and data transfer operations.
 
 	if (stringIsNull(textureCreateInfo.textureID)) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: texture ID is null.");
@@ -60,13 +60,11 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	// Create semaphores.
 	VkSemaphore semaphore_transition_finished = VK_NULL_HANDLE;
 	VkSemaphore semaphore_transfer_finished = VK_NULL_HANDLE;
-
 	const VkSemaphoreCreateInfo semaphoreCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0
 	};
-
 	vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore_transition_finished);
 	vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore_transfer_finished);
 
@@ -91,9 +89,8 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	};
 
 	// Transfer image data to texture images.
-	VkCommandBuffer transferCommandBuffer = VK_NULL_HANDLE;
-	allocCmdBufs(device, commandPoolTransfer.vkCommandPool, 1, &transferCommandBuffer);
-	cmdBufBegin(transferCommandBuffer, true); {
+	CmdBufArray transferCmdBufs = cmdBufAlloc(commandPoolTransfer, 1);
+	cmdBufBegin(transferCmdBufs, 0, true); {
 		
 		const uint32_t numBufImgCopies = texture.image.arrayLayerCount;
 		VkBufferImageCopy2 *bufImgCopies = nullptr;
@@ -147,12 +144,12 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.pRegions = bufImgCopies
 		};
 
-		vkCmdCopyBufferToImage2(transferCommandBuffer, &copy_info);
+		vkCmdCopyBufferToImage2(transferCmdBufs.pCmdBufs[0], &copy_info);
 
 		deallocate((void **)&bufImgCopies);
-	} vkEndCommandBuffer(transferCommandBuffer);
+	} cmdBufEnd(transferCmdBufs, 0);
 
-	{	// Second submit
+	{	// Second submit // TODO: use vkQueueSubmit2
 		const VkSubmitInfo submitInfo = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.pNext = nullptr,
@@ -160,7 +157,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.pWaitSemaphores = nullptr,
 			.pWaitDstStageMask = nullptr,
 			.commandBufferCount = 1,
-			.pCommandBuffers = &transferCommandBuffer,
+			.pCommandBuffers = &transferCmdBufs.pCmdBufs[0],
 			.signalSemaphoreCount = 1,
 			.pSignalSemaphores = &semaphore_transfer_finished
 		};
@@ -168,9 +165,8 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	}
 
 	// Command buffer for second image layout transition (transfer destination to sampled).
-	VkCommandBuffer transitionCommandBuffer2 = VK_NULL_HANDLE;
-	allocCmdBufs(device, commandPoolGraphics.vkCommandPool, 1, &transitionCommandBuffer2);
-	cmdBufBegin(transitionCommandBuffer2, true); {
+	CmdBufArray transitionCmdBufs = cmdBufAlloc(commandPoolGraphics, 1);
+	cmdBufBegin(transitionCmdBufs, 0, true); {
 
 		ImageUsage imageUsage = imageUsageSampled;
 		if (textureCreateInfo.isTilemap) {
@@ -189,14 +185,14 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.imageMemoryBarrierCount = 1,
 			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
-		vkCmdPipelineBarrier2(transitionCommandBuffer2, &dependencyInfo);
+		vkCmdPipelineBarrier2(transitionCmdBufs.pCmdBufs[0], &dependencyInfo);
 		texture.image.usage = imageUsage;
 
-	} vkEndCommandBuffer(transitionCommandBuffer2);
+	} cmdBufEnd(transitionCmdBufs, 0);
 
 	VkPipelineStageFlags transition_1_stage_flags[1] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
 
-	{	// Third submit
+	{	// Third submit // TODO: use vkQueueSubmit2
 		const VkSubmitInfo submit_info = {
 			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 			.pNext = nullptr,
@@ -204,7 +200,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 			.pWaitSemaphores = &semaphore_transfer_finished,
 			.pWaitDstStageMask = transition_1_stage_flags,
 			.commandBufferCount = 1,
-			.pCommandBuffers = &transitionCommandBuffer2,
+			.pCommandBuffers = &transitionCmdBufs.pCmdBufs[0],
 			.signalSemaphoreCount = 0,
 			.pSignalSemaphores = nullptr
 		};
@@ -213,10 +209,8 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	vkQueueWaitIdle(queueGraphics);
 	vkQueueWaitIdle(queueTransfer);
-
-	vkFreeCommandBuffers(device, commandPoolGraphics.vkCommandPool, 1, &transitionCommandBuffer2);
-	vkFreeCommandBuffers(device, commandPoolTransfer.vkCommandPool, 1, &transferCommandBuffer);
-
+	cmdBufFree(&transferCmdBufs);
+	cmdBufFree(&transitionCmdBufs);
 	vkDestroySemaphore(device, semaphore_transition_finished, nullptr);
 	vkDestroySemaphore(device, semaphore_transfer_finished, nullptr);
 

@@ -259,23 +259,14 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 
 	/* Transition texture image layout to something usable. */
 
-	VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
-	allocCmdBufs(texture.vkDevice, commandPoolGraphics.vkCommandPool, 1, &cmdBuf);
-	cmdBufBegin(cmdBuf, true); {
-		
-		ImageUsage imageUsage;
-		if (textureCreateInfo.isLoaded) {
-			imageUsage = imageUsageTransferDestination;
-		} else {
-			imageUsage = imageUsageSampled;
-		}
-		
+	CmdBufArray cmdBufArray = cmdBufAlloc(commandPoolGraphics, 1);
+	cmdBufBegin(cmdBufArray, 0, true); {
+		const ImageUsage imageUsage = textureCreateInfo.isLoaded ? imageUsageTransferDestination : imageUsageSampled;
 		const ImageSubresourceRange imageSubresourceRange = {
 			.imageAspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			.baseArrayLayer = 0,
 			.arrayLayerCount = VK_REMAINING_ARRAY_LAYERS
 		};
-		
 		const VkImageMemoryBarrier2 imageMemoryBarrier = makeImageTransitionBarrier(texture.image, imageSubresourceRange, imageUsage);
 		const VkDependencyInfo dependencyInfo = {
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -288,11 +279,11 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 			.imageMemoryBarrierCount = 1,
 			.pImageMemoryBarriers = &imageMemoryBarrier
 		};
-		vkCmdPipelineBarrier2(cmdBuf, &dependencyInfo);
+		vkCmdPipelineBarrier2(cmdBufArray.pCmdBufs[0], &dependencyInfo);
 		texture.image.usage = imageUsage;
-		
-	} vkEndCommandBuffer(cmdBuf);
-	submit_command_buffers_async(queueGraphics, 1, &cmdBuf);
+	} cmdBufEnd(cmdBufArray, 0);
+	submit_command_buffers_async(queueGraphics, 1, &cmdBufArray.pCmdBufs[0]);
+	cmdBufFree(&cmdBufArray);
 
 	return texture;
 }

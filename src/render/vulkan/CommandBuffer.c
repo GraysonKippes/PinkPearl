@@ -50,7 +50,7 @@ void deleteCommandPool(CommandPool *const pCommandPool) {
 	pCommandPool->resetable = false;
 }
 
-CmdBufArray cmdBufAlloc2(const CommandPool commandPool, const uint32_t count) {
+CmdBufArray cmdBufAlloc(const CommandPool commandPool, const uint32_t count) {
 	
 	CmdBufArray cmdBufArray = { };
 	
@@ -75,18 +75,29 @@ CmdBufArray cmdBufAlloc2(const CommandPool commandPool, const uint32_t count) {
 		return (CmdBufArray){ };
 	}
 	cmdBufArray.resetable = commandPool.resetable;
+	cmdBufArray.vkCommandPool = commandPool.vkCommandPool;
+	cmdBufArray.vkDevice = commandPool.vkDevice;
 	
 	return cmdBufArray;
 }
 
-void cmdBufFree2(CmdBufArray *const pArr) {
+void cmdBufFree(CmdBufArray *const pArr) {
 	assert(pArr);
+	/*if (pArr->resetable) {
+		for (uint32_t i = 0; i < pArr->count; ++i) {
+			const VkResult result = vkResetCommandBuffer(pArr->pCmdBufs[i], 0);
+			if (result != VK_SUCCESS) {
+				logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Freeing command buffer array: failed to reset command buffer %u in command buffer array %p (error code = %i).", i, pArr->pCmdBufs, result);
+			}
+		}
+	}*/
+	vkFreeCommandBuffers(pArr->vkDevice, pArr->vkCommandPool, pArr->count, pArr->pCmdBufs);
 	pArr->resetable = false;
 	pArr->count = 0;
 	pArr->pCmdBufs = heapFree(pArr->pCmdBufs);
 }
 
-void cmdBufBegin2(const CmdBufArray arr, const uint32_t idx, const bool singleSubmit) {
+void cmdBufBegin(const CmdBufArray arr, const uint32_t idx, const bool singleSubmit) {
 	if (idx >= arr.count) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Beginning command buffer recording: command buffer index (%u) is not less than command buffer count (%u) in command buffer array %p.", idx, arr.count, arr.pCmdBufs);
 		return;
@@ -104,7 +115,7 @@ void cmdBufBegin2(const CmdBufArray arr, const uint32_t idx, const bool singleSu
 	}
 }
 
-void cmdBufEnd2(const CmdBufArray arr, const uint32_t idx) {
+void cmdBufEnd(const CmdBufArray arr, const uint32_t idx) {
 	if (idx >= arr.count) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Ending command buffer recording: command buffer index (%u) is not less than command buffer count (%u) in command buffer array %p.", idx, arr.count, arr.pCmdBufs);
 		return;
@@ -131,129 +142,6 @@ void cmdBufReset(const CmdBufArray arr, const uint32_t idx) {
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Resetting command buffer: failed to reset command buffer (error code = %i).", result);
 	}
-}
-
-
-
-
-
-
-CommandBuffer allocateCommandBuffer(const CommandPool commandPool) {
-	
-	CommandBuffer commandBuffer = { 
-		.vkCommandBuffer = VK_NULL_HANDLE,
-		.recording = false,
-		.resetable = false
-	};
-	
-	const VkCommandBufferAllocateInfo allocateInfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-		.pNext = nullptr,
-		.commandPool = commandPool.vkCommandPool,
-		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		.commandBufferCount = 1
-	};
-	vkAllocateCommandBuffers(commandPool.vkDevice, &allocateInfo, &commandBuffer.vkCommandBuffer);
-	
-	commandBuffer.resetable = commandPool.resetable;
-	
-	return commandBuffer;
-}
-
-void commandBufferBegin(CommandBuffer *const pCommandBuffer, const bool singleSubmit) {
-	if (!pCommandBuffer) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error beginning command buffer recording: null pointer(s) detected.");
-		return;
-	} else if (pCommandBuffer->recording) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error beginning command buffer recording: command buffer already recording.");
-		return;
-	}
-	
-	const VkCommandBufferBeginInfo beginInfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.pNext = nullptr,
-		.flags = singleSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0,
-		.pInheritanceInfo = nullptr
-	};
-	vkBeginCommandBuffer(pCommandBuffer->vkCommandBuffer, &beginInfo);
-	pCommandBuffer->recording = true;
-}
-
-void commandBufferEnd(CommandBuffer *const pCommandBuffer) {
-	if (!pCommandBuffer) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error ending command buffer recording: null pointer(s) detected.");
-		return;
-	} else if (!pCommandBuffer->recording) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error ending command buffer recording: command buffer not already recording.");
-		return;
-	}
-	
-	vkEndCommandBuffer(pCommandBuffer->vkCommandBuffer);
-	pCommandBuffer->recording = false;
-}
-
-void commandBufferBindPipeline(CommandBuffer *const pCommandBuffer, const Pipeline pipeline) {
-	if (!pCommandBuffer) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding pipeline: pointer to command buffer object is null.");
-		return;
-	}
-	
-	VkPipelineBindPoint pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	switch (pipeline.type) {
-		case PIPELINE_TYPE_GRAPHICS:
-			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			break;
-		case PIPELINE_TYPE_COMPUTE:
-			pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
-			break;
-	}
-	
-	vkCmdBindPipeline(pCommandBuffer->vkCommandBuffer, pipelineBindPoint, pipeline.vkPipeline);
-}
-
-void commandBufferBindGraphicsPipeline(CommandBuffer *const pCommandBuffer, const GraphicsPipeline pipeline) {
-	if (!pCommandBuffer) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error binding pipeline: pointer to command buffer object is null.");
-		return;
-	}
-	
-	vkCmdBindPipeline(pCommandBuffer->vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
-}
-
-void commandBufferReset(CommandBuffer *const pCommandBuffer) {
-	if (!pCommandBuffer) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reseting command buffer: null pointer(s) detected.");
-		return;
-	} else if (!pCommandBuffer->resetable) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reseting command buffer: command buffer is not resetable.");
-		return;
-	}
-	
-	vkResetCommandBuffer(pCommandBuffer->vkCommandBuffer, 0);
-}
-
-
-
-void allocCmdBufs(VkDevice device, VkCommandPool command_pool, uint32_t num_buffers, VkCommandBuffer *command_buffers) {
-
-	VkCommandBufferAllocateInfo allocate_info = { 0 };
-	allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocate_info.commandPool = command_pool;
-	allocate_info.commandBufferCount = num_buffers;
-
-	// TODO - error handling
-	vkAllocateCommandBuffers(device, &allocate_info, command_buffers);
-}
-
-void cmdBufBegin(const VkCommandBuffer cmdBuf, const bool singleSubmit) {
-	const VkCommandBufferBeginInfo cmdBufBeginInfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.pNext = nullptr,
-		.flags = singleSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0,
-		.pInheritanceInfo = nullptr
-	};
-	vkBeginCommandBuffer(cmdBuf, &cmdBufBeginInfo);
 }
 
 VkCommandBufferSubmitInfo make_command_buffer_submit_info(const VkCommandBuffer command_buffer) {
