@@ -2,14 +2,11 @@
 
 #include <stdint.h>
 #include <string.h>
-
 #include <vulkan/vulkan.h>
-
 #include "config.h"
 #include "log/Logger.h"
-#include "render/stb/image_data.h"
+#include "render/stb/ImageData.h"
 #include "util/allocate.h"
-
 #include "buffer.h"
 #include "CommandBuffer.h"
 #include "VulkanManager.h"
@@ -73,12 +70,12 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 	// Load image data into image staging buffer.
 	byte_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 2);
-	image_data_t base_image_data = load_image_data(path.pBuffer, numImageChannels);
+	ImageData base_image_data = loadImageData(path.pBuffer, numImageChannels);
 	const VkDeviceSize base_image_width = base_image_data.width;
 	const VkDeviceSize base_image_height = base_image_data.height;
 	const VkDeviceSize base_image_size = base_image_width * base_image_height * numImageChannels;
-	memcpy(mapped_memory, base_image_data.data, base_image_size);
-	free_image_data(base_image_data);
+	memcpy(mapped_memory, base_image_data.pPixels, base_image_size);
+	deleteImageData(&base_image_data);
 	buffer_partition_unmap_memory(global_staging_buffer_partition);
 	
 	// Subresource range used in all image views and layout transitions.	

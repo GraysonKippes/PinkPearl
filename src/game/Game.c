@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "glfw/GLFWManager.h"
 #include "glfw/InputManager.h"
 #include "log/Logger.h"
 #include "render/RenderManager.h"
@@ -158,6 +159,12 @@ void tick_game(void) {
 		}
 		gameState.scrolling = false;
 		unloadImpersistentEntities();
+	}
+	
+	if (isInputPressed(controls.useItemLeft)) {
+		double x = 0.0, y = 0.0;
+		getCursorPosition(&x, &y);
+		logMsg(loggerGame, LOG_LEVEL_INFO, "Click at %.2f, %.2f", x, y);
 	}
 
 	const bool move_up_pressed = isInputPressedOrHeld(controls.moveUp);		// UP

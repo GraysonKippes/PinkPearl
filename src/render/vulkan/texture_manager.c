@@ -5,14 +5,10 @@
 #include <stdlib.h>
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <string.h>
-
 #include <vulkan/vulkan.h>
-
 #include "config.h"
 #include "log/Logger.h"
-#include "render/stb/image_data.h"
 #include "util/allocate.h"
-
 #include "buffer.h"
 #include "CommandBuffer.h"
 #include "texture.h"

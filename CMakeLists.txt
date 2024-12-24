@@ -78,7 +78,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/render_config.c
 	src/render/RenderManager.c
 	src/render/texture_pack.c
-	src/render/stb/image_data.c
+	src/render/stb/ImageData.c
 	src/render/vulkan/buffer.c
 	src/render/vulkan/Buffer2.c
 	src/render/vulkan/CommandBuffer.c

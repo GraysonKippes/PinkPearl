@@ -8,7 +8,6 @@
 #include "log/Logger.h"
 #include "glfw/GLFWManager.h"
 #include "render/render_config.h"
-#include "render/stb/image_data.h"
 #include "util/Types.h"
 #include "CommandBuffer.h"
 #include "descriptor.h"

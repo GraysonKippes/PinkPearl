@@ -2,17 +2,16 @@
 #define IMAGE_DATA_H
 
 #include <stddef.h>
-#include <stdint.h>
 
-#include <GLFW/glfw3.h>
+#define GRAYSCALE				1LLU
+#define GRAYSCALE_TRANSPARENT	2LLU
+#define COLOR					3LLU
+#define COLOR_TRANSPARENT		4LLU
 
-#include "util/Types.h"
-
-// TODO - change integer types to uint32_t.
-typedef struct image_data_t {
+typedef struct ImageData {
 	
 	// The data of this image.
-	unsigned char *data;
+	unsigned char *pPixels;
 
 	// The width of this image, in pixels.
 	size_t width;
@@ -25,16 +24,14 @@ typedef struct image_data_t {
 	// 2 = Grayscale and Alpha;
 	// 3 = Red, Green, Blue; and
 	// 4 = Red, Green, Blue, and Alpha.
-	size_t num_channels;
+	size_t numChannels;
 
-} image_data_t;
+} ImageData;
 
 // Loads an image at the given filepath.
-image_data_t load_image_data(const char *path, int num_channels);
+ImageData loadImageData(const char *const pPath, const size_t numChannels);
 
 // Frees an image, destroying the data buffer.
-void free_image_data(image_data_t image);
-
-GLFWimage load_glfw_image(const char *path);
+void deleteImageData(ImageData *const pImageData);
 
 #endif	// IMAGE_DATA_H

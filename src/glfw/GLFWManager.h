@@ -6,7 +6,6 @@
  * before including this header to use GLFW-Vulkan functions.
 */
 
-#include <stdbool.h>
 #include <GLFW/glfw3.h>
 
 // Initializes GLFW and creates the application window.
@@ -17,6 +16,8 @@ void terminateGLFW(void);
 
 // Returns the handle to the application window.
 GLFWwindow *getAppWindow(void);
+
+void getCursorPosition(double *const pPosX, double *const pPosY);
 
 bool shouldAppWindowClose(void);
 
