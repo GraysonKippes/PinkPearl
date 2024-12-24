@@ -396,6 +396,21 @@ int32_t renderObjectGetTextureHandle(const int32_t handle, const int32_t quadInd
 	return renderObjects[handle].textureHandle;
 }
 
+void renderObjectSetQuadImage(const int32_t handle, const int32_t quadIndex, const int32_t imageIndex) {
+	if (!renderObjectExists(handle)) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Setting render object quad image: render object %i does not exist.", handle);
+		return;
+	} else if (!renderObjectQuadExists(handle, quadIndex)) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Setting render object quad image: quad %i of render object %i does not exist.", quadIndex, handle);
+		return;
+	}
+	
+	TextureState *const pTextureState = modelGetTextureState(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle);
+	if (pTextureState) {
+		updateDrawInfo(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle, imageIndex);
+	}
+}
+
 void renderObjectAnimate(const int32_t handle) {
 	if (!renderObjectExists(handle)) {
 		//logMsg(loggerRender, LOG_LEVEL_ERROR, "Error animating render object: render object %i does not exist.", handle);

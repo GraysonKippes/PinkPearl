@@ -74,6 +74,9 @@ int loadEntity(const String entityID, const Vector3D initPosition, const Vector3
 	entities[entityHandle].hitbox = entityRecord.entityHitbox;
 	entities[entityHandle].ai = entityRecord.entityAI;
 	entities[entityHandle].persistent = entityRecord.entityIsPersistent;
+	entities[entityHandle].invincible = false;
+	entities[entityHandle].currentHP = entityRecord.entityHP;
+	entities[entityHandle].maxHP = entityRecord.entityHP;
 	entities[entityHandle].speed = entityRecord.entitySpeed;
 	entities[entityHandle].renderHandle = renderHandle;
 	entities[entityHandle].wireframe = -1;

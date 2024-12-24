@@ -53,9 +53,7 @@ static GameControls controls = {
 	.useItemLeft = MOUSE_BUTTON_LEFT,
 	.useItemRight = MOUSE_BUTTON_RIGHT
 };
-static GameRenderState renderState = {
-	
-};
+static GameRenderState renderState = { };
 
 // The area that the player is currently in.
 Area currentArea = { };
@@ -66,6 +64,8 @@ static int playerEntityHandle = -1;
 static void pauseGame(GameState *const pGameState, GameRenderState *const pGameRenderState);
 
 static void toggleDebugMenu(GameRenderState *const pGameRenderState);
+
+static void addPlayerHP(Entity *const pPlayerEntity, const int32_t addAmount, GameState *const pGameState, const GameRenderState gameRenderState);
 
 void start_game(void) {
 	
@@ -94,21 +94,21 @@ void start_game(void) {
 				.initPosition = makeVec3D(-11.5, 7.25, 3.0),
 				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 				.initAnimation = 0,
-				.initCell = 0,
+				.initCell = 3,
 				.color = COLOR_WHITE
 			}, {
 				.quadType = QUAD_TYPE_GUI,
 				.initPosition = makeVec3D(-11.0, 7.25, 3.0),
 				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 				.initAnimation = 0,
-				.initCell = 0,
+				.initCell = 3,
 				.color = COLOR_WHITE
 			}, {
 				.quadType = QUAD_TYPE_GUI,
 				.initPosition = makeVec3D(-10.5, 7.25, 3.0),
 				.quadDimensions = (BoxF){ .x1 = -0.25F, .y1 = -0.25F, .x2 = 0.25F, .y2 = 0.25F },
 				.initAnimation = 0,
-				.initCell = 0,
+				.initCell = 3,
 				.color = COLOR_WHITE
 			}
 		}
@@ -148,12 +148,12 @@ void tick_game(void) {
 		pauseGame(&gameState, &renderState);
 	}
 
-	if (gameState.paused) {
+	if (gameState.paused || gameState.gameOver) {
 		return;
 	}
 
 	if (gameState.scrolling) {
-		if (areaIsScrolling(currentArea)) {
+		if (!areaIsScrolling(currentArea)) {
 			return;
 		}
 		gameState.scrolling = false;
@@ -221,7 +221,10 @@ void tick_game(void) {
 		}
 		
 		if (entityCollision(*pPlayerEntity, *pEntity)) {
-			logMsg(loggerGame, LOG_LEVEL_INFO, "Hitting entity %i.", entityHandle);
+			if (!pPlayerEntity->invincible) {
+				addPlayerHP(pPlayerEntity, -1, &gameState, renderState);
+			}
+			entityTriggerInvincibility(pPlayerEntity);
 		}
 	}
 
@@ -244,6 +247,7 @@ static void pauseGame(GameState *const pGameState, GameRenderState *const pGameR
 }
 
 static void toggleDebugMenu(GameRenderState *const pGameRenderState) {
+	assert(pGameRenderState);
 	pGameRenderState->debugMenuEnabled = !pGameRenderState->debugMenuEnabled;
 	if (pGameRenderState->debugMenuEnabled) {
 		pGameRenderState->debugTextHandles[0] = loadRenderText(makeStaticString("Position Position"), makeVec3D(-11.5, -6.25, 4.0), COLOR_PINK);
@@ -257,5 +261,32 @@ static void toggleDebugMenu(GameRenderState *const pGameRenderState) {
 		unloadRenderObject(&pGameRenderState->debugTextHandles[2]);
 		undrawEntityHitboxes();
 		areaUnloadWireframes(&currentArea);
+	}
+}
+
+static void addPlayerHP(Entity *const pPlayerEntity, const int32_t addAmount, GameState *const pGameState, const GameRenderState gameRenderState) {
+	assert(pPlayerEntity);
+	
+	const int32_t newHP = pPlayerEntity->currentHP + addAmount;
+	if (newHP > pPlayerEntity->maxHP) {
+		pPlayerEntity->currentHP = pPlayerEntity->maxHP;
+	} else if (newHP <= 0) {
+		pPlayerEntity->currentHP = 0;
+		pGameState->gameOver = true;
+	} else {
+		pPlayerEntity->currentHP = newHP;
+	}
+	
+	// Update HP bar in the player HUD.
+	int32_t fillHP = pPlayerEntity->currentHP;
+	for (int32_t quadIndex = 0; quadIndex < 3; ++quadIndex) {
+		int32_t imageIndex = 0;
+		if (fillHP >= 3) {
+			imageIndex = 3;
+		} else if (fillHP > 0) {
+			imageIndex = fillHP;
+		}
+		renderObjectSetQuadImage(gameRenderState.heartsHandle, quadIndex, imageIndex);
+		fillHP -= 3;
 	}
 }

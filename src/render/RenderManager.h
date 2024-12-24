@@ -106,6 +106,8 @@ void renderObjectSetPosition(const int32_t handle, const int32_t quadIndex, cons
 
 int renderObjectGetTextureHandle(const int renderHandle, const int quadIndex);
 
+void renderObjectSetQuadImage(const int32_t handle, const int32_t quadIndex, const int32_t imageIndex);
+
 // Animates each of the render object's quad's textures.
 void renderObjectAnimate(const int32_t handle);
 

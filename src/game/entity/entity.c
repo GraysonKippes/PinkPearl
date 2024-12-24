@@ -6,11 +6,9 @@
 #include "game/game.h"
 #include "render/RenderManager.h"
 #include "render/vulkan/math/render_vector.h"
+#include "util/time.h"
 
 #define SQUARE(x) ((x) * (x))
-
-#define between(x, l, u) ((x) > (l) && (x) < (u))
-#define betweenStrict(x, l, u) ((x) >= (l) && (x) <= (u))
 
 static Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
 
@@ -68,6 +66,10 @@ void tick_entity(Entity *const pEntity) {
 			step_length_squared = resolved_step_length_squared;
 		}
 	}
+	
+	if (getTimeMS() - pEntity->iFrameTimer >= 1500) {
+		pEntity->invincible = false;
+	}
 
 	// Update entity physics to final position, velocity, and acceleration.
 	pEntity->physics.position = nextPosition;
@@ -77,6 +79,13 @@ void tick_entity(Entity *const pEntity) {
 	renderObjectSetPosition(pEntity->renderHandle, 0, pEntity->physics.position);
 	if (renderObjectQuadExists(pEntity->renderHandle, pEntity->wireframe)) {
 		renderObjectSetPosition(pEntity->renderHandle, pEntity->wireframe, pEntity->physics.position);
+	}
+}
+
+void entityTriggerInvincibility(Entity *const pEntity) {
+	if (!pEntity->invincible) {
+		pEntity->invincible = true;
+		pEntity->iFrameTimer = getTimeMS();
 	}
 }
 

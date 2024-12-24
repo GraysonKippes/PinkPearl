@@ -7,6 +7,7 @@
 typedef struct GameState {
 	bool paused;
 	bool scrolling;
+	bool gameOver;
 } GameState;
 
 extern Area currentArea;
