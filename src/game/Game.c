@@ -83,7 +83,7 @@ void start_game(void) {
 	};
 	
 	entitySpawnerReload(&testEntitySpawner);
-	//entitySpawnerSpawnEntities(&testEntitySpawner);
+	entitySpawnerSpawnEntities(&testEntitySpawner);
 	
 	const RenderObjectLoadInfo loadInfoHearts = {
 		.textureID = makeStaticString("gui/heart3"),
@@ -208,6 +208,21 @@ void tick_game(void) {
 		writeRenderText(renderState.debugTextHandles[0], "P %.2f, %.2f", pPlayerEntity->physics.position.x, pPlayerEntity->physics.position.y);
 		writeRenderText(renderState.debugTextHandles[1], "V %.3f, %.3f", pPlayerEntity->physics.velocity.x, pPlayerEntity->physics.velocity.y);
 		writeRenderText(renderState.debugTextHandles[2], "A %.3f, %.3f", pPlayerEntity->physics.acceleration.x, pPlayerEntity->physics.acceleration.y);
+	}
+	
+	for (int32_t entityHandle = 0; entityHandle < maxNumEntities; ++entityHandle) {
+		if (entityHandle == playerEntityHandle) {
+			continue;
+		}
+		
+		Entity *pEntity = nullptr;
+		if (getEntity(entityHandle, &pEntity) != 0) {
+			continue;
+		}
+		
+		if (entityCollision(*pPlayerEntity, *pEntity)) {
+			logMsg(loggerGame, LOG_LEVEL_INFO, "Hitting entity %i.", entityHandle);
+		}
 	}
 
 	const CardinalDirection travelDirection = test_room_travel(pPlayerEntity->physics.position, currentArea, currentArea.currentRoomIndex);

@@ -2,14 +2,15 @@
 
 #include <math.h>
 #include <stddef.h>
-
 #include "log/Logger.h"
-
 #include "game/game.h"
 #include "render/RenderManager.h"
 #include "render/vulkan/math/render_vector.h"
 
 #define SQUARE(x) ((x) * (x))
+
+#define between(x, l, u) ((x) > (l) && (x) < (u))
+#define betweenStrict(x, l, u) ((x) >= (l) && (x) <= (u))
 
 static Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
 
@@ -82,48 +83,72 @@ void tick_entity(Entity *const pEntity) {
 /* SINGLE-AXIS OVERLAP CASES
  *
  * Case 1: Rect A ahead of rect B
- * 	a.x1 > b.x1 AND
- * 	a.x1 < b.x2
+ * 	e1.x1 >= e2.x1 AND
+ * 	e1.x1 <= e2.x2
  *
  * Case 2: Rect A behind rect B
- * 	a.x2 > b.x1 AND
- * 	a.x2 < b.x2
+ * 	e1.x2 >= e2.x1 AND
+ * 	e1.x2 <= e2.x2
  *
- * Case 3: Rect A larger than & around rect B
- * 	a.x1 < b.x1 AND
- * 	a.x2 > b.x2
+ * Case 3: Rect A larger than and around rect B
+ * 	e1.x1 < e2.x1 AND
+ * 	e1.x2 > e2.x2
  *
- * Case 4: Rect A smaller than & within rect B
- * 	a.x1 > b.x1 AND
- * 	a.x1 < b.x2 AND
- * 	a.x2 > b.x1 AND
- * 	a.x2 < b.x2
+ * Case 4: Rect A smaller than and within rect B
+ * 	e1.x1 >= e2.x1 AND
+ * 	e1.x1 <= e2.x2 AND
+ * 	e1.x2 >= e2.x1 AND
+ * 	e1.x2 <= e2.x2
  *
- * let bool c = a.x1 > b.x1
- * let bool d = a.x1 < b.x2
- * let bool e = a.x2 > b.x1
- * let bool f = a.x2 < b.x2
- * let bool g = a.x1 < b.x1
- * let bool h = a.x2 > b.x2
+ * let bool a = e1.x1 >= e2.x1
+ * let bool b = e1.x1 <= e2.x2
+ * let bool c = e1.x2 >= e2.x1
+ * let bool d = e1.x2 <= e2.x2
+ * let bool e = e1.x1 < e2.x1 = a'
+ * let bool f = e1.x2 > e2.x2 = d'
  *
- * case 1 = cd
- * case 2 = ef
- * case 3 = gh
- * case 4 = cdef
- * 
- * let bool o = true if overlap, false if no overlap
- * o = case 1 OR case 2 OR case 3 OR case 4
- * o = cd + ef + gh + cdef			Original boolean function
- * o = cd + cdef + ef + gh			Commutation
- * o = (cd + cdef) + ef + gh		Association
- * o = ((cd) + (cd)ef) + ef + gh	Association
- * o = (cd) + ef + gh				Absorption
- * o = cd + ef + gh					Association
+ * Case 1 = ab
+ * Case 2 = cd
+ * Case 3 = ef = a'd'
+ * Case 4 = abcd
  *
- * cd -> "a.x1 is between b.x1 and b.x2"
- * ef -> "a.x2 is between b.x1 and b.x2"
+ * Let bool o = true if overlap, false if no overlap:
+ * o = ab + cd + ef + abcd			Original Boolean function
+ * o = ab + cd + a'd' + abcd		Replace some literals
+ * o = ab + abcd + cd + a'd'		Commutation
+ * o = (ab) + (ab)(cd) + cd + a'd'	Association
+ * o = ab + cd + a'd'				Absorption
  *
  * */
+ 
+bool entityCollision(const Entity e1, const Entity e2) {
+	const BoxD hitbox1 = {
+		e1.hitbox.x1 + e1.physics.position.x,
+		e1.hitbox.y1 + e1.physics.position.y,
+		e1.hitbox.x2 + e1.physics.position.x,
+		e1.hitbox.y2 + e1.physics.position.y
+	};
+	const BoxD hitbox2 = {
+		e2.hitbox.x1 + e2.physics.position.x,
+		e2.hitbox.y1 + e2.physics.position.y,
+		e2.hitbox.x2 + e2.physics.position.x,
+		e2.hitbox.y2 + e2.physics.position.y
+	};
+	
+	const bool a = hitbox1.x1 >= hitbox2.x1;
+	const bool b = hitbox1.x1 <= hitbox2.x2;
+	const bool c = hitbox1.x2 >= hitbox2.x1;
+	const bool d = hitbox1.x2 <= hitbox2.x2;
+	const bool xCol = (a && b) || (c && d) || (!a && !d);
+	
+	const bool e = hitbox1.y1 >= hitbox2.y1;
+	const bool f = hitbox1.y1 <= hitbox2.y2;
+	const bool g = hitbox1.y2 >= hitbox2.y1;
+	const bool h = hitbox1.y2 <= hitbox2.y2;
+	const bool yCol = (e && f) || (g && h) || (!e && !h);
+	
+	return xCol && yCol;
+}
 
 static Vector3D resolve_collision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall) {
 	

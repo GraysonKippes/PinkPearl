@@ -27,6 +27,8 @@ typedef struct Entity {
 	// Controls whether or not this entity is unloaded when the player leaves the current room.
 	bool persistent;
 	
+	bool enemy;
+	
 	/* Stats */
 	int32_t currentHP;	// Current hit points of the entity.
 	int32_t maxHP;		// Maximum hit points of the entity. Current HP cannot exceed this value.
@@ -44,5 +46,7 @@ Entity new_entity(void);
 
 // Ticks the entity's game logic.
 void tick_entity(Entity *const pEntity);
+
+bool entityCollision(const Entity e1, const Entity e2);
 
 #endif	// ENTITY_H
