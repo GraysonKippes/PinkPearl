@@ -123,7 +123,7 @@ void getCursorPosition(double *const pPosX, double *const pPosY) {
 	x -= 0.5; // Shift to [-0.5, 0.5]
 	y -= 0.5;
 	x *= 2.0; // Scale to [-1, 1]
-	y *= -2.0; // Flip Y position
+	y *= -2.0; // Also flip Y position
 	*pPosX = x;
 	*pPosY = y;
 }

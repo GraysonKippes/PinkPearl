@@ -154,7 +154,7 @@ void tick_game(void) {
 	}
 
 	if (gameState.scrolling) {
-		if (!areaIsScrolling(currentArea)) {
+		if (areaIsScrolling(currentArea)) {
 			return;
 		}
 		gameState.scrolling = false;
@@ -162,8 +162,14 @@ void tick_game(void) {
 	}
 	
 	if (isInputPressed(controls.useItemLeft)) {
+		const Vector4F camera = areaGetCameraPosition(&currentArea);
+		const ProjectionBounds projection = areaGetProjectionBounds(currentArea);
 		double x = 0.0, y = 0.0;
 		getCursorPosition(&x, &y);
+		x *= projection.right; // Scale to projection
+		y *= projection.bottom;
+		x += camera.x;
+		y += camera.y;
 		logMsg(loggerGame, LOG_LEVEL_INFO, "Click at %.2f, %.2f", x, y);
 	}
 
