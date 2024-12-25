@@ -2,16 +2,13 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
 #include "config.h"
 #include "log/Logger.h"
 #include "util/file_io.h"
 #include "util/string.h"
 
 #define FGE_PATH (RESOURCE_PATH "data/EntityRecordData.fge")
-
-#define ENTITY_RECORD_COUNT 2
-
+#define ENTITY_RECORD_COUNT 3
 #define ENTITY_AI_COUNT 2
 
 static const size_t entityRecordCount = ENTITY_RECORD_COUNT;

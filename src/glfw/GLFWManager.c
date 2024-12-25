@@ -12,16 +12,21 @@
 #define DEFAULT_WINDOW_HEIGHT	600
 
 typedef struct AppWindow {
+	
+	// Window handle and dimensions.
 	GLFWwindow *pHandle;
 	int32_t width;
 	int32_t height;
+	
+	GLFWcursor *pCursor;
+	
 } AppWindow;
 
 static AppWindow appWindow;
 
 static void glfwErrorCallback(int code, const char *description);
 
-AppWindow createWindow(const int32_t width, const int32_t height, const char title[const], const ImageData icon, const bool fullscreen);
+AppWindow createWindow(const int32_t width, const int32_t height, const char title[const], const ImageData icon, const ImageData cursorImage, const bool fullscreen);
 
 void deleteWindow(AppWindow *const pWindow);
 
@@ -37,15 +42,14 @@ void initGLFW(void) {
 	
 	char appName[64];
 	snprintf(appName, 64, "%s %i.%i", APP_NAME, PinkPearl_VERSION_MAJOR, PinkPearl_VERSION_MINOR);
-
 	ImageData icon = loadImageData(RESOURCE_PATH "assets/textures/icon.png", COLOR_TRANSPARENT);
-	
-	appWindow = createWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, appName, icon, !debug_enabled);
+	ImageData cursorImage = loadImageData(RESOURCE_PATH "assets/textures/gui/crosshairs.png", COLOR_TRANSPARENT);
+	appWindow = createWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, appName, icon, cursorImage, !debug_enabled);
 	if (!appWindow.pHandle) {
 		logMsg(loggerSystem, LOG_LEVEL_FATAL, "Initializing GLFW: window creation failed.");
 	}
-	
 	deleteImageData(&icon);
+	deleteImageData(&cursorImage);
 	
 	initInputManager(appWindow.pHandle);
 	
@@ -59,7 +63,7 @@ void terminateGLFW(void) {
 	logMsg(loggerSystem, LOG_LEVEL_VERBOSE, "Terminated GLFW.");
 }
 
-AppWindow createWindow(const int32_t width, const int32_t height, const char title[const], const ImageData icon, const bool fullscreen) {
+AppWindow createWindow(const int32_t width, const int32_t height, const char title[const], const ImageData icon, const ImageData cursorImage, const bool fullscreen) {
 	
 	AppWindow window = { };
 
@@ -94,6 +98,14 @@ AppWindow createWindow(const int32_t width, const int32_t height, const char tit
 		.pixels = icon.pPixels
 	};
 	glfwSetWindowIcon(window.pHandle, 1, &img);
+	
+	/*const GLFWimage cursorImg = {
+		.width = cursorImage.width,
+		.height = cursorImage.height,
+		.pixels = cursorImage.pPixels
+	};
+	window.pCursor = glfwCreateCursor(cursorImg, cursorImg / 2, cursorImg / 2);*/
+	
 	
 	return window;
 }

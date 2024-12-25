@@ -160,18 +160,6 @@ void tick_game(void) {
 		gameState.scrolling = false;
 		unloadImpersistentEntities();
 	}
-	
-	if (isInputPressed(controls.useItemLeft)) {
-		const Vector4F camera = areaGetCameraPosition(&currentArea);
-		const ProjectionBounds projection = areaGetProjectionBounds(currentArea);
-		double x = 0.0, y = 0.0;
-		getCursorPosition(&x, &y);
-		x *= projection.right; // Scale to projection
-		y *= projection.bottom;
-		x += camera.x;
-		y += camera.y;
-		logMsg(loggerGame, LOG_LEVEL_INFO, "Click at %.2f, %.2f", x, y);
-	}
 
 	const bool move_up_pressed = isInputPressedOrHeld(controls.moveUp);		// UP
 	const bool move_left_pressed = isInputPressedOrHeld(controls.moveLeft);	// LEFT
@@ -182,6 +170,22 @@ void tick_game(void) {
 	int result = getEntity(playerEntityHandle, &pPlayerEntity);
 	if (!pPlayerEntity || result != 0) {
 		return;
+	}
+	
+	if (isInputPressed(controls.useItemLeft)) {
+		const Vector4F camera = areaGetCameraPosition(&currentArea);
+		const ProjectionBounds projection = areaGetProjectionBounds(currentArea);
+		
+		Vector3D click = { };
+		getCursorPosition(&click.x, &click.y);
+		click.x *= projection.right; // Scale to projection
+		click.y *= projection.bottom;
+		click.x += camera.x;
+		click.y += camera.y;
+		
+		const Vector3D position = pPlayerEntity->physics.position;
+		const Vector3D velocity = mulVec3D(normVec3D(subVec3D(click, position)), 0.5);
+		loadEntity(makeStaticString("spear"), position, velocity);
 	}
 	
 	static const double accelerationMagnitude = 0.24;
