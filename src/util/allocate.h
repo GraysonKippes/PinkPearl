@@ -7,7 +7,9 @@
 // Allocates (at least) `num_bytes_per_object` * `num_objects` bytes, which are zeroed-out.
 // Returns true if the allocation was successful, false otherwise.
 // If allocation fails, then the contents of ppObject are not changed.
+[[deprecated]]
 bool allocate(void **ppObject, const size_t num_objects, const size_t num_bytes_per_object);
+[[deprecated]]
 bool allocate_max(void **ppObject, const size_t num_objects, const size_t num_bytes_per_object, const size_t max_num_objects);
 
 // TODO - write reallocation function.
@@ -15,6 +17,7 @@ bool allocate_max(void **ppObject, const size_t num_objects, const size_t num_by
 // Frees the memory stored at the pointer pointed to by `ppObject`.
 // Sets the pointer stored at `ppObject` (`*ppObject`) to nullptr.
 // Returns true normally, but returns false if `ppObject` itself is nullptr.
+[[deprecated]]
 bool deallocate(void **const ppObject);
 
 
