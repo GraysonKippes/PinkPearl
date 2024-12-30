@@ -385,6 +385,17 @@ void renderObjectSetPosition(const int32_t handle, const int32_t quadIndex, cons
 	modelSetTranslation(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle, vec3DtoVec4F(position));
 }
 
+void renderObjectSetRotation(const int32_t handle, const int32_t quadIndex, const Vector3D rotation) {
+	if (!renderObjectExists(handle)) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error setting render object position: render object %i does not exist.", handle);
+		return;
+	} else if (!renderObjectQuadExists(handle, quadIndex)) {
+		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error setting render object position: quad %i of render object %i does not exist.", quadIndex, handle);
+		return;
+	}
+	modelSetRotation(renderObjects[handle].pQuads[quadIndex].modelPool, renderObjects[handle].pQuads[quadIndex].handle, vec3DtoVec4F(rotation));
+}
+
 int32_t renderObjectGetTextureHandle(const int32_t handle, const int32_t quadIndex) {
 	if (!renderObjectExists(handle)) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error getting render object texture handle: render object %i does not exist.", handle);

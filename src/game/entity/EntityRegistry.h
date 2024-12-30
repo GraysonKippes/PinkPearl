@@ -3,9 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
 #include "EntityAI.h"
-
 #include "math/Box.h"
 #include "util/string.h"
 

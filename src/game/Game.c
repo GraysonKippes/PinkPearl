@@ -183,7 +183,8 @@ void tick_game(void) {
 		click.x += camera.x;
 		click.y += camera.y;
 		
-		const Vector3D position = pPlayerEntity->physics.position;
+		Vector3D position = pPlayerEntity->physics.position;
+		position.z = 2.0;
 		const Vector3D velocity = mulVec3D(normVec3D(subVec3D(click, position)), 0.5);
 		loadEntity(makeStaticString("spear"), position, velocity);
 	}

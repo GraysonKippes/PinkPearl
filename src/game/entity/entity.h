@@ -7,10 +7,18 @@
 #include "math/Vector.h"
 
 typedef struct EntityPhysics {
+	Vector3D rotation;		
 	Vector3D position;		// Current position of the entity is the game area.
 	Vector3D velocity;		// Added to position every tick.
 	Vector3D acceleration;	// Added to velocity every tick.
 } EntityPhysics;
+
+// Elliptical hitbox
+typedef struct EntityHitbox {
+	Vector3D focus1;
+	Vector3D focus2;
+	double distance;
+} EntityHitbox;
 
 // Represents a single "being" with the game (e.g. the player, NPCs, enemies, interactable objects).
 typedef struct Entity {

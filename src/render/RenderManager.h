@@ -104,6 +104,8 @@ bool renderObjectQuadExists(const int32_t handle, const int32_t quadIndex);
 // Sets the position of a single quad associated with the render object.
 void renderObjectSetPosition(const int32_t handle, const int32_t quadIndex, const Vector3D position);
 
+void renderObjectSetRotation(const int32_t handle, const int32_t quadIndex, const Vector3D rotation);
+
 int renderObjectGetTextureHandle(const int renderHandle, const int quadIndex);
 
 void renderObjectSetQuadImage(const int32_t handle, const int32_t quadIndex, const int32_t imageIndex);
