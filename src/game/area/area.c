@@ -3,11 +3,11 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include "log/Logger.h"
 #include "render/render_config.h"
 #include "render/RenderManager.h"
 #include "render/vulkan/compute/ComputeStitchTexture.h"
+#include "util/allocate.h"
 #include "util/time.h"
 
 #define swap(x, y) {\
@@ -33,8 +33,8 @@ static String roomSizeToTextureID(const RoomSize roomSize) {
 
 void deleteArea(Area *const pArea) {
 	assert(pArea);
-	free(pArea->pRooms);
-	free(pArea->pPositionsToRooms);
+	heapFree(pArea->pRooms);
+	heapFree(pArea->pPositionsToRooms);
 	pArea->pRooms = nullptr;
 	pArea->pPositionsToRooms = nullptr;
 }
@@ -273,18 +273,18 @@ void areaRenderStateReset(Area *const pArea, const Room initialRoom) {
 	const String tilemapTextureID = makeStaticString("tilemap/dungeon5");
 	pArea->renderState.tilemapTextureState = newTextureState(tilemapTextureID);
 	pArea->renderState.numRoomIDs = pArea->roomCount;
-	pArea->renderState.roomIDsToCacheSlots = realloc(pArea->renderState.roomIDsToCacheSlots, pArea->renderState.numRoomIDs * sizeof(uint32_t));
-	pArea->renderState.roomIDsToPositions = realloc(pArea->renderState.roomIDsToPositions, pArea->renderState.numRoomIDs * sizeof(uint32_t));
+	pArea->renderState.roomIDsToCacheSlots = heapRealloc(pArea->renderState.roomIDsToCacheSlots, pArea->renderState.numRoomIDs, sizeof(uint32_t));
+	pArea->renderState.roomIDsToPositions = heapRealloc(pArea->renderState.roomIDsToPositions, pArea->renderState.numRoomIDs, sizeof(uint32_t));
 	
 	if (!pArea->renderState.roomIDsToCacheSlots) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error resetting area render state: failed to allocate room IDs to cache slots pointer-array.");
-		free(pArea->renderState.roomIDsToPositions);
+		heapFree(pArea->renderState.roomIDsToPositions);
 		return;
 	}
 	
 	if (!pArea->renderState.roomIDsToPositions) {
 		logMsg(loggerRender, LOG_LEVEL_ERROR, "Error resetting area render state: failed to allocate room IDs to room positions pointer array.");
-		free(pArea->renderState.roomIDsToCacheSlots);
+		heapFree(pArea->renderState.roomIDsToCacheSlots);
 		return;
 	}
 	

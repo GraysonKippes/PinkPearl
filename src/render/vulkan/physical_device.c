@@ -1,10 +1,9 @@
 #include "physical_device.h"
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
-
 #include "log/Logger.h"
+#include "util/allocate.h"
 
 #define DEVICE_EXTENSION_COUNT 2
 
@@ -31,7 +30,7 @@ bool check_physical_device_extension_support(PhysicalDevice physical_device) {
 
 	uint32_t num_available_extensions = 0;
 	vkEnumerateDeviceExtensionProperties(physical_device.vkPhysicalDevice, nullptr, &num_available_extensions, nullptr);
-	VkExtensionProperties *available_extensions = malloc(num_available_extensions * sizeof(VkExtensionProperties));
+	VkExtensionProperties *available_extensions = heapAlloc(num_available_extensions, sizeof(VkExtensionProperties));
 	vkEnumerateDeviceExtensionProperties(physical_device.vkPhysicalDevice, nullptr, &num_available_extensions, available_extensions);
 
 	for (size_t i = 0; i < physical_device.extensionNames.num_strings; ++i) {
@@ -49,7 +48,7 @@ bool check_physical_device_extension_support(PhysicalDevice physical_device) {
 			return false;
 	}
 
-	free(available_extensions);
+	heapFree(available_extensions);
 	return true;
 }
 
@@ -71,7 +70,7 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, Str
 		return false;
 	}
 
-	VkLayerProperties *available_layers = calloc(num_available_layers, sizeof(VkLayerProperties));
+	VkLayerProperties *available_layers = heapAlloc(num_available_layers, sizeof(VkLayerProperties));
 	vkEnumerateDeviceLayerProperties(physical_device, &num_available_layers, available_layers);
 
 	for (size_t i = 0; i < required_layer_names.num_strings; ++i) {
@@ -91,7 +90,7 @@ bool check_device_validation_layer_support(VkPhysicalDevice physical_device, Str
 			return false;
 	}
 
-	free(available_layers);
+	heapFree(available_layers);
 	available_layers = nullptr;
 
 	return true;
@@ -120,22 +119,22 @@ static QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice physical_device
 		vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, windowSurface.vkSurface, &presentSupport);
 
 		if (graphicsSupport && queueFamilyIndices.graphics_family_ptr == nullptr) {
-			queueFamilyIndices.graphics_family_ptr = malloc(sizeof(uint32_t));
+			queueFamilyIndices.graphics_family_ptr = heapAlloc(1, sizeof(uint32_t));
 			*queueFamilyIndices.graphics_family_ptr = i;
 		}
 
 		if (presentSupport && queueFamilyIndices.present_family_ptr == nullptr) {
-			queueFamilyIndices.present_family_ptr = malloc(sizeof(uint32_t));
+			queueFamilyIndices.present_family_ptr = heapAlloc(1, sizeof(uint32_t));
 			*queueFamilyIndices.present_family_ptr = i;
 		}
 
 		if (transferSupport && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queueFamilyIndices.transfer_family_ptr == nullptr) {
-			queueFamilyIndices.transfer_family_ptr = malloc(sizeof(uint32_t));
+			queueFamilyIndices.transfer_family_ptr = heapAlloc(1, sizeof(uint32_t));
 			*queueFamilyIndices.transfer_family_ptr = i;
 		}
 
 		if (computeSupport && queueFamilyIndices.compute_family_ptr == nullptr) {
-			queueFamilyIndices.compute_family_ptr = malloc(sizeof(uint32_t));
+			queueFamilyIndices.compute_family_ptr = heapAlloc(1, sizeof(uint32_t));
 			*queueFamilyIndices.compute_family_ptr = i;
 		}
 	}
@@ -161,7 +160,7 @@ static SwapchainSupportDetails getSwapchainSupportDetails(VkPhysicalDevice physi
 	vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, windowSurface.vkSurface, &num_formats, nullptr);
 	if (num_formats != 0) {
 		details.num_formats = num_formats;
-		details.formats = malloc(num_formats * sizeof(VkSurfaceFormatKHR));
+		details.formats = heapAlloc(num_formats, sizeof(VkSurfaceFormatKHR));
 		vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, windowSurface.vkSurface, &num_formats, details.formats);
 	}
 
@@ -169,7 +168,7 @@ static SwapchainSupportDetails getSwapchainSupportDetails(VkPhysicalDevice physi
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, windowSurface.vkSurface, &num_present_modes, nullptr);
 	if (num_present_modes != 0) {
 		details.num_present_modes = num_present_modes;
-		details.present_modes = malloc(num_present_modes * sizeof(VkPresentModeKHR));
+		details.present_modes = heapAlloc(num_present_modes, sizeof(VkPresentModeKHR));
 		vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, windowSurface.vkSurface, &num_present_modes, details.present_modes);
 	}
 
@@ -247,12 +246,12 @@ void deletePhysicalDevice(PhysicalDevice *const pPhysicalDevice) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error deleting physical device: pointer to physical device object is null.");
 	}
 	
-	free(pPhysicalDevice->queueFamilyIndices.graphics_family_ptr);
-	free(pPhysicalDevice->queueFamilyIndices.present_family_ptr);
-	free(pPhysicalDevice->queueFamilyIndices.transfer_family_ptr);
-	free(pPhysicalDevice->queueFamilyIndices.compute_family_ptr);
-	free(pPhysicalDevice->swapchainSupportDetails.formats);
-	free(pPhysicalDevice->swapchainSupportDetails.present_modes);
+	heapFree(pPhysicalDevice->queueFamilyIndices.graphics_family_ptr);
+	heapFree(pPhysicalDevice->queueFamilyIndices.present_family_ptr);
+	heapFree(pPhysicalDevice->queueFamilyIndices.transfer_family_ptr);
+	heapFree(pPhysicalDevice->queueFamilyIndices.compute_family_ptr);
+	heapFree(pPhysicalDevice->swapchainSupportDetails.formats);
+	heapFree(pPhysicalDevice->swapchainSupportDetails.present_modes);
 	
 	*pPhysicalDevice = nullPhysicalDevice;
 }

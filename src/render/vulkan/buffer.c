@@ -1,12 +1,9 @@
 #include "buffer.h"
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
-
 #include "log/Logger.h"
 #include "util/allocate.h"
-
 #include "CommandBuffer.h"
 
 const VkBufferUsageFlags buffer_usage_vertex = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -200,7 +197,7 @@ bool destroy_buffer_partition(BufferPartition *const buffer_partition_ptr) {
 	vkFreeMemory(buffer_partition_ptr->device, buffer_partition_ptr->memory, nullptr);
 	buffer_partition_ptr->memory = VK_NULL_HANDLE;
 
-	free(buffer_partition_ptr->ranges);
+	heapFree(buffer_partition_ptr->ranges);
 	buffer_partition_ptr->ranges = nullptr;
 	buffer_partition_ptr->total_memory_size = 0;
 	buffer_partition_ptr->num_ranges = 0;

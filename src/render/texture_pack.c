@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "log/Logger.h"
 #include "util/allocate.h"
@@ -17,7 +16,7 @@ void deleteTexturePack(TexturePack *const pTexturePack) {
 		pTexturePack->pTextureCreateInfos[i].animations = heapFree(pTexturePack->pTextureCreateInfos[i].animations);
 	}
 
-	free(pTexturePack->pTextureCreateInfos);
+	heapFree(pTexturePack->pTextureCreateInfos);
 	pTexturePack->pTextureCreateInfos = nullptr;
 }
 

@@ -1,9 +1,7 @@
 #include "fgm_file_parse.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-
 #include "config.h"
 #include "log/Logger.h"
 #include "render/render_config.h"
@@ -80,7 +78,7 @@ Area readAreaData(const char *const pFilename) {
 	}
 	
 	// Allocate array of rooms.
-	area.pRooms = calloc(area.roomCount, sizeof(Room));
+	area.pRooms = heapAlloc(area.roomCount, sizeof(Room));
 	if (!area.pRooms) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: allocation of area.pRooms failed.");
 		fclose(pFile);
@@ -88,10 +86,10 @@ Area readAreaData(const char *const pFilename) {
 	}
 
 	// Allocate 1D position to room array index map.
-	area.pPositionsToRooms = calloc(extentArea, sizeof(int));
+	area.pPositionsToRooms = heapAlloc(extentArea, sizeof(int));
 	if (!area.pPositionsToRooms) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: allocation of area.pPositionsToRooms failed.");
-		free(area.pRooms);
+		heapFree(area.pRooms);
 		fclose(pFile);
 		return nullArea;
 	}
@@ -115,8 +113,8 @@ Area readAreaData(const char *const pFilename) {
 		const int result = readRoomData(pFile, &area.pRooms[i]);
 		if (result != 0) {
 			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: error encountered while reading data for room %u (error code = %i).", i, result);
-			free(area.pRooms);
-			free(area.pPositionsToRooms);
+			heapFree(area.pRooms);
+			heapFree(area.pPositionsToRooms);
 			fclose(pFile);
 			return nullArea;
 		}

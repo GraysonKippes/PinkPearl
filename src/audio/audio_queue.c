@@ -2,10 +2,10 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include <stdlib.h>
+#include "util/allocate.h"
 
 AudioQueueNode *new_audio_queue_node(void) {
-	AudioQueueNode *audio_queue_node_ptr = malloc(sizeof(AudioQueueNode));
+	AudioQueueNode *audio_queue_node_ptr = heapAlloc(1, sizeof(AudioQueueNode));
 	atomic_init(&audio_queue_node_ptr->pNextNode, nullptr);
 	return audio_queue_node_ptr;
 }

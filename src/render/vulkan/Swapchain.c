@@ -1,15 +1,11 @@
 #include "Swapchain.h"
 
 #include <stdio.h>
-#include <stdlib.h>
-
 #include "log/Logger.h"
-
+#include "util/allocate.h"
 #include "VulkanManager.h"
 
 #define clamp(x, min, max) (x > min ? (x < max ? x : max) : min)
-
-
 
 static VkSurfaceFormatKHR selectSurfaceFormat(const SwapchainSupportDetails swapchainSupportDetails);
 
@@ -107,7 +103,7 @@ Swapchain createSwapchain(GLFWwindow *const pWindow, const WindowSurface windowS
 		}
 	}
 	
-	swapchain.pImages = malloc(imageCount * sizeof(Image));
+	swapchain.pImages = heapAlloc(imageCount, sizeof(Image));
 	if (!swapchain.pImages) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating swapchain: failed to allocate array of images.");
 		return swapchain;
@@ -144,7 +140,7 @@ void deleteSwapchain(Swapchain *const pSwapchain) {
 		vkDestroyImageView(pSwapchain->vkDevice, pSwapchain->pImages[imageIndex].vkImageView, nullptr);
 	}
 	vkDestroySwapchainKHR(pSwapchain->vkDevice, pSwapchain->vkSwapchain, nullptr);
-	free(pSwapchain->pImages);
+	heapFree(pSwapchain->pImages);
 	
 	pSwapchain->imageCount = 0;
 	pSwapchain->pImages = nullptr;

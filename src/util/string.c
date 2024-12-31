@@ -93,7 +93,7 @@ bool stringConcatChar(String *const pString, const char c) {
 	
 	if (pString->length + 1 >= pString->capacity) {
 		// TODO - sanitize reallocation.
-		pString->pBuffer = realloc(pString->pBuffer, ++pString->capacity * sizeof(char));
+		pString->pBuffer = heapRealloc(pString->pBuffer, ++pString->capacity, sizeof(char));
 	}
 	pString->pBuffer[pString->length++] = c;
 	pString->pBuffer[pString->length] = '\0';
@@ -113,7 +113,7 @@ bool stringConcatString(String *const pDst, const String src) {
 	const size_t new_length = pDst->length + src.length;
 	if (pDst->capacity <= new_length) {
 		// Reallocate new_length + 1 bytes for the buffer, for the extra byte at the end.
-		pDst->pBuffer = realloc(pDst->pBuffer, (new_length + 1) * sizeof(char));
+		pDst->pBuffer = heapRealloc(pDst->pBuffer, new_length + 1, sizeof(char));
 	}
 	
 	strncpy(&pDst->pBuffer[pDst->length], src.pBuffer, src.length);
@@ -135,7 +135,7 @@ bool stringConcatCString(String *const pDst, const char *const src_pstring) {
 	const size_t new_length = pDst->length + src_length;
 	if (pDst->capacity <= new_length) {
 		// Reallocate new_length + 1 bytes for the buffer, for the extra byte at the end.
-		pDst->pBuffer = realloc(pDst->pBuffer, (new_length + 1) * sizeof(char));
+		pDst->pBuffer = heapRealloc(pDst->pBuffer, new_length + 1, sizeof(char));
 	}
 	
 	for (size_t i = 0; i < src_length; ++i) {

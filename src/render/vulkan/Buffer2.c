@@ -1,11 +1,9 @@
 #include "Buffer2.h"
 
-#include <stdlib.h>
 #include <string.h>
-
 #include <vulkan/vulkan.h>
-
 #include "log/Logger.h"
+#include "util/allocate.h"
 
 struct Buffer_T {
 	
@@ -65,25 +63,25 @@ void createBuffer(const BufferCreateInfo bufferCreateInfo, Buffer *const pOutBuf
 
 	// Allocate buffer and its arrays.
 	
-	Buffer buffer = malloc(sizeof(struct Buffer_T));
+	Buffer buffer = heapAlloc(1, sizeof(struct Buffer_T));
 	if (!buffer) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating buffer: failed to allocate buffer object.");
 		return;
 	}
 	*buffer = nullBufferT;
 
-	buffer->pSubrangeFlags = calloc(bufferCreateInfo.subrangeCount, sizeof(bool));
+	buffer->pSubrangeFlags = heapAlloc(bufferCreateInfo.subrangeCount, sizeof(bool));
 	if (!buffer->pSubrangeFlags) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating buffer: failed to allocate memory for buffer->pSubrangeFlags.");
-		free(buffer);
+		heapFree(buffer);
 		return;
 	}
 	
-	buffer->pSubranges = calloc(bufferCreateInfo.subrangeCount, sizeof(BufferSubrange));
+	buffer->pSubranges = heapAlloc(bufferCreateInfo.subrangeCount, sizeof(BufferSubrange));
 	if (!buffer->pSubranges) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating buffer: failed to allocate memory for buffer->pSubranges.");
-		free(buffer->pSubrangeFlags);
-		free(buffer);
+		heapFree(buffer->pSubrangeFlags);
+		heapFree(buffer);
 		return;
 	}
 	
@@ -246,8 +244,8 @@ void deleteBuffer(Buffer *const pBuffer) {
 		}
 	}
 	
-	free(buffer->pSubrangeFlags);
-	free(buffer->pSubranges);
+	heapFree(buffer->pSubrangeFlags);
+	heapFree(buffer->pSubranges);
 	vkDestroyBuffer(buffer->vkDevice, buffer->vkBuffer, nullptr);
 	vkFreeMemory(buffer->vkDevice, buffer->vkDeviceMemory, nullptr);
 	

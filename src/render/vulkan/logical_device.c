@@ -2,9 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-
 #include "debug.h"
 #include "log/Logger.h"
+#include "util/allocate.h"
 #include "util/string_array.h"
 
 // Returns a pointer-array that must be freed by the caller.
@@ -35,7 +35,7 @@ VkDeviceQueueCreateInfo *make_queue_create_infos(QueueFamilyIndices queue_family
 		}
 	}
 
-	VkDeviceQueueCreateInfo *queue_create_infos = calloc(num_unique_queue_families, sizeof(VkDeviceQueueCreateInfo));
+	VkDeviceQueueCreateInfo *queue_create_infos = heapAlloc(num_unique_queue_families, sizeof(VkDeviceQueueCreateInfo));
 
 	static const float queue_priority = 1.0F;
 
@@ -136,5 +136,5 @@ void create_device(VulkanInstance vulkan_instance, PhysicalDevice physical_devic
 		exit(1); // TODO - better error handling
 	}
 
-	free(queue_create_infos);
+	heapFree(queue_create_infos);
 }

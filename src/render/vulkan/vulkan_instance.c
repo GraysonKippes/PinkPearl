@@ -2,12 +2,12 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "config.h"
 #include "debug.h"
 #include "glfw/GLFWManager.h"
 #include "log/Logger.h"
+#include "util/allocate.h"
 
 #define NUM_VALIDATION_LAYERS 1
 
@@ -44,17 +44,10 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 	uint32_t num_available_layers = 0;
 	vkEnumerateInstanceLayerProperties(&num_available_layers, nullptr);
 
-	if (num_available_layers < num_required_layers)
-		return false;
+	if (num_available_layers < num_required_layers) return false;
+	if (num_available_layers == 0) return num_required_layers == 0;
 
-	if (num_available_layers == 0) {
-		if (num_required_layers == 0)
-			return true;
-		else
-			return false;
-	}
-
-	VkLayerProperties *available_layers = calloc(num_available_layers, sizeof(VkLayerProperties));
+	VkLayerProperties *available_layers = heapAlloc(num_available_layers, sizeof(VkLayerProperties));
 	vkEnumerateInstanceLayerProperties(&num_available_layers, available_layers);
 
 	for (size_t i = 0; i < num_required_layers; ++i) {
@@ -74,7 +67,7 @@ bool check_validation_layer_support(uint32_t num_required_layers, const char *re
 			return false;
 	}
 
-	free(available_layers);
+	heapFree(available_layers);
 	available_layers = nullptr;
 
 	return true;
@@ -96,7 +89,7 @@ VulkanInstance create_vulkan_instance(void) {
 	if (debug_enabled) {
 
 		num_extensions = num_glfw_extensions + 1;	// Include space for the debug extension name.
-		extensions = calloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to nullptr.
+		extensions = heapAlloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to nullptr.
 		if (!extensions) {
 			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate array of extension names.");
 			return vulkan_instance;
@@ -104,10 +97,10 @@ VulkanInstance create_vulkan_instance(void) {
 
 		for (uint32_t i = 0; i < num_glfw_extensions; ++i) {
 			size_t glfw_extension_name_length = strlen(glfw_extensions[i]) + 1;	// +1 to include the null-terminator.
-			extensions[i] = malloc(glfw_extension_name_length * sizeof(char));	// Allocate enough space for the GLFW extension name.
+			extensions[i] = heapAlloc(glfw_extension_name_length, sizeof(char));	// Allocate enough space for the GLFW extension name.
 			if (!extensions[i]) {
 				logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate extension name.");
-				free(extensions);
+				heapFree(extensions);
 				return vulkan_instance;
 			}
 			strncpy(extensions[i], glfw_extensions[i], glfw_extension_name_length);
@@ -115,17 +108,17 @@ VulkanInstance create_vulkan_instance(void) {
 
 		// Append the debug extension name.
 		size_t debug_extension_name_length = strlen(VK_EXT_DEBUG_UTILS_EXTENSION_NAME) + 1;
-		extensions[num_extensions - 1] = calloc(debug_extension_name_length, sizeof(char));
+		extensions[num_extensions - 1] = heapAlloc(debug_extension_name_length, sizeof(char));
 		if (!extensions[num_extensions - 1]) {
 			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate extension name.");
-			free(extensions);
+			heapFree(extensions);
 			return vulkan_instance;
 		}
 		strncpy(extensions[num_extensions - 1], VK_EXT_DEBUG_UTILS_EXTENSION_NAME, debug_extension_name_length);
 	} else {
 		
 		num_extensions = num_glfw_extensions;
-		extensions = calloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to nullptr.
+		extensions = heapAlloc(num_extensions, sizeof(char *));	// Use calloc to set each uninitialized pointer to nullptr.
 		if (!extensions) {
 			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate array of extension names.");
 			return vulkan_instance;
@@ -133,10 +126,10 @@ VulkanInstance create_vulkan_instance(void) {
 
 		for (uint32_t i = 0; i < num_glfw_extensions; ++i) {
 			size_t glfw_extension_name_length = strlen(glfw_extensions[i]) + 1;	// +1 to include the null-terminator.
-			extensions[i] = malloc(glfw_extension_name_length * sizeof(char));	// Allocate enough space for the GLFW extension name.
+			extensions[i] = heapAlloc(glfw_extension_name_length, sizeof(char));	// Allocate enough space for the GLFW extension name.
 			if (!extensions[i]) {
 				logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating Vulkan instance: failed to allocate extension name.");
-				free(extensions);
+				heapFree(extensions);
 				return vulkan_instance;
 			}
 			strncpy(extensions[i], glfw_extensions[i], glfw_extension_name_length);
@@ -192,13 +185,13 @@ VulkanInstance create_vulkan_instance(void) {
 	VkResult result = vkCreateInstance(&create_info, nullptr, &vulkan_instance.handle);
 	if (result != VK_SUCCESS) {
 		logMsg(loggerVulkan, LOG_LEVEL_FATAL, "Vulkan instance creation failed. (Error code: %i)", result);
-		exit(1);
+		return (VulkanInstance){ };
 	}
 
 	for (size_t i = 0; i < num_extensions; ++i) {
-		free(extensions[i]);
+		heapFree(extensions[i]);
 	}
-	free(extensions);
+	heapFree(extensions);
 
 	return vulkan_instance;
 }

@@ -30,12 +30,9 @@ AudioData load_audio_file(const char *const filename) {
 	return audio_data;
 }
 
-bool unload_audio_file(AudioData *const pAudioData) {
+void unload_audio_file(AudioData *const pAudioData) {
 	assert(pAudioData);
-
-	free(pAudioData->samples);
+	heapFree(pAudioData->samples);
 	pAudioData->num_samples = 0;
 	pAudioData->samples = nullptr;
-
-	return true;
 }

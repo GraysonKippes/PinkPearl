@@ -1,6 +1,5 @@
 #include "Draw.h"
 
-#include <stdlib.h>
 #include "log/Logger.h"
 #include "util/allocate.h"
 #include "Descriptor.h"
@@ -99,7 +98,7 @@ const uint32_t drawCommandStride = sizeof(DrawInfo);
 void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOutModelPool) {
 	logMsg(loggerVulkan, LOG_LEVEL_VERBOSE, "Creating model pool...");
 	
-	ModelPool modelPool = calloc(1, sizeof(struct ModelPool_T));
+	ModelPool modelPool = heapAlloc(1, sizeof(struct ModelPool_T));
 	if (!modelPool) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate model pool object.");
 		return;
@@ -119,57 +118,57 @@ void createModelPool(const ModelPoolCreateInfo createInfo, ModelPool *const pOut
 	
 	modelPool->pSlotFlags = heapAlloc(createInfo.maxModelCount, sizeof(bool));
 	if (!modelPool->pSlotFlags) {
-		free(modelPool);
+		heapFree(modelPool);
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate slot flags.");
 		return;
 	}
 	
 	modelPool->pDrawInfoIndices = heapAlloc(createInfo.maxModelCount, sizeof(uint32_t));
 	if (!modelPool->pDrawInfoIndices) {
-		free(modelPool->pSlotFlags);
-		free(modelPool);
+		heapFree(modelPool->pSlotFlags);
+		heapFree(modelPool);
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate draw info indices.");
 		return;
 	}
 	
 	modelPool->pCameraFlags = heapAlloc(createInfo.maxModelCount, sizeof(uint32_t));
 	if (!modelPool->pCameraFlags) {
-		free(modelPool->pSlotFlags);
-		free(modelPool->pDrawInfoIndices);
-		free(modelPool);
+		heapFree(modelPool->pSlotFlags);
+		heapFree(modelPool->pDrawInfoIndices);
+		heapFree(modelPool);
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate camera flags.");
 		return;
 	}
 	
 	modelPool->pModelTransforms = heapAlloc(createInfo.maxModelCount, sizeof(ModelTransform));
 	if (!modelPool->pModelTransforms) {
-		free(modelPool->pSlotFlags);
-		free(modelPool->pDrawInfoIndices);
-		free(modelPool->pCameraFlags);
-		free(modelPool);
+		heapFree(modelPool->pSlotFlags);
+		heapFree(modelPool->pDrawInfoIndices);
+		heapFree(modelPool->pCameraFlags);
+		heapFree(modelPool);
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate model transforms.");
 		return;
 	}
 	
 	modelPool->pTextureStates = heapAlloc(createInfo.maxModelCount, sizeof(TextureState));
 	if (!modelPool->pTextureStates) {
-		free(modelPool->pSlotFlags);
-		free(modelPool->pDrawInfoIndices);
-		free(modelPool->pCameraFlags);
-		free(modelPool->pModelTransforms);
-		free(modelPool);
+		heapFree(modelPool->pSlotFlags);
+		heapFree(modelPool->pDrawInfoIndices);
+		heapFree(modelPool->pCameraFlags);
+		heapFree(modelPool->pModelTransforms);
+		heapFree(modelPool);
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate texture states.");
 		return;
 	}
 	
 	modelPool->pDrawInfos = heapAlloc(createInfo.maxModelCount, sizeof(DrawInfo));
 	if (!modelPool->pDrawInfos) {
-		free(modelPool->pSlotFlags);
-		free(modelPool->pDrawInfoIndices);
-		free(modelPool->pCameraFlags);
-		free(modelPool->pModelTransforms);
-		free(modelPool->pTextureStates);
-		free(modelPool);
+		heapFree(modelPool->pSlotFlags);
+		heapFree(modelPool->pDrawInfoIndices);
+		heapFree(modelPool->pCameraFlags);
+		heapFree(modelPool->pModelTransforms);
+		heapFree(modelPool->pTextureStates);
+		heapFree(modelPool);
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating model pool: failed to allocate draw infos.");
 		return;
 	}

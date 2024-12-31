@@ -2,9 +2,9 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-
 #include "log/Logger.h"
 #include "render/render_config.h"
+#include "util/allocate.h"
 
 const uint32_t num_room_sizes = NUM_ROOM_SIZES;
 
@@ -21,8 +21,8 @@ Extent room_size_to_extent(const RoomSize room_size) {
 
 void deleteRoom(Room room) {
 	for (uint32_t i = 0; i < numRoomLayers; ++i) {
-		free(room.ppTileIndices[i]);
+		heapFree(room.ppTileIndices[i]);
 	}
-	free(room.ppTileIndices);
-	free(room.pWalls);
+	heapFree(room.ppTileIndices);
+	heapFree(room.pWalls);
 }
