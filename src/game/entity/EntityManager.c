@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "log/Logger.h"
 #include "render/RenderManager.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 //#include "EntityAI.h"
 
 #define ECS_ELEMENT_COUNT	64

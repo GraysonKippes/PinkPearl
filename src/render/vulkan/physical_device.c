@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 #define DEVICE_EXTENSION_COUNT 2
 

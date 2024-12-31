@@ -5,7 +5,7 @@
 #include "config.h"
 #include "log/Logger.h"
 #include "render/render_config.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "util/file_io.h"
 
 #define FGA_FILE_DIRECTORY (RESOURCE_PATH "data/DemoDungeon.fga")

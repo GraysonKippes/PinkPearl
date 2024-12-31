@@ -3,7 +3,7 @@
 #include <string.h>
 #include "log/Logger.h"
 #include "render/render_config.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "queue.h"
 #include "vertex_input.h"
 #include "VulkanManager.h"

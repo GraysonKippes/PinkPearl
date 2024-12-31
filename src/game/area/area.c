@@ -7,7 +7,7 @@
 #include "render/render_config.h"
 #include "render/RenderManager.h"
 #include "render/vulkan/compute/ComputeStitchTexture.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "util/time.h"
 
 #define swap(x, y) {\

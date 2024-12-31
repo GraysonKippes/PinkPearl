@@ -3,7 +3,7 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 struct Buffer_T {
 	

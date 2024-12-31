@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 // TODO: support concurrency.
 // Does not necessarily need to be lockless.

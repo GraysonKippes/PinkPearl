@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "VulkanManager.h"
 
 #define clamp(x, min, max) (x > min ? (x < max ? x : max) : min)

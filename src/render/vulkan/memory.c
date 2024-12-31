@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 MemoryTypeIndexSet select_memory_types(VkPhysicalDevice physical_device) {
 

@@ -4,7 +4,7 @@
 #include <string.h>
 #include "debug.h"
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "util/string_array.h"
 
 // Returns a pointer-array that must be freed by the caller.

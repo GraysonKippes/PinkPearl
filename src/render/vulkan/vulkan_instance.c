@@ -7,7 +7,7 @@
 #include "debug.h"
 #include "glfw/GLFWManager.h"
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 #define NUM_VALIDATION_LAYERS 1
 

@@ -8,7 +8,7 @@
 #include <vulkan/vulkan.h>
 #include "config.h"
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "buffer.h"
 #include "CommandBuffer.h"
 #include "texture.h"

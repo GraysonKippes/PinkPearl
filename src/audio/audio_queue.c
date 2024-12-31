@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 AudioQueueNode *new_audio_queue_node(void) {
 	AudioQueueNode *audio_queue_node_ptr = heapAlloc(1, sizeof(AudioQueueNode));

@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 CommandPool createCommandPool(const VkDevice vkDevice, const uint32_t queueFamilyIndex, const bool transient, const bool resetable) {
 	

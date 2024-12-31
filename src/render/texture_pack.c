@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "util/file_io.h"
 
 void deleteTexturePack(TexturePack *const pTexturePack) {

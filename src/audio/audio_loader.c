@@ -5,7 +5,7 @@
 #include <dr_audio/dr_wav.h>
 #include "config.h"
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 #define AUDIO_PATH (RESOURCE_PATH "assets/audio/music/demo_dungeon.wav")
 

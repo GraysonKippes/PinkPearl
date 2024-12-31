@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "log/Logger.h"
 #include "render/render_config.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 
 const uint32_t num_room_sizes = NUM_ROOM_SIZES;
 

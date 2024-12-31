@@ -8,7 +8,7 @@
 #include <GLFW/glfw3.h>
 #include "config.h"
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "vulkan/Draw.h"
 #include "vulkan/VulkanManager.h"
 #include "vulkan/texture_manager.h"

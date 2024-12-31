@@ -5,7 +5,7 @@
 #include <string.h>
 #include "config.h"
 #include "log/Logger.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "util/Types.h"
 
 #define SHADER_DIRECTORY (RESOURCE_PATH "shaders/")

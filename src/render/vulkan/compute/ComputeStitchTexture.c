@@ -5,7 +5,7 @@
 #include <string.h>
 #include "log/Logger.h"
 #include "render/render_config.h"
-#include "util/allocate.h"
+#include "util/Allocation.h"
 #include "../CommandBuffer.h"
 #include "../ComputePipeline.h"
 #include "../Descriptor.h"

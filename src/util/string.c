@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "log/Logger.h"
-#include "allocate.h"
+#include "Allocation.h"
 
 String makeNullString(void) {
 	return (String){
