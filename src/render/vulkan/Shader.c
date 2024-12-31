@@ -1,9 +1,8 @@
 #include "Shader.h"
 
+#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-
 #include "config.h"
 #include "log/Logger.h"
 #include "util/allocate.h"
@@ -44,7 +43,7 @@ static ShaderBytecode read_shader_file(const char *const pPath) {
 		++shader_bytecode.bytecode_size;
 	}
 	
-	shader_bytecode.bytecode = calloc(initial_buffer_size, sizeof(uint8_t));
+	shader_bytecode.bytecode = heapAlloc(initial_buffer_size, sizeof(uint8_t));
 	if (!shader_bytecode.bytecode) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error reading shader file: failed to allocate buffer for shader bytecode.");
 		fclose(file);
@@ -62,15 +61,10 @@ static ShaderBytecode read_shader_file(const char *const pPath) {
 	return shader_bytecode;
 }
 
-static bool destroy_shader_bytecode(ShaderBytecode *const pShaderBytecode) {
-	if (pShaderBytecode == nullptr) {
-		return false;
-	}
-	
-	deallocate((void **)&pShaderBytecode->bytecode);
+static void destroy_shader_bytecode(ShaderBytecode *const pShaderBytecode) {
+	assert(pShaderBytecode);
+	pShaderBytecode->bytecode = heapFree(pShaderBytecode->bytecode);
 	pShaderBytecode->bytecode_size = 0;
-	
-	return true;
 }
 
 ShaderModule createShaderModule(const VkDevice vkDevice, const ShaderStage shaderStage, const char *const pFilename) {

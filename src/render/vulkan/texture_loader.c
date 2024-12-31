@@ -90,8 +90,8 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	recordCommands(transferCmdBufs, 0, true,
 		
 		const uint32_t numBufImgCopies = texture.image.arrayLayerCount;
-		VkBufferImageCopy2 *bufImgCopies = nullptr;
-		if (!allocate((void **)&bufImgCopies, numBufImgCopies, sizeof(VkBufferImageCopy2))) {
+		VkBufferImageCopy2 *bufImgCopies = heapAlloc(numBufImgCopies, sizeof(VkBufferImageCopy2));
+		if (!bufImgCopies) {
 			logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error loading texture: failed to allocate copy region pointer-array.");
 			// TODO - do proper cleanup here.
 			return texture;
@@ -143,7 +143,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 
 		vkCmdCopyBufferToImage2(cmdBuf, &copy_info);
 
-		deallocate((void **)&bufImgCopies);
+		bufImgCopies = heapFree(bufImgCopies);
 	);
 
 	{	// Second submit // TODO: use vkQueueSubmit2

@@ -1,11 +1,11 @@
 #include "error_code.h"
 
 #include <stddef.h>
-
+#include "log/Logger.h"
 #include "util/allocate.h"
 
 // TODO: support concurrency.
-// Does not necessarily need to be atomic.
+// Does not necessarily need to be lockless.
 
 typedef struct error_queue_node_t {
 	LogLevel logLevel;
@@ -22,8 +22,7 @@ static error_queue_t error_queue;
 
 void error_queue_push(const LogLevel logLevel, const StatusCode errorCode) {
 	
-	error_queue_node_t *new_node_ptr = nullptr;
-	allocate((void **)&new_node_ptr, 1, sizeof(error_queue_node_t));
+	error_queue_node_t *new_node_ptr = heapAlloc(1, sizeof(error_queue_node_t));
 	*new_node_ptr = (error_queue_node_t){
 		.logLevel = logLevel,
 		.errorCode = errorCode,
@@ -33,8 +32,7 @@ void error_queue_push(const LogLevel logLevel, const StatusCode errorCode) {
 	if (error_queue.pHeadNode == nullptr || error_queue.pTailNode == nullptr) {
 		error_queue.pHeadNode = new_node_ptr;
 		error_queue.pTailNode = new_node_ptr;
-	}
-	else if (error_queue.pTailNode != nullptr) {
+	} else if (error_queue.pTailNode != nullptr) {
 		error_queue.pTailNode->pNextNode = new_node_ptr;
 		error_queue.pTailNode = new_node_ptr;
 	}
@@ -46,7 +44,7 @@ void error_queue_flush(void) {
 		logMsg();
 		error_queue_node_t *previous_node_ptr = error_queue.pHeadNode;
 		error_queue.pHeadNode = error_queue.pHeadNode->pNextNode;
-		deallocate((void **)&previous_node_ptr);
+		previous_node_ptr = heapFree(previous_node_ptr);
 	}
 	error_queue.pTailNode = error_queue.pHeadNode;
 }
@@ -55,7 +53,7 @@ void terminate_error_queue(void) {
 	while (error_queue.pHeadNode != nullptr) {
 		error_queue_node_t *previous_node_ptr = error_queue.pHeadNode;
 		error_queue.pHeadNode = error_queue.pHeadNode->pNextNode;
-		deallocate((void **)&previous_node_ptr);
+		previous_node_ptr = heapFree(previous_node_ptr);
 	}
 	error_queue.pTailNode = error_queue.pHeadNode;
 }

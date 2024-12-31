@@ -227,10 +227,12 @@ Texture createTexture(const TextureCreateInfo textureCreateInfo) {
 	texture.vkDevice = device;	// TODO - pass vkDevice through parameters, not global state.
 	texture.isLoaded = textureCreateInfo.isLoaded;
 	texture.isTilemap = textureCreateInfo.isTilemap;
-
-	allocate((void **)&texture.animations, texture.numAnimations, sizeof(TextureAnimation));
+	texture.animations = heapAlloc(texture.numAnimations, sizeof(TextureAnimation));
+	if (!texture.animations) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating texture: failed to allocate animations array.");
+		return nullTexture;
+	}
 	memcpy(texture.animations, textureCreateInfo.animations, textureCreateInfo.numAnimations * sizeof(TextureAnimation));
-
 	texture.image.arrayLayerCount = textureCreateInfo.numCells.width * textureCreateInfo.numCells.length;
 	texture.image.vkImage = createTextureImage(texture.vkDevice, texture.image.arrayLayerCount, textureCreateInfo);
 	texture.image.extent = textureCreateInfo.cellExtent;
@@ -295,8 +297,7 @@ bool deleteTexture(Texture *const pTexture) {
 		return false;
 	}
 	
-	// TODO - implement allocator objects for each type of allocation (i.e. heap, stack, text, arena).
-	//deallocate((void **)&pTexture->animations);
+	pTexture->animations = heapFree(pTexture->animations);
 	vkDestroyImage(pTexture->vkDevice, pTexture->image.vkImage, nullptr);
 	vkDestroyImageView(pTexture->vkDevice, pTexture->image.vkImageView, nullptr);
 	vkFreeMemory(pTexture->vkDevice, pTexture->vkDeviceMemory, nullptr);

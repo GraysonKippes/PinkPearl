@@ -96,7 +96,8 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 		frameArray.num_frames = frameArrayCreateInfo.num_frames;
 	}
 
-	if (!allocate((void **)&frameArray.frames, frameArray.num_frames, sizeof(Frame))) {
+	frameArray.frames = heapAlloc(frameArray.num_frames, sizeof(Frame));
+	if (!frameArray.frames) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating frame array: failed to allocate frame pointer-array.");
 		return (FrameArray){ };
 	}
@@ -191,7 +192,7 @@ bool deleteFrameArray(FrameArray *const pFrameArray) {
 	for (uint32_t i = 0; i < pFrameArray->num_frames; ++i) {
 		destroy_frame(pFrameArray->device, pFrameArray->frames[i]);
 	}
-	deallocate((void **)&pFrameArray->frames);
+	pFrameArray->frames = heapFree(pFrameArray->frames);
 	cmdBufFree(&pFrameArray->cmdBufArray);
 	pFrameArray->num_frames = 0;
 	pFrameArray->current_frame = 0;

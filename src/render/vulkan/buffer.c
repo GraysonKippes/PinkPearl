@@ -26,18 +26,18 @@ BufferPartition create_buffer_partition(const BufferPartitionCreateInfo buffer_p
 		.device = VK_NULL_HANDLE
 	};
 
-	if (buffer_partition_create_info.partition_sizes == nullptr) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating buffer partition: memory ranges pointer-array is nullptr.");
+	if (!buffer_partition_create_info.partition_sizes) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating buffer partition: memory ranges pointer-array is nullptr.");
 		return buffer_partition;
 	}
 
 	buffer_partition.num_ranges = buffer_partition_create_info.num_partition_sizes;
-	if (!allocate((void **)&buffer_partition.ranges, buffer_partition.num_ranges, sizeof(MemoryRange))) {
-		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error creating buffer partition: failed to allocate partition ranges pointer-array.");
+	buffer_partition.ranges = heapAlloc(buffer_partition.num_ranges, sizeof(MemoryRange));
+	if (!buffer_partition.ranges) {
+		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Creating buffer partition: failed to allocate partition ranges pointer-array.");
 		buffer_partition.num_ranges = 0;
 		return buffer_partition;
 	}
-
 	buffer_partition.device = buffer_partition_create_info.device;
 
 	VkPhysicalDeviceProperties2 physical_device_properties = {

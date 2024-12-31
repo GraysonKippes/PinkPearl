@@ -141,12 +141,14 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 	
 	// Allocate tile indices arrays.
 	const uint64_t numTiles = extentArea(pRoom->extent);
-	if (!allocate((void **)&pRoom->ppTileIndices, numRoomLayers, sizeof(uint32_t *))) {
+	pRoom->ppTileIndices = heapAlloc(numRoomLayers, sizeof(uint32_t *));
+	if (!pRoom->ppTileIndices) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to allocate array of tile index arrays.");
 		return -1;
 	}
 	for (uint32_t i = 0; i < numRoomLayers; ++i) {
-		if (!allocate((void **)&pRoom->ppTileIndices[i], numTiles, sizeof(uint32_t))) {
+		pRoom->ppTileIndices[i] = heapAlloc(numTiles, sizeof(uint32_t));
+		if (!pRoom->ppTileIndices[i]) {
 			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to allocate tile indices array.");
 			return -1;
 		}
@@ -174,7 +176,8 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 	
 	if (pRoom->wallCount > 0) {
 		// Allocate array for the walls.
-		if (!allocate((void **)&pRoom->pWalls, pRoom->wallCount, sizeof(BoxD))) {
+		pRoom->pWalls = heapAlloc(pRoom->wallCount, sizeof(BoxD));
+		if (!pRoom->pWalls) {
 			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to allocate room wall array.");
 			return -1;
 		}

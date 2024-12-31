@@ -1,22 +1,20 @@
 #include "texture_pack.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "log/Logger.h"
 #include "util/allocate.h"
 #include "util/file_io.h"
 
 void deleteTexturePack(TexturePack *const pTexturePack) {
-	if (!pTexturePack) {
-		return;
-	}
+	assert(pTexturePack);
 
 	for (uint32_t i = 0; i < pTexturePack->numTextures; ++i) {
 		deleteString(&pTexturePack->pTextureCreateInfos[i].textureID);
-		deallocate((void **)&pTexturePack->pTextureCreateInfos[i].animations);
+		pTexturePack->pTextureCreateInfos[i].animations = heapFree(pTexturePack->pTextureCreateInfos[i].animations);
 	}
 
 	free(pTexturePack->pTextureCreateInfos);
@@ -57,7 +55,8 @@ TexturePack readTexturePackFile(const char *pPath) {
 		goto end_read;
 	}
 
-	if (!allocate((void **)&texturePack.pTextureCreateInfos, texturePack.numTextures, sizeof(TextureCreateInfo))) {
+	texturePack.pTextureCreateInfos = heapAlloc(texturePack.numTextures, sizeof(TextureCreateInfo));
+	if (!texturePack.pTextureCreateInfos) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Texture create info array allocation failed.");
 		goto end_read;
 	}
@@ -75,13 +74,8 @@ TexturePack readTexturePackFile(const char *pPath) {
 		// Read texture type.
 		uint32_t textureCreateInfoFlags = 0;
 		read_data(pFile, sizeof(uint32_t), 1, &textureCreateInfoFlags);
-		
-		if (textureCreateInfoFlags & 0x00000001) {
-			pTextureInfo->isLoaded = true;
-		}
-		if (textureCreateInfoFlags & 0x00000002) {
-			pTextureInfo->isTilemap = true;
-		}
+		if (textureCreateInfoFlags & 0x00000001U) pTextureInfo->isLoaded = true;
+		if (textureCreateInfoFlags & 0x00000002U) pTextureInfo->isTilemap = true;
 
 		// Read number of cells in texture atlas.
 		read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->numCells.width);
@@ -109,8 +103,9 @@ TexturePack readTexturePackFile(const char *pPath) {
 		read_data(pFile, sizeof(uint32_t), 1, &pTextureInfo->numAnimations);
 		if (pTextureInfo->numAnimations > 0) {
 
-			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->numAnimations, sizeof(TextureAnimation))) {
-				logMsg(loggerSystem, LOG_LEVEL_ERROR, "Failed to allocate array of animation create infos in texture %u.", i);
+			pTextureInfo->animations = heapAlloc(pTextureInfo->numAnimations, sizeof(TextureAnimation));
+			if (!pTextureInfo->animations) {
+				logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading texture file: failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}
 
@@ -126,7 +121,8 @@ TexturePack readTexturePackFile(const char *pPath) {
 			// 	and set the first (and only) animation to a default value.
 			// This eliminates the need for branching when querying animation cycles in a texture.
 			pTextureInfo->numAnimations = 1;
-			if (!allocate((void **)&pTextureInfo->animations, pTextureInfo->numAnimations, sizeof(TextureAnimation))) {
+			pTextureInfo->animations = heapAlloc(pTextureInfo->numAnimations, sizeof(TextureAnimation));
+			if (!pTextureInfo->animations) {
 				logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading texture file: failed to allocate array of animation create infos in texture %u.", i);
 				goto end_read;
 			}

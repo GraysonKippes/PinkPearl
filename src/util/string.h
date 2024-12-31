@@ -37,6 +37,7 @@ typedef struct String {
 } String;
 
 // Returns an "empty" or unallocated string.
+[[deprecated]]
 String makeNullString(void);
 
 // Returns a new string with no contents.
@@ -49,7 +50,7 @@ String newString(const size_t capacity, const char *const initData);
 String deepCopyString(const String copy);
 
 // Frees the memory held by the string.
-bool deleteString(String *const pString);
+void deleteString(String *const pString);
 
 // String analysis
 bool stringIsNull(const String string);

@@ -4,47 +4,6 @@
 #include <stdlib.h>
 #include "log/Logger.h"
 
-bool allocate(void **ppObject, const size_t num_objects, const size_t num_bytes_per_object) {
-	if (ppObject != nullptr && num_objects > 0 && num_bytes_per_object > 0) {
-		void *ptr = calloc(num_objects, num_bytes_per_object);
-		if (ptr) {
-			*ppObject = ptr;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool allocate_max(void **ppObject, const size_t num_objects, const size_t num_bytes_per_object, const size_t max_num_objects) {
-	if (ppObject != nullptr && num_objects > 0 && num_bytes_per_object > 0) {
-		size_t num_objects_to_allocate = num_objects;
-		if (num_objects_to_allocate > max_num_objects) {
-			num_objects_to_allocate = max_num_objects;
-		}
-		void *ptr = calloc(num_objects, num_bytes_per_object);
-		if (ptr) {
-			*ppObject = ptr;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool deallocate(void **const ppObject) {
-	if (!ppObject) {
-		return false;
-	}
-
-	if (*ppObject != nullptr) {
-		free(*ppObject);
-		*ppObject = nullptr;
-	}
-
-	return true;
-}
-
-
-
 void *heapAlloc(const size_t objectCount, const size_t objectSize) {
 	if (objectCount == 0 || objectSize == 0) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Heap allocation: requested memory size is invalid (count = %llu, size = %llu).", objectCount, objectSize);

@@ -1,10 +1,9 @@
 #include "string.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "log/Logger.h"
-
 #include "allocate.h"
 
 String makeNullString(void) {
@@ -17,20 +16,20 @@ String makeNullString(void) {
 
 String newStringEmpty(const size_t initCapacity) {
 	const size_t capacity = initCapacity > 0 ? initCapacity : 16;
-	
-	String string = makeNullString();
-	if (!allocate((void **)&string.pBuffer, capacity, sizeof(char))) {
-		return string;
+	String string = { };
+	string.pBuffer = heapAlloc(capacity, sizeof(char));
+	if (!string.pBuffer) {
+		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Creating empty string: failed to allocate string with capacity %llu (requested capacity: %llu).", capacity, initCapacity);
+		return (String){ };
 	}
 	string.capacity = capacity;
-	
 	return string;
 }
 
 String newString(const size_t capacity, const char *const pInitData) {
 	
 	String string = newStringEmpty(capacity);
-	if (stringIsNull(string) || pInitData == nullptr) {
+	if (stringIsNull(string) || !pInitData) {
 		return string;
 	}
 	
@@ -46,16 +45,11 @@ String deepCopyString(const String copy) {
 	return newString(copy.capacity, copy.pBuffer);
 }
 
-bool deleteString(String *const pString) {
-	if (!pString) {
-		return false;
-	}
-	
-	deallocate((void **)&pString->pBuffer);
+void deleteString(String *const pString) {
+	assert(pString);
+	pString->pBuffer = heapFree(pString->pBuffer);
 	pString->length = 0;
 	pString->capacity = 0;
-	
-	return true;
 }
 
 bool stringIsNull(const String string) {
