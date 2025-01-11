@@ -6,7 +6,6 @@
 #include "config.h"
 #include "log/Logger.h"
 #include "util/Allocation.h"
-#include "util/Types.h"
 
 #define SHADER_DIRECTORY (RESOURCE_PATH "shaders/")
 
@@ -14,7 +13,7 @@ static const char shaderEntrypoint[] = "main";
 
 typedef struct ShaderBytecode {
 	uint32_t bytecode_size;
-	byte_t *bytecode;
+	uint8_t *bytecode;
 } ShaderBytecode;
 
 static const char *shader_directory = SHADER_DIRECTORY;

@@ -2,11 +2,7 @@
 #define BUFFER_H
 
 #include <stdint.h>
-
 #include <vulkan/vulkan.h>
-
-#include "util/Types.h"
-
 #include "memory.h"
 #include "physical_device.h"
 #include "queue.h"
@@ -51,7 +47,7 @@ typedef struct BufferPartition {
 BufferPartition create_buffer_partition(const BufferPartitionCreateInfo buffer_partition_create_info);
 bool destroy_buffer_partition(BufferPartition *const buffer_partition_ptr);
 
-byte_t *buffer_partition_map_memory(const BufferPartition buffer_partition, const uint32_t partition_index);
+uint8_t *buffer_partition_map_memory(const BufferPartition buffer_partition, const uint32_t partition_index);
 void buffer_partition_unmap_memory(const BufferPartition buffer_partition);
 
 VkDescriptorBufferInfo buffer_partition_descriptor_info(const BufferPartition buffer_partition, const uint32_t partition_index);

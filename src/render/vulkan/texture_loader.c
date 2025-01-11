@@ -69,7 +69,7 @@ Texture loadTexture(const TextureCreateInfo textureCreateInfo) {
 	const String path = textureIDToPath(textureCreateInfo.textureID);
 
 	// Load image data into image staging buffer.
-	byte_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 2);
+	uint8_t *const mapped_memory = buffer_partition_map_memory(global_staging_buffer_partition, 2);
 	ImageData base_image_data = loadImageData(path.pBuffer, numImageChannels);
 	const VkDeviceSize base_image_width = base_image_data.width;
 	const VkDeviceSize base_image_height = base_image_data.height;

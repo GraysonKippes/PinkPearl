@@ -73,7 +73,7 @@ void computeMatrices(const uint32_t transformBufferDescriptorHandle, const uint3
 	vkWaitForFences(computeMatricesPipeline.vkDevice, 1, &computeMatricesFence, VK_TRUE, UINT64_MAX);
 	vkResetFences(computeMatricesPipeline.vkDevice, 1, &computeMatricesFence);
 
-	byte_t *mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 0);
+	uint8_t *mapped_memory = buffer_partition_map_memory(global_uniform_buffer_partition, 0);
 	if (!mapped_memory) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error computing matrices: uniform buffer memory mapping failed.");
 		return;

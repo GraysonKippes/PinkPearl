@@ -207,14 +207,14 @@ bool destroy_buffer_partition(BufferPartition *const buffer_partition_ptr) {
 	return true;
 }
 
-byte_t *buffer_partition_map_memory(const BufferPartition buffer_partition, const uint32_t partition_index) {
+uint8_t *buffer_partition_map_memory(const BufferPartition buffer_partition, const uint32_t partition_index) {
 
 	if (partition_index >= buffer_partition.num_ranges) {
 		logMsg(loggerVulkan, LOG_LEVEL_ERROR, "Error mapping buffer partition memory: partition index (%u) is not less than number of partition ranges (%u).", partition_index, buffer_partition.num_ranges);
 		return nullptr;
 	}
 
-	byte_t *mapped_memory = nullptr;
+	uint8_t *mapped_memory = nullptr;
 	const VkResult map_memory_result = vkMapMemory(buffer_partition.device, buffer_partition.memory, 
 			buffer_partition.ranges[partition_index].offset,
 			buffer_partition.ranges[partition_index].size,

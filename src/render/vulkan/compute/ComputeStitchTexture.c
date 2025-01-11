@@ -192,7 +192,7 @@ void computeStitchTexture(const int tilemapTextureHandle, const int destinationT
 		return;
 	}
 	
-	byte_t *mappedMemory = buffer_partition_map_memory(global_uniform_buffer_partition, 1); {
+	uint8_t *mappedMemory = buffer_partition_map_memory(global_uniform_buffer_partition, 1); {
 		const uint32_t numTileIndices = extentArea(tileExtent);
 		const uint32_t layerSize = numTileIndices * sizeof(**tileIndices);
 		const uint32_t fullLayerSize = 640 * sizeof(**tileIndices);

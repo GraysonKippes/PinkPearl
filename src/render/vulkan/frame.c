@@ -145,7 +145,7 @@ FrameArray createFrameArray(const FrameArrayCreateInfo frameArrayCreateInfo) {
 			0, 1, 1, 2, 2, 3, 3, 0
 		};
 		
-		byte_t *mappedMemory = buffer_partition_map_memory(global_staging_buffer_partition, 0);
+		uint8_t *mappedMemory = buffer_partition_map_memory(global_staging_buffer_partition, 0);
 		memcpy(mappedMemory, indices, indexCount * sizeof(uint16_t));
 		buffer_partition_unmap_memory(global_staging_buffer_partition);
 	
