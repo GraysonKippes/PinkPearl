@@ -6,7 +6,7 @@
 #include "log/Logger.h"
 #include "render/RenderManager.h"
 #include "util/Allocation.h"
-#include "util/time.h"
+#include "util/Time.h"
 
 #define ECS_ELEMENT_COUNT	64
 #define MAX_ENTITY_COUNT 	(ECS_ELEMENT_COUNT - 1)

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "util/string.h"
+#include "util/String.h"
 
 typedef struct TextureState {
 

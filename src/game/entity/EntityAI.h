@@ -2,7 +2,7 @@
 #define ENTITY_AI_H
 
 #include <stdint.h>
-#include "util/string.h"
+#include "util/String.h"
 
 typedef struct Entity Entity;
 

@@ -4,7 +4,7 @@
 
 #include "log/Logger.h"
 #include "util/Allocation.h"
-#include "util/time.h"
+#include "util/Time.h"
 
 #include "texture.h"
 #include "texture_manager.h"
@@ -96,8 +96,8 @@ int textureStateAnimate(TextureState *const pTextureState) {
 	}
 	
 	// Calculate the time difference between last frame change for this texture and current time, in seconds.
-	const unsigned long long int currentTimeMS = getTimeMS();
-	const unsigned long long int deltaTimeMS = currentTimeMS - pTextureState->lastFrameTimeMS;
+	const uint64_t currentTimeMS = getTimeMS();
+	const uint64_t deltaTimeMS = currentTimeMS - pTextureState->lastFrameTimeMS;
 	const double deltaTimeS = (double)deltaTimeMS / 1000.0;
 
 	// Time in seconds * frames per second = number of frames to increment the frame counter by.

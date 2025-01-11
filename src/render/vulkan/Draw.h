@@ -5,7 +5,7 @@
 
 #include "math/Box.h"
 #include "math/Vector.h"
-#include "util/string.h"
+#include "util/String.h"
 
 #include "Buffer2.h"
 #include "GraphicsPipeline.h"

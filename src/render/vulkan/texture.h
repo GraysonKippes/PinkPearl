@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 #include "physical_device.h"
 #include "math/extent.h"
-#include "util/string.h"
+#include "util/String.h"
 
 /* -- IMAGE OBJECT and FUNCTIONALITY -- */
 

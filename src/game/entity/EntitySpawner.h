@@ -1,7 +1,7 @@
 #ifndef ENTITY_SPAWNER_H
 #define ENTITY_SPAWNER_H
 
-#include "util/string.h"
+#include "util/String.h"
 
 // Controls how often an object (e.g. entity spawner) in a room reloads.
 typedef enum ReloadMode {

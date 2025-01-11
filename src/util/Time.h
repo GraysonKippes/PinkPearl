@@ -1,6 +1,8 @@
 #ifndef TIME_H
 #define TIME_H
 
-unsigned long long int getTimeMS(void);
+#include <stdint.h>
+
+uint64_t getTimeMS(void);
 
 #endif	// TIME_H

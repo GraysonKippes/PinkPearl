@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "math/Box.h"
 #include "math/Vector.h"
-#include "util/string.h"
+#include "util/String.h"
 #include "vulkan/math/projection.h"
 
 // TYPE DEFINITIONS

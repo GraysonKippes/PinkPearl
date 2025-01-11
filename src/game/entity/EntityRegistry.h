@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "EntityAI.h"
 #include "math/Box.h"
-#include "util/string.h"
+#include "util/String.h"
 
 typedef struct EntityRecord {
 	

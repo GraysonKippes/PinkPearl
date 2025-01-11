@@ -6,7 +6,7 @@
 
 #include "entity.h"
 
-#include "util/string.h"
+#include "util/String.h"
 
 #define MAX_NUM_ENTITIES 64
 

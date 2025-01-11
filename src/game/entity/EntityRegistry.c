@@ -5,7 +5,7 @@
 #include "config.h"
 #include "log/Logger.h"
 #include "util/FileIO.h"
-#include "util/string.h"
+#include "util/String.h"
 
 #define FGE_PATH (RESOURCE_PATH "data/EntityRecordData.fge")
 #define ENTITY_RECORD_COUNT 3

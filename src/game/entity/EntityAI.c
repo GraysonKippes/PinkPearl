@@ -4,7 +4,7 @@
 #include "math/Vector.h"
 #include "render/RenderManager.h"
 #include "util/Random.h"
-#include "util/time.h"
+#include "util/Time.h"
 
 static void entityAIRegularTickNone(Entity *const pEntity) {
 	(void)pEntity;

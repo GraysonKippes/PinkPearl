@@ -9,7 +9,7 @@
 #include "log/Logger.h"
 #include "render/RenderManager.h"
 #include "render/vulkan/TextureState.h"
-#include "util/time.h"
+#include "util/Time.h"
 #include "area/fgm_file_parse.h"
 #include "entity/entity_manager.h"
 #include "entity/EntityRegistry.h"

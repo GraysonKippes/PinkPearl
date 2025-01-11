@@ -7,7 +7,7 @@
 #include "game/game.h"
 #include "render/RenderManager.h"
 #include "render/vulkan/math/render_vector.h"
-#include "util/time.h"
+#include "util/Time.h"
 
 #define SQUARE(x) ((x) * (x))
 

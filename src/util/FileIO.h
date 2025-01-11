@@ -2,7 +2,7 @@
 #define FILE_IO_H
 
 #include <stdio.h>
-#include "util/string.h"
+#include "util/String.h"
 
 #define FMODE_NO_UPDATE	0
 #define FMODE_UPDATE	1

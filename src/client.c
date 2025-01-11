@@ -4,7 +4,7 @@
 #include "game/game.h"
 #include "glfw/GLFWManager.h"
 #include "render/RenderManager.h"
-#include "util/time.h"
+#include "util/Time.h"
 
 static bool clientRunning = false;
 

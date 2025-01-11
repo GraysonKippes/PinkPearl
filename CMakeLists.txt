@@ -110,7 +110,7 @@ target_sources(PinkPearl PRIVATE
 	src/util/Allocation.c
 	src/util/FileIO.c
 	src/util/Random.c
-	src/util/string.c
+	src/util/String.c
 	src/util/string_array.c
-	src/util/time.c
+	src/util/Time.c
 )

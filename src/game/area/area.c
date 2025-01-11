@@ -8,7 +8,7 @@
 #include "render/RenderManager.h"
 #include "render/vulkan/compute/ComputeStitchTexture.h"
 #include "util/Allocation.h"
-#include "util/time.h"
+#include "util/Time.h"
 
 #define swap(x, y) {\
 		typeof(x) tmp = x; \
