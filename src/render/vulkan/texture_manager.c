@@ -53,7 +53,7 @@ void initTextureManager(void) {
 	
 	// Nullify texture records FIRST, hash-collision-resolution relies on records being null to begin with.
 	for (int i = 0; i < numTextures; ++i) {
-		textureRecords[i].textureID = makeNullString();
+		textureRecords[i].textureID = (String){ };
 		textureRecords[i].textureHandle = textureHandleMissing;
 	}
 	

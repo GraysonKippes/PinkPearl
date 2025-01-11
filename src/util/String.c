@@ -6,14 +6,6 @@
 #include "log/Logger.h"
 #include "Allocation.h"
 
-String makeNullString(void) {
-	return (String){
-		.length = 0,
-		.capacity = 0,
-		.pBuffer = nullptr
-	};
-}
-
 String newStringEmpty(const size_t initCapacity) {
 	const size_t capacity = initCapacity > 0 ? initCapacity : 16;
 	String string = { };

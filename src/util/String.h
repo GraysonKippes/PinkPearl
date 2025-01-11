@@ -41,10 +41,6 @@ typedef union StringParam {
 	char *pCString;
 } StringParam;
 
-// Returns an "empty" or unallocated string.
-[[deprecated]]
-String makeNullString(void);
-
 // Returns a new string with no contents.
 String newStringEmpty(const size_t capacity);
 

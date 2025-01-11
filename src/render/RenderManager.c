@@ -65,7 +65,7 @@ void initRenderManager(void) {
 		
 		// Give each room texture enough layers for each room layer (background, foreground) and each room cache slot.
 		TextureCreateInfo roomTextureCreateInfo = (TextureCreateInfo){
-			.textureID = makeNullString(),
+			.textureID = (String){ },
 			.isLoaded = false,
 			.isTilemap = false,
 			.numCells.width = 1,
