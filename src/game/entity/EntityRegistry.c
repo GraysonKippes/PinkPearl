@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "config.h"
 #include "log/Logger.h"
-#include "util/file_io.h"
+#include "util/FileIO.h"
 #include "util/string.h"
 
 #define FGE_PATH (RESOURCE_PATH "data/EntityRecordData.fge")
@@ -31,48 +31,45 @@ void initEntityRegistry(void) {
 	
 	for (size_t i = 0; i < entityRecordCount; ++i) {
 		entityRecords[i] = (EntityRecord){
-			.entityID = makeNullString(),
+			.entityID = (String){ },
 			.entityHitbox = (BoxD){ },
 			.entityAI = entityAINone,
-			.textureID = makeNullString(),
+			.textureID = (String){ },
 			.textureDimensions = (BoxF){ }
 		};
 	}
 	
-	FILE *fge_file = fopen(FGE_PATH, "rb");
-	if (!fge_file) {
-		return;
-	}
+	File file = openFile(FGE_PATH, FMODE_READ, FMODE_NO_UPDATE, FMODE_BINARY);
 	
 	for (size_t i = 0; i < entityRecordCount; ++i) {
 		
 		EntityRecord entityRecord = { };
 		
 		// Read entity ID.
-		entityRecord.entityID = readString(fge_file, 32);
+		entityRecord.entityID = fileReadString(file, 32);
 		
 		/* -- Entity Properties -- */
 		
-		String entityAIID = readString(fge_file, 32);	// Read entity AI ID.
+		String entityAIID = fileReadString(file, 32);	// Read entity AI ID.
 		entityRecord.entityAI = findEntityAI(entityAIID);	// Find entity AI.
 		deleteString(&entityAIID);
-		read_data(fge_file, sizeof(BoxD), 1, &entityRecord.entityHitbox);	// Read entity hitbox.
-		read_data(fge_file, 4, 1, &entityRecord.entityIsPersistent);	// Read entity persistency flag.
+		fileReadData(file, sizeof(BoxD), 1, &entityRecord.entityHitbox); // Read entity hitbox.
+		fileReadData(file, 4, 1, &entityRecord.entityIsPersistent); // Read entity persistency flag.
 		
 		/* -- Entity Statistics -- */
 		
-		read_data(fge_file, sizeof(int32_t), 1, &entityRecord.entityHP);	// Read maximum entity hitpoints.
-		read_data(fge_file, sizeof(double), 1, &entityRecord.entitySpeed);	// Read maximum entity speed.
+		fileReadData(file, sizeof(int32_t), 1, &entityRecord.entityHP);	// Read maximum entity hitpoints.
+		fileReadData(file, sizeof(double), 1, &entityRecord.entitySpeed);	// Read maximum entity speed.
 		
 		/* -- Texture Properties -- */
 		
-		entityRecord.textureID = readString(fge_file, 32);	// Read entity texture ID.
-		read_data(fge_file, sizeof(BoxF), 1, &entityRecord.textureDimensions); // Read entity texture dimensions.
+		entityRecord.textureID = fileReadString(file, 32);	// Read entity texture ID.
+		fileReadData(file, sizeof(BoxF), 1, &entityRecord.textureDimensions); // Read entity texture dimensions.
 		
 		registerEntityRecord(entityRecord);
 	}
 	
-	fclose(fge_file);
+	closeFile(&file);
 	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Done initializing entity registry.");
 }
 

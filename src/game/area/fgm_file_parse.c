@@ -6,30 +6,24 @@
 #include "log/Logger.h"
 #include "render/render_config.h"
 #include "util/Allocation.h"
-#include "util/file_io.h"
+#include "util/FileIO.h"
 
 #define FGA_FILE_DIRECTORY (RESOURCE_PATH "data/DemoDungeon.fga")
 
-static int readRoomData(FILE *const pFile, Room *const pRoom);
+static int readRoomData(const File file, Room *const pRoom);
 
 Area readAreaData(const char *const pFilename) {
 	
-	static const Area nullArea = { };
-	Area area = nullArea;
-
-	FILE *pFile = fopen(FGA_FILE_DIRECTORY, "rb");
-	if (!pFile) {
-		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to open file.");
-		return nullArea;
-	}
+	Area area = { };
+	File file = openFile(FGA_FILE_DIRECTORY, FMODE_READ, FMODE_NO_UPDATE, FMODE_BINARY);
 
 	// Check file label.
 	char label[4];
-	fread(label, 1, 4, pFile);
+	fread(label, 1, 4, file.pStream);
 	if (strcmp(label, "FGA") != 0) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: invalid file format; found label \"%s\".", label);
-		fclose(pFile);
-		return nullArea;
+		closeFile(&file);
+		return (Area){ };
 	}
 	
 	
@@ -41,48 +35,34 @@ Area readAreaData(const char *const pFilename) {
 	 * Room data
 	*/
 	
-	// Read area extent.
-	if (!read_data(pFile, sizeof(area.extent), 1, &area.extent)) {
-		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read area extent.");
-		fclose(pFile);
-		return nullArea;
-	}
-	
+	fileReadData(file, sizeof(area.extent), 1, &area.extent);
 	const int areaWidth = boxWidth(area.extent);
 	const int areaLength = boxLength(area.extent);
 	const long int extentArea = areaWidth * areaLength;
 	
 	// Read room size type.
 	uint32_t roomSizeType = 0;
-	if (!read_data(pFile, sizeof(roomSizeType), 1, &roomSizeType)) {
-		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room size type.");
-		fclose(pFile);
-		return nullArea;
-	}
+	fileReadData(file, sizeof(roomSizeType), 1, &roomSizeType);
 
 	// Validate room size type, must be between 0 and 3, inclusive.
 	if (roomSizeType >= num_room_sizes) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: room size type is invalid (%u).", roomSizeType);
-		fclose(pFile);
-		return nullArea;
+		closeFile(&file);
+		return (Area){ };
 	}
 
 	area.room_size = (RoomSize)roomSizeType;
 	area.room_extent = room_size_to_extent(area.room_size);
 	
 	// Read room count.
-	if (!read_data(pFile, sizeof(area.roomCount), 1, &area.roomCount)) {
-		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read area room count.");
-		fclose(pFile);
-		return nullArea;
-	}
+	fileReadData(file, sizeof(area.roomCount), 1, &area.roomCount);
 	
 	// Allocate array of rooms.
 	area.pRooms = heapAlloc(area.roomCount, sizeof(Room));
 	if (!area.pRooms) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: allocation of area.pRooms failed.");
-		fclose(pFile);
-		return nullArea;
+		closeFile(&file);
+		return (Area){ };
 	}
 
 	// Allocate 1D position to room array index map.
@@ -90,8 +70,8 @@ Area readAreaData(const char *const pFilename) {
 	if (!area.pPositionsToRooms) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: allocation of area.pPositionsToRooms failed.");
 		heapFree(area.pRooms);
-		fclose(pFile);
-		return nullArea;
+		closeFile(&file);
+		return (Area){ };
 	}
 
 	// Fill the position-to-room map with -1.
@@ -110,13 +90,13 @@ Area readAreaData(const char *const pFilename) {
 		area.pRooms[i].entity_spawners = nullptr;	// Feature not yet implemented.
 		
 		// Read room data.
-		const int result = readRoomData(pFile, &area.pRooms[i]);
+		const int result = readRoomData(file, &area.pRooms[i]);
 		if (result != 0) {
 			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error creating area: error encountered while reading data for room %u (error code = %i).", i, result);
 			heapFree(area.pRooms);
 			heapFree(area.pPositionsToRooms);
-			fclose(pFile);
-			return nullArea;
+			closeFile(&file);
+			return (Area){ };
 		}
 
 		// Map the 1D position of this room to an index into the room array inside the area struct.
@@ -124,11 +104,11 @@ Area readAreaData(const char *const pFilename) {
 		area.pPositionsToRooms[roomPosition] = i;
 	}
 	
-	fclose(pFile);
+	closeFile(&file);
 	return area;
 }
 
-static int readRoomData(FILE *const pFile, Room *const pRoom) {
+static int readRoomData(const File file, Room *const pRoom) {
 	
 	/* Order of data reading:
 	 * Room Position (2 * i32)
@@ -153,24 +133,15 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 	}
 	
 	// Read room position from file.
-	if (!read_data(pFile, sizeof(Offset), 1, &pRoom->position)) {
-		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room position.");
-		return -1;
-	}
+	fileReadData(file, sizeof(Offset), 1, &pRoom->position);
 	
 	// Read tile data for each layer from file.
 	for (uint32_t i = 0; i < numRoomLayers; ++i) {
-		if (!read_data(pFile, sizeof(uint32_t), numTiles, pRoom->ppTileIndices[i])) {
-			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room tile indices.");
-			return -2;
-		}
+		fileReadData(file, sizeof(uint32_t), numTiles, pRoom->ppTileIndices[i]);
 	}
 	
 	// Read wall count from the file.
-	if (!read_data(pFile, sizeof(uint32_t), 1, &pRoom->wallCount)) {
-		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
-		return -2;
-	}
+	fileReadData(file, sizeof(uint32_t), 1, &pRoom->wallCount);
 	
 	if (pRoom->wallCount > 0) {
 		// Allocate array for the walls.
@@ -181,10 +152,7 @@ static int readRoomData(FILE *const pFile, Room *const pRoom) {
 		}
 		
 		// Read wall data from the file.
-		if (!read_data(pFile, sizeof(BoxD), pRoom->wallCount, pRoom->pWalls)) {
-			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Error reading area file: failed to read room wall count.");
-			return -2;
-		}
+		fileReadData(file, sizeof(BoxD), pRoom->wallCount, pRoom->pWalls);
 	}
 	
 	return 0;

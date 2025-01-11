@@ -108,7 +108,7 @@ target_sources(PinkPearl PRIVATE
 	src/render/vulkan/math/lerp.c
 	src/render/vulkan/math/render_vector.c
 	src/util/Allocation.c
-	src/util/file_io.c
+	src/util/FileIO.c
 	src/util/Random.c
 	src/util/string.c
 	src/util/string_array.c

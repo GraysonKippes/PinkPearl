@@ -36,6 +36,11 @@ typedef struct String {
 	
 } String;
 
+typedef union StringParam {
+	String string;
+	char *pCString;
+} StringParam;
+
 // Returns an "empty" or unallocated string.
 [[deprecated]]
 String makeNullString(void);
