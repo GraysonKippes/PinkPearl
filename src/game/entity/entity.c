@@ -11,8 +11,6 @@
 
 #define SQUARE(x) ((x) * (x))
 
-static Vector3D resolveCollision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
-
 Entity new_entity(void) {
 	return (Entity){
 		.physics = (EntityPhysics){ },
@@ -158,7 +156,7 @@ bool entityCollision(const Entity e1, const Entity e2) {
 	return xCol && yCol;
 }
 
-static Vector3D resolveCollision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall) {
+Vector3D resolveCollision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall) {
 	/*
 	Collision detection and correction works by transforming 
 	the entity's velocity vector into a linear function:

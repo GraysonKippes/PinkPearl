@@ -5,10 +5,18 @@
 #include "math/Box.h"
 #include "math/Vector.h"
 #include "util/String.h"
+#include "EntityAI.h"
 
 typedef struct EntityComponentSystem_T *EntityComponentSystem;
 
-typedef int32_t Entity;
+typedef int32_t Entity2;
+
+typedef void (*SystemFunctor)(EntityComponentSystem ecs, Entity2 entity);
+
+typedef struct System {
+	uint32_t componentMask;	// Specifies the components an entity must have at least to be matched by this system.
+	SystemFunctor functor;	// The function that is called on each matching entity.
+} System;
 
 // Entity Components:
 // EntityTraits: various flags that affect entity behavior or interaction with the game world. Generally immutable.
@@ -20,7 +28,8 @@ typedef enum EntityComponent {
 	ECMP_PHYSICS	= 0x00000002U,
 	ECMP_HITBOX		= 0x00000004U,
 	ECMP_HEALTH		= 0x00000008U,
-	ECMP_RENDER		= 0x00000010U
+	ECMP_AI			= 0x00000010U,
+	ECMP_RENDER		= 0x00000020U
 } EntityComponent;
 
 typedef struct EntityTraits { // All intrinsic state.
@@ -67,9 +76,12 @@ EntityComponentSystem createEntityComponentSystem(void);
 void deleteEntityComponentSystem(EntityComponentSystem *const pEntityComponentSystem);
 
 // Creates an entity in the given entity component system and returns a handle to it.
-Entity createEntity(EntityComponentSystem ecs, const EntityCreateInfo createInfo);
+Entity2 createEntity(EntityComponentSystem ecs, const EntityCreateInfo createInfo);
 
 // Deletes an entity that was created in the given entity component system and resets the handle to null.
-void deleteEntity(EntityComponentSystem ecs, Entity *const pEntity);
+void deleteEntity(EntityComponentSystem ecs, Entity2 *const pEntity);
+
+// Runs a system on all the matching entities in the entity component system.
+void executeSystem(EntityComponentSystem ecs, System system);
 
 #endif // ENTITY_MANAGER_2_H

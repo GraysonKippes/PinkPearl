@@ -63,5 +63,6 @@ void tick_entity(Entity *const pEntity);
 void entityTriggerInvincibility(Entity *const pEntity);
 
 bool entityCollision(const Entity e1, const Entity e2);
+Vector3D resolveCollision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
 
 #endif	// ENTITY_H
