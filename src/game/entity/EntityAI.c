@@ -19,7 +19,7 @@ static void entityAIRegularTickSlime(Entity *const pEntity) {
 	
 	static const double accelerationMagnitude = 0.24;
 	
-	const uint64_t currentTimeMS = getTimeMS();
+	const uint64_t currentTimeMS = getMilliseconds();
 	if (currentTimeMS - pEntity->ai.lastActionTimeMS >= pEntity->ai.timeTillNextAction) {
 		pEntity->ai.lastActionTimeMS = currentTimeMS;
 		pEntity->ai.timeTillNextAction = (random(0ULL, 3ULL) + random(1ULL, 4ULL)) * 1000ULL;

@@ -182,7 +182,7 @@ bool areaSetNextRoom(Area *const pArea, const CardinalDirection direction) {
 		//swap(pArea->renderState.currentRoomQuadIndices[1], pArea->renderState.nextRoomQuadIndices[1]);
 	}
 	pArea->renderState.nextCacheSlot = nextCacheSlot;
-	pArea->renderState.scrollStartTimeMS = getTimeMS();
+	pArea->renderState.scrollStartTimeMS = getMilliseconds();
 	pArea->renderState.roomIDsToCacheSlots[pNextRoom->id] = pArea->renderState.nextCacheSlot;
 	pArea->renderState.cacheSlotsToRoomIDs[pArea->renderState.nextCacheSlot] = pNextRoom->id;
 	pArea->currentRoomIndex = pNextRoom->id;
@@ -389,7 +389,7 @@ Vector4F areaGetCameraPosition(Area *const pArea) {
 	};
 	
 	static const uint64_t timeLimitMS = 1024;
-	const uint64_t currentTimeMS = getTimeMS();
+	const uint64_t currentTimeMS = getMilliseconds();
 	
 	// If the scrolling time limit is reached, update the current room slot to equal the next room cache slot.
 	if (currentTimeMS - pArea->renderState.scrollStartTimeMS >= timeLimitMS) {

@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-uint64_t getTimeMS(void);
+uint64_t getMilliseconds(void);
 
 #endif	// TIME_H

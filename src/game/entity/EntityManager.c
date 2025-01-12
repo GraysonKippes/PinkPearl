@@ -399,7 +399,7 @@ void doEntityDamage(EntityComponentSystem ecs, Entity2 entity) {
 	
 	
 	
-	if (getTimeMS() - pHealth->iFrameTimer >= 1500) {
+	if (getMilliseconds() - pHealth->iFrameTimer >= 1500) {
 		pHealth->invincible = false;
 	}
 }

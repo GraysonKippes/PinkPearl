@@ -41,7 +41,7 @@ TextureState newTextureState(const String textureID) {
 	textureState.startCell = texture.animations[textureState.currentAnimation].startCell;
 	textureState.numFrames = texture.animations[textureState.currentAnimation].numFrames;
 	textureState.currentFPS = texture.animations[textureState.currentAnimation].framesPerSecond;
-	textureState.lastFrameTimeMS = getTimeMS();
+	textureState.lastFrameTimeMS = getMilliseconds();
 	
 	return textureState;
 }
@@ -62,7 +62,7 @@ TextureState newTextureState2(const int32_t textureHandle) {
 		.numFrames = texture.animations[0].numFrames,
 		.currentFPS = texture.animations[0].framesPerSecond,
 		.currentFrame = 0,
-		.lastFrameTimeMS = getTimeMS()
+		.lastFrameTimeMS = getMilliseconds()
 	};
 }
 
@@ -81,7 +81,7 @@ bool textureStateSetAnimation(TextureState *const pTextureState, const unsigned 
 	pTextureState->numFrames = textureAnimation.numFrames;
 	pTextureState->currentFPS = textureAnimation.framesPerSecond;
 	pTextureState->currentFrame = 0;
-	pTextureState->lastFrameTimeMS = getTimeMS();
+	pTextureState->lastFrameTimeMS = getMilliseconds();
 
 	return true;
 }
@@ -96,7 +96,7 @@ int textureStateAnimate(TextureState *const pTextureState) {
 	}
 	
 	// Calculate the time difference between last frame change for this texture and current time, in seconds.
-	const uint64_t currentTimeMS = getTimeMS();
+	const uint64_t currentTimeMS = getMilliseconds();
 	const uint64_t deltaTimeMS = currentTimeMS - pTextureState->lastFrameTimeMS;
 	const double deltaTimeS = (double)deltaTimeMS / 1000.0;
 

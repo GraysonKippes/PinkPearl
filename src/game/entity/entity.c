@@ -64,7 +64,7 @@ void tick_entity(Entity *const pEntity) {
 		}
 	}
 	
-	if (getTimeMS() - pEntity->iFrameTimer >= 1500) {
+	if (getMilliseconds() - pEntity->iFrameTimer >= 1500) {
 		pEntity->invincible = false;
 	}
 
@@ -82,7 +82,7 @@ void tick_entity(Entity *const pEntity) {
 void entityTriggerInvincibility(Entity *const pEntity) {
 	if (!pEntity->invincible) {
 		pEntity->invincible = true;
-		pEntity->iFrameTimer = getTimeMS();
+		pEntity->iFrameTimer = getMilliseconds();
 	}
 }
 
