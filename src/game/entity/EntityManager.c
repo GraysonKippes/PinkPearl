@@ -6,6 +6,7 @@
 #include "log/Logger.h"
 #include "render/RenderManager.h"
 #include "util/Allocation.h"
+#include "util/FileIO.h"
 #include "util/Time.h"
 
 #define ECS_ELEMENT_COUNT	64
@@ -13,15 +14,44 @@
 
 #define SQUARE(x) ((x) * (x))
 
-static Vector3D resolveCollision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
-
 // Requirements of entity component system:
 //	* Systems must operate on all entities with *at least* all requirement components.
 //	* Each component must reference back to the entity that it "owns" it.
 //	* Each entity must have a bitmask indicating which components it has.
 //	* Entity handle zero must be reserved to indicate a null entity.
 
+// This struct includes only the intrinsic/immutable state in EntityPhysics.
+typedef struct IntrEntityPhysics {
+	double maxSpeed;
+	double mass;
+} IntrEntityPhysics;
+
+// This struct includes only the intrinsic/immutable state in EntityHealth.
+typedef struct IntrEntityHealth {
+	int32_t maxHP;
+} IntrEntityHealth;
+
+// Contains the basic, immutable information of a species of entity, from which individuals of that species can be instantiated.
+typedef struct EntityRecord2 {
+	String entityID;
+	uint32_t componentMask;
+	EntityTraits traits;
+	IntrEntityPhysics physics;
+	BoxD hitbox;
+	IntrEntityHealth health;
+	EntityAI ai;
+	String textureID;
+	BoxF textureDimensions;
+} EntityRecord2;
+
+typedef struct EntityRegistry {
+	size_t recordCount;
+	EntityRecord2 *pRecords;
+} EntityRegistry;
+
 struct EntityComponentSystem_T {
+	
+	EntityRegistry registry;
 	
 	int32_t stackPosition; // Index of the top element in the stack.
 	Entity2 entityStack[MAX_ENTITY_COUNT];
@@ -36,6 +66,14 @@ struct EntityComponentSystem_T {
 	EntityAI			ais[ECS_ELEMENT_COUNT];
 	EntityRenderState	renderStates[ECS_ELEMENT_COUNT];
 };
+
+// Helper function for the registry loading function.
+static void registerEntityRecord(EntityRegistry *const pRegistry, const EntityRecord2 record);
+
+// Helper function for the registry loading function.
+static EntityAI findEntityAI(const String string);
+
+static Vector3D resolveCollision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
 
 EntityComponentSystem createEntityComponentSystem(void) {
 	EntityComponentSystem ecs = heapAlloc(1, sizeof(struct EntityComponentSystem_T));
@@ -52,7 +90,92 @@ EntityComponentSystem createEntityComponentSystem(void) {
 
 void deleteEntityComponentSystem(EntityComponentSystem *const pEntityComponentSystem) {
 	assert(pEntityComponentSystem);
+	if ((*pEntityComponentSystem)->registry.pRecords) {
+		(*pEntityComponentSystem)->registry.pRecords = heapFree((*pEntityComponentSystem)->registry.pRecords);
+	}
 	*pEntityComponentSystem = heapFree(*pEntityComponentSystem);
+}
+
+void registerEntities(EntityComponentSystem ecs, const String fgePath) {
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entities...");
+	assert(ecs);
+	
+	EntityRegistry registry = { };
+	File file = openFile(fgePath.pBuffer, FMODE_READ, FMODE_NO_UPDATE, FMODE_BINARY);
+	
+	uint32_t recordCount = 0;
+	fileReadData(file, 1, sizeof(recordCount), &recordCount);
+	registry.pRecords = heapAlloc(recordCount, sizeof(EntityRecord2));
+	if (!registry.pRecords) {
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Registering entities: failed to allocate record array.");
+		return;
+	}
+	registry.recordCount = recordCount;
+	
+	for (size_t i = 0; i < registry.recordCount; ++i) {
+		EntityRecord2 record = { };
+		record.entityID = fileReadString(file, 64);
+		
+		fileReadData(file, 1, sizeof(record.componentMask), &record.componentMask);
+		fileReadData(file, 1, sizeof(record.traits), &record.traits);
+		fileReadData(file, 1, sizeof(record.physics), &record.physics);
+		fileReadData(file, 1, sizeof(record.hitbox), &record.hitbox);
+		fileReadData(file, 1, sizeof(record.health), &record.health);
+		
+		String aiID = fileReadString(file, 64);
+		record.ai = findEntityAI(aiID);
+		deleteString(&aiID);
+		
+		record.textureID = fileReadString(file, 64);
+		fileReadData(file, 1, sizeof(record.textureDimensions), &record.textureDimensions);
+		
+		registerEntityRecord(&registry, record);
+	}
+	
+	closeFile(&file);
+	ecs->registry = registry;
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registered entities.");
+}
+
+static void registerEntityRecord(EntityRegistry *const pRegistry, const EntityRecord2 record) {
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", record.entityID.pBuffer);
+	assert(pRegistry);
+	
+	size_t hashIndex = stringHash(record.entityID, pRegistry->recordCount);
+	for (size_t i = 0; i < pRegistry->recordCount; ++i) {
+		if (stringIsNull(pRegistry->pRecords[hashIndex].entityID)) {
+			pRegistry->pRecords[hashIndex] = record;
+			return;
+		} else {
+			hashIndex += 1;
+			hashIndex %= pRegistry->recordCount;
+		}
+	}
+	
+	logMsg(loggerGame, LOG_LEVEL_ERROR, "Registering entity record: could not register entity record with ID \"%s\"...", record.entityID.pBuffer);
+}
+
+static EntityAI findEntityAI(const String string) {
+	if (stringIsNull(string)) {
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Finding entity AI: string ID is null.");
+		return entityAINone;
+	}
+	
+	#define ENTITY_AI_COUNT 2
+	const EntityAI entityAIs[ENTITY_AI_COUNT] = {
+		[0] = entityAINone, 
+		[1] = entityAISlime
+	};
+	
+	// Just use a linear search to find the entity AI, good enough for now.
+	for (size_t i = 0; i < ENTITY_AI_COUNT; ++i) {
+		if (stringCompare(string, entityAIs[i].id)) {
+			return entityAIs[i];
+		}
+	}
+	
+	logMsg(loggerGame, LOG_LEVEL_ERROR, "Finding entity AI: no match found with ID \"%s\".", string.pBuffer);
+	return entityAINone;
 }
 
 Entity2 createEntity(EntityComponentSystem ecs, const EntityCreateInfo createInfo) {

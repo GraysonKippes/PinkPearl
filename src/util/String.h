@@ -23,9 +23,6 @@
 // TODO: consider adding a flag for whether the string is malloced/freeable or not.
 typedef struct String {
 	
-	// Character buffer containing the string's contents.
-	char *pBuffer;
-	
 	// Number of characters in the string.
 	// Does not include the null-terminator.
 	// Must be on range of [0, capacity).
@@ -33,6 +30,9 @@ typedef struct String {
 	
 	// Total size of character buffer in bytes.
 	size_t capacity;
+	
+	// Character buffer containing the string's contents.
+	char *pBuffer;
 	
 } String;
 

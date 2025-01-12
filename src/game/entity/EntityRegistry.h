@@ -1,7 +1,6 @@
 #ifndef ENTITY_REGISTRY_H
 #define ENTITY_REGISTRY_H
 
-#include <stdbool.h>
 #include <stdint.h>
 #include "EntityAI.h"
 #include "math/Box.h"
