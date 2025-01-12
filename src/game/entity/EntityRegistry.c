@@ -51,18 +51,18 @@ void initEntityRegistry(void) {
 		String entityAIID = fileReadString(file, 32);	// Read entity AI ID.
 		entityRecord.entityAI = findEntityAI(entityAIID);	// Find entity AI.
 		deleteString(&entityAIID);
-		fileReadData(file, sizeof(BoxD), 1, &entityRecord.entityHitbox); // Read entity hitbox.
-		fileReadData(file, 4, 1, &entityRecord.entityIsPersistent); // Read entity persistency flag.
+		fileReadData(file, 1, sizeof(entityRecord.entityHitbox), &entityRecord.entityHitbox); // Read entity hitbox.
+		fileReadData(file, 1, sizeof(entityRecord.entityIsPersistent), &entityRecord.entityIsPersistent); // Read entity persistency flag.
 		
 		/* -- Entity Statistics -- */
 		
-		fileReadData(file, sizeof(int32_t), 1, &entityRecord.entityHP);	// Read maximum entity hitpoints.
-		fileReadData(file, sizeof(double), 1, &entityRecord.entitySpeed);	// Read maximum entity speed.
+		fileReadData(file, 1, sizeof(entityRecord.entityHP), &entityRecord.entityHP);	// Read maximum entity hitpoints.
+		fileReadData(file, 1, sizeof(entityRecord.entitySpeed), &entityRecord.entitySpeed);	// Read maximum entity speed.
 		
 		/* -- Texture Properties -- */
 		
 		entityRecord.textureID = fileReadString(file, 32);	// Read entity texture ID.
-		fileReadData(file, sizeof(BoxF), 1, &entityRecord.textureDimensions); // Read entity texture dimensions.
+		fileReadData(file, 1, sizeof(entityRecord.textureDimensions), &entityRecord.textureDimensions); // Read entity texture dimensions.
 		
 		registerEntityRecord(entityRecord);
 	}

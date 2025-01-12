@@ -33,7 +33,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 		goto end_read;
 	}
 
-	fileReadData(file, sizeof(uint32_t), 1, &texturePack.numTextures);
+	fileReadData(file, 1, sizeof(texturePack.numTextures), &texturePack.numTextures);
 
 	if (texturePack.numTextures == 0) {
 		logMsg(loggerSystem, LOG_LEVEL_ERROR, "Number of textures specified as zero.");
@@ -58,17 +58,17 @@ TexturePack readTexturePackFile(const char *pPath) {
 
 		// Read texture type.
 		uint32_t textureCreateInfoFlags = 0;
-		fileReadData(file, sizeof(uint32_t), 1, &textureCreateInfoFlags);
+		fileReadData(file, 1, sizeof(textureCreateInfoFlags), &textureCreateInfoFlags);
 		if (textureCreateInfoFlags & 0x00000001U) pTextureInfo->isLoaded = true;
 		if (textureCreateInfoFlags & 0x00000002U) pTextureInfo->isTilemap = true;
 
 		// Read number of cells in texture atlas.
-		fileReadData(file, sizeof(uint32_t), 1, &pTextureInfo->numCells.width);
-		fileReadData(file, sizeof(uint32_t), 1, &pTextureInfo->numCells.length);
+		fileReadData(file, 1, sizeof(pTextureInfo->numCells.width), &pTextureInfo->numCells.width);
+		fileReadData(file, 1, sizeof(pTextureInfo->numCells.length), &pTextureInfo->numCells.length);
 
 		// Read texture cell extent.
-		fileReadData(file, sizeof(uint32_t), 1, &pTextureInfo->cellExtent.width);
-		fileReadData(file, sizeof(uint32_t), 1, &pTextureInfo->cellExtent.length);
+		fileReadData(file, 1, sizeof(pTextureInfo->cellExtent.width), &pTextureInfo->cellExtent.width);
+		fileReadData(file, 1, sizeof(pTextureInfo->cellExtent.length), &pTextureInfo->cellExtent.length);
 
 		// Check extents -- if any of them are zero, then there certainly was an error.
 		if (pTextureInfo->numCells.width == 0) {
@@ -85,7 +85,7 @@ TexturePack readTexturePackFile(const char *pPath) {
 		}
 
 		// Read animation create infos.
-		fileReadData(file, sizeof(uint32_t), 1, &pTextureInfo->numAnimations);
+		fileReadData(file, 1, sizeof(pTextureInfo->numAnimations), &pTextureInfo->numAnimations);
 		if (pTextureInfo->numAnimations > 0) {
 
 			pTextureInfo->animations = heapAlloc(pTextureInfo->numAnimations, sizeof(TextureAnimation));
@@ -95,9 +95,9 @@ TexturePack readTexturePackFile(const char *pPath) {
 			}
 
 			for (uint32_t j = 0; j < pTextureInfo->numAnimations; ++j) {
-				fileReadData(file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].startCell);
-				fileReadData(file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].numFrames);
-				fileReadData(file, sizeof(uint32_t), 1, &pTextureInfo->animations[j].framesPerSecond);
+				fileReadData(file, 1, sizeof(pTextureInfo->animations[j].startCell), &pTextureInfo->animations[j].startCell);
+				fileReadData(file, 1, sizeof(pTextureInfo->animations[j].numFrames), &pTextureInfo->animations[j].numFrames);
+				fileReadData(file, 1, sizeof(pTextureInfo->animations[j].framesPerSecond), &pTextureInfo->animations[j].framesPerSecond);
 			}
 		} else {
 			// If there are no specified animations, then set the number of animations to one 
