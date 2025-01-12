@@ -68,10 +68,63 @@ struct EntityComponentSystem_T {
 };
 
 // Helper function for the registry loading function.
-static void registerEntityRecord(EntityRegistry *const pRegistry, const EntityRecord2 record);
+static void registerEntityRecord(EntityRegistry *const pRegistry, const EntityRecord2 record) {
+	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", record.entityID.pBuffer);
+	assert(pRegistry);
+	
+	size_t hashIndex = stringHash(record.entityID, pRegistry->recordCount);
+	for (size_t i = 0; i < pRegistry->recordCount; ++i) {
+		if (stringIsNull(pRegistry->pRecords[hashIndex].entityID)) {
+			pRegistry->pRecords[hashIndex] = record;
+			return;
+		} else {
+			hashIndex += 1;
+			hashIndex %= pRegistry->recordCount;
+		}
+	}
+	
+	logMsg(loggerGame, LOG_LEVEL_ERROR, "Registering entity record: could not register entity record with ID \"%s\"...", record.entityID.pBuffer);
+}
 
 // Helper function for the registry loading function.
-static EntityAI findEntityAI(const String string);
+static EntityAI findEntityAI(const String string) {
+	if (stringIsNull(string)) {
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Finding entity AI: string ID is null.");
+		return entityAINone;
+	}
+	
+	#define ENTITY_AI_COUNT 2
+	const EntityAI entityAIs[ENTITY_AI_COUNT] = {
+		[0] = entityAINone, 
+		[1] = entityAISlime
+	};
+	
+	// Just use a linear search to find the entity AI, good enough for now.
+	for (size_t i = 0; i < ENTITY_AI_COUNT; ++i) {
+		if (stringCompare(string, entityAIs[i].id)) {
+			return entityAIs[i];
+		}
+	}
+	
+	logMsg(loggerGame, LOG_LEVEL_ERROR, "Finding entity AI: no match found with ID \"%s\".", string.pBuffer);
+	return entityAINone;
+}
+
+static EntityRecord2 findEntityRecord(const EntityComponentSystem ecs, const String entityID) {
+	
+	size_t hashIndex = stringHash(entityID, ecs->registry.recordCount);
+	for (size_t i = 0; i < ecs->registry.recordCount; ++i) {
+		if (stringCompare(entityID, ecs->registry.pRecords[i].entityID)) {
+			return ecs->registry.pRecords[i];
+		} else {
+			hashIndex += 1;
+			hashIndex %= ecs->registry.recordCount;
+		}
+	}
+	
+	logMsg(loggerGame, LOG_LEVEL_ERROR, "Finding entity AI: no match found with ID \"%s\".", entityID.pBuffer);
+	return (EntityRecord2){ };
+}
 
 static Vector3D resolveCollision(const Vector3D old_position, const Vector3D new_position, const BoxD hitbox, const BoxD wall);
 
@@ -135,47 +188,6 @@ void registerEntities(EntityComponentSystem ecs, const String fgePath) {
 	closeFile(&file);
 	ecs->registry = registry;
 	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registered entities.");
-}
-
-static void registerEntityRecord(EntityRegistry *const pRegistry, const EntityRecord2 record) {
-	logMsg(loggerGame, LOG_LEVEL_VERBOSE, "Registering entity record with ID \"%s\"...", record.entityID.pBuffer);
-	assert(pRegistry);
-	
-	size_t hashIndex = stringHash(record.entityID, pRegistry->recordCount);
-	for (size_t i = 0; i < pRegistry->recordCount; ++i) {
-		if (stringIsNull(pRegistry->pRecords[hashIndex].entityID)) {
-			pRegistry->pRecords[hashIndex] = record;
-			return;
-		} else {
-			hashIndex += 1;
-			hashIndex %= pRegistry->recordCount;
-		}
-	}
-	
-	logMsg(loggerGame, LOG_LEVEL_ERROR, "Registering entity record: could not register entity record with ID \"%s\"...", record.entityID.pBuffer);
-}
-
-static EntityAI findEntityAI(const String string) {
-	if (stringIsNull(string)) {
-		logMsg(loggerGame, LOG_LEVEL_ERROR, "Finding entity AI: string ID is null.");
-		return entityAINone;
-	}
-	
-	#define ENTITY_AI_COUNT 2
-	const EntityAI entityAIs[ENTITY_AI_COUNT] = {
-		[0] = entityAINone, 
-		[1] = entityAISlime
-	};
-	
-	// Just use a linear search to find the entity AI, good enough for now.
-	for (size_t i = 0; i < ENTITY_AI_COUNT; ++i) {
-		if (stringCompare(string, entityAIs[i].id)) {
-			return entityAIs[i];
-		}
-	}
-	
-	logMsg(loggerGame, LOG_LEVEL_ERROR, "Finding entity AI: no match found with ID \"%s\".", string.pBuffer);
-	return entityAINone;
 }
 
 Entity2 createEntity(EntityComponentSystem ecs, const EntityCreateInfo createInfo) {
@@ -250,6 +262,38 @@ Entity2 createEntity(EntityComponentSystem ecs, const EntityCreateInfo createInf
 	}
 	
 	return entity;
+}
+
+Entity2 loadEntity2(EntityComponentSystem ecs, const EntityLoadInfo loadInfo) {
+	if (!ecs) {
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Loading entity: entity component system is null.");
+		return (Entity2){ };
+	}
+	
+	const EntityRecord2 record = findEntityRecord(ecs, loadInfo.entityID);
+	if (stringIsNull(record.entityID)) {
+		logMsg(loggerGame, LOG_LEVEL_ERROR, "Loading entity: could not find entity record with ID \"%s\".", loadInfo.entityID);
+	}
+	
+	const EntityCreateInfo createInfo = {
+		.componentMask = record.componentMask,
+		.traits = record.traits,
+		.physics = (EntityPhysics){
+			.maxSpeed = record.physics.maxSpeed,
+			.mass = record.physics.mass,
+			.position = loadInfo.physics.position,
+			.velocity = loadInfo.physics.velocity,
+			.acceleration = loadInfo.physics.acceleration,
+		},
+		.hitbox = record.hitbox,
+		.health = (EntityHealth){
+			.currentHP = loadInfo.health.currentHP,
+			.maxHP = record.health.maxHP
+		},
+		.textureID = record.textureID,
+		.textureDimensions = record.textureDimensions
+	};
+	return createEntity(ecs, createInfo);
 }
 
 void deleteEntity(EntityComponentSystem ecs, Entity2 *const pEntity) {

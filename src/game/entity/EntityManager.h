@@ -69,6 +69,24 @@ typedef struct EntityCreateInfo {
 	BoxF textureDimensions;
 } EntityCreateInfo;
 
+// Used to initialize some mutable state when loading an entity.
+typedef struct InitEntityPhysics {
+	Vector3D position;		// Current position of the entity is the game area.
+	Vector3D velocity;		// Added to position every tick.
+	Vector3D acceleration;	// Added to velocity every tick.
+} InitEntityPhysics;
+
+// Used to initialize some mutable state when loading an entity.
+typedef struct InitEntityHealth {
+	int32_t currentHP; // If currentHP is zero, then it is initialized to maxHP. Fields invincible and iFrameTimer are ignored.
+} InitEntityHealth;
+
+typedef struct EntityLoadInfo {
+	String entityID;
+	InitEntityPhysics physics;
+	InitEntityHealth health;
+} EntityLoadInfo;
+
 // Creates and returns an entity component system.
 EntityComponentSystem createEntityComponentSystem(void);
 
@@ -77,6 +95,8 @@ void deleteEntityComponentSystem(EntityComponentSystem *const pEntityComponentSy
 
 // Creates an entity in the given entity component system and returns a handle to it.
 Entity2 createEntity(EntityComponentSystem ecs, const EntityCreateInfo createInfo);
+
+Entity2 loadEntity2(EntityComponentSystem ecs, const EntityLoadInfo loadInfo);
 
 // Deletes an entity that was created in the given entity component system and resets the handle to null.
 void deleteEntity(EntityComponentSystem ecs, Entity2 *const pEntity);
