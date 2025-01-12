@@ -52,7 +52,7 @@ void initEntityRegistry(void) {
 		entityRecord.entityAI = findEntityAI(entityAIID);	// Find entity AI.
 		deleteString(&entityAIID);
 		fileReadData(file, 1, sizeof(entityRecord.entityHitbox), &entityRecord.entityHitbox); // Read entity hitbox.
-		fileReadData(file, 1, sizeof(entityRecord.entityIsPersistent), &entityRecord.entityIsPersistent); // Read entity persistency flag.
+		fileReadData(file, 1, 4, &entityRecord.entityIsPersistent); // Read entity persistency flag.
 		
 		/* -- Entity Statistics -- */
 		
