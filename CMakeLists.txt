@@ -51,9 +51,8 @@ target_include_directories(PinkPearl PRIVATE
 )
 
 target_sources(PinkPearl PRIVATE 
-	src/client.c
 	src/debug.c
-	src/main.c
+	src/Main.c
 	src/game/Game.c
 	src/audio/audio_config.c
 	src/audio/audio_loader.c

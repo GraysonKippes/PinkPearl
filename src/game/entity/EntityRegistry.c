@@ -12,11 +12,9 @@
 #define ENTITY_AI_COUNT 2
 
 static const size_t entityRecordCount = ENTITY_RECORD_COUNT;
-
 static EntityRecord entityRecords[ENTITY_RECORD_COUNT];
 
 static const size_t entityAICount = ENTITY_AI_COUNT;
-
 static EntityAI entityAIs[ENTITY_AI_COUNT];
 
 static bool registerEntityRecord(const EntityRecord entityRecord);

@@ -1,18 +1,21 @@
 #include <unistd.h>
 #include "config.h"
-#include "client.h"
 #include "debug.h"
 #include "audio/audio_mixer.h"
 #include "audio/portaudio/portaudio_manager.h"
-#include "game/game.h"
+#include "game/Game.h"
 #include "game/entity/entity_manager.h"
 #include "game/entity/EntityRegistry.h"
 #include "glfw/GLFWManager.h"
 #include "log/Logger.h"
 #include "render/RenderManager.h"
 #include "util/Random.h"
+#include "util/Time.h"
 
 static const char appVersion[] = "Alpha 0.2";
+static bool appRunning = false;
+
+static void runApp(void);
 
 int main(void) {
 	logMsg(loggerSystem, LOG_LEVEL_INFO, "Running Pink Pearl version %s.", appVersion);
@@ -31,7 +34,7 @@ int main(void) {
 	start_game();
 
 	logMsg(loggerSystem, LOG_LEVEL_INFO, "Ready to play Pink Pearl!");
-	runClient();
+	runApp();
 
 	endGame();
 	terminate_entity_registry();
@@ -42,4 +45,36 @@ int main(void) {
 
 	logMsg(loggerSystem, LOG_LEVEL_INFO, "Stopping Pink Pearl. Goodbye!");
 	return 0;
+}
+
+static void runApp(void) {
+	appRunning = true;
+	
+	static const double tickPerSecond = 20.0;	// ticks / s
+	static const double msPerTick = 1000.0 / tickPerSecond; // ms
+
+	uint64_t previousTime = getTimeMS();	// ms
+	float tickDelta = 0.0F; // Unitless interpolation value
+
+	while (appRunning && !shouldAppWindowClose()) {
+
+		const uint64_t currentTime = getTimeMS();	// ms
+		const uint64_t deltaTime = currentTime - previousTime;	// ms
+		previousTime = currentTime;
+		tickDelta += (float)(deltaTime / msPerTick);
+
+		while (tickDelta >= 1.0F) {
+			tick_game();
+			tickDelta -= 1.0F;
+		}
+
+		if (appRunning && !shouldAppWindowClose()) {
+			const GameState gameState = getGameState();
+			renderFrame(tickDelta, areaGetCameraPosition(&currentArea), areaGetProjectionBounds(currentArea), !gameState.paused && !gameState.scrolling);
+		} else {
+			break;
+		}
+	}
+	
+	appRunning = false;
 }
