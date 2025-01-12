@@ -35,14 +35,14 @@ Area readAreaData(const char *const pFilename) {
 	 * Room data
 	*/
 	
-	fileReadData(file, sizeof(area.extent), 1, &area.extent);
+	fileReadData(file, 1, sizeof(area.extent), &area.extent);
 	const int areaWidth = boxWidth(area.extent);
 	const int areaLength = boxLength(area.extent);
 	const long int extentArea = areaWidth * areaLength;
 	
 	// Read room size type.
 	uint32_t roomSizeType = 0;
-	fileReadData(file, sizeof(roomSizeType), 1, &roomSizeType);
+	fileReadData(file, 1, sizeof(roomSizeType), &roomSizeType);
 
 	// Validate room size type, must be between 0 and 3, inclusive.
 	if (roomSizeType >= num_room_sizes) {
@@ -55,7 +55,7 @@ Area readAreaData(const char *const pFilename) {
 	area.room_extent = room_size_to_extent(area.room_size);
 	
 	// Read room count.
-	fileReadData(file, sizeof(area.roomCount), 1, &area.roomCount);
+	fileReadData(file, 1, sizeof(area.roomCount), &area.roomCount);
 	
 	// Allocate array of rooms.
 	area.pRooms = heapAlloc(area.roomCount, sizeof(Room));
@@ -133,15 +133,15 @@ static int readRoomData(const File file, Room *const pRoom) {
 	}
 	
 	// Read room position from file.
-	fileReadData(file, sizeof(Offset), 1, &pRoom->position);
+	fileReadData(file, 1, sizeof(Offset), &pRoom->position);
 	
 	// Read tile data for each layer from file.
 	for (uint32_t i = 0; i < numRoomLayers; ++i) {
-		fileReadData(file, sizeof(uint32_t), numTiles, pRoom->ppTileIndices[i]);
+		fileReadData(file, numTiles, sizeof(uint32_t), pRoom->ppTileIndices[i]);
 	}
 	
 	// Read wall count from the file.
-	fileReadData(file, sizeof(uint32_t), 1, &pRoom->wallCount);
+	fileReadData(file, 1, sizeof(uint32_t), &pRoom->wallCount);
 	
 	if (pRoom->wallCount > 0) {
 		// Allocate array for the walls.
@@ -152,7 +152,7 @@ static int readRoomData(const File file, Room *const pRoom) {
 		}
 		
 		// Read wall data from the file.
-		fileReadData(file, sizeof(BoxD), pRoom->wallCount, pRoom->pWalls);
+		fileReadData(file, pRoom->wallCount, sizeof(BoxD), pRoom->pWalls);
 	}
 	
 	return 0;

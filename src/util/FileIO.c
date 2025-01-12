@@ -82,10 +82,15 @@ void fileReadData(const File file, const size_t objectCount, const size_t object
 		return;
 	}
 	
-	const size_t bytesToRead = objectCount * objectSize;
-	const size_t bytesRead = fread(pBuffer, objectSize, objectCount, file.pStream);
-	if (bytesRead != bytesToRead) {
-		logMsg(loggerSystem, LOG_LEVEL_WARNING, "Reading data from file: did not read requested number of bytes (requested: %llu, actually read: %llu).", bytesToRead, bytesRead);
+	const size_t objectsRead = fread(pBuffer, objectSize, objectCount, file.pStream);
+	if (objectsRead != objectCount) {
+		if (feof(file.pStream) != 0) {
+			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Reading data from file: end-of-file reached.");
+		} else if (ferror(file.pStream) != 0) {
+			logMsg(loggerSystem, LOG_LEVEL_ERROR, "Reading data from file: error occurred during reading operation.");
+		} else {
+			logMsg(loggerSystem, LOG_LEVEL_WARNING, "Reading data from file: did not read requested number of objects (requested: %llu, actually read: %llu).", objectCount, objectsRead);
+		}
 	}
 }
 
